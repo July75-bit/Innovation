@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "description": "PlayerStock 固定演示数据（虚构选手，与真实人物无关）。用于 seed_db.py 初始化和现场演示，保证每次演示价格起点一致、效果可复现。",
+  "pricing": {
+    "alpha": 0.15,
+    "beta": 0.0,
+    "floor": 1.0,
+    "position_limit": 50
+  },
+  "players": [
+    {
+      "player_id": 1,
+      "name": "Shadow",
+      "display_name": "影刃",
+      "team": "NOVA",
+      "game": "MOBA",
+      "initial_price": 100.0,
+      "prev_price": 100.0,
+      "current_price": 103.5,
+      "rating": 82,
+      "status": "trading",
+      "note": "首发阵容稳定，近 3 场表现上扬"
+    },
+    {
+      "player_id": 2,
+      "name": "Kite",
+      "display_name": "风筝",
+      "team": "NORTH",
+      "game": "MOBA",
+      "initial_price": 120.0,
+      "prev_price": 120.0,
+      "current_price": 114.2,
+      "rating": 71,
+      "status": "trading",
+      "note": "近期关键局失误偏多"
+    },
+    {
+      "player_id": 3,
+      "name": "Ember",
+      "display_name": "余烬",
+      "team": "PHOENIX",
+      "game": "FPS",
+      "initial_price": 85.0,
+      "prev_price": 85.0,
+      "current_price": 92.8,
+      "rating": 88,
+      "status": "trading",
+      "note": "连续两场 MVP，价格被市场追高"
+    },
+    {
+      "player_id": 4,
+      "name": "Vertex",
+      "display_name": "顶点",
+      "team": "TITAN",
+      "game": "FPS",
+      "initial_price": 150.0,
+      "prev_price": 150.0,
+      "current_price": 146.0,
+      "rating": 76,
+      "status": "trading",
+      "note": "高价股，波动相对温和"
+    },
+    {
+      "player_id": 5,
+      "name": "Pulse",
+      "display_name": "脉冲",
+      "team": "RIFT",
+      "game": "MOBA",
+      "initial_price": 95.0,
+      "prev_price": 95.0,
+      "current_price": 95.0,
+      "rating": 65,
+      "status": "trading",
+      "note": "表现中庸，适合演示横盘"
+    },
+    {
+      "player_id": 6,
+      "name": "Echo",
+      "display_name": "回声",
+      "team": "WAVE",
+      "game": "FPS",
+      "initial_price": 110.0,
+      "prev_price": 110.0,
+      "current_price": 88.4,
+      "rating": 58,
+      "status": "trading",
+      "note": "状态下滑，适合演示下跌与 SELL 建议"
+    },
+    {
+      "player_id": 7,
+      "name": "Frost",
+      "display_name": "霜牙",
+      "team": "GLACIER",
+      "game": "MOBA",
+      "initial_price": 130.0,
+      "prev_price": 130.0,
+      "current_price": 141.7,
+      "rating": 90,
+      "status": "suspended",
+      "note": "比赛进行中，暂停交易（用于演示暂停交易规则）"
+    },
+    {
+      "player_id": 8,
+      "name": "Nova",
+      "display_name": "新星",
+      "team": "NOVA",
+      "game": "FPS",
+      "initial_price": 90.0,
+      "prev_price": 90.0,
+      "current_price": 90.0,
+      "rating": 60,
+      "status": "trading",
+      "note": "与 Shadow 同队，用于演示同队不同走势"
+    }
+  ]
+}

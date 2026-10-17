@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------- 后端：pytest ----------------
+  backend:
+    name: 后端测试 (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: 安装依赖
+        run: pip install -r backend/requirements.txt
+      - name: 运行 pytest
+        run: python -m pytest
+
+  # ---------------- 前端：eslint + build ----------------
+  frontend:
+    name: 前端检查 (eslint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # ⚠️ 不能把 hashFiles() 写在 job 级 if 里：job 级 if 在 checkout 之前求值，
+      #    工作区还是空的，hashFiles 永远返回空字符串，导致该 job 永远被跳过。
+      #    所以先 checkout，再用 step output 判断。
+      - name: 检测 frontend 是否已生成
+        id: detect
+        run: |
+          if [ -f frontend/package.json ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::frontend/package.json 尚不存在（A 同学还没跑 npm create vue@latest），跳过前端检查。"
+          fi
+      - name: 安装 Node
+        if: steps.detect.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # 注意：npm ci 需要提交 package-lock.json（vue 脚手架会生成，别加进 .gitignore）
+      - name: 安装依赖
+        if: steps.detect.outputs.ready == 'true'
+        working-directory: frontend
+        run: npm ci
+      - name: 代码规范
+        if: steps.detect.outputs.ready == 'true'
+        working-directory: frontend
+        run: npm run lint
+      - name: 构建
+        if: steps.detect.outputs.ready == 'true'
+        working-directory: frontend
+        run: npm run build
+
+  # ---------------- 交付物完整性：防止第 6 天发现文档没写 ----------------
+  deliverables:
+    name: 交付物完整性检查
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 检查 docs 必需文件是否存在
+        run: |
+          missing=0
+          for f in \
+            README.md \
+            .gitignore \
+            LICENSE \
+            data/seed_players.json \
+            docs/requirements/problem_definition.md \
+            docs/requirements/functional_spec.md \
+            docs/requirements/nonfunctional_spec.md \
+            docs/requirements/user_stories.md \
+            docs/requirements/mechanism_design.md \
+            docs/algorithm/pricing_model.md \
+            docs/algorithm/ai_agent_prompt.md \
+            docs/algorithm/backtest_report.md \
+            docs/software/architecture.md \
+            docs/software/api_contract.md \
+            docs/software/database_design.md \
+            docs/software/deployment.md \
+            docs/mgmt/communication_plan.md \
+            docs/mgmt/risk_plan.md \
+            docs/mgmt/milestones.md \
+            docs/acceptance/test_plan.md \
+            docs/acceptance/test_report.md \
+            docs/acceptance/user_manual.md \
+            docs/acceptance/compliance.md \
+            docs/retrospection/daily_summary.md
+          do
+            if [ ! -f "$f" ]; then
+              echo "::error file=$f::缺少课程要求的交付物"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "交付物不完整，请补齐后再合并。"
+            exit 1
+          fi
+          echo "交付物完整性检查通过。"
