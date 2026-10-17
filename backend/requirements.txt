@@ -11,3 +11,6 @@ pydantic-settings
 python-dotenv
 pytest
 httpx
+
+# 方案 B：后端接 Render 免费 Postgres 所需驱动（SQLAlchemy 通过它连 Postgres）
+psycopg2-binary
