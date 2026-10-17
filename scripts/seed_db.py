@@ -43,7 +43,7 @@ def main() -> None:
     #                             reason="初始价格", ts=now()))
     for p in players:
         print(f"  [{p['player_id']}] {p['name']}({p['display_name']}) "
-              f"@ {p['current_price']}  rating={p['rating']}  status={p['status']}")
+              f"@ {p['current_price']}  rating={p['rating']}  HLTV={p['hltv_rating']}  status={p['status']}")
 
     raise SystemExit(
         "TODO(B)：数据库模型就绪后取消注释上面的写入逻辑并删除本行。"

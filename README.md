@@ -146,7 +146,7 @@ python -m pytest
 成功响应统一结构（交易是否成功**以后端数据库为准**，不允许前端只改数字）：
 
 ```json
-{ "success": true, "message": "买入成功", "balance": 4800, "player_id": 1, "quantity": 2 }
+{ "success": true, "message": "买入成功", "balance": 4748.00, "player_id": 1, "quantity": 2 }
 ```
 
 ## 交易规则（稳定层）

@@ -6,7 +6,8 @@
 docs/software/database_design.md，并@A @C 确认字段名）：
 
 - users        账户：id, nickname, balance, initial_balance, created_at
-- players      选手：id, name, team, current_price, prev_price, rating, status, updated_at
+- players      选手：id, name, display_name, team, role, current_price, prev_price,
+                rating, hltv_rating, kast, adr, status, updated_at
 - positions    持仓：id, user_id, player_id, quantity, avg_cost, updated_at
                 （user_id + player_id 唯一索引）
 - trades       交易记录：id, user_id, player_id, side(BUY/SELL), quantity, price,

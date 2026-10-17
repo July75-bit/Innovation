@@ -7,18 +7,22 @@
 - C 输出 current_price，B 就不能存成 price。
 
 待实现：
-- GET /api/players                 市场列表（选手名、当前价、涨跌幅、表现评分）
+- GET /api/players                 市场列表（选手名、当前价、涨跌幅、综合表现分、CS2 指标）
 - GET /api/players/{player_id}     单个选手详情（含最近一次价格变化原因）
 
 参考响应（列表项）：
     {
       "player_id": 1,
-      "name": "Shadow",
-      "team": "Nova",
-      "current_price": 103.5,
-      "prev_price": 100.0,
-      "change_pct": 3.5,
-      "rating": 82,
+      "name": "Vex",
+      "team": "OBSIDIAN",
+      "role": "AWPer",
+      "current_price": 126.0,
+      "prev_price": 120.0,
+      "change_pct": 5.0,
+      "rating": 88,
+      "hltv_rating": 1.32,
+      "kast": 74.5,
+      "adr": 82.1,
       "status": "trading"
     }
 """

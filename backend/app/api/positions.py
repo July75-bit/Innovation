@@ -8,13 +8,13 @@
 参考响应（列表项）：
     {
       "player_id": 1,
-      "name": "Shadow",
+      "name": "Vex",
       "quantity": 10,
-      "avg_cost": 98.0,
-      "current_price": 103.5,
-      "market_value": 1035.0,
-      "profit": 55.0,
-      "profit_pct": 5.61
+      "avg_cost": 120.0,
+      "current_price": 126.0,
+      "market_value": 1260.0,
+      "profit": 60.0,
+      "profit_pct": 5.0
     }
 
 注意：

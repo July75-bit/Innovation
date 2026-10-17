@@ -77,34 +77,43 @@
 [
   {
     "player_id": 1,
-    "name": "Shadow",
-    "display_name": "影刃",
-    "team": "NOVA",
-    "current_price": 103.50,
-    "prev_price": 100.00,
-    "change_pct": 3.50,
-    "rating": 82,
+    "name": "Vex",
+    "display_name": "锐矢",
+    "team": "OBSIDIAN",
+    "role": "AWPer",
+    "current_price": 126.00,
+    "prev_price": 120.00,
+    "change_pct": 5.00,
+    "rating": 88,
+    "hltv_rating": 1.32,
+    "kast": 74.5,
+    "adr": 82.1,
     "status": "trading"
   }
 ]
 ```
 
 > `status ∈ {trading, suspended}`；`change_pct` 后端算好，前端不要自己算。
+> CS2 指标说明：`rating` 是自建 0–100 综合表现分；`hltv_rating`（1.0 为平均）/ `kast` / `adr` 是模拟的 CS2 统计。**两组不是一回事**，不要混用或互相换算。
 
 ### 4.3 `GET /api/players/{player_id}`
 
 ```json
 {
   "player_id": 1,
-  "name": "Shadow",
-  "display_name": "影刃",
-  "team": "NOVA",
-  "current_price": 103.50,
-  "prev_price": 100.00,
-  "change_pct": 3.50,
-  "rating": 82,
+  "name": "Vex",
+  "display_name": "锐矢",
+  "team": "OBSIDIAN",
+  "role": "AWPer",
+  "current_price": 126.00,
+  "prev_price": 120.00,
+  "change_pct": 5.00,
+  "rating": 88,
+  "hltv_rating": 1.32,
+  "kast": 74.5,
+  "adr": 82.1,
   "status": "trading",
-  "latest_reason": "模拟比赛表现提升（近 3 场均分 88，S=+0.42）"
+  "latest_reason": "模拟比赛表现提升（近 3 图 Rating 由 1.18 升至 1.32，S=+0.42）"
 }
 ```
 
@@ -116,8 +125,8 @@
 {
   "player_id": 1,
   "points": [
-    { "ts": "2026-01-01T10:00:00Z", "price": 100.00, "reason": "初始价格" },
-    { "ts": "2026-01-01T10:05:00Z", "price": 103.50, "reason": "模拟比赛表现提升" }
+    { "ts": "2026-01-01T10:00:00Z", "price": 120.00, "reason": "初始价格" },
+    { "ts": "2026-01-01T10:05:00Z", "price": 126.00, "reason": "模拟比赛表现提升" }
   ]
 }
 ```
@@ -144,13 +153,13 @@
 [
   {
     "player_id": 1,
-    "name": "Shadow",
+    "name": "Vex",
     "quantity": 10,
-    "avg_cost": 98.00,
-    "current_price": 103.50,
-    "market_value": 1035.00,
-    "profit": 55.00,
-    "profit_pct": 5.61
+    "avg_cost": 120.00,
+    "current_price": 126.00,
+    "market_value": 1260.00,
+    "profit": 60.00,
+    "profit_pct": 5.00
   }
 ]
 ```
@@ -171,10 +180,10 @@
 {
   "success": true,
   "message": "买入成功",
-  "balance": 4800.00,
+  "balance": 4748.00,
   "player_id": 1,
   "quantity": 2,
-  "price": 100.00,
+  "price": 126.00,
   "trade_id": 17
 }
 ```
@@ -182,7 +191,7 @@
 失败 400 示例：
 
 ```json
-{ "success": false, "message": "余额不足，当前余额 50.00，需要 100.00", "code": "INSUFFICIENT_BALANCE" }
+{ "success": false, "message": "余额不足，当前余额 50.00，需要 126.00", "code": "INSUFFICIENT_BALANCE" }
 ```
 
 校验顺序（B 必须按此顺序，便于前端给准确提示）：
@@ -202,10 +211,10 @@
 {
   "success": true,
   "message": "卖出成功",
-  "balance": 4900.00,
+  "balance": 4874.00,
   "player_id": 1,
   "quantity": 1,
-  "price": 100.00,
+  "price": 126.00,
   "trade_id": 18
 }
 ```
@@ -221,12 +230,12 @@
   {
     "trade_id": 18,
     "player_id": 1,
-    "name": "Shadow",
+    "name": "Vex",
     "side": "SELL",
     "quantity": 1,
-    "price": 100.00,
-    "amount": 100.00,
-    "balance_after": 4900.00,
+    "price": 126.00,
+    "amount": 126.00,
+    "balance_after": 4874.00,
     "created_at": "2026-01-01T10:10:00Z"
   }
 ]
@@ -240,9 +249,9 @@
 {
   "player_id": 1,
   "action": "BUY",
-  "reason": "近 3 场表现评分由 74 升至 82，价格上涨 3.5% 但低于表现提升幅度",
+  "reason": "近 3 图 Rating 由 1.18 升至 1.32，价格上涨 5.0% 但低于表现提升幅度",
   "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 100.00, "high": 108.00 },
+  "suggested_price_band": { "low": 120.00, "high": 130.00 },
   "source": "llm",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
@@ -262,7 +271,11 @@
 | 当前价格 | `current_price` | `price`, `currentPrice`, `now_price` |
 | 上一价格 | `prev_price` | `last_price` |
 | 涨跌幅（%） | `change_pct` | `change`, `pct`, `chg` |
-| 表现评分 | `rating` | `score`, `performance` |
+| 综合表现分（自建 0–100） | `rating` | `score`, `performance` |
+| 选手位置 | `role`（AWPer / Entry / Rifler / IGL / Support / Lurker） | `position_name`, `pos` |
+| HLTV 风格评分 | `hltv_rating`（1.0 为平均） | `hltv`, `hlRating` |
+| KAST 百分比 | `kast` | `kast_pct` |
+| 场均伤害 | `adr` | `damage`, `avg_damage` |
 | 余额 | `balance` | `money`, `cash`, `fund` |
 | 数量 | `quantity` | `qty`, `amount`, `num` |
 | 方向 | `side`（BUY/SELL） | `type`, `direction` |

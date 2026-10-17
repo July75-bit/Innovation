@@ -9,7 +9,8 @@
 
 响应：
 - TradeResponse：success: bool, message: str, balance: float, player_id: int, quantity: int
-- PlayerSummary：player_id, name, team, current_price, prev_price, change_pct, rating, status
+- PlayerSummary：player_id, name, display_name, team, role, current_price, prev_price,
+  change_pct, rating, hltv_rating, kast, adr, status
 - PlayerDetail：PlayerSummary + reason（最近一次价格变化原因）
 - AccountResponse：user_id, balance, initial_balance, total_asset, position_value
 - PositionItem：player_id, name, quantity, avg_cost, current_price, market_value, profit, profit_pct
