@@ -1,0 +1,50 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ---------- SQLite ----------
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+# 但保留演示种子数据（JSON 不是数据库文件）
+!data/seed_players.json
+
+# ---------- Node / Vue ----------
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/coverage/
+frontend/.vite/
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log
+
+# ---------- Editor / OS ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---------- 运行时产物 ----------
+logs/
+*.log
+tmp/
+.tmp/
+
+# ---------- 部署/密钥 ----------
+render-secrets.md
+*.pem

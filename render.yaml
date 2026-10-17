@@ -1,0 +1,60 @@
+# Render 部署蓝图（Blueprint）
+#
+# 用法：Render 控制台 → New → Blueprint → 选择本仓库，会自动识别本文件。
+# 也可以不启用 Blueprint，手工在控制台创建两个服务（配置与本文件一致即可）。
+#
+# ⚠️ 两个必须注意的点（三份项目材料都专门警告过）：
+# 1. Render 默认文件系统是临时的，重启/重新部署会丢失 SQLite 数据。
+#    方案 A：付费挂载 Persistent Disk（见下方注释块），DB 路径指向挂载点；
+#    方案 B：改用托管 PostgreSQL（把 DATABASE_URL 换成 postgres://...）。
+# 2. 前端的 VITE_API_BASE_URL 必须是后端公网地址，不能写 127.0.0.1:8000。
+
+services:
+  # ---------------- 后端 Web Service ----------------
+  - type: web
+    name: playerstock-backend
+    runtime: python
+    plan: free
+    region: singapore
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # 注意：入口是 app.main:app（backend/app/main.py），不是手册里的 main:app
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: DATABASE_URL
+        # 免费版：临时磁盘，重新部署会丢数据（仅够演示）
+        value: sqlite:///./playerstock.db
+        # 付费版挂载磁盘后改为： sqlite:////var/data/playerstock.db
+      - key: LLM_PROVIDER
+        value: openai
+      - key: LLM_MODEL
+        value: gpt-4o-mini
+      - key: LLM_API_KEY
+        sync: false # 在 Render 控制台手工填写，绝不提交明文
+      - key: CORS_ORIGINS
+        sync: false # 填前端公网地址，如 https://playerstock-frontend.onrender.com
+
+    # ⚠️ Persistent Disk 仅付费套餐可用；启用后把 DATABASE_URL 改成 sqlite:////var/data/playerstock.db
+    # disk:
+    #   name: playerstock-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+
+  # ---------------- 前端 Static Site ----------------
+  - type: web
+    name: playerstock-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false # 填后端公网地址，如 https://playerstock-backend.onrender.com
+    routes:
+      # SPA 路由回退，避免刷新 /market 之类的前端路由 404
+      - type: rewrite
+        source: /*
+        destination: /index.html
