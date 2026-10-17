@@ -14,9 +14,16 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
-connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+connect_args = {"check_same_thread": False} if settings.is_sqlite else {}
 
-engine = create_engine(settings.database_url, connect_args=connect_args, future=True)
+engine = create_engine(
+    settings.database_url,
+    connect_args=connect_args,
+    # 托管 Postgres 空闲后连接可能被服务端断开；免费实例还会休眠。
+    # pool_pre_ping 会在取连接时先探活，避免第一个请求报 "server closed the connection"。
+    pool_pre_ping=not settings.is_sqlite,
+    future=True,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 

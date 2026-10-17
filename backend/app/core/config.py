@@ -8,6 +8,7 @@
 
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,6 +40,23 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-4o-mini"
     llm_api_key: str = ""
     llm_timeout_seconds: float = 20.0
+
+    @field_validator("database_url")
+    @classmethod
+    def _normalize_database_url(cls, v: str) -> str:
+        """Render 给的连接串可能以 postgres:// 开头，SQLAlchemy 2.x 只认 postgresql://。
+
+        不转换的话，线上启动会直接抛
+        `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`。
+        """
+        if v.startswith("postgres://"):
+            return "postgresql://" + v[len("postgres://") :]
+        return v
+
+    @property
+    def is_sqlite(self) -> bool:
+        """是否在用本地 SQLite（线上必须为 False，否则数据会随部署丢失）。"""
+        return self.database_url.startswith("sqlite")
 
     @property
     def cors_origin_list(self) -> list[str]:

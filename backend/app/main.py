@@ -12,6 +12,8 @@
 """
 
 from contextlib import asynccontextmanager
+import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,9 +22,18 @@ from app.api import account, ai, health, players, positions, prices, trades
 from app.core.config import settings
 from app.core.database import init_db
 
+logger = logging.getLogger("playerstock")
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # 线上必须用托管 Postgres；这里在 Render 上检测到 SQLite 就大声警告，
+    # 避免"数据总是丢"却查不出原因（免费实例的文件系统是临时的）。
+    if settings.is_sqlite and os.getenv("RENDER"):
+        logger.warning(
+            "当前部署在 Render 上却使用本地 SQLite：重新部署/重启/休眠后数据会全部丢失！"
+            "请把 DATABASE_URL 设为 Render Postgres 的连接串（scheme 用 postgresql://）。"
+        )
     # 开发期直接建表；表结构由 B 在 app/models/ 中定义
     init_db()
     yield
