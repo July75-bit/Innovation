@@ -85,6 +85,13 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ### 2. 启动前端（A 同学第 1 天）
 
+> ⚠️ `code/frontend/` 当前只有一份说明文件，而脚手架要求目标目录为空，
+> 直接跑 `npm create vue` 会因"目录非空"失败。先把说明移走（对应 `docs/mgmt/milestones.md` 的 T1-04）。
+
+```powershell
+Move-Item code/frontend/README.md docs/software/frontend_setup.md
+```
+
 ```powershell
 npm create vue@latest code/frontend
 # 选项：TypeScript=Yes / JSX=No / Vue Router=Yes / Pinia=No
