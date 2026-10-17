@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "📖 项目文档"
+    url: https://github.com/July75-bit/Innovation/wiki
+    about: 查看项目文档和使用说明
+  - name: "💬 讨论区"
+    url: https://github.com/July75-bit/Innovation/discussions
+    about: 有问题或想法？在这里讨论
