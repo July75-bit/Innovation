@@ -2,7 +2,7 @@
 
 负责人：B
 
-启动（在 backend/ 目录下）：
+启动（在 code/backend/ 目录下）：
     python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 验收：

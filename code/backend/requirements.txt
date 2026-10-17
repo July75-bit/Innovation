@@ -1,6 +1,6 @@
 # PlayerStock 后端依赖
 # 注意：以下清单沿用 6 天手册，未固定版本号。
-# 第 1 天四个人的环境都跑通后，请在 backend/ 目录执行：
+# 第 1 天四个人的环境都跑通后，请在 code/backend/ 目录执行：
 #   pip freeze > requirements.lock.txt
 # 并把 requirements.lock.txt 一起提交，满足课程"可复现"要求（指标 #22）。
 

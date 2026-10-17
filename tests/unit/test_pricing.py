@@ -2,13 +2,13 @@
 
 负责人：C（实现后把 skip 去掉）
 
-保留 skip 的原因：backend/pricing/pricing.py 目前是契约骨架（raise NotImplementedError），
+保留 skip 的原因：code/core_engine/pricing.py 目前是契约骨架（raise NotImplementedError），
 先写上预期行为，C 第 2 天实现时先改测试跑通再改实现（课程要求 TDD）。
 """
 
 import pytest
 
-from pricing.pricing import update_price
+from core_engine.pricing import update_price
 
 
 @pytest.mark.skip(reason="C 同学第 2 天实现 update_price 后取消 skip")

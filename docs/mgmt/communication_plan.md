@@ -58,10 +58,10 @@
 
 | 目录 | 唯一写入人 | 其他人只能 |
 | --- | --- | --- |
-| `frontend/` | A | 读 |
-| `backend/app/api`、`models`、`schemas`、`core` | B | 读 |
-| `backend/pricing/` | C | 读 |
-| `backend/ai/` | D | 读 |
+| `code/frontend/` | A | 读 |
+| `code/backend/app/api`、`models`、`schemas`、`core` | B | 读 |
+| `code/core_engine/` | C | 读 |
+| `code/backend/ai/` | D | 读 |
 | `docs/algorithm/pricing_model.md` | C | 提意见 |
 | `docs/algorithm/ai_agent_prompt.md`、`backtest_report.md` | D | 提意见 |
 | `docs/software/api_contract.md` | B | 提变更申请 |

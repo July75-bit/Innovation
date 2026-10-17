@@ -6,11 +6,11 @@ requires-python = ">=3.12"
 license = { text = "MIT" }
 
 # 说明：本项目不做 pip 安装，此文件主要用于统一 pytest 配置。
-# 之所以需要 pythonpath，是因为 tests/ 独立于 backend/，
-# 需要让 `import app.xxx` 能解析到 backend/app 包。
+# 之所以需要 pythonpath，是因为 tests/ 独立于 code/backend/，
+# 需要让 `import app.xxx` 能解析到 code/backend/app 包。
 
 [tool.pytest.ini_options]
-pythonpath = ["backend"]
+pythonpath = ["code/backend", "code"]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
 markers = [

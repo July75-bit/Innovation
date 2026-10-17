@@ -7,8 +7,10 @@
 
 | 服务 | 平台 | Root Directory | 构建 | 启动 |
 | --- | --- | --- | --- | --- |
-| 前端 | Render Static Site | `frontend` | `npm install && npm run build` | 静态（`dist/`） |
-| 后端 | Render Web Service | `backend` | `pip install -r requirements.txt` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| 前端 | Render Static Site | `code/frontend` | `npm install && npm run build` | 静态（`dist/`） |
+| 后端 | Render Web Service | `code/backend` | `pip install -r requirements.txt` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+
+> `code/core_engine` 通过 `code/backend/app/core/config.py` 里的 `sys.path` 注入被后端导入，**无需单独安装**；如需标准包形式，可在 `code/backend` 下执行 `pip install -e ../core_engine`。
 
 > 仓库根目录的 `render.yaml` 已写好这两个服务，可以在 Render 里直接 New → Blueprint 导入。
 
@@ -41,10 +43,10 @@
 
 ### 3.0 前置条件（代码侧已就绪）
 
-- [x] `backend/requirements.txt` 已含 `psycopg2-binary`（连 Postgres 的驱动）
-- [x] `backend/app/core/config.py` 已把 Render 的 `postgres://` 自动转成 `postgresql://`（不转会启动报 `Can't load plugin: sqlalchemy.dialects:postgres`）
-- [x] `backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
-- [x] `backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
+- [x] `code/backend/requirements.txt` 已含 `psycopg2-binary`（连 Postgres 的驱动）
+- [x] `code/backend/app/core/config.py` 已把 Render 的 `postgres://` 自动转成 `postgresql://`（不转会启动报 `Can't load plugin: sqlalchemy.dialects:postgres`）
+- [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
+- [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
 - [ ] 代码已推到 GitHub；确认 **要部署的分支**（团队当前用 `develop`，Blueprint 创建时选它，否则推了不自动部署）
 
 ### 3.1 注册并授权 Render
@@ -91,7 +93,7 @@
 2. 本地仓库根目录执行：
 
    ```powershell
-   cd backend
+   cd code/backend
    $env:DATABASE_URL="<External Database URL>"
    python ../scripts/seed_db.py
    ```
@@ -143,7 +145,7 @@
 
 **代码侧已完成的铺垫（不需再做）**：
 
-- [x] `backend/requirements.txt` 加入 `psycopg2-binary`
+- [x] `code/backend/requirements.txt` 加入 `psycopg2-binary`
 - [x] `config.py` 自动把 `postgres://` 归一化为 `postgresql://`
 - [x] `database.py` 对 Postgres 开启 `pool_pre_ping`
 - [x] `main.py` 在 Render 上误用 SQLite 时打警告日志
@@ -214,7 +216,7 @@
 | 前端报 CORS | `CORS_ORIGINS` 没加前端域名 | 改后重启后端 |
 | 前端请求 404 | `VITE_API_BASE_URL` 少了协议或尾部斜杠 | 改成 `https://host`，重新构建 |
 | 后端 502 | 启动命令路径错（写成 `main:app`） | 必须是 `uvicorn app.main:app` |
-| 后端 import 失败 | 用了 `../core_engine` 这类跨目录 import | 定价/AI 必须在 `backend/` 内 |
+| 后端 import 失败（`No module named core_engine`） | `code/` 未加入 `sys.path` 或未安装 core_engine | 确认 `code/backend/app/core/config.py` 的 sys.path 注入存在；或执行 `pip install -e ../core_engine` |
 | 刷新后数据消失 | 用了临时文件系统 | 挂持久盘或换 PostgreSQL |
 | 首次访问很慢（约 1 分钟）或先出现加载页 | 免费实例已休眠（15 分钟无入站流量） | 正常现象，不是故障；演示前预热（见 4.4） |
 | 重新部署后交易记录全没了 | 免费实例临时文件系统 + 本地 SQLite | 换免费 Postgres（见 4.3 方案 B），并检查 `DATABASE_URL` 是否生效 |

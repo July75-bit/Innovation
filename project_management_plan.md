@@ -227,10 +227,10 @@
 
 | 目录/文件 | 唯一写入人 | 其他人权限 |
 | --- | --- | --- |
-| `frontend/` | 倪颢容（A） | 只读 + PR 评论 |
-| `backend/app/api`、`models`、`schemas`、`core` | 胡德昊（B） | 只读 + PR 评论 |
-| `backend/pricing/` | 刘宏（C） | 只读 + PR 评论 |
-| `backend/ai/` | 王泽棠（D） | 只读 + PR 评论 |
+| `code/frontend/` | 倪颢容（A） | 只读 + PR 评论 |
+| `code/backend/app/api`、`models`、`schemas`、`core` | 胡德昊（B） | 只读 + PR 评论 |
+| `code/core_engine/` | 刘宏（C） | 只读 + PR 评论 |
+| `code/backend/ai/` | 王泽棠（D） | 只读 + PR 评论 |
 | `docs/algorithm/pricing_model.md` | 刘宏（C） | 提意见 |
 | `docs/algorithm/ai_agent_prompt.md`、`backtest_report.md` | 王泽棠（D） | 提意见 |
 | `docs/software/api_contract.md` | 胡德昊（B） | 提变更申请（走第 7 节） |

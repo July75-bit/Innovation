@@ -47,30 +47,30 @@
 
 #### 2.2 A 同学：前端（8 项，约 5.5h）
 
-**边界**：只改 `frontend/`，不碰 `backend/` 任何文件。
+**边界**：只改 `code/frontend/`，不碰 `code/backend/` 任何文件。
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-04 | 10:30–10:45 | **解除目录阻塞**：`Move-Item frontend/README.md docs/software/frontend_setup.md`（否则脚手架会因目录非空失败；该说明要保留，不要直接删） | T1-03 | `frontend/` 为空目录；`docs/software/frontend_setup.md` 存在 | ⬜ |
-| T1-05 | 10:45–11:15 | `npm create vue@latest frontend`；选项：TS=Yes / JSX=No / Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes | T1-04 | 脚手架生成成功 | ⬜ |
-| T1-06 | 11:15–11:35 | `cd frontend` → `npm install` → `npm run dev` | T1-05 | 浏览器打开 `localhost:5173` 显示初始页 | ⬜ |
-| T1-07 | 11:35–11:55 | 新建 `frontend/.env.example`（`VITE_API_BASE_URL=http://127.0.0.1:8000`）+ `src/api/client.ts`（从 `import.meta.env` 读地址，封装 `get/post`） | T1-06 | 代码里搜不到硬编码的 `127.0.0.1` | ⬜ |
+| T1-04 | 10:30–10:45 | **解除目录阻塞**：`Move-Item code/frontend/README.md docs/software/frontend_setup.md`（否则脚手架会因目录非空失败；该说明要保留，不要直接删） | T1-03 | `code/frontend/` 为空目录；`docs/software/frontend_setup.md` 存在 | ⬜ |
+| T1-05 | 10:45–11:15 | `npm create vue@latest code/frontend`；选项：TS=Yes / JSX=No / Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes | T1-04 | 脚手架生成成功 | ⬜ |
+| T1-06 | 11:15–11:35 | `cd code/frontend` → `npm install` → `npm run dev` | T1-05 | 浏览器打开 `localhost:5173` 显示初始页 | ⬜ |
+| T1-07 | 11:35–11:55 | 新建 `code/frontend/.env.example`（`VITE_API_BASE_URL=http://127.0.0.1:8000`）+ `src/api/client.ts`（从 `import.meta.env` 读地址，封装 `get/post`） | T1-06 | 代码里搜不到硬编码的 `127.0.0.1` | ⬜ |
 | T1-08 | 11:55–12:30 | **今日最关键交付**：HomeView 调 `GET /api/health`，页面显示“连接成功：playerstock-backend” | T1-07, T1-13 | 页面出现连接成功文案 | ⬜ |
 | T1-09 | 14:00–15:00 | 配 4 条路由：`/` 市场、`/players/:id` 详情、`/positions` 持仓、`/trades` 流水；各建空 view | T1-06 | 4 个路径可切换、不白屏 | ⬜ |
 | T1-10 | 15:00–16:30 | 统一顶部导航（Logo / 市场 / 持仓 / 流水 / 余额占位）+ 抽 `LoadingState` / `EmptyState` / `ErrorState` 三个组件 | T1-09 | 每个页面都有统一顶栏 | ⬜ |
-| T1-11 | 16:30–18:30 | 对着契约核对字段（`player_id` / `current_price` / `change_pct` / `rating` / `role` / `hltv_rating` / `kast` / `adr` / `latest_reason` / `avg_cost` / `market_value` / `profit`）→ 缺的当场提给 B → 与 B 联调 5173×8000 → 提 PR（模板勾“接口变更：否”）+ 补 `docs/requirements/wireframes/README.md` | T1-08, T1-16 | PR 已建；CI 前端 job 转绿；契约下留一行确认 | ⬜ |
+| T1-11 | 16:30–18:30 | 对着契约核对字段（`player_id` / `current_price` / `change_pct` / `rating` / `role` / `latest_reason` / `avg_cost` / `market_value` / `profit`）→ 缺的当场提给 B → 与 B 联调 5173×8000 → 提 PR（模板勾“接口变更：否”）+ 补 `docs/requirements/wireframes/README.md` | T1-08, T1-16 | PR 已建；CI 前端 job 转绿；契约下留一行确认 | ⬜ |
 
 #### 2.3 B 同学：后端与交易系统（9 项，约 6h）
 
-**边界**：只改 `backend/app/{api,models,schemas,core}`、`backend/requirements.txt`、`scripts/seed_db.py`；不碰 `frontend/`、`backend/pricing/`、`backend/ai/`。
+**边界**：只改 `code/backend/app/{api,models,schemas,core}`、`code/backend/requirements.txt`、`scripts/seed_db.py`；不碰 `code/frontend/`、`code/core_engine/`、`code/backend/ai/`。
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-12 | 10:30–10:55 | `cd backend` → `py -3.12 -m venv .venv` → `.\venv\Scripts\Activate.ps1` → `pip install -r requirements.txt` → `Copy-Item .env.example .env` | T1-03 | 终端出现 `(.venv)`；`git status` 看不到 `.env` | ⬜ |
+| T1-12 | 10:30–10:55 | `cd code/backend` → `py -3.12 -m venv .venv` → `.\venv\Scripts\Activate.ps1` → `pip install -r requirements.txt` → `Copy-Item .env.example .env` | T1-03 | 终端出现 `(.venv)`；`git status` 看不到 `.env` | ⬜ |
 | T1-13 | 10:55–11:20 | **后端三验**：`python -m uvicorn app.main:app --reload --port 8000`，验证 `/`、`/api/health`、`/docs` | T1-12 | 三个页面截图发群（第 1 个里程碑） | ⬜ |
-| T1-14 | 11:20–12:30 | 按 `database_design.md` 建 5 张表：`User/Player/Position/Trade/PriceHistory`；`players` 含 `role` / `hltv_rating` / `kast` / `adr`；`positions` 加 `UNIQUE(user_id, player_id)`；`trades` 加 `INDEX(user_id, created_at)`；跑通 `init_db()`；把 `database_design.md` 定稿 | T1-13 | `playerstock.db` 生成成功；文档无空白节 | ⬜ |
+| T1-14 | 11:20–12:30 | 按 `database_design.md` 建 5 张表：`User/Player/Position/Trade/PriceHistory`；`players` 含 `role`（真实位置）与 `rating`（模拟评分）；`positions` 加 `UNIQUE(user_id, player_id)`；`trades` 加 `INDEX(user_id, created_at)`；跑通 `init_db()`；把 `database_design.md` 定稿 | T1-13 | `playerstock.db` 生成成功；文档无空白节 | ⬜ |
 | T1-15 | 12:30–13:00 | `sqlite3 playerstock.db ".schema"`（或 Python 读 `sqlite_master`）自测，把实际 schema 贴进 `database_design.md` 附录 | T1-14 | 文档与实际表 100% 一致 | ⬜ |
-| T1-16 | 14:00–15:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 CS2 字段（`role` / `hltv_rating` / `kast` / `adr`）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | ⬜ |
+| T1-16 | 14:00–15:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 `role`（真实位置）与 `rating`（模拟评分，UI 需标注）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | ⬜ |
 | T1-17 | 15:00–16:00 | 实现只读接口 `GET /api/players`、`GET /api/account`（demo 用户 + 5000 余额） | T1-16 | Swagger 能试出数据 | ⬜ |
 | T1-18 | 16:00–17:30 | 实现 `POST /api/trades/buy` 骨架：正整数校验 → 查选手 → 查余额 → 事务内扣款+加持仓+写流水，失败返回 400 + 中文 `message` | T1-17 | 买 2 股（价 126.00）后余额 4748.00、持仓 +2、流水 +1 | ⬜ |
 | T1-19 | 17:30–18:30 | 写第一批真测试：正常买入 / 余额不足 / 非法数量（把 `tests/unit/test_trades_rule.py` 对应 skip 去掉） | T1-18 | `python -m pytest` 全绿 | ⬜ |
@@ -80,15 +80,15 @@
 
 #### 2.4 C 同学：行情与定价（7 项，约 5h）
 
-**边界**：只改 `backend/pricing/`、`data/seed_players.json`、`docs/algorithm/pricing_model.md`、`scripts/simulate_match.py`；**绝不**改 `app/api`、`app/models`。
+**边界**：只改 `code/core_engine/`、`data/seed_players.json`、`docs/algorithm/pricing_model.md`、`scripts/simulate_match.py`；**绝不**改 `app/api`、`app/models`。
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-21 | 10:30–11:45 | 审 `data/seed_players.json`（已按 CS2 场景给出 8 名虚构选手，字段 `player_id` / `name` / `display_name` / `team` / `role` / `initial_price` / `current_price` / `hltv_rating` / `kast` / `adr` / `rating` / `status`），确认价格与评级合理 | T1-03 | `json.load` 通过，8 名选手，无重复 id | ⬜ |
+| T1-21 | 10:30–11:45 | 审 `data/seed_players.json`（已按 CS2 场景给出 8 名真实 CS2 选手，身份公开、价格与评分为模拟，字段 `player_id` / `name` / `display_name` / `team` / `role` / `initial_price` / `current_price` / `rating` / `status`），确认价格与评级合理 | T1-03 | `json.load` 通过，8 名选手，无重复 id | ⬜ |
 | T1-22 | 11:45–12:30 | 定稿 `pricing_model.md`：公式 `P' = max(floor, P×(1+αS+βD))`、α=0.15 / β=0 / floor=1.0 / 窗口 N=5、**单次涨幅 clamp 上限**（建议 ±20%，今天必须定一个数并写进文档） | T1-21 | 参数表无空白；clamp 有具体值 | ⬜ |
 | T1-23 | 14:00–15:00 | 与 B 对齐三件事：① 价格存 `players.current_price`；② 历史存 `price_history(player_id, price, reason, ts)`；③ 谁触发价格更新（定时任务 or 手动脚本） | T1-22 | 结论写进 `mechanism_design.md` 并勾掉“待定项” | ⬜ |
 | T1-24 | 15:00–16:00 | 参加契约评审，重点确认 `GET /api/players/{id}/prices`：时间升序、每点带 `reason`、空历史返回 `[]` 而非 404 | T1-16 | 契约签字 | ⬜ |
-| T1-25 | 16:00–17:30 | 在 `backend/pricing/pricing.py` 实现 `update_price` + `standardize_score`，去掉 `tests/unit/test_pricing.py` 的 skip | T1-22 | 5 条定价测试全绿 | ⬜ |
+| T1-25 | 16:00–17:30 | 在 `code/core_engine/pricing.py` 实现 `update_price` + `standardize_score`，去掉 `tests/unit/test_pricing.py` 的 skip | T1-22 | 5 条定价测试全绿 | ⬜ |
 | T1-26 | 17:30–18:30 | `python scripts/simulate_match.py --seed 42`：能打印比赛结果；若 `update_price` 已完成，能打印“旧价 → 新价 + reason” | T1-25 | 命令行看到一条价格变化及原因 | ⬜ |
 | T1-27 | 18:30–19:00 | 在 `pricing_model.md` 第 8 节填“至少一个涨、一个跌”案例占位；提定价 PR | T1-26 | 两个案例各一行 | ⬜ |
 
@@ -96,7 +96,7 @@
 
 #### 2.5 D 同学：AI / 部署 / 文档（10 项，约 6h）
 
-**边界**：只改 `backend/ai/`、`docs/`（除 `pricing_model.md`）、`.github/`、`render.yaml`；不碰 A/B/C 的代码目录。
+**边界**：只改 `code/backend/ai/`、`docs/`（除 `pricing_model.md`）、`.github/`、`render.yaml`；不碰 A/B/C 的代码目录。
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
@@ -106,7 +106,7 @@
 | T1-31 | 14:00–14:45 | 主持需求评审（15 分钟）：过一遍 5W1H 与“不做什么”，A/B/C 各提 1 个反对意见并记录 | T1-29 | 评审结论写进 `daily_summary.md` | ⬜ |
 | T1-32 | 14:45–15:30 | 部署方案预研（**今天不部署**）：注册 Render；确认 Static Site / Web Service 配置、免费实例会休眠、**SQLite 临时盘会丢数据**；结论补进 `deployment.md` 第 4 节 | — | 明确第 5 天走持久盘还是 PostgreSQL | ⬜ |
 | T1-33 | 15:30–16:00 | 参加契约评审，确认 `GET /api/analysis/{player_id}` 字段与错误码，并确认“AI 绝不改余额”写进契约 | T1-16 | 契约签字 | ⬜ |
-| T1-34 | 16:00–17:00 | 在 `backend/ai/fallback.py` 实现 `rule_based_advice`（纯阈值规则，不调模型） | T1-30 | 给定上下文返回合法 JSON（无需模型） | ⬜ |
+| T1-34 | 16:00–17:00 | 在 `code/backend/ai/fallback.py` 实现 `rule_based_advice`（纯阈值规则，不调模型） | T1-30 | 给定上下文返回合法 JSON（无需模型） | ⬜ |
 | T1-35 | 17:00–18:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ⬜ |
 | T1-36 | 18:00–18:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ⬜ |
 | T1-37 | 18:30–19:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ⬜ |
@@ -128,8 +128,8 @@
 
 | 风险 | 症状 | 预防 |
 | --- | --- | --- |
-| `frontend/` 非空导致脚手架失败 | `npm create vue` 报目录非空 | 开工第一件事做 T1-04 |
-| 启动命令照抄手册 `main:app` | `Could not import module "main"` | 必须 `uvicorn app.main:app`，且在 `backend/` 下执行 |
+| `code/frontend/` 非空导致脚手架失败 | `npm create vue` 报目录非空 | 开工第一件事做 T1-04 |
+| 启动命令照抄手册 `main:app` | `Could not import module "main"` | 必须 `uvicorn app.main:app`，且在 `code/backend/` 下执行 |
 | 接口字段各写各的 | 前端拿到 `undefined` | T1-16 必须签字；改字段走 PR“接口变更” |
 | 密钥/数据库被提交 | PR 里出现 `.env`、`playerstock.db` | `.gitignore` 已配，提交前 `git status` 自查（T1-28） |
 | C 和 B 都以为对方会存历史价 | 第 3 天发现 `price_history` 空表 | T1-23 那场对齐会必须定“谁写入” |

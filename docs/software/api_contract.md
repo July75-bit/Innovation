@@ -77,43 +77,37 @@
 [
   {
     "player_id": 1,
-    "name": "Vex",
-    "display_name": "锐矢",
-    "team": "OBSIDIAN",
+    "name": "ZywOo",
+    "display_name": "ZywOo",
+    "team": "Vitality",
     "role": "AWPer",
     "current_price": 126.00,
     "prev_price": 120.00,
     "change_pct": 5.00,
     "rating": 88,
-    "hltv_rating": 1.32,
-    "kast": 74.5,
-    "adr": 82.1,
     "status": "trading"
   }
 ]
 ```
 
 > `status ∈ {trading, suspended}`；`change_pct` 后端算好，前端不要自己算。
-> CS2 指标说明：`rating` 是自建 0–100 综合表现分；`hltv_rating`（1.0 为平均）/ `kast` / `adr` 是模拟的 CS2 统计。**两组不是一回事**，不要混用或互相换算。
+> 数据口径：`role` 为选手真实位置；`rating` 是本项目自建的**模拟综合表现分（0–100）**，仅用于驱动定价公式，**不是 HLTV Rating，也不是任何官方统计**，前端需标注为模拟数据。
 
 ### 4.3 `GET /api/players/{player_id}`
 
 ```json
 {
   "player_id": 1,
-  "name": "Vex",
-  "display_name": "锐矢",
-  "team": "OBSIDIAN",
+  "name": "ZywOo",
+  "display_name": "ZywOo",
+  "team": "Vitality",
   "role": "AWPer",
   "current_price": 126.00,
   "prev_price": 120.00,
   "change_pct": 5.00,
   "rating": 88,
-  "hltv_rating": 1.32,
-  "kast": 74.5,
-  "adr": 82.1,
   "status": "trading",
-  "latest_reason": "模拟比赛表现提升（近 3 图 Rating 由 1.18 升至 1.32，S=+0.42）"
+  "latest_reason": "模拟比赛表现提升（模拟评分由 78 升至 88，S=+0.42）"
 }
 ```
 
@@ -153,7 +147,7 @@
 [
   {
     "player_id": 1,
-    "name": "Vex",
+    "name": "ZywOo",
     "quantity": 10,
     "avg_cost": 120.00,
     "current_price": 126.00,
@@ -230,7 +224,7 @@
   {
     "trade_id": 18,
     "player_id": 1,
-    "name": "Vex",
+    "name": "ZywOo",
     "side": "SELL",
     "quantity": 1,
     "price": 126.00,
@@ -271,11 +265,8 @@
 | 当前价格 | `current_price` | `price`, `currentPrice`, `now_price` |
 | 上一价格 | `prev_price` | `last_price` |
 | 涨跌幅（%） | `change_pct` | `change`, `pct`, `chg` |
-| 综合表现分（自建 0–100） | `rating` | `score`, `performance` |
-| 选手位置 | `role`（AWPer / Entry / Rifler / IGL / Support / Lurker） | `position_name`, `pos` |
-| HLTV 风格评分 | `hltv_rating`（1.0 为平均） | `hltv`, `hlRating` |
-| KAST 百分比 | `kast` | `kast_pct` |
-| 场均伤害 | `adr` | `damage`, `avg_damage` |
+| 模拟综合表现分（0–100） | `rating` | `score`, `performance` |
+| 选手位置（真实） | `role`（AWPer / Entry / Rifler / IGL / Support / Lurker） | `position_name`, `pos` |
 | 余额 | `balance` | `money`, `cash`, `fund` |
 | 数量 | `quantity` | `qty`, `amount`, `num` |
 | 方向 | `side`（BUY/SELL） | `type`, `direction` |

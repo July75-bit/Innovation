@@ -77,16 +77,13 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `player_id` | INTEGER | PK | |
-| `name` | VARCHAR(50) | NOT NULL, UNIQUE | CS2 游戏内 ID，如 Vex |
-| `display_name` | VARCHAR(50) | | 中文昵称，如 锐矢 |
-| `team` | VARCHAR(50) | | 虚拟战队，如 OBSIDIAN |
+| `name` | VARCHAR(50) | NOT NULL, UNIQUE | CS2 选手游戏内 ID（真实公开信息），如 ZywOo |
+| `display_name` | VARCHAR(50) | | 展示名，真实选手暂无官方中文名时与 name 相同 |
+| `team` | VARCHAR(50) | | 所属战队（真实公开信息），如 Vitality |
 | `current_price` | FLOAT | NOT NULL, > 0 | 定价模块写入 |
 | `prev_price` | FLOAT | NOT NULL | 用于算涨跌幅 |
-| `role` | VARCHAR(20) | | 选手位置：AWPer / Entry / Rifler / IGL / Support / Lurker |
-| `rating` | INTEGER | 0–100 | 自建综合表现分（C 维护）；**不是 HLTV Rating** |
-| `hltv_rating` | FLOAT | 0.5–2.0 | 模拟的 HLTV 风格 Rating（1.0 为平均），展示与 AI 分析用 |
-| `kast` | FLOAT | 0–100 | 模拟的 KAST 百分比 |
-| `adr` | FLOAT | ≥ 0 | 模拟的场均伤害 |
+| `role` | VARCHAR(20) | | 选手真实位置：AWPer / Entry / Rifler / IGL / Support / Lurker |
+| `rating` | INTEGER | 0–100 | 本项目模拟综合表现分（C 维护），**不是 HLTV Rating 或任何官方统计** |
 | `status` | VARCHAR(20) | NOT NULL, default 'trading' | `trading` / `suspended` |
 | `updated_at` | DATETIME | NOT NULL | |
 

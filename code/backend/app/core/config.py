@@ -1,15 +1,22 @@
 """集中配置。
 
-所有可调参数都从环境变量读取（见 backend/.env.example），代码里不要写死魔数：
+所有可调参数都从环境变量读取（见 code/backend/.env.example），代码里不要写死魔数：
 交易规则参数是 B 的，定价参数是 C 的，模型参数是 D 的，改这里不动机器。
 
 负责人：B（结构） / C、D（各自的参数）
 """
 
+import sys
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 让后端能 import 同仓库的 code/core_engine（本地、CI、Render 都生效，无需额外安装）
+_CODE_DIR = Path(__file__).resolve().parents[3]  # <repo>/code
+if str(_CODE_DIR) not in sys.path:
+    sys.path.insert(0, str(_CODE_DIR))
 
 
 class Settings(BaseSettings):

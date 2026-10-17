@@ -1,4 +1,4 @@
-"""AI 分析接口（B 提供路由外壳，业务逻辑在 backend/ai/）。
+"""AI 分析接口（B 提供路由外壳，业务逻辑在 code/backend/ai/）。
 
 负责人：D（业务） + B（路由/错误处理） + A（展示）
 
@@ -19,7 +19,7 @@
 硬约束（三份材料都强调）：
 1. API 密钥只在后端读取（settings.llm_api_key），绝不下发前端；
 2. AI 只提供建议，**不直接修改余额或执行交易**；
-3. 模型超时 / 返回非法 JSON / 无密钥时，必须回落到 backend/ai/fallback.py 的规则版，
+3. 模型超时 / 返回非法 JSON / 无密钥时，必须回落到 code/backend/ai/fallback.py 的规则版，
    返回合法结构（source="rule_fallback"），并保证交易、定价、行情功能不受影响；
 4. 单次调用要有超时（settings.llm_timeout_seconds），不能让前端挂死。
 """

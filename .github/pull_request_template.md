@@ -29,6 +29,6 @@
 
 - [ ] `python -m pytest` 通过（或说明为什么没跑）
 - [ ] 没有提交 `.env`、真实密钥、`*.db`
-- [ ] 没有提交 `frontend/node_modules`
+- [ ] 没有提交 `code/frontend/node_modules`
 - [ ] 新增的文档已在 `docs/` 对应目录落盘，不是只写在聊天里
 - [ ] 如果改了 API 地址/启动命令，README 和 `docs/software/deployment.md` 已同步

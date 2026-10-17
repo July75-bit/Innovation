@@ -18,15 +18,13 @@
 ```json
 {
   "player_id": 1,
-  "name": "Vex",
-  "team": "OBSIDIAN",
+  "name": "ZywOo",
+  "team": "Vitality",
   "role": "AWPer",
   "current_price": 126.0,
   "change_pct": 5.0,
   "rating": 88,
-  "hltv_rating": 1.32,
-  "kast": 74.5,
-  "adr": 82.1,
+  "rating_note": "项目模拟值，非官方统计",
   "recent_prices": [
     { "ts": "2026-01-01T10:00:00", "price": 120.0 },
     { "ts": "2026-01-01T10:05:00", "price": 126.0 }
@@ -61,7 +59,7 @@
 
 ## 4. Prompt 结构
 
-提示词模板在 `backend/ai/prompts.py`：
+提示词模板在 `code/backend/ai/prompts.py`：
 
 | 部分 | 作用 | 迭代要点 |
 | --- | --- | --- |
@@ -92,7 +90,7 @@ flowchart TD
     G --> H
 ```
 
-**规则版兜底规则**（`backend/ai/fallback.py`，D 实现并写进文档）：
+**规则版兜底规则**（`code/backend/ai/fallback.py`，D 实现并写进文档）：
 
 | 条件 | 建议 | 风险 |
 | --- | --- | --- |

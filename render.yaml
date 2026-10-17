@@ -16,9 +16,9 @@ services:
     runtime: python
     plan: free
     region: singapore
-    rootDir: backend
+    rootDir: code/backend
     buildCommand: pip install -r requirements.txt
-    # 注意：入口是 app.main:app（backend/app/main.py），不是手册里的 main:app
+    # 注意：入口是 app.main:app（code/backend/app/main.py），不是手册里的 main:app
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     envVars:
@@ -50,7 +50,7 @@ services:
   - type: web
     name: playerstock-frontend
     runtime: static
-    rootDir: frontend
+    rootDir: code/frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
     envVars:

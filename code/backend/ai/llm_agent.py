@@ -19,7 +19,7 @@ def analyze(player_context: dict[str, Any]) -> dict[str, Any]:
         player_context: 由 B 组装的行情上下文，至少包含：
             {
               "player_id": 1,
-              "name": "Vex",
+              "name": "ZywOo",
               "current_price": 126.0,
               "change_pct": 3.5,
               "rating": 82,

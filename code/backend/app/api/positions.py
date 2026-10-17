@@ -8,7 +8,7 @@
 参考响应（列表项）：
     {
       "player_id": 1,
-      "name": "Vex",
+      "name": "ZywOo",
       "quantity": 10,
       "avg_cost": 120.0,
       "current_price": 126.0,
