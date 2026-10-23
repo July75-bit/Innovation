@@ -115,19 +115,16 @@ WHERE player_id = :player_id
 """
 
 
-def db_context(player_id: int) -> dict[str, Any]:
-    """按 database_design.md 的表结构只读取数；任何一步失败都抛异常交给上层回落。"""
+def _read_context(db: Any, player_id: int) -> dict[str, Any]:
+    """在给定会话上执行 3 条只读 SELECT 并组装上下文（不 commit、不写库）。"""
     from sqlalchemy import text  # 延迟导入：本地无依赖时也能 import 本模块
 
-    from app.core.database import SessionLocal
+    player = db.execute(text(_SQL_PLAYER), {"player_id": player_id}).mappings().first()
+    if player is None:
+        raise LookupError(f"数据库里没有选手 {player_id}")
 
-    with SessionLocal() as db:
-        player = db.execute(text(_SQL_PLAYER), {"player_id": player_id}).mappings().first()
-        if player is None:
-            raise LookupError(f"数据库里没有选手 {player_id}")
-
-        history = db.execute(text(_SQL_HISTORY), {"player_id": player_id}).mappings().all()
-        position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
+    history = db.execute(text(_SQL_HISTORY), {"player_id": player_id}).mappings().all()
+    position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
 
     recent_prices = [
         {"ts": _fmt_ts(row["ts"]), "price": float(row["price"])} for row in history
@@ -158,13 +155,36 @@ def db_context(player_id: int) -> dict[str, Any]:
     }
 
 
+def db_context(player_id: int, *, db: Any = None) -> dict[str, Any]:
+    """按 database_design.md 的表结构只读取数；任何一步失败都抛异常交给上层回落。
+
+    Args:
+        player_id: 选手 ID。
+        db: 可选的 SQLAlchemy 会话。接口层把 FastAPI 依赖注入的**同一个只读会话**传进来，
+            这样测试里 `get_db` 的依赖覆盖也生效（不会另开一个连到开发库的会话）。
+            默认（None）自己开一个会话，供命令行/独立调用使用。
+    """
+    if db is not None:
+        return _read_context(db, player_id)
+
+    from app.core.database import SessionLocal
+
+    with SessionLocal() as own_session:
+        return _read_context(own_session, player_id)
+
+
 # ---------------------------------------------------------------- 对外入口
 
-def build_player_context(player_id: int, *, prefer_db: bool = True) -> dict[str, Any]:
-    """组装上下文：优先真实数据库，失败自动回落 mock（并把回落原因带出来便于排查）。"""
+def build_player_context(
+    player_id: int, *, prefer_db: bool = True, db: Any = None
+) -> dict[str, Any]:
+    """组装上下文：优先真实数据库，失败自动回落 mock（并把回落原因带出来便于排查）。
+
+    `db` 传入接口层的只读会话时，真实路径就在该会话上跑；其余行为不变。
+    """
     if prefer_db:
         try:
-            return db_context(player_id)
+            return db_context(player_id, db=db)
         except Exception as exc:  # B 未实现 / 表未建 / 驱动缺失 都走这里
             context = mock_context(player_id)
             context["context_fallback_reason"] = f"{type(exc).__name__}: {exc}"

@@ -92,7 +92,9 @@
 | 上下文组装 | `code/backend/ai/context.py`（`build_player_context`：查库失败自动回落 seed 数据） |
 | 调用与校验 | `code/backend/ai/llm_agent.py`（`analyze` / `_parse_and_validate`，支持注入 chat client，超时取 `settings.llm_timeout_seconds`） |
 | 规则兜底 | `code/backend/ai/fallback.py` |
-| 单测 | `tests/unit/test_llm_agent.py`（13 条）+ `tests/unit/test_ai_fallback.py`（6 条） |
+| 接口接线 | `code/backend/app/api/ai.py`（`GET /api/analysis/{player_id}`，第 3 天 D 接线；入参校验 404 / AI 故障一律 200 + 规则版） |
+| 单测 | `tests/unit/test_llm_agent.py`（13 条）+ `tests/unit/test_ai_fallback.py`（6 条）+ `tests/unit/test_api_ai.py`（7 条） |
+| 集成测试 | `tests/integration/test_e2e_flow.py`（2 条：全链路交易闭环 + AI 结构/降级/只读） |
 | 命令行验收 | `cd code/backend` → `python -m ai.llm_agent 1 --demo {llm,dirty,no-key}`；上下文 `python -m ai.context 1` |
 
 ## 5. 失败处理链路（与 B 一起实现）
@@ -139,5 +141,5 @@ flowchart TD
 ## 8. TODO
 
 - [ ] D 第 2 天：填第 4 节迭代记录（至少 2 版）
-- [ ] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码
+- [x] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码 → 404 `PLAYER_NOT_FOUND` / 200（含 AI 降级）/ 500 仅非 AI 故障；已写入契约 §4.10 并落到 `app/api/ai.py`（2026-10-23）
 - [ ] D 第 6 天：把最差一次模型输出做成答辩"翻车→兜底"演示素材

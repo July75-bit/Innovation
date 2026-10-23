@@ -57,10 +57,11 @@
 | 7 | POST | `/api/trades/buy` | 买入 | A + B | ✅ 已实现 |
 | 8 | POST | `/api/trades/sell` | 卖出 | A + B | ✅ 已实现（提前完成） |
 | 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
-| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ⬜ 待 D 接入 |
+| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ✅ 已实现（第 3 天 D 接线） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
-> 第 10 项由 D 在第 2 天接入 `code/backend/ai/`，B 只提供路由外壳。
+> 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进
+> `app/api/ai.py`（B 的路由外壳，接线改动已同步本契约与测试）。
 > 卖出（第 8 项）原计划第 2 天，因与买入共用同一套事务与校验、提前一并完成。
 
 ---
@@ -243,29 +244,35 @@
 
 ### 4.10 `GET /api/analysis/{player_id}`
 
+> **状态**：✅ 已实现（2026-10-23 第 3 天，D 接线）。
+> 链路：`app/api/ai.py` → `ai.context.build_player_context()`（只读查库，失败回落 seed 数据）
+> → `ai.llm_agent.analyze()`（无密钥/超时/非 JSON/枚举非法内部回落规则版）→ 固定 6 字段裸对象。
+> 测试：`tests/unit/test_api_ai.py`、`tests/integration/test_e2e_flow.py`。
+
 ```json
 {
   "player_id": 1,
-  "action": "BUY",
-  "reason": "近 3 图 Rating 由 1.18 升至 1.32，价格上涨 5.0% 但低于表现提升幅度",
-  "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 120.00, "high": 130.00 },
-  "source": "llm",
+  "action": "HOLD",
+  "reason": "近 5 个价格点累计变动 +5.0%，综合表现分 88，未触发买卖阈值（规则版建议）",
+  "risk_level": "LOW",
+  "source": "rule_fallback",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
 ```
 
-**字段定义（7 个，前端按此渲染）**
+**字段定义（6 个，前端按此渲染）**
 
 | 字段 | 类型 | 必填 | 取值 / 约束 |
 | --- | --- | --- | --- |
-| `player_id` | int | ✅ | 与请求路径一致 |
+| `player_id` | int | ✅ | 与请求路径一致（实现以路径为准回填） |
 | `action` | enum | ✅ | `BUY` / `SELL` / `HOLD`（大写，不接受中文或小写 `buy`） |
-| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/Rating） |
+| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/表现分） |
 | `risk_level` | enum | ✅ | `LOW` / `MEDIUM` / `HIGH` |
-| `suggested_price_band` | object | ❌ **可缺省** | `{ "low": number, "high": number }`，且 `low ≤ high`。**前端必须容错**：缺省时隐藏区间条，不能直接取 `band.low` |
 | `source` | enum | ✅ | `llm`（模型生成）/ `rule_fallback`（规则兜底） |
 | `disclaimer` | string | ✅ | 固定文案，前端**必须**展示 |
+
+> `suggested_price_band`：本期**不输出**（2026-10-23 决策：LLM 版与规则版字段集合完全一致，
+> 规则版不编造价格区间）。契约保留该字段为"可缺省"，前端按缺省容错；将来恢复输出也不必改渲染逻辑。
 
 **错误码（本接口专属规则）**
 
@@ -273,12 +280,17 @@
 | --- | --- | --- | --- |
 | 200 | — | 正常返回，**包含 AI 失败降级** | 默认路径；用 `source` 区分来源 |
 | 404 | `PLAYER_NOT_FOUND` | `player_id` 不存在 | 返回 §2 统一错误体 |
-| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 可选实现；未启用则不会出现 |
+| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 本期未启用限流，不会出现 |
 | 500 | `INTERNAL_ERROR` | **仅**非 AI 故障（如数据库不可用） | 兜底逻辑本身也失败才算 |
 
 > 🔴 **硬规则：AI 相关故障一律不得用 4xx / 5xx 表达。**
 > 模型超时、未配置密钥、返回非法 JSON、调用被限流 —— 都必须返回 **200 + `source=rule_fallback`**，
 > 保证前端只有一套渲染逻辑，且"AI 挂了不影响交易"这条设计目标可验证。
+>
+> **实现保证（2026-10-23）**：无密钥直接规则版、不碰网络；调模型超时取
+> `settings.llm_timeout_seconds`（默认 20s）；超时/网络错误/非 JSON/枚举非法 → 200 + 规则版；
+> 连上下文组装都失败时用「最小上下文」走规则版，同样不升级成 5xx。只有选手不存在（404）
+> 与非 AI 故障（500）才用非 200 表达。
 
 **只读保证（AI 绝不改余额）**
 
@@ -287,7 +299,7 @@
 | 数据操作 | 本接口只做 `SELECT`，**禁止**调用 `Session.commit()`，禁止任何 INSERT / UPDATE / DELETE |
 | 依赖注入 | 路由只依赖 `get_db`（只读使用），不得注入交易服务 |
 | 权限边界 | AI 只产出建议；真正下单必须由用户显式调用 `/api/trades/buy` / `sell` |
-| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；此用例须在 CI 通过 |
+| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；已在 `tests/unit/test_api_ai.py` 与 `tests/integration/test_e2e_flow.py` 断言 |
 
 **响应形态注意**：本接口成功时返回**裸对象**（无 `success` 字段），失败时返回 §2 的统一错误体 `{success:false, message, code}`；前端按 HTTP 状态码分支处理。
 
@@ -319,7 +331,8 @@
 
 | 日期 | 变更内容 | 提出人 | 影响方 |
 | --- | --- | --- | --- |
-| | 初版定稿 | B | A/B/C/D |
+| 2026-10-17 | 初版定稿 | B | A/B/C/D |
+| 2026-10-23 | 第 10 项 `GET /api/analysis/{player_id}` 实现并生效：固定 6 字段（去掉 `suggested_price_band` 输出）、AI 故障一律 200 + `rule_fallback`、404 仅用于选手不存在 | D | A/B |
 
 ## 7. 契约验收（第 1 天）
 
