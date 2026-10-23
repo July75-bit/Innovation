@@ -6,7 +6,7 @@
     python scripts/simulate_match.py
     python scripts/simulate_match.py --rounds 5 --seed 42   # 演示用固定种子
 
-待实现：C 完成 backend/pricing/ 之后补全 TODO。
+待实现：C 完成 code/core_engine/ 之后补全 TODO。
 """
 
 from __future__ import annotations
@@ -16,9 +16,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT / "backend"))
+sys.path.insert(0, str(ROOT / "code"))
+sys.path.insert(0, str(ROOT / "code/backend"))
 
-from pricing.simulator import generate_match_series  # noqa: E402
+from core_engine.simulator import generate_match_series  # noqa: E402
 
 
 def main() -> None:

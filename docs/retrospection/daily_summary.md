@@ -7,63 +7,105 @@
 
 ---
 
-## 第 1 天 · ______（日期）
+## 第 1 天 · 2026-10-23
 
-### 站会（09:30）
+> 记录口径：只写仓库里可验证的事实与已发生的决策；未完成项如实标 ❌/⚪，不补写未发生的会议结论。
 
-| 成员 | 昨天完成 | 今天计划 | 阻塞 |
+### 站会（08:30）
+
+| 成员 | 昨天完成 | 今天计划 | 阻塞（据仓库实际状态） |
 | --- | --- | --- | --- |
-| A | — | 前端脚手架 + 路由骨架 + 调通 health | |
-| B | — | FastAPI + 健康接口 + 表结构设计 | |
-| C | — | 选手演示数据 + 定价公式初稿 | |
-| D | — | 仓库骨架 + 文档目录 + AI 方案 | |
+| A | — | 前端脚手架 + 4 条路由 + 调通 `/api/health` | `code/frontend/` 仍只有 README.md，脚手架未生成 |
+| B | — | venv + 5 张表 + 只读接口 + 主持契约评审 | `app/models/` 里 `class Player` 仍是 docstring 示例，业务接口 0 个路由；本机无 `.venv` |
+| C | — | 审选手数据 + 定价公式 + `update_price` | `code/core_engine/pricing.py` 仍为 `NotImplementedError` |
+| D | — | 仓库体检 + 5W1H + AI 契约 + 部署预研 + 规则兜底 | 规则兜底已实现并自测通过（见下）；分支仍为 `develop`，未按约定开 `feat/d-ai-deploy` |
 
-### 晚验收（20:30）
+### 晚验收（19:30）
 
-| 验收项 | 结果 | 证据 |
-| --- | --- | --- |
-| 四人环境都能运行 | ⬜ | |
-| 前端连上后端（显示连接成功） | ⬜ | |
-| 接口字段已确认（四人签字） | ⬜ | `api_contract.md` |
-| 仓库已推上 GitHub | ⬜ | 仓库地址 |
+| # | 验收项 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 四人环境都能运行 | ⚪ 未验证 | 本机无 `.venv`、无 `node_modules`，无法在本机复现 |
+| 2 | FastAPI 启动，`/api/health` 返回 ok | ⚪ 未验证 | `code/backend/app/api/health.py` 有 1 个路由；本机缺依赖未实测 |
+| 3 | Vue 启动、5173 能打开 | ❌ 未达成 | `code/frontend/` 仅 README.md，无 `package.json` |
+| 4 | **前端显示"连接成功"** | ❌ 未达成 | 同上；按规则"第 4 项不绿即今天不算完成" |
+| 5 | 代码已提交、远程仓库已创建 | ⚪ 部分 | 远程仓库存在；最后一次提交停在 10-17 20:04，第 1 天工作未见新提交 |
+| 6 | 四人分工 + 接口字段已确认 | ❌ 未达成 | `api_contract.md` §7 目前仅 D 签字（见该节），A/B/C 未签 |
+
+**结论**：第 1 天未完成。唯一代码交付"规则版兜底"已落地并自测；主要卡点 = 前端脚手架未生成、后端 5 张表未建。
 
 ### 今日问题与决策
 
 | 问题 | 决策 | 负责人 |
 | --- | --- | --- |
-| | | |
+| `GET /api/analysis/{player_id}` 原无字段定义、无错误码，只读约束只是口头承诺 | 契约 §4.10 补齐 7 字段 / 4 错误码 / 只读保证（SELECT-only、禁 `commit`、TC-205 验收）；**硬规则：AI 故障一律 200 + `rule_fallback`，不得用 4xx/5xx**（T1-33） | D |
+| 项目改为 `code/` 布局后，CI / `render.yaml` / `pyproject` / 文档路径一度全部失效 | 已同步为 `code/backend`、`code/frontend`、`code/core_engine` | D + 全员 |
+| 演示数据改用真实 CS2 选手，与"虚构选手"表述冲突 | 口径统一为"真实职业身份 + 模拟价格/评分"；`compliance.md` 增加"与 Valve/HLTV/俱乐部无关联、不用官方 Logo"声明 | D |
+| 数据库持久化未定（免费实例休眠、临时盘丢数据） | 定 **方案 B：Render 免费 Postgres**（30 天有效期覆盖答辩）；代码侧已加 `psycopg2-binary`、`postgres://` 归一化、连接探活、误用 SQLite 告警 | D |
+| `code/frontend/` 非空阻塞脚手架 | 先 `Move-Item code/frontend/README.md docs/software/frontend_setup.md` 再 `npm create vue` | A |
 
 ### 明日风险
 
-- ______
+- **最高**：前端仍未生成 → 第 2 天前端任务全被阻塞，第 4 项验收会继续红
+- 后端 5 张表未建 → C 的价格历史无处落库、A 无数据可渲染
+- 分支约定未落地：远端只有 `main` / `develop`，无 `feat/*`，PR 流程实际未跑起来
 
 ---
 
-## 第 2 天 · ______
+## 第 2 天 · 2026-10-23
 
-### 站会
+> 记录口径：本段由 D 按仓库实况整理（截至 19:10）；站会口头纪要未留档，表中只填**可验证事实**。
+> 今天的目标是"四个零件各自转起来"，不要求前后端串起来。
 
-| 成员 | 昨天完成 | 今天计划 | 阻塞 |
+### 站会（08:30）
+
+| 成员 | 昨天完成 | 今天计划 | 阻塞（据仓库实况） |
 | --- | --- | --- | --- |
-| A | | | |
-| B | | | |
-| C | | | |
-| D | | | |
+| A | — | 市场页 / 详情页 / 买卖表单 / 持仓页 / 流水页 + mock 开关 | `code/frontend/` 仍只有 README.md（无 `package.json`），Day1 脚手架补漏未完成 |
+| B | — | 5 张表 + 5 个只读接口 + 买卖事务 + 6 条边界测试 | `app/models/` 仍是 docstring 示例；除 health 外接口 0 路由；`scripts/seed_db.py` 仍是桩 |
+| C | — | `update_price` / `standardize_score` / 模拟比赛发生器 | `pricing.py`、`simulator.py` 仍为 `NotImplementedError` |
+| D | Day1 已交：AI 契约 + 规则兜底 + 部署方案 B | 上下文组装 + `analyze`/校验 + 三态实测 + 单测 + 文档 | 无阻塞（真实取数依赖 B 的表，已用 mock 降级） |
 
-### 晚验收
+### D 今日交付（可验证证据）
 
-| 验收项 | 结果 | 证据 |
-| --- | --- | --- |
-| 前端页面可看 | ⬜ | |
-| 后端交易接口可测（Swagger） | ⬜ | |
-| 定价脚本可运行 | ⬜ | |
-| AI 原型可输出建议 | ⬜ | |
+| 交付 | 证据 |
+| --- | --- |
+| `code/backend/ai/context.py` | `python -m ai.context 1` 输出完整上下文；查库失败自动回落 seed 并带出 `context_fallback_reason` |
+| `code/backend/ai/llm_agent.py` | `analyze()` 可注入 client、超时取 `settings.llm_timeout_seconds`（20s）、无密钥/异常一律回落；`_parse_and_validate()` 容错围栏/大小写/中文枚举/缺字段 |
+| `tests/unit/test_llm_agent.py` | 13 条用例；`python -m pytest` → **21 passed, 16 skipped, exit code 0** |
+| 三态实测 | `--demo llm` → `source=llm`；`--demo dirty` / `--demo no-key` → `source=rule_fallback` |
+| 文档 | `ai_agent_prompt.md`（6 字段口径 / v2·v3 迭代记录 / 实现落点）、`test_plan.md`（AI 用例状态回填）、`milestones.md`（T2-08/T2-09 ✅） |
+
+### 晚验收（19:30）
+
+| # | 验收项 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| 1 | 市场页有内容（8 名选手 + 价格/涨跌/评分） | ❌ | `code/frontend/` 无 `package.json` |
+| 2 | `/api/players` 返回 8 条 | ❌ | B 未实现 |
+| 3 | 交易接口可测（买 2 股 → 余额 4748.00） | ❌ | B 未实现 |
+| 4 | 6 条边界按预期拒绝 | ❌ | B 未实现 |
+| 5 | 定价脚本独立跑通 | ❌ | C 未实现 |
+| 6 | **AI 输出合法 + 无密钥 `rule_fallback`** | ✅ | pytest 21 passed / exit 0 + 三态输出截图 |
+| 7 | 契约无擅自变更 | 🟡 | 字段未变；A/B/C 三人签字待补 |
+
+> ⚠️ #6 口径：#6 验证的是**结构、解析与降级链路**（注入假 client + 无密钥路径）；
+> **真实大模型调用**要等拿到 `LLM_API_KEY`、并在第 3 天接入 `/api/analysis` 后补验。
 
 ### 今日问题与决策
 
 | 问题 | 决策 | 负责人 |
 | --- | --- | --- |
-| | | |
+| `suggested_price_band` 是否输出（契约中可缺省） | **两版都不输出**，保证"两版字段集合完全一致"；前端按可缺省容错，不编造区间 | D |
+| 默认模型客户端选型 | 用标准库 `urllib`（少一个运行时依赖；无网络时也能真实验证"调用失败 → 回落"） | D |
+| B 的表未就绪，AI 取不到真实数据 | `build_player_context()` 查库失败自动回落 seed 数据；B 完成后无需改代码即可切换 | D |
+| 本机 `py -3.12` 报 "No suitable Python runtime" | 改用 conda 独立环境 `playerstock`（Python 3.13.13），满足 `requires-python >= 3.12` | D |
+| `pytest -q` 看不到汇总行 | `pyproject.toml` 的 `addopts` 已带 `-q`，再加 `-q` 变 `-qq` 会省略汇总；用 `python -m pytest` 或 `-o addopts=""` | D |
+
+### 明日风险
+
+- **最高**：A/B/C 三项均未交付 → 第 3 天"交易闭环（硬卡点）"没有零件可拼；D 的 `/api/analysis` 接入也要等 B 的路由
+- B 的 5 张表未建 → 价格历史无处落库，AI 只能吃 mock 数据
+- 契约 A/B/C 签字未补 → 第 3 天若需改字段，没有变更流程可依
+- 依赖未锁版本：建议 B 在 `code/backend` 执行 `pip freeze > requirements.lock.txt`（课程"可复现"要求）
 
 ---
 

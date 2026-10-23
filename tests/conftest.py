@@ -1,6 +1,6 @@
 """pytest 公共夹具。
 
-在仓库根目录运行（pyproject.toml 已配置 pythonpath = ["backend"]）：
+在仓库根目录运行（pyproject.toml 已配置 pythonpath = ["code/backend", "code/core_engine", "code"]）：
     python -m pytest
 """
 

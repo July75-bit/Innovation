@@ -11,7 +11,7 @@
     { "player_id": 1, "quantity": 2 }
 
 成功响应统一结构（交易是否成功以后端数据库为准，前端不能只改数字）：
-    { "success": true, "message": "买入成功", "balance": 4800, "player_id": 1, "quantity": 2 }
+    { "success": true, "message": "买入成功", "balance": 4748.00, "player_id": 1, "quantity": 2 }
 
 失败也要返回统一结构，HTTP 400：
     { "success": false, "message": "余额不足" }

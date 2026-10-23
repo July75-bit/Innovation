@@ -1,0 +1,15 @@
+# 可选：把 core_engine 装成独立包
+# 用法（在 code/backend 目录下）：pip install -e ../core_engine
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "playerstock-core-engine"
+version = "0.1.0"
+description = "PlayerStock 定价算法与模拟比赛数据（纯 Python，不依赖数据库）"
+requires-python = ">=3.12"
+
+[tool.setuptools]
+packages = ["core_engine"]
+package-dir = { "core_engine" = "." }

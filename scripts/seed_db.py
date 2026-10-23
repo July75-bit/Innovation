@@ -17,8 +17,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SEED_FILE = ROOT / "data" / "seed_players.json"
 
-# 让脚本能 import 到 backend/app（避免依赖 PYTHONPATH）
-sys.path.insert(0, str(ROOT / "backend"))
+# 让脚本能 import 到 code/backend/app（避免依赖 PYTHONPATH）
+sys.path.insert(0, str(ROOT / "code/backend"))
 
 
 def load_seed() -> dict:
@@ -43,7 +43,7 @@ def main() -> None:
     #                             reason="初始价格", ts=now()))
     for p in players:
         print(f"  [{p['player_id']}] {p['name']}({p['display_name']}) "
-              f"@ {p['current_price']}  rating={p['rating']}  status={p['status']}")
+              f"@ {p['current_price']}  rating(模拟)={p['rating']}  status={p['status']}")
 
     raise SystemExit(
         "TODO(B)：数据库模型就绪后取消注释上面的写入逻辑并删除本行。"

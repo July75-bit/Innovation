@@ -24,10 +24,10 @@ htmlcov/
 
 # ---------- Node / Vue ----------
 node_modules/
-frontend/dist/
-frontend/dist-ssr/
-frontend/coverage/
-frontend/.vite/
+code/frontend/dist/
+code/frontend/dist-ssr/
+code/frontend/coverage/
+code/frontend/.vite/
 npm-debug.log*
 pnpm-debug.log*
 yarn-error.log
