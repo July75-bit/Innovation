@@ -94,9 +94,14 @@ flowchart TD
 
 | 条件 | 建议 | 风险 |
 | --- | --- | --- |
-| 近 N 点涨幅 > +5% 且 rating < 60 | SELL | HIGH |
-| 近 N 点跌幅 < -5% 且 rating ≥ 75 | BUY | MEDIUM |
-| 其他 | HOLD | LOW |
+| 近 N 点涨幅 > +5% 且 `rating` < 60 | SELL | HIGH |
+| 近 N 点跌幅 < -5% 且 `rating` ≥ 75 | BUY | MEDIUM |
+| 命中 SELL 但当前持仓为 0 | HOLD（降级，避免建议做不到的动作） | LOW |
+| 其他（含数据不足） | HOLD | LOW |
+
+> **已实现**：`code/backend/ai/fallback.py`（D，2026-10-23），参数常量 `WINDOW=5`、`RISE_THRESHOLD=+5%`、`FALL_THRESHOLD=-5%`、`LOW_RATING=60`、`HIGH_RATING=75`，
+> 单元测试 `tests/unit/test_ai_fallback.py`。
+> **规则版不输出 `suggested_price_band`**（契约 §4.10 中该字段可缺省）：规则模型没有价格预测能力，不编造区间；前端按"可缺省"容错。
 
 ## 6. 成本与限流（加分项）
 
