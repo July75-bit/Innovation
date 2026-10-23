@@ -2,26 +2,47 @@
 
 负责人：B + C
 
-待实现：
-- GET /api/players/{player_id}/prices   价格历史（供 A 画折线图、D 做 AI 分析输入）
-
-参考响应：
-    {
-      "player_id": 1,
-      "points": [
-        {"ts": "2026-01-01T10:00:00", "price": 120.0, "reason": "初始价格"},
-        {"ts": "2026-01-01T10:05:00", "price": 126.0, "reason": "模拟比赛表现提升"}
-      ]
-    }
-
-约定（第 1 天必须和 C 对齐，否则前端图表和 AI 输入都会崩）：
-1. 时间必须升序，且能被 JavaScript `new Date()` 正确解析（建议 ISO 8601，带时区或统一 UTC）；
-2. 每条点必须带 reason，这是"价格变化可解释"的落点，也是答辩演示要拆解的证据；
-3. 空历史返回空数组 points: []，不要返回 404 —— 前端要区分"没有数据"和"选手不存在"。
+GET /api/players/{player_id}/prices
+- 时间升序，前端折线图直接按数组顺序画；
+- 每条必须带 reason（涨跌归因）；
+- 选手不存在 → 404 PLAYER_NOT_FOUND；选手存在但无历史 → 200 + points: []。
 """
 
-from fastapi import APIRouter
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.errors import ApiError
+from app.models import Player, PriceHistory
+from app.schemas.price import PriceHistoryResponse, PricePoint
 
 router = APIRouter(tags=["prices"])
 
-# TODO(B)：实现 GET /players/{player_id}/prices（挂在 /api 前缀下）
+
+@router.get(
+    "/players/{player_id}/prices",
+    response_model=PriceHistoryResponse,
+    summary="选手价格历史（升序，空数组不 404）",
+)
+def get_price_history(
+    player_id: int, db: Session = Depends(get_db)
+) -> PriceHistoryResponse:
+    if db.get(Player, player_id) is None:
+        raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
+
+    rows = db.scalars(
+        select(PriceHistory)
+        .where(PriceHistory.player_id == player_id)
+        .order_by(PriceHistory.ts.asc(), PriceHistory.price_id.asc())
+    ).all()
+
+    return PriceHistoryResponse(
+        player_id=player_id,
+        points=[
+            PricePoint(ts=row.ts, price=float(row.price), reason=row.reason)
+            for row in rows
+        ],
+    )

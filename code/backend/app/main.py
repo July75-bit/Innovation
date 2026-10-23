@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import account, ai, health, players, positions, prices, trades
 from app.core.config import settings
 from app.core.database import init_db
+from app.core.errors import register_exception_handlers
 
 logger = logging.getLogger("playerstock")
 
@@ -54,6 +55,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 统一错误格式：所有 4xx/5xx 都是 {"success": false, "message": 中文, "code": ...}
+register_exception_handlers(app)
 
 
 @app.get("/", tags=["meta"], summary="项目信息")

@@ -49,15 +49,19 @@
 | # | 方法 | 路径 | 功能 | 对接人 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/api/health` | 健康检查 | 全员 | ✅ 已实现 |
-| 2 | GET | `/api/players` | 市场选手列表 | A + B | ⬜ |
-| 3 | GET | `/api/players/{player_id}` | 单个选手详情 | A + B | ⬜ |
-| 4 | GET | `/api/players/{player_id}/prices` | 价格历史 | A + B + C | ⬜ |
-| 5 | GET | `/api/account` | 账户余额 | A + B | ⬜ |
-| 6 | GET | `/api/positions` | 持仓列表 | A + B | ⬜ |
-| 7 | POST | `/api/trades/buy` | 买入 | A + B | ⬜ |
-| 8 | POST | `/api/trades/sell` | 卖出 | A + B | ⬜ |
-| 9 | GET | `/api/trades` | 交易流水 | A + B | ⬜ |
-| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ⬜ |
+| 2 | GET | `/api/players` | 市场选手列表 | A + B | ✅ 已实现 |
+| 3 | GET | `/api/players/{player_id}` | 单个选手详情 | A + B | ✅ 已实现 |
+| 4 | GET | `/api/players/{player_id}/prices` | 价格历史 | A + B + C | ✅ 已实现 |
+| 5 | GET | `/api/account` | 账户余额 | A + B | ✅ 已实现 |
+| 6 | GET | `/api/positions` | 持仓列表 | A + B | ✅ 已实现 |
+| 7 | POST | `/api/trades/buy` | 买入 | A + B | ✅ 已实现 |
+| 8 | POST | `/api/trades/sell` | 卖出 | A + B | ✅ 已实现（提前完成） |
+| 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
+| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ⬜ 待 D 接入 |
+
+> 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
+> 第 10 项由 D 在第 2 天接入 `code/backend/ai/`，B 只提供路由外壳。
+> 卖出（第 8 项）原计划第 2 天，因与买入共用同一套事务与校验、提前一并完成。
 
 ---
 

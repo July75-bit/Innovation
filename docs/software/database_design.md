@@ -89,6 +89,15 @@ erDiagram
 
 > 说明：`data/seed_players.json` 里的 `initial_price`（上市价）**不是本表字段**，落库时写成 `price_history` 的第一条记录（`reason = 初始价格`）。
 
+### 2.2.1 实现说明（第 1 天补充）
+
+- 金额字段（`balance` / `initial_balance` / `current_price` / `prev_price` / `price` / `amount` / `balance_after`）
+  在 ORM 中用 `NUMERIC(12,2)`，`avg_cost` 用 `NUMERIC(12,4)`；SQLite 下仍按 REAL 存储，
+  但应用层统一用 `Decimal` 计算，避免浮点误差。对外 JSON 仍是两位小数 `number`，契约不变。
+- 种子数据会为每名选手写 `price_history` 第一条（`reason = 初始价格`）；若
+  `current_price != initial_price`，再补一条当前价（`reason = 模拟比赛表现调整（种子数据…）`），
+  保证前端折线图与 D 的 AI 输入都有可解释的历史点。
+
 ### 2.3 `positions` 持仓
 
 | 字段 | 类型 | 约束 | 说明 |
@@ -157,9 +166,120 @@ erDiagram
 | 日期 | 变更 | 变更人 | 影响 |
 | --- | --- | --- | --- |
 | | 初版表结构 | B | A/C/D 确认字段名 |
+| 第 1 天 | 按本文落成 ORM：5 张表 + `uq_positions_user_player` + `ck_positions_quantity_range` + 三条索引；金额改用 `NUMERIC(12,2)`（应用层 Decimal 计算，JSON 仍是两位小数）；SQLite 开启 `foreign_keys=ON` / WAL / `busy_timeout=5000` | B | 无接口字段变更；A/C/D 无需适配 |
 
 ## 6. TODO
 
-- [ ] B 第 1 天：按本文建 models，跑通 `init_db()`
-- [ ] B 第 2 天：补唯一索引与 CHECK 约束
+- [x] B 第 1 天：按本文建 models，跑通 `init_db()`
+- [x] B 第 1 天：补唯一索引与 CHECK 约束（提前于 D2 完成）
 - [ ] B 第 6 天：把实际表结构（`sqlite3 .schema` 输出）贴到附录，证明与文档一致
+      —— 第 1 天已先贴一版实测结果，见 §7，第 6 天只做复核
+
+## 7. 附录 A：第 1 天实测 `.schema`（`code/backend/playerstock.db`）
+
+生成方式：
+
+```powershell
+# 有 sqlite3 命令行时
+sqlite3 code/backend/playerstock.db ".schema"
+
+# 没有 sqlite3 时用 Python（本次实际采用）
+python -c "import sqlite3;print('\n'.join(r[0] for r in sqlite3.connect('code/backend/playerstock.db').execute('select sql from sqlite_master where sql is not null')))"
+```
+
+```sql
+-- table: players
+CREATE TABLE players (
+	player_id INTEGER NOT NULL, 
+	name VARCHAR(50) NOT NULL, 
+	display_name VARCHAR(50), 
+	team VARCHAR(50), 
+	current_price NUMERIC(12, 2) NOT NULL, 
+	prev_price NUMERIC(12, 2) NOT NULL, 
+	role VARCHAR(20), 
+	rating INTEGER NOT NULL, 
+	status VARCHAR(20) DEFAULT 'trading' NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (player_id), 
+	CONSTRAINT ck_players_current_price_positive CHECK (current_price > 0), 
+	CONSTRAINT ck_players_prev_price_positive CHECK (prev_price > 0), 
+	CONSTRAINT ck_players_rating_range CHECK (rating >= 0 AND rating <= 100), 
+	UNIQUE (name)
+);
+
+-- table: positions
+CREATE TABLE positions (
+	position_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	avg_cost NUMERIC(12, 4) NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (position_id), 
+	CONSTRAINT uq_positions_user_player UNIQUE (user_id, player_id), 
+	CONSTRAINT ck_positions_quantity_range CHECK (quantity >= 1 AND quantity <= 50), 
+	CONSTRAINT ck_positions_avg_cost_non_negative CHECK (avg_cost >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: price_history
+CREATE TABLE price_history (
+	price_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	reason VARCHAR(200) NOT NULL, 
+	ts DATETIME NOT NULL, 
+	PRIMARY KEY (price_id), 
+	CONSTRAINT ck_price_history_price_positive CHECK (price > 0), 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: trades
+CREATE TABLE trades (
+	trade_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	amount NUMERIC(12, 2) NOT NULL, 
+	balance_after NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (trade_id), 
+	CONSTRAINT ck_trades_side CHECK (side IN ('BUY', 'SELL')), 
+	CONSTRAINT ck_trades_quantity_positive CHECK (quantity > 0), 
+	CONSTRAINT ck_trades_price_positive CHECK (price > 0), 
+	CONSTRAINT ck_trades_amount_non_negative CHECK (amount >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: users
+CREATE TABLE users (
+	user_id INTEGER NOT NULL, 
+	nickname VARCHAR(50) NOT NULL, 
+	balance NUMERIC(12, 2) NOT NULL, 
+	initial_balance NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (user_id), 
+	CONSTRAINT ck_users_balance_non_negative CHECK (balance >= 0), 
+	CONSTRAINT ck_users_initial_balance_non_negative CHECK (initial_balance >= 0)
+);
+
+-- index: ix_positions_player_id
+CREATE INDEX ix_positions_player_id ON positions (player_id);
+
+-- index: ix_positions_user_id
+CREATE INDEX ix_positions_user_id ON positions (user_id);
+
+-- index: ix_price_history_player_ts
+CREATE INDEX ix_price_history_player_ts ON price_history (player_id, ts);
+
+-- index: ix_trades_user_created
+CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
+```
+
+自查结果：`players=8`、`price_history=15`、`users=1`、`positions=0`、`trades=0`（seed 后的干净状态）。
+`positions` 唯一约束与 `quantity 1–50` CHECK、`trades(user_id, created_at)` 索引、
+`price_history(player_id, ts)` 索引均已实际生成。

@@ -1,35 +1,22 @@
-"""SQLAlchemy 模型。
+"""SQLAlchemy 模型统一导出。
 
-负责人：B
+五张表与 docs/software/database_design.md 一一对应：
 
-按 B 的 D1 计划，需要设计 5 张表（表名与字段确定后同步到
-docs/software/database_design.md，并@A @C 确认字段名）：
+| 模型 | 表 | 说明 |
+| --- | --- | --- |
+| User | users | 虚拟账户（初始 5000 虚拟币） |
+| Player | players | 选手（虚拟资产标的，价格/评分为模拟数据） |
+| Position | positions | 持仓（UNIQUE(user_id, player_id)） |
+| Trade | trades | 交易流水（只追加，INDEX(user_id, created_at)） |
+| PriceHistory | price_history | 价格历史（INDEX(player_id, ts)，reason 必填） |
 
-- users        账户：id, nickname, balance, initial_balance, created_at
-- players      选手：id, name, display_name, team, role, current_price, prev_price,
-                rating, status, updated_at
-- positions    持仓：id, user_id, player_id, quantity, avg_cost, updated_at
-                （user_id + player_id 唯一索引）
-- trades       交易记录：id, user_id, player_id, side(BUY/SELL), quantity, price,
-                amount, balance_after, created_at
-- price_history 价格历史：id, player_id, price, reason, ts
-                （player_id + ts 索引，供折线图和 AI 分析取数）
-
-写模型时的注意事项：
-1. 金额用 Numeric/Float 要统一，别一半 int 一半 float；
-2. created_at/ts 统一时区策略，前端 `new Date()` 要能解析；
-3. 持仓上限、初始资金等数值从 app.core.config.settings 取，不要写死。
-
-示例（B 取消注释并补全即可）：
-
-    from datetime import datetime
-    from sqlalchemy import Float, ForeignKey, Integer, String, DateTime, UniqueConstraint
-    from sqlalchemy.orm import Mapped, mapped_column
-    from app.core.database import Base
-
-    class Player(Base):
-        __tablename__ = "players"
-        id: Mapped[int] = mapped_column(Integer, primary_key=True)
-        name: Mapped[str] = mapped_column(String(50), nullable=False)
-        ...
+新增表务必在这里登记，``init_db()`` 依赖本文件的导入注册元数据。
 """
+
+from app.models.price_history import PriceHistory
+from app.models.player import Player
+from app.models.position import Position
+from app.models.trade import Trade
+from app.models.user import User
+
+__all__ = ["User", "Player", "Position", "Trade", "PriceHistory"]
