@@ -18,10 +18,19 @@
 
 成交价一律用数据库里的 current_price（最新价），不使用任何缓存价。
 
-并发与事务：
-- 进程内 _trade_lock 串行化下单，避免同一账户并发扣款；
-- 扣款用 `UPDATE ... WHERE balance >= amount` 条件更新，多进程下也不会扣成负数；
-- 余额、持仓、流水在同一个事务提交，任一步失败整体 rollback。
+并发与事务（第 2 天加固；答辩问"并发下怎么保证不超卖"就看这三条）：
+1. 进程内 `_trade_lock` 先把同一进程的下单排队，只是减少无谓的写冲突；
+2. 真正的正确性靠数据库的**条件更新**，不靠"读出来再判断"：
+   - 扣款 `UPDATE users SET balance = balance - amount WHERE balance >= amount`；
+   - 加仓 `UPDATE positions SET quantity = quantity + n WHERE quantity + n <= 50`；
+   - 减仓 `UPDATE positions SET quantity = quantity - n WHERE quantity >= n`。
+   读出来的余额/持仓只用于拼中文提示，条件成不成立以数据库当时的行为准；
+3. 买入先扣款、卖出先入账（都先拿账户行），再动持仓，两条路径的加锁顺序一致，
+   不会互相死锁；任一步失败整体 rollback，失败时钱和货一起回到原样。
+
+为什么不能只靠"读出来判断"：两个连接（多进程 / 多 worker）可以同时读到"持仓 3 股"，
+各自都判断"卖 2 股够"，结果卖掉 4 股、钱按 4 股入账。条件更新把判断交给数据库，
+第二个 UPDATE 的 WHERE 不成立就一行都不改，于是"钱货二选一"必然失败。
 """
 
 from __future__ import annotations
@@ -31,10 +40,11 @@ import threading
 from decimal import ROUND_HALF_UP, Decimal
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.errors import ApiError
 from app.core.rules import (
@@ -103,58 +113,87 @@ def buy(
     quantity = payload.quantity
     price = Decimal(player.current_price).quantize(CENT)
     amount = calc_amount(price, quantity)
+    limit = settings.max_position_per_player
 
     with _trade_lock:
         current_user = db.get(User, user.user_id, populate_existing=True)
-        position = db.scalar(
-            select(Position).where(
-                Position.user_id == current_user.user_id,
-                Position.player_id == player.player_id,
-            )
-        )
-        held = int(position.quantity) if position else 0
-
-        # 先做规则校验，全部通过才动数据库
-        ensure_position_limit(held, quantity)
-        ensure_sufficient_balance(Decimal(current_user.balance), amount)
+        user_id = current_user.user_id
 
         try:
+            # 契约 §4.7 第 4 步：余额。先扣款——rowcount 为 0 就是余额不够；
+            # 这条 UPDATE 同时把账户行的写锁握在手里，后面读到的持仓一定是最新值。
             deducted = db.execute(
                 update(User)
-                .where(User.user_id == current_user.user_id, User.balance >= amount)
+                .where(User.user_id == user_id, User.balance >= amount)
                 .values(balance=User.balance - amount)
             )
             if deducted.rowcount != 1:
                 db.rollback()
-                raise ApiError(
-                    f"余额不足，当前余额 {Decimal(current_user.balance):.2f}，"
-                    f"需要 {amount:.2f}",
-                    status_code=400,
-                    code="INSUFFICIENT_BALANCE",
-                )
+                balance_now = Decimal(db.get(User, user_id, populate_existing=True).balance)
+                ensure_sufficient_balance(balance_now, amount)
+                raise ApiError("交易失败，请稍后重试", status_code=500, code="INTERNAL_ERROR")
 
             db.refresh(current_user)
             new_balance = Decimal(current_user.balance).quantize(CENT)
 
+            # 契约 §4.7 第 5 步：持仓上限。读出来只为拼提示，真正的判断在 UPDATE 的 WHERE 里。
+            position = db.scalar(
+                select(Position)
+                .where(Position.user_id == user_id, Position.player_id == player.player_id)
+                .execution_options(populate_existing=True)
+            )
+            held = int(position.quantity) if position else 0
+            ensure_position_limit(held, quantity)
+
             if position is None:
-                position = Position(
-                    user_id=current_user.user_id,
-                    player_id=player.player_id,
-                    quantity=quantity,
-                    avg_cost=price,
+                db.add(
+                    Position(
+                        user_id=user_id,
+                        player_id=player.player_id,
+                        quantity=quantity,
+                        avg_cost=price,
+                    )
                 )
-                db.add(position)
+                db.flush()
             else:
-                total_cost = Decimal(position.avg_cost) * held + amount
-                position.quantity = held + quantity
-                position.avg_cost = (total_cost / Decimal(position.quantity)).quantize(
+                # 条件加仓：把"加完不超过 50 股"交给数据库判断，
+                # 两个连接同时加仓时第二个必然 rowcount=0，不会合计超上限。
+                grown = db.execute(
+                    update(Position)
+                    .where(
+                        Position.user_id == user_id,
+                        Position.player_id == player.player_id,
+                        Position.quantity + quantity <= limit,
+                    )
+                    .values(quantity=Position.quantity + quantity)
+                )
+                if grown.rowcount != 1:
+                    db.rollback()
+                    fresh = db.scalar(
+                        select(Position).where(
+                            Position.user_id == user_id,
+                            Position.player_id == player.player_id,
+                        )
+                    )
+                    ensure_position_limit(int(fresh.quantity) if fresh else 0, quantity)
+                    raise ApiError("交易失败，请稍后重试", status_code=500, code="INTERNAL_ERROR")
+
+                # 加仓成功后再算均价：此时数量已是最新值，用 Decimal 计算避免浮点误差。
+                updated = db.scalar(
+                    select(Position)
+                    .where(Position.user_id == user_id, Position.player_id == player.player_id)
+                    .execution_options(populate_existing=True)
+                )
+                new_quantity = int(updated.quantity)
+                cost_before = Decimal(updated.avg_cost) * (new_quantity - quantity)
+                updated.avg_cost = ((cost_before + amount) / Decimal(new_quantity)).quantize(
                     COST_PRECISION, rounding=ROUND_HALF_UP
                 )
+                db.flush()
 
-            db.flush()
             trade = _record_trade(
                 db,
-                user_id=current_user.user_id,
+                user_id=user_id,
                 player_id=player.player_id,
                 side=SIDE_BUY,
                 price=price,
@@ -199,34 +238,61 @@ def sell(
 
     with _trade_lock:
         current_user = db.get(User, user.user_id, populate_existing=True)
-        position = db.scalar(
-            select(Position).where(
-                Position.user_id == current_user.user_id,
-                Position.player_id == player.player_id,
-            )
-        )
-        held = int(position.quantity) if position else 0
-        ensure_available_position(held, quantity)
+        user_id = current_user.user_id
 
         try:
+            # 1) 先入账：拿账户行的写锁，和买入保持同一加锁顺序（避免互相死锁）。
+            #    入账之后如果发现持仓不够，下面的 rollback 会把这笔钱一起撤销。
             db.execute(
-                update(User)
-                .where(User.user_id == current_user.user_id)
-                .values(balance=User.balance + amount)
+                update(User).where(User.user_id == user_id).values(balance=User.balance + amount)
             )
             db.refresh(current_user)
             new_balance = Decimal(current_user.balance).quantize(CENT)
 
-            if held == quantity:
-                # 清仓：删行（positions.quantity 有 1–50 的 CHECK，不能留 0）
-                db.delete(position)
-            else:
-                position.quantity = held - quantity
+            # 2) 锁内重读持仓，读出来只用于拼中文提示。
+            position = db.scalar(
+                select(Position)
+                .where(Position.user_id == user_id, Position.player_id == player.player_id)
+                .execution_options(populate_existing=True)
+            )
+            held = int(position.quantity) if position else 0
+            ensure_available_position(held, quantity)
 
-            db.flush()
+            # 3) 条件减仓：`quantity > n` 是"不允许卖空"的权威防线。
+            #    两个连接同时卖同一批股票时，第二个必然 rowcount=0，只能拿到 400。
+            shrunk = db.execute(
+                update(Position)
+                .where(
+                    Position.user_id == user_id,
+                    Position.player_id == player.player_id,
+                    Position.quantity > quantity,
+                )
+                .values(quantity=Position.quantity - quantity)
+            )
+            if shrunk.rowcount != 1:
+                # 4) 一次卖光：直接删行（positions.quantity 有 1–50 的 CHECK，
+                #    写成 0 会违反约束，所以清仓必须走 DELETE，且同样用 `= n` 做原子判断）。
+                cleared = db.execute(
+                    delete(Position).where(
+                        Position.user_id == user_id,
+                        Position.player_id == player.player_id,
+                        Position.quantity == quantity,
+                    )
+                )
+                if cleared.rowcount != 1:
+                    db.rollback()
+                    fresh = db.scalar(
+                        select(Position).where(
+                            Position.user_id == user_id,
+                            Position.player_id == player.player_id,
+                        )
+                    )
+                    ensure_available_position(int(fresh.quantity) if fresh else 0, quantity)
+                    raise ApiError("交易失败，请稍后重试", status_code=500, code="INTERNAL_ERROR")
+
             trade = _record_trade(
                 db,
-                user_id=current_user.user_id,
+                user_id=user_id,
                 player_id=player.player_id,
                 side=SIDE_SELL,
                 price=price,
