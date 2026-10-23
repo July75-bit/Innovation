@@ -255,9 +255,41 @@
 }
 ```
 
-- `action ∈ {BUY, SELL, HOLD}`，`risk_level ∈ {LOW, MEDIUM, HIGH}`
-- `source ∈ {llm, rule_fallback}`：**无论模型是否可用，本接口都必须 200 且结构合法**
-- 本接口**永不**修改余额/持仓，只读
+**字段定义（7 个，前端按此渲染）**
+
+| 字段 | 类型 | 必填 | 取值 / 约束 |
+| --- | --- | --- | --- |
+| `player_id` | int | ✅ | 与请求路径一致 |
+| `action` | enum | ✅ | `BUY` / `SELL` / `HOLD`（大写，不接受中文或小写 `buy`） |
+| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/Rating） |
+| `risk_level` | enum | ✅ | `LOW` / `MEDIUM` / `HIGH` |
+| `suggested_price_band` | object | ❌ **可缺省** | `{ "low": number, "high": number }`，且 `low ≤ high`。**前端必须容错**：缺省时隐藏区间条，不能直接取 `band.low` |
+| `source` | enum | ✅ | `llm`（模型生成）/ `rule_fallback`（规则兜底） |
+| `disclaimer` | string | ✅ | 固定文案，前端**必须**展示 |
+
+**错误码（本接口专属规则）**
+
+| HTTP | code | 触发条件 | 说明 |
+| --- | --- | --- | --- |
+| 200 | — | 正常返回，**包含 AI 失败降级** | 默认路径；用 `source` 区分来源 |
+| 404 | `PLAYER_NOT_FOUND` | `player_id` 不存在 | 返回 §2 统一错误体 |
+| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 可选实现；未启用则不会出现 |
+| 500 | `INTERNAL_ERROR` | **仅**非 AI 故障（如数据库不可用） | 兜底逻辑本身也失败才算 |
+
+> 🔴 **硬规则：AI 相关故障一律不得用 4xx / 5xx 表达。**
+> 模型超时、未配置密钥、返回非法 JSON、调用被限流 —— 都必须返回 **200 + `source=rule_fallback`**，
+> 保证前端只有一套渲染逻辑，且"AI 挂了不影响交易"这条设计目标可验证。
+
+**只读保证（AI 绝不改余额）**
+
+| 项 | 约定 |
+| --- | --- |
+| 数据操作 | 本接口只做 `SELECT`，**禁止**调用 `Session.commit()`，禁止任何 INSERT / UPDATE / DELETE |
+| 依赖注入 | 路由只依赖 `get_db`（只读使用），不得注入交易服务 |
+| 权限边界 | AI 只产出建议；真正下单必须由用户显式调用 `/api/trades/buy` / `sell` |
+| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；此用例须在 CI 通过 |
+
+**响应形态注意**：本接口成功时返回**裸对象**（无 `success` 字段），失败时返回 §2 的统一错误体 `{success:false, message, code}`；前端按 HTTP 状态码分支处理。
 
 ---
 
@@ -293,5 +325,6 @@
 
 - [ ] A 确认所有字段都能在页面上渲染（不需要额外请求）
 - [ ] C 确认价格字段与 `price_history` 结构一致
-- [ ] D 确认 AI 分析接口的输入数据都能从上述接口拼出来
+- [x] D 确认 AI 分析接口的输入数据都能从上述接口拼出来（2026-10-23）
 - [ ] 四人在这份文档下各留一行"确认"记录
+- [x] **D 签字**（2026-10-23，T1-33）：`GET /api/analysis/{player_id}` 的 7 个字段、4 个错误码、"AI 绝不改余额"的只读保证已写入 §4.10；规则版兜底 `code/backend/ai/fallback.py` 已实现并通过自测
