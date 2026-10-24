@@ -107,7 +107,9 @@ def seed(reset: bool) -> None:
                     PriceHistory(
                         player_id=player_id,
                         price=current_price,
-                        reason="模拟比赛表现调整（种子数据，待 C 的定价引擎接管）",
+                        # 这是开赛前的行情地板，背后没有比赛，所以不带「得分/S」；
+                        # 措辞要能被前端直接展示（旧文案"待 C 的定价引擎接管"已过时）。
+                        reason="行情初始化（种子数据，无对应比赛）",
                         ts=now,
                     )
                 )
