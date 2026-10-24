@@ -77,9 +77,9 @@
 > 当前实现：B 在落库层临时拼接“本轮模拟得分”（`update_prices.with_score_in_reason`），C 接管后由 C 直接拼好、B 只透传（见 `database_design.md` §3.2 分工待办）。详见 `architecture.md` §5 ADR。
 
 > **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
-> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补。
+> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补（后续均已补齐：TC-108 见 `dfe9f26`，TC-106 见 `506b564`）。
 >
-> **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补。
+> **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补（已于 `506b564` 补齐，见下方 15:00 记录）。
 >
 > **执行记录（2026-10-24 11:45，D）**：B 的 `--from-json` + reason 拼接（`adcc848`/`24496ee`）合入，加 D 的 TC-110 4 条后全仓 → **92 passed / 0 skipped**（另含 B 的 `test_update_prices_script.py` 7 条）。
 >

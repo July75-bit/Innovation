@@ -21,6 +21,8 @@
 >
 > **11:00 更新**：A 前端初版（`9782dc7`）、C 定价实现（`59186a5`）、B 价格落库（`5f069ee`）已合入 develop；C 补 3σ/同 seed 断言（`dfe9f26`/`506b564`）、B 补 `--from-json` + reason 幂等（`adcc848`/`19e68bd`）后全仓 pytest **97 passed / 0 skipped**。
 > CI 首次 push 因新增 ruff 门槛红在 `scripts/simulate_match.py::main` 复杂度 11（CLI 入口装配），已把 scripts 的 C901 阈值放宽到 12（业务代码/测试仍为 10），见 `code_quality_report.md` §4.2。剩余 M3 卡点 = 浏览器联调 + 持久化验证。
+>
+> **15:30 更新（D 复核）**：自动化层 **97 passed / 0 skipped**；T3-01/03/05/06/07 已完成，T3-02 代码已接真实接口、**T3-04 浏览器全链路尚未跑**（当前工作区 `node_modules`/`dist` 都没有，A 侧依赖待装）；T3-05 重启持久化已由 D 用真实 uvicorn 进程复现（见 `test_report.md` §7）；契约 §7 **3/4 已签（C 待签）**；CI run #30（`0bc2f14`）三 job 绿。今日剩余 = A 浏览器联调 + B 灌 10+ 价格点 + C 签字。
 
 ## 1. 全员共同段（09:00–09:40）
 
@@ -85,7 +87,7 @@
 | 14:30–16:00 | 全链路联调主持：e2e 2 条维持绿；补错误路径（404/参数非法/暂停交易）；联调问题登记 Issue | e2e 全绿、问题有记录 | ⏳ 待 A/B 浏览器联调 |
 | 16:00–17:00 | 文档回填：`test_plan.md`、`test_report.md`、`milestones.md`；**S 的 3σ 归一化口径**同步到 `functional_spec.md` FR-M2-02 与 `test_plan.md`（TC-108，C 实现后转绿）；`pricing_model.md` 由 C 改 | 三份文档有真实数据，不写"应该能跑" | ✅ 2026-10-24 |
 | 17:00–17:30 | 部署预检（不部署）：`render.yaml` rootDir/startCommand、`.env.example`、`DATABASE_URL`/`CORS` 控制台项、Render 误用 SQLite 告警 | 预检清单写进 `deployment.md` | ✅ 见 `deployment.md` §3.8 |
-| 17:30–18:00 | CI 三 job 绿：后端（pytest + ruff）、前端（eslint + build）、交付物完整性 | CI 全绿 | 🟡 本地 ruff 四条命令全绿；推送后复核 Actions |
+| 17:30–18:00 | CI 三 job 绿：后端（pytest + ruff）、前端（eslint + build）、交付物完整性 | CI 全绿 | ✅ run #30（`0bc2f14`）三 job 全绿 |
 
 ## 3. 19:30 晚验收（对照 M3，逐条打勾）
 
@@ -119,7 +121,7 @@
 - 价格更新落库 + `/prices` 历史可用（B + C）
 - 重启后数据仍在（B）
 - **代码质量扫描报告 + 重构前/后对比**（D）
-- 全仓 pytest 全绿（目标 65+ passed / 0 skipped，定价 5 条转绿）
+- 全仓 pytest 97 passed / 0 skipped（定价 5 条已转绿）
 - CI 三 job 绿（D）
 - PR：A / B / C 各至少 1 个，B 的接口变更（如有）必须同步契约
 
