@@ -61,14 +61,18 @@
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ⬜ |
-| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ⬜ |
-| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ⬜ |
-| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ⬜ |
-| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ⬜ |
-| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | ⬜ |
-| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ⬜ |
-| TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | 🟡 口径已定（C 第 3 天实现，PR 合入后转绿；D 验收） |
+| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ✅ `test_pricing.py::test_price_rises_when_score_positive` |
+| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ✅ `test_price_falls_when_score_negative` |
+| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ✅ `test_zero_demand_signal_keeps_price_when_score_zero` |
+| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ✅ `test_price_never_below_floor` + `test_floor_applies_after_clamp` |
+| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ✅ `test_invalid_current_price_raises` |
+| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | 🟡 模拟器已实现（`generate_match(seed=...)`），但**缺同 seed 可复现的自动化断言**，建议 C 补 |
+| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ✅ e2e 价格历史升序断言 + `test_price_update.py::test_apply_updates_writes_price_and_history` |
+| TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | 🟡 `standardize_score` 已实现（`Z_FULL_SCALE=3.0`），但现有测试只断言符号/范围，**缺 3σ 数值断言**，建议 C 补 |
+| TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
+
+> **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
+> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补。
 
 ### 4.3 AI 智能体
 
