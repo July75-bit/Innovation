@@ -108,6 +108,34 @@ def test_standardize_score_basics() -> None:
     assert -1.0 <= low <= high <= 1.0
 
 
+def test_standardize_score_three_sigma_scale() -> None:
+    """1σ → S≈0.333、2σ → 0.667、3σ → 满格 1.0：证明实现的是 z/Z_FULL_SCALE 而非 clamp(z)。"""
+
+    history = [70.0, 72.0, 74.0]        # 均值 72，总体标准差 ≈ 1.6330
+    sd = 1.632993161855452
+
+    assert _close(standardize_score(72 + sd, history), 1 / 3, 1e-3)
+    assert _close(standardize_score(72 + 2 * sd, history), 2 / 3, 1e-3)
+    assert _close(standardize_score(72 + 3 * sd, history), 1.0, 1e-3)
+    assert _close(standardize_score(72 + 10 * sd, history), 1.0)  # 超过 3σ 仍饱和
+
+
+def test_z_full_scale_one_matches_literal_mapping() -> None:
+    """Z_FULL_SCALE 改成 1.0 时回到字面口径 clamp(z,-1,1)：1σ 即满格。"""
+
+    import core_engine.pricing as pricing_mod
+
+    history = [70.0, 72.0, 74.0]
+    sd = 1.632993161855452
+    original = pricing_mod.Z_FULL_SCALE
+    try:
+        pricing_mod.Z_FULL_SCALE = 1.0
+        assert _close(standardize_score(72 + sd, history), 1.0)
+        assert _close(standardize_score(72 + 0.5 * sd, history), 0.5)
+    finally:
+        pricing_mod.Z_FULL_SCALE = original
+
+
 # ---------------------------------------------------------------- 零依赖运行器
 def _run_all() -> int:
     """没有 pytest 也能跑（课程环境/CI 未装依赖时用）。"""
