@@ -1,6 +1,6 @@
 """PlayerStock 后端应用包。
 
-目录约定（与原 6 天手册的 backend/main.py 单文件写法有意不同）：
+目录约定（与原 6 天手册的 code/backend/main.py 单文件写法有意不同）：
 - app/api/      HTTP 路由
 - app/models/   SQLAlchemy 模型
 - app/schemas/  Pydantic 请求/响应模型

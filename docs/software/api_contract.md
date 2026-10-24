@@ -77,34 +77,37 @@
 [
   {
     "player_id": 1,
-    "name": "Shadow",
-    "display_name": "影刃",
-    "team": "NOVA",
-    "current_price": 103.50,
-    "prev_price": 100.00,
-    "change_pct": 3.50,
-    "rating": 82,
+    "name": "ZywOo",
+    "display_name": "ZywOo",
+    "team": "Vitality",
+    "role": "AWPer",
+    "current_price": 126.00,
+    "prev_price": 120.00,
+    "change_pct": 5.00,
+    "rating": 88,
     "status": "trading"
   }
 ]
 ```
 
 > `status ∈ {trading, suspended}`；`change_pct` 后端算好，前端不要自己算。
+> 数据口径：`role` 为选手真实位置；`rating` 是本项目自建的**模拟综合表现分（0–100）**，仅用于驱动定价公式，**不是 HLTV Rating，也不是任何官方统计**，前端需标注为模拟数据。
 
 ### 4.3 `GET /api/players/{player_id}`
 
 ```json
 {
   "player_id": 1,
-  "name": "Shadow",
-  "display_name": "影刃",
-  "team": "NOVA",
-  "current_price": 103.50,
-  "prev_price": 100.00,
-  "change_pct": 3.50,
-  "rating": 82,
+  "name": "ZywOo",
+  "display_name": "ZywOo",
+  "team": "Vitality",
+  "role": "AWPer",
+  "current_price": 126.00,
+  "prev_price": 120.00,
+  "change_pct": 5.00,
+  "rating": 88,
   "status": "trading",
-  "latest_reason": "模拟比赛表现提升（近 3 场均分 88，S=+0.42）"
+  "latest_reason": "模拟比赛表现提升（模拟评分由 78 升至 88，S=+0.42）"
 }
 ```
 
@@ -116,8 +119,8 @@
 {
   "player_id": 1,
   "points": [
-    { "ts": "2026-01-01T10:00:00Z", "price": 100.00, "reason": "初始价格" },
-    { "ts": "2026-01-01T10:05:00Z", "price": 103.50, "reason": "模拟比赛表现提升" }
+    { "ts": "2026-01-01T10:00:00Z", "price": 120.00, "reason": "初始价格" },
+    { "ts": "2026-01-01T10:05:00Z", "price": 126.00, "reason": "模拟比赛表现提升" }
   ]
 }
 ```
@@ -144,13 +147,13 @@
 [
   {
     "player_id": 1,
-    "name": "Shadow",
+    "name": "ZywOo",
     "quantity": 10,
-    "avg_cost": 98.00,
-    "current_price": 103.50,
-    "market_value": 1035.00,
-    "profit": 55.00,
-    "profit_pct": 5.61
+    "avg_cost": 120.00,
+    "current_price": 126.00,
+    "market_value": 1260.00,
+    "profit": 60.00,
+    "profit_pct": 5.00
   }
 ]
 ```
@@ -171,10 +174,10 @@
 {
   "success": true,
   "message": "买入成功",
-  "balance": 4800.00,
+  "balance": 4748.00,
   "player_id": 1,
   "quantity": 2,
-  "price": 100.00,
+  "price": 126.00,
   "trade_id": 17
 }
 ```
@@ -182,7 +185,7 @@
 失败 400 示例：
 
 ```json
-{ "success": false, "message": "余额不足，当前余额 50.00，需要 100.00", "code": "INSUFFICIENT_BALANCE" }
+{ "success": false, "message": "余额不足，当前余额 50.00，需要 126.00", "code": "INSUFFICIENT_BALANCE" }
 ```
 
 校验顺序（B 必须按此顺序，便于前端给准确提示）：
@@ -202,10 +205,10 @@
 {
   "success": true,
   "message": "卖出成功",
-  "balance": 4900.00,
+  "balance": 4874.00,
   "player_id": 1,
   "quantity": 1,
-  "price": 100.00,
+  "price": 126.00,
   "trade_id": 18
 }
 ```
@@ -221,12 +224,12 @@
   {
     "trade_id": 18,
     "player_id": 1,
-    "name": "Shadow",
+    "name": "ZywOo",
     "side": "SELL",
     "quantity": 1,
-    "price": 100.00,
-    "amount": 100.00,
-    "balance_after": 4900.00,
+    "price": 126.00,
+    "amount": 126.00,
+    "balance_after": 4874.00,
     "created_at": "2026-01-01T10:10:00Z"
   }
 ]
@@ -240,17 +243,49 @@
 {
   "player_id": 1,
   "action": "BUY",
-  "reason": "近 3 场表现评分由 74 升至 82，价格上涨 3.5% 但低于表现提升幅度",
+  "reason": "近 3 图 Rating 由 1.18 升至 1.32，价格上涨 5.0% 但低于表现提升幅度",
   "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 100.00, "high": 108.00 },
+  "suggested_price_band": { "low": 120.00, "high": 130.00 },
   "source": "llm",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
 ```
 
-- `action ∈ {BUY, SELL, HOLD}`，`risk_level ∈ {LOW, MEDIUM, HIGH}`
-- `source ∈ {llm, rule_fallback}`：**无论模型是否可用，本接口都必须 200 且结构合法**
-- 本接口**永不**修改余额/持仓，只读
+**字段定义（7 个，前端按此渲染）**
+
+| 字段 | 类型 | 必填 | 取值 / 约束 |
+| --- | --- | --- | --- |
+| `player_id` | int | ✅ | 与请求路径一致 |
+| `action` | enum | ✅ | `BUY` / `SELL` / `HOLD`（大写，不接受中文或小写 `buy`） |
+| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/Rating） |
+| `risk_level` | enum | ✅ | `LOW` / `MEDIUM` / `HIGH` |
+| `suggested_price_band` | object | ❌ **可缺省** | `{ "low": number, "high": number }`，且 `low ≤ high`。**前端必须容错**：缺省时隐藏区间条，不能直接取 `band.low` |
+| `source` | enum | ✅ | `llm`（模型生成）/ `rule_fallback`（规则兜底） |
+| `disclaimer` | string | ✅ | 固定文案，前端**必须**展示 |
+
+**错误码（本接口专属规则）**
+
+| HTTP | code | 触发条件 | 说明 |
+| --- | --- | --- | --- |
+| 200 | — | 正常返回，**包含 AI 失败降级** | 默认路径；用 `source` 区分来源 |
+| 404 | `PLAYER_NOT_FOUND` | `player_id` 不存在 | 返回 §2 统一错误体 |
+| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 可选实现；未启用则不会出现 |
+| 500 | `INTERNAL_ERROR` | **仅**非 AI 故障（如数据库不可用） | 兜底逻辑本身也失败才算 |
+
+> 🔴 **硬规则：AI 相关故障一律不得用 4xx / 5xx 表达。**
+> 模型超时、未配置密钥、返回非法 JSON、调用被限流 —— 都必须返回 **200 + `source=rule_fallback`**，
+> 保证前端只有一套渲染逻辑，且"AI 挂了不影响交易"这条设计目标可验证。
+
+**只读保证（AI 绝不改余额）**
+
+| 项 | 约定 |
+| --- | --- |
+| 数据操作 | 本接口只做 `SELECT`，**禁止**调用 `Session.commit()`，禁止任何 INSERT / UPDATE / DELETE |
+| 依赖注入 | 路由只依赖 `get_db`（只读使用），不得注入交易服务 |
+| 权限边界 | AI 只产出建议；真正下单必须由用户显式调用 `/api/trades/buy` / `sell` |
+| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；此用例须在 CI 通过 |
+
+**响应形态注意**：本接口成功时返回**裸对象**（无 `success` 字段），失败时返回 §2 的统一错误体 `{success:false, message, code}`；前端按 HTTP 状态码分支处理。
 
 ---
 
@@ -262,7 +297,8 @@
 | 当前价格 | `current_price` | `price`, `currentPrice`, `now_price` |
 | 上一价格 | `prev_price` | `last_price` |
 | 涨跌幅（%） | `change_pct` | `change`, `pct`, `chg` |
-| 表现评分 | `rating` | `score`, `performance` |
+| 模拟综合表现分（0–100） | `rating` | `score`, `performance` |
+| 选手位置（真实） | `role`（AWPer / Entry / Rifler / IGL / Support / Lurker） | `position_name`, `pos` |
 | 余额 | `balance` | `money`, `cash`, `fund` |
 | 数量 | `quantity` | `qty`, `amount`, `num` |
 | 方向 | `side`（BUY/SELL） | `type`, `direction` |
@@ -287,3 +323,4 @@
 - [ ] C 确认价格字段与 `price_history` 结构一致
 - [ ] D 确认 AI 分析接口的输入数据都能从上述接口拼出来
 - [ ] 四人在这份文档下各留一行"确认"记录
+- [x] **AI 分析接口字段与错误码已确认**（T1-33，2026-10-17）：7 个字段、4 个错误码、只读保证已写入 §4.10

@@ -1,6 +1,6 @@
 # 系统架构设计
 
-> **负责人**：B + D ｜ **截止**：第 1 天初稿，第 6 天定稿 ｜ **状态**：⬜ 待填写
+> **负责人**：B + D ｜ **截止**：第 1 天初稿，第 6 天定稿 ｜ **状态**：✅ 已填写（第 6 天补真实版本号）
 > **对应课程指标**：#7 架构与详细设计、#9 架构设计说明；交付物要求"完整 readme.md：项目简介、**架构图**、运行方式"
 
 ## 1. 架构总览
@@ -12,14 +12,14 @@ flowchart LR
     end
 
     subgraph Render["Render 云平台"]
-        subgraph FE["Static Site<br/>rootDir: frontend"]
+        subgraph FE["Static Site<br/>rootDir: code/frontend"]
             DIST["dist/ 静态资源"]
         end
-        subgraph BE["Web Service<br/>rootDir: backend"]
+        subgraph BE["Web Service<br/>rootDir: code/backend"]
             API["FastAPI<br/>app/main.py"]
             SVC["交易服务<br/>app/api/trades.py"]
-            PRICE["定价引擎<br/>backend/pricing/"]
-            AI["智能体<br/>backend/ai/"]
+            PRICE["定价引擎<br/>code/core_engine/"]
+            AI["智能体<br/>code/backend/ai/"]
             DB[("SQLite<br/>playerstock.db")]
         end
     end
@@ -40,9 +40,9 @@ flowchart LR
 
 | 层 | 模块 | 职责 | 责任人 | 边界（不能做什么） |
 | --- | --- | --- | --- | --- |
-| 表现层 | `frontend/` | 页面渲染、交互、调接口、状态提示 | A | 不写死 API 地址、不改后端文件 |
+| 表现层 | `code/frontend/` | 页面渲染、交互、调接口、状态提示 | A | 不写死 API 地址、不改后端文件 |
 | 接口层 | `app/api/` | 路由、参数校验、错误码、事务边界 | B | 不在路由里写算法 |
-| 领域层 | `app/pricing/`、`app/ai/` | 纯计算：定价、信号、建议 | C、D | 不直接改用户余额/持仓 |
+| 领域层 | `code/core_engine/`、`code/backend/ai/` | 纯计算：定价、信号、建议 | C、D | 不直接改用户余额/持仓 |
 | 数据层 | `app/models/`、`app/core/` | ORM 模型、会话、配置 | B | 不包含业务规则 |
 | 平台层 | Render / GitHub Actions | 部署、CI | D | 密钥只放环境变量 |
 
@@ -67,7 +67,7 @@ sequenceDiagram
     else 校验通过
         A->>DB: 扣余额 + 加持仓 + 写流水
         A->>DB: COMMIT
-        A-->>F: 200 {success:true, balance:4800, ...}
+        A-->>F: 200 {success:true, balance:4748.00, ...}
     end
     F->>U: 刷新余额/持仓/流水
 ```
@@ -95,7 +95,7 @@ sequenceDiagram
 
 | 组件 | 选型 | 版本 | 选它的理由 | 备选 |
 | --- | --- | --- | --- | --- |
-| 前端框架 | Vue 3 + TypeScript | 见 `frontend/package.json` | 官方脚手架自带 Router/Vitest/ESLint，上手快 | React |
+| 前端框架 | Vue 3 + TypeScript | 见 `code/frontend/package.json` | 官方脚手架自带 Router/Vitest/ESLint，上手快 | React |
 | 构建 | Vite | 同上 | 启动快、配置少 | — |
 | 后端 | FastAPI | 见 `requirements.lock.txt` | 自动生成 Swagger，四人联调成本最低 | Express |
 | ORM | SQLAlchemy 2.x | 同上 | 事务控制明确 | — |
@@ -110,7 +110,7 @@ sequenceDiagram
 
 | 决策 | 选择 | 放弃的方案 | 理由 |
 | --- | --- | --- | --- |
-| 定价模块位置 | `backend/pricing/` | 仓库根 `core_engine/` + 独立服务 | 部署时后端 Root Directory 只有 `backend/`，跨目录 import 线上失败 |
+| 定价模块位置 | `code/core_engine/`（同仓库、可 pip 安装） | 独立部署的定价服务 | 6 天版不引入第二个服务；后端通过 `sys.path` 注入 / `pip install -e` 导入，避免跨目录 import 失败 |
 | 数据库 | SQLite | PostgreSQL | 6 天版零运维；线上若不挂持久盘再换 |
 | 智能体编排 | 单智能体 | LangGraph 多智能体 DAG | 时间不够，单智能体已能体现"智能体肌肉" |
 | 真实赛事数据 | 模拟数据 + 适配器接口 | 直接接 SportScore | 接口可用性未知，模拟数据保证演示稳定 |
@@ -121,7 +121,7 @@ sequenceDiagram
 ```mermaid
 flowchart TB
     GH["GitHub 仓库"] --> CI["GitHub Actions<br/>pytest + eslint + build"]
-    GH -- "push main" --> R1["Render Static Site<br/>frontend/dist"]
+    GH -- "push main" --> R1["Render Static Site<br/>code/frontend/dist"]
     GH -- "push main" --> R2["Render Web Service<br/>uvicorn app.main:app"]
     R2 --> DISK[("Persistent Disk<br/>/var/data/playerstock.db")]
     U["老师/同学浏览器"] --> R1

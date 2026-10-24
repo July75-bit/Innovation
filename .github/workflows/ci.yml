@@ -21,9 +21,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: backend/requirements.txt
+          cache-dependency-path: code/backend/requirements.txt
       - name: 安装依赖
-        run: pip install -r backend/requirements.txt
+        run: pip install -r code/backend/requirements.txt
       - name: 运行 pytest
         run: python -m pytest
 
@@ -39,11 +39,11 @@ jobs:
       - name: 检测 frontend 是否已生成
         id: detect
         run: |
-          if [ -f frontend/package.json ]; then
+          if [ -f code/frontend/package.json ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::frontend/package.json 尚不存在（A 同学还没跑 npm create vue@latest），跳过前端检查。"
+            echo "::notice::code/frontend/package.json 尚不存在（A 同学还没跑 npm create vue@latest），跳过前端检查。"
           fi
       - name: 安装 Node
         if: steps.detect.outputs.ready == 'true'
@@ -51,19 +51,19 @@ jobs:
         with:
           node-version: "20"
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: code/frontend/package-lock.json
       # 注意：npm ci 需要提交 package-lock.json（vue 脚手架会生成，别加进 .gitignore）
       - name: 安装依赖
         if: steps.detect.outputs.ready == 'true'
-        working-directory: frontend
+        working-directory: code/frontend
         run: npm ci
       - name: 代码规范
         if: steps.detect.outputs.ready == 'true'
-        working-directory: frontend
+        working-directory: code/frontend
         run: npm run lint
       - name: 构建
         if: steps.detect.outputs.ready == 'true'
-        working-directory: frontend
+        working-directory: code/frontend
         run: npm run build
 
   # ---------------- 交付物完整性：防止第 6 天发现文档没写 ----------------

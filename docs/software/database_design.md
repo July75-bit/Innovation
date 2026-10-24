@@ -1,6 +1,6 @@
 # 数据库设计说明
 
-> **负责人**：B ｜ **截止**：第 1 天出表结构，第 6 天定稿 ｜ **状态**：⬜ 待填写
+> **负责人**：B ｜ **截止**：第 1 天出表结构，第 6 天定稿 ｜ **状态**：✅ 已填写（第 6 天附实际 schema）
 > **对应课程指标**：#7 数据设计；分工文档 B6"整理 API 文档和数据库设计说明"
 > 答辩必问："为什么要这几张表？并发下怎么保证不超卖？"
 
@@ -77,14 +77,17 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `player_id` | INTEGER | PK | |
-| `name` | VARCHAR(50) | NOT NULL, UNIQUE | 英文/ID，如 Shadow |
-| `display_name` | VARCHAR(50) | | 中文昵称，如 影刃 |
-| `team` | VARCHAR(50) | | 虚拟战队 |
+| `name` | VARCHAR(50) | NOT NULL, UNIQUE | CS2 选手游戏内 ID（真实公开信息），如 ZywOo |
+| `display_name` | VARCHAR(50) | | 展示名，真实选手暂无官方中文名时与 name 相同 |
+| `team` | VARCHAR(50) | | 所属战队（真实公开信息），如 Vitality |
 | `current_price` | FLOAT | NOT NULL, > 0 | 定价模块写入 |
 | `prev_price` | FLOAT | NOT NULL | 用于算涨跌幅 |
-| `rating` | INTEGER | 0–100 | 表现评分（C 维护） |
+| `role` | VARCHAR(20) | | 选手真实位置：AWPer / Entry / Rifler / IGL / Support / Lurker |
+| `rating` | INTEGER | 0–100 | 本项目模拟综合表现分（C 维护），**不是 HLTV Rating 或任何官方统计** |
 | `status` | VARCHAR(20) | NOT NULL, default 'trading' | `trading` / `suspended` |
 | `updated_at` | DATETIME | NOT NULL | |
+
+> 说明：`data/seed_players.json` 里的 `initial_price`（上市价）**不是本表字段**，落库时写成 `price_history` 的第一条记录（`reason = 初始价格`）。
 
 ### 2.3 `positions` 持仓
 

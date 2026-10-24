@@ -1,6 +1,6 @@
 # AI 智能体设计：Prompt 与输出契约
 
-> **负责人**：D ｜ **截止**：第 2 天出原型，第 3 天接入，第 6 天定稿 ｜ **状态**：⬜ 待填写
+> **负责人**：D ｜ **截止**：第 2 天出原型，第 3 天接入，第 6 天定稿 ｜ **状态**：✅ 已填写（第 2–3 天补提示词迭代记录）
 > **对应交付物**：LLM Prompt 设计、输出 JSON 格式约定；答辩要能解释"为什么这么写提示词"
 
 ## 1. 设计目标
@@ -18,16 +18,19 @@
 ```json
 {
   "player_id": 1,
-  "name": "Shadow",
-  "current_price": 103.5,
-  "change_pct": 3.5,
-  "rating": 82,
+  "name": "ZywOo",
+  "team": "Vitality",
+  "role": "AWPer",
+  "current_price": 126.0,
+  "change_pct": 5.0,
+  "rating": 88,
+  "rating_note": "项目模拟值，非官方统计",
   "recent_prices": [
-    { "ts": "2026-01-01T10:00:00", "price": 100.0 },
-    { "ts": "2026-01-01T10:05:00", "price": 103.5 }
+    { "ts": "2026-01-01T10:00:00", "price": 120.0 },
+    { "ts": "2026-01-01T10:05:00", "price": 126.0 }
   ],
   "recent_reasons": ["模拟比赛表现提升", "买盘集中"],
-  "position": { "quantity": 10, "avg_cost": 98.0 }
+  "position": { "quantity": 10, "avg_cost": 120.0 }
 }
 ```
 
@@ -56,11 +59,11 @@
 
 ## 4. Prompt 结构
 
-提示词模板在 `backend/ai/prompts.py`：
+提示词模板在 `code/backend/ai/prompts.py`：
 
 | 部分 | 作用 | 迭代要点 |
 | --- | --- | --- |
-| `SYSTEM_PROMPT` | 角色、任务、输出格式、规则 | 强调"只输出 JSON"；枚举用 `|` 明确列出 |
+| `SYSTEM_PROMPT` | 角色、任务、输出格式、规则 | 强调“只输出 JSON”；枚举值用竖线分隔并逐一列出 |
 | `USER_PROMPT_TEMPLATE` | 注入行情数据 | 数值统一保留 2 位小数，避免模型读到浮点噪声 |
 
 ### 迭代记录（每次改提示词都要记）
@@ -87,7 +90,7 @@ flowchart TD
     G --> H
 ```
 
-**规则版兜底规则**（`backend/ai/fallback.py`，D 实现并写进文档）：
+**规则版兜底规则**（`code/backend/ai/fallback.py`，D 实现并写进文档）：
 
 | 条件 | 建议 | 风险 |
 | --- | --- | --- |

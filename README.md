@@ -5,7 +5,7 @@
 
 ## ⚠️ 合规声明
 
-本项目全程使用**虚拟币**，**不可充值、不可提现、不可兑换**任何实物或货币，所有选手均为虚构角色，与真实运动员/选手无关。项目仅用于课程学习与演示，不构成任何投资建议或金融产品。
+本项目全程使用**虚拟币**，**不可充值、不可提现、不可兑换**任何实物或货币。选手姓名、战队与位置取自公开可查的 CS2 职业选手信息，但**价格与综合表现评分均为本项目自行设定的模拟数据**，不代表 HLTV 或任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部**均无关联**，属非官方课程作品，不展示任何官方图片或 Logo。项目仅用于课程学习与演示，不构成任何投资建议或金融产品。
 
 ## 一句话介绍
 
@@ -28,22 +28,25 @@
 ├── README.md                     # 本文件
 ├── .gitignore
 ├── LICENSE
-├── pyproject.toml                # pytest 配置（pythonpath = backend）
+├── pyproject.toml                # pytest 配置（pythonpath 指向 code/）
 ├── render.yaml                   # Render 部署蓝图
 │
-├── frontend/                     # A：Vue 3 + TS + Vite（见 frontend/README.md）
-│
-├── backend/                      # B：FastAPI + SQLAlchemy + SQLite
-│   ├── app/
-│   │   ├── main.py               # 入口（uvicorn app.main:app）
-│   │   ├── api/                  # health / players / account / trades / positions / prices / ai
-│   │   ├── models/               # SQLAlchemy 模型
-│   │   ├── schemas/              # Pydantic 请求/响应模型
-│   │   └── core/                 # 配置、数据库会话
-│   ├── pricing/                  # C：价格更新算法 + 模拟比赛数据（被 app/api/prices.py 调用）
-│   ├── ai/                       # D：LLM 智能体（密钥只在此层读取，绝不下发前端）
-│   ├── requirements.txt
-│   └── .env.example
+├── code/                         # 全部源码
+│   ├── frontend/                 # A：Vue 3 + TS + Vite（见 code/frontend/README.md）
+│   ├── backend/                  # B：FastAPI + SQLAlchemy + SQLite
+│   │   ├── app/
+│   │   │   ├── main.py           # 入口（uvicorn app.main:app）
+│   │   │   ├── api/              # health / players / account / trades / positions / prices / ai
+│   │   │   ├── models/           # SQLAlchemy 模型
+│   │   │   ├── schemas/          # Pydantic 请求/响应模型
+│   │   │   └── core/             # 配置、数据库会话
+│   │   ├── ai/                   # D：LLM 智能体（密钥只在此层读取，绝不下发前端）
+│   │   ├── requirements.txt
+│   │   └── .env.example
+│   └── core_engine/              # C：定价算法 + 模拟比赛数据（供后端 import）
+│       ├── pricing.py
+│       ├── simulator.py
+│       └── pyproject.toml        # 可选：pip install -e 成独立包
 │
 ├── docs/                         # 课程要求的工程文档（见「文档索引」）
 ├── tests/                        # 独立测试目录：unit/ + integration/
@@ -63,7 +66,7 @@
 ### 1. 启动后端
 
 ```powershell
-cd backend
+cd code/backend
 py -3.13 -m venv .venv
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
@@ -72,7 +75,7 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-> ⚠️ **注意启动命令是 `app.main:app`，不是 `main:app`**。本项目后端采用 `backend/app/` 包结构（见文末「已知偏差」），与 6 天手册里的 `main.py` 直达写法不同。
+> ⚠️ **注意启动命令是 `app.main:app`，不是 `main:app`**。本项目后端采用 `code/backend/app/` 包结构（见文末「已知偏差」），与 6 天手册里的 `main.py` 直达写法不同。
 
 验收：
 
@@ -82,17 +85,24 @@ python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 ### 2. 启动前端（A 同学第 1 天）
 
+> ⚠️ `code/frontend/` 当前只有一份说明文件，而脚手架要求目标目录为空，
+> 直接跑 `npm create vue` 会因"目录非空"失败。先把说明移走（对应 `docs/mgmt/milestones.md` 的 T1-04）。
+
 ```powershell
-npm create vue@latest frontend
+Move-Item code/frontend/README.md docs/software/frontend_setup.md
+```
+
+```powershell
+npm create vue@latest code/frontend
 # 选项：TypeScript=Yes / JSX=No / Vue Router=Yes / Pinia=No
 #       Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes
-cd frontend
+cd code/frontend
 npm install
 Copy-Item .env.example .env.local   # 若已有 .env.example
 npm run dev                          # http://localhost:5173
 ```
 
-> `frontend/` 目录当前只有一份说明文件，由 A 同学用官方脚手架生成，**不要手工预置文件**，否则 `npm create vue` 会因目录非空而失败。
+> `code/frontend/` 目录当前只有一份说明文件，由 A 同学用官方脚手架生成，**不要手工预置文件**，否则 `npm create vue` 会因目录非空而失败。
 
 ### 3. 初始化演示数据
 
@@ -104,8 +114,8 @@ python scripts/simulate_match.py # 生成一轮模拟比赛并触发价格更新
 ### 4. 跑测试
 
 ```powershell
-# 在仓库根目录（pyproject.toml 已配置 pythonpath = ["backend"]）
-pip install -r backend/requirements.txt
+# 在仓库根目录（pyproject.toml 已配置 pythonpath = ["code/backend", "code/core_engine", "code"]）
+pip install -r code/backend/requirements.txt
 python -m pytest
 ```
 
@@ -146,7 +156,7 @@ python -m pytest
 成功响应统一结构（交易是否成功**以后端数据库为准**，不允许前端只改数字）：
 
 ```json
-{ "success": true, "message": "买入成功", "balance": 4800, "player_id": 1, "quantity": 2 }
+{ "success": true, "message": "买入成功", "balance": 4748.00, "player_id": 1, "quantity": 2 }
 ```
 
 ## 交易规则（稳定层）
@@ -173,18 +183,18 @@ python -m pytest
 
 仓库根目录的 [`render.yaml`](render.yaml) 已配置两个服务：
 
-- 后端 Web Service：Root Directory `backend`，Start Command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- 前端 Static Site：Root Directory `frontend`，Publish Directory `dist`
+- 后端 Web Service：Root Directory `code/backend`，Start Command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- 前端 Static Site：Root Directory `code/frontend`，Publish Directory `dist`
 
 > ⚠️ **SQLite 持久化**：Render 默认文件系统是临时的，重启/重新部署会丢数据。必须挂载 Persistent Disk（付费）或改用托管 PostgreSQL，详见 [`docs/software/deployment.md`](docs/software/deployment.md)。验收标准不是"网站能打开"，而是"交易完成后数据能保存"。
 
 ## 已知偏差（与原 6 天手册不一致处，四人必须知悉）
 
-1. **后端入口路径**：手册用 `backend/main.py` + `uvicorn main:app`；本项目用 `backend/app/main.py` + `uvicorn app.main:app`。理由：路由/模型/schema 分层，避免单文件膨胀。
-2. **定价与 AI 的位置**：不是仓库根目录的 `core_engine/`，而是 `backend/pricing/` 与 `backend/ai/`。理由：① 部署时后端 Root Directory 只有 `backend/`，跨目录 import 在线上必失败；② 手册 D2 要求"避免把 API 密钥暴露到前端"，AI 层必须在后端进程内读环境变量。
-3. **`frontend/` 尚未生成**：由 A 用 `npm create vue@latest` 生成，见 `frontend/README.md`。
-4. **依赖未锁版本**：`backend/requirements.txt` 沿用手册的清单但未固定版本号。第 1 天环境跑通后，请执行 `pip freeze > requirements.lock.txt` 提交，满足课程"可复现"要求。
-5. **尚无 git 历史**：仓库未执行 `git init`，由团队自行初始化并绑定远程。
+1. **后端入口路径**：手册用 `backend/main.py` + `uvicorn main:app`；本项目用 `code/backend/app/main.py` + `uvicorn app.main:app`。理由：路由/模型/schema 分层，避免单文件膨胀。
+2. **目录按课程模板组织**：源码统一放在 `code/` 下（`code/backend`、`code/frontend`、`code/core_engine`）。理由：① 课程要求的仓库结构就是 `code/{backend,frontend,core_engine}`；② 定价算法独立成 `code/core_engine`，后端通过 `code/` 加入 `sys.path` 或 `pip install -e code/core_engine` 导入；③ AI 层必须留在 `code/backend/ai/`——手册 D2 要求"避免把 API 密钥暴露到前端"，只有后端进程内才能安全读环境变量。
+3. **`code/frontend/` 尚未生成**：由 A 用 `npm create vue@latest` 生成，见 `code/frontend/README.md`。
+4. **依赖未锁版本**：`code/backend/requirements.txt` 沿用手册的清单但未固定版本号。第 1 天环境跑通后，请执行 `pip freeze > requirements.lock.txt` 提交，满足课程"可复现"要求。
+5. **分支**：`main` 为生产分支、`develop` 为集成分支，均已存在并绑定远程 `origin`；日常开发走 `feat/*` 分支合并回 `develop`。
 
 ## 每日验收（对齐 6 天计划）
 
