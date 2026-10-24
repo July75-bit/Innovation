@@ -179,7 +179,7 @@
 | T4-03 | AI 分析接口 `/api/analysis/{id}` | B + D | T2-08 | 返回合法结构 | ✅ 2026-10-24（第 3 天提前接入，`test_api_ai.py` 7 条 + e2e：6 字段 / 200+rule_fallback / TC-205） |
 | T4-04 | AI 建议卡（action/理由/风险） | A | T4-03 | 页面能看到徽标 | ⬜ |
 | T4-05 | 加载中/无数据/失败三态 | A | T4-01 | 拔网线能看到失败态 | ⬜ |
-| T4-06 | 核心异常测试用例 | D | T3-04 | 边界用例通过 | ✅ 2026-10-24（`test_core_exceptions.py` 7 条：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚；全仓 104 passed / 0 skipped） |
+| T4-06 | 核心异常测试用例 | D | T3-04 | 边界用例通过 | ✅ 2026-10-24（`test_core_exceptions.py` 7 条：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚；全仓 106 passed / 0 skipped） |
 | T4-07 | 智能体回测初版 | D | T2-09 | `backtest_report.md` 有数字 | ✅ 2026-10-24（`scripts/backtest.py` 可重跑；seed 42/20 轮结果 + 3 seed 稳定性 + `backtest_result.json`；LLM 版待第 5 天线上补） |
 
 ### 第 5 天：部署上线

@@ -9,12 +9,12 @@
 
 | 项 | 内容 |
 | --- | --- |
-| 测试日期 | 2026-10-24（第 3 天） |
+| 测试日期 | 2026-10-24（第 3 天末 + 第 4 天） |
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **104**（单元 98 + 集成 6） |
-| 通过 / 失败 / 跳过 | **104 / 0 / 0** |
+| 自动化用例总数 | **106**（单元 100 + 集成 6） |
+| 通过 / 失败 / 跳过 | **106 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §9） |
 | 通过 / 失败 | 未执行 / 未执行 |
 
@@ -25,7 +25,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-104 passed, 1 warning in 5.44s
+106 passed, 1 warning in 7.57s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -43,6 +43,7 @@ $ python -m pytest
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 4 天新增：`simulate_match.py` CLI 8 条输出 + ts ISO 8601 冒烟 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 
 ### 2.2 集成测试
@@ -55,7 +56,7 @@ $ python -m pytest
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（104 条用例）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（106 条用例）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
@@ -199,7 +200,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 104 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 106 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
