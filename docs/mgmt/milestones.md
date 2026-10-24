@@ -189,7 +189,7 @@
 | T5-01 | 后端部署 + 环境变量 + CORS | D + B | T4-03 | 公网可访问 `/api/health` | ✅ 2026-10-25（`https://playerstock-backend-mdlk.onrender.com/api/health` → 200 `{"status":"ok"}`；前端跨域取数成功，CORS 生效） |
 | T5-02 | 前端部署 + `VITE_API_BASE_URL` | D + A | T4-04 | 公网页面能打开 | ✅ 2026-10-25（`https://playerstock-frontend-mdlk.onrender.com` 市场页显示 8 名选手与真实价格） |
 | T5-03 | 线上持久化（Postgres）方案落地 | D + B | T5-01 | 重启/重新部署后数据仍在 | 🟡 已用 Postgres（`playerstock-db`，PG 18）；**"重新部署后再查"的对比还没做**，见 TC-404 |
-| T5-04 | 线上全流程验收（买卖/查询/AI 各一次） | 全员 | T5-02 | 验收清单打勾 | 🟡 只读四项已验（health/players/prices/analysis）；**线上买卖未做**（`/api/trades` 仍为空），见 TC-403 |
+| T5-04 | 线上全流程验收（买卖/查询/AI 各一次） | 全员 | T5-02 | 验收清单打勾 | 🟡 TC-401/402/403/406 ✅（线上买卖已跑通：买 2 → 卖 1 → 并发卖 1，余额回到 5000.00、流水 3 条）；剩 TC-404（重新部署后仍持久）、TC-405（子路由刷新） |
 | T5-05 | 修复线上与本地不一致问题 | 全员 | T5-04 | 无阻断性 bug | ⬜ |
 | T5-06 | 部署说明定稿 | D | T5-04 | `deployment.md` 填完 | 🟡 访问地址与已知问题已填（§6），验收清单待补 |
 | T5-07 | 线上数据灌入（bootstrap/9 轮，≥10 点/人） | B | T5-01 | `/prices` 点数达标、带 reason | ✅ 2026-10-25（线上 `/api/players/1/prices` = **11 点**、升序、末点 108.75 = 现价、reason 为「本轮得分 xx，S=±x.xx」；价格与本地 `--rounds 9` 配方逐条一致） |
