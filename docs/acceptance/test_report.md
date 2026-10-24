@@ -181,13 +181,17 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | TC-401 | 线上健康检查 | ✅ | `GET /api/health` → 200 `{"status":"ok","service":"playerstock-backend"}`；`/docs` 200 |
 | TC-402 | CORS 正常 | ✅ | 前端（`*-frontend-mdlk.onrender.com`）成功跨域取到 8 名选手与价格，"连接成功 / 余额 5000.00"；Network 无 CORS 报错（A 的线上截图） |
 | TC-403 | 线上交易闭环 | ✅ | **2026-10-25 线上实测**：`GET /api/account` 5000.00 → 买 #1 × 2 @ **108.75**（= 当时最新价）→ 4782.50 → 卖 1 → 4891.25 → 并发两个「卖 1」→ **[200, 400]** 只入账一次 → 5000.00；持仓归零、流水 3 条（#1 BUY ×2 / #2 SELL ×1 / #3 SELL ×1）。同轮把 6 类错误分支全打了一遍（余额不足 / 超上限 / 非法数量 ×3 / 选手不存在 / 暂停交易 / 持仓不足），错误码与契约 §5 完全一致。执行命令：`python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com` |
-| TC-404 | 重启后数据持久 | ⬜ | **待做**：Manual Deploy 一次后再查余额/持仓/流水/价格历史（证明 Postgres 生效，而非临时 SQLite）。现在有了 TC-403 留下的 3 条流水，正好当"部署前"的比对基准 |
+| TC-404 | 重启后数据持久 | ✅ | **2026-10-25 重新部署后实测**（Manual Deploy 后端 + 前端，现网已对齐 `develop`）：部署前后逐项一致 —— 余额 5000.00、总资产 5000.00、持仓 0 条、流水 **3 条**（#1 BUY ×2 @108.75→4782.50 / #2 SELL ×1→4891.25 / #3 SELL ×1→5000.00）、`/api/players/1/prices` 仍 **11 点**且末点 108.75。→ **Postgres 生效，不是临时 SQLite**（免费实例若用 SQLite，重新部署后这些行会全部消失） |
 | TC-405 | 子路由刷新 | ⬜ | **待做**：浏览器直接刷新 `/market`、`/players/1` 不 404（A，SPA rewrite 已在 `render.yaml`） |
 | TC-406 | 无密钥全站可用 | ✅ | 线上未配 `LLM_API_KEY`：`GET /api/analysis/1` → 200，`action=HOLD`、`source=rule_fallback`；行情/账户/价格历史均正常 |
 
 > 线上数据核对（B，`GET /api/players/1/prices`）：**11 个点**、`ts` 升序、
 > 末点 `108.75` = `current_price`、`reason` 为「本轮得分 xx，S=±x.xx」；
 > 8 人价格与本地 `bootstrap_demo_data.py --rounds 9` 的输出逐条一致（108.75/131.45/85.08/58.11/127.04/105.27/136.50/74.45）。
+>
+> 重新部署后另核：`access-control-allow-origin: *`（CORS 放开的那次提交已生效）、
+> 前端 HTML 引用的是新构建产物（`assets/index-we8cxpp9.js`）、
+> 带 `Origin: <前端域名>` 请求 `/api/players` 仍返回 8 名选手 → 前后端版本均已更新。
 
 ## 7. 本地持久化验证（T3-05，2026-10-24）
 

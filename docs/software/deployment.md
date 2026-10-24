@@ -275,16 +275,16 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 | 项 | 内容 |
 | --- | --- |
-| 前端地址 | https://playerstock-frontend-mdlk.onrender.com （Static Site，`develop`，部署 commit `168fb3e`，状态 Live） |
+| 前端地址 | https://playerstock-frontend-mdlk.onrender.com （Static Site，`develop`，已重新部署至最新提交，Live） |
 | 后端地址 | https://playerstock-backend-mdlk.onrender.com （Web Service，Python 3 / Free，`develop`，Live） |
 | Swagger 文档 | https://playerstock-backend-mdlk.onrender.com/docs |
 | 数据库 | Render **PostgreSQL 18**，服务名 `playerstock-db`（Service ID `dpg-dbe8nvrjlhs73ervmu0-a`） |
-| 部署日期 | 2026-10-25（三个服务均 Blueprint managed，由 `render.yaml` 创建） |
+| 部署日期 | 2026-10-25 首次上线（`render.yaml` Blueprint 创建三服务）；同日 **Manual Deploy 重新部署前后端**，与 `develop` 对齐 |
 | 已知问题 1 | **数据库 2026-11-23 到期**（免费库到期即删除）。答辩/验收在此之前完成；若之后还要访问，需在到期前升级付费或迁到 Neon（只改 `DATABASE_URL`） |
 | 已知问题 2 | 免费实例会休眠，冷启动约 1 分钟 → **演示前 10–15 分钟预热 `/api/health`**（见 §4.4） |
-| 已知问题 3 | CORS 目前放开了全部来源（提交 `9abacf9` "Update CORS middleware to allow all origins"），演示可接受；若要收紧，把 `CORS_ORIGINS` 设为前端域名并把中间件改回按白名单 |
-| 已知问题 4 | 线上库是全新 seed：余额 5000.00、无持仓、无流水（`/api/trades` = `[]`），**线上交易闭环 TC-403 尚未做** |
-| 已知问题 5 | 线上部署的 `168fb3e` 比 `origin/develop` 落后 3 个提交（`3a4e54e` / `092c7b7` / `f750f6a`，含 UI 调整与文档补齐）→ 演示前点一次 **Manual Deploy** 对齐 |
+| 已知问题 3 | CORS 目前是 `access-control-allow-origin: *`（提交 `9abacf9`，重新部署后已实测生效），演示可接受；若要收紧，把 `CORS_ORIGINS` 设为前端域名并把中间件改回按白名单 |
+| 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
+| 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
 
 ## 7. 常见故障排查
 
