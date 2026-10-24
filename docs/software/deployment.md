@@ -140,10 +140,10 @@
 
 | # | 步骤 | 命令 / 要点 | 状态 |
 | --- | --- | --- | --- |
-| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**（必须与后端同区，才能用 Internal URL）；Plan = Free；建好复制 **Internal Database URL** | ⬜ 待控制台（需账号） |
-| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ⬜ 待控制台 |
-| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS` = 先留空后在 §3.5 回填、`LLM_API_KEY` = 没有就留空（自动走 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ⬜ 待控制台 |
-| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | 🟡 命令已就绪，干净库实测通过（见下）；线上那一次要等 1–3 完成 |
+| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**；Plan = Free；建好复制 **Internal Database URL** | ✅ 已建（PG 18，Service ID `dpg-dbe8nvrjlhs73ervmu0-a`，**2026-11-23 到期**） |
+| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ✅ 已导入（两服务均 "Blueprint managed"，分支 `develop`，Live） |
+| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS`、`LLM_API_KEY`（留空 → 自动 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ✅ 已生效（前端能取到数据 = CORS 与 `VITE_API_BASE_URL` 都对；线上无密钥时 `/api/analysis` 返回 `rule_fallback`） |
+| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | ✅ 已灌（线上 `/api/players/1/prices` = **11 点**，8 人价格与本地 `--rounds 9` 逐条一致；见 §6 / `test_report.md` §6） |
 
 **第 4 步的配方在干净库上的实测（2026-10-25，B 本机）**
 
@@ -275,12 +275,16 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 | 项 | 内容 |
 | --- | --- |
-| 前端地址 | ______ |
-| 后端地址 | ______ |
-| Swagger 文档 | ______/docs |
-| 部署日期 | ______ |
-| 已知问题 1 | ______ |
-| 已知问题 2 | ______ |
+| 前端地址 | https://playerstock-frontend-mdlk.onrender.com （Static Site，`develop`，部署 commit `168fb3e`，状态 Live） |
+| 后端地址 | https://playerstock-backend-mdlk.onrender.com （Web Service，Python 3 / Free，`develop`，Live） |
+| Swagger 文档 | https://playerstock-backend-mdlk.onrender.com/docs |
+| 数据库 | Render **PostgreSQL 18**，服务名 `playerstock-db`（Service ID `dpg-dbe8nvrjlhs73ervmu0-a`） |
+| 部署日期 | 2026-10-25（三个服务均 Blueprint managed，由 `render.yaml` 创建） |
+| 已知问题 1 | **数据库 2026-11-23 到期**（免费库到期即删除）。答辩/验收在此之前完成；若之后还要访问，需在到期前升级付费或迁到 Neon（只改 `DATABASE_URL`） |
+| 已知问题 2 | 免费实例会休眠，冷启动约 1 分钟 → **演示前 10–15 分钟预热 `/api/health`**（见 §4.4） |
+| 已知问题 3 | CORS 目前放开了全部来源（提交 `9abacf9` "Update CORS middleware to allow all origins"），演示可接受；若要收紧，把 `CORS_ORIGINS` 设为前端域名并把中间件改回按白名单 |
+| 已知问题 4 | 线上库是全新 seed：余额 5000.00、无持仓、无流水（`/api/trades` = `[]`），**线上交易闭环 TC-403 尚未做** |
+| 已知问题 5 | 线上部署的 `168fb3e` 比 `origin/develop` 落后 3 个提交（`3a4e54e` / `092c7b7` / `f750f6a`，含 UI 调整与文档补齐）→ 演示前点一次 **Manual Deploy** 对齐 |
 
 ## 7. 常见故障排查
 

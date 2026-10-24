@@ -171,14 +171,23 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 ## 6. 线上验收结果
 
+> 服务地址：前端 `https://playerstock-frontend-mdlk.onrender.com` ／
+> 后端 `https://playerstock-backend-mdlk.onrender.com`（Swagger `/docs` 正常）／
+> 数据库 Render Postgres 18（`playerstock-db`）。
+> 线上部署 commit `168fb3e`；B 于 2026-10-25 用 HTTP 直接复核了只读项。
+
 | ID | 用例 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| TC-401 | 线上健康检查 | ⬜ | URL |
-| TC-402 | CORS 正常 | ⬜ | Network 截图 |
-| TC-403 | 线上交易闭环 | ⬜ | 截图 |
-| TC-404 | 重启后数据持久 | ⬜ | 重启前后对比截图 |
-| TC-405 | 子路由刷新 | ⬜ | 截图 |
-| TC-406 | 无密钥全站可用 | ⬜ | 截图 |
+| TC-401 | 线上健康检查 | ✅ | `GET /api/health` → 200 `{"status":"ok","service":"playerstock-backend"}`；`/docs` 200 |
+| TC-402 | CORS 正常 | ✅ | 前端（`*-frontend-mdlk.onrender.com`）成功跨域取到 8 名选手与价格，"连接成功 / 余额 5000.00"；Network 无 CORS 报错（A 的线上截图） |
+| TC-403 | 线上交易闭环 | ⬜ | **待做**：线上买 2 卖 1。可直接跑 `python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com`（脚本净额为 0：买 2 卖 1 后再并发卖 1，余额回到 5000.00、持仓清空，只留 3 条流水） |
+| TC-404 | 重启后数据持久 | ⬜ | **待做**：Manual Deploy 一次后再查余额/持仓/流水/价格历史（证明 Postgres 生效，而非临时 SQLite） |
+| TC-405 | 子路由刷新 | ⬜ | **待做**：浏览器直接刷新 `/market`、`/players/1` 不 404（A，SPA rewrite 已在 `render.yaml`） |
+| TC-406 | 无密钥全站可用 | ✅ | 线上未配 `LLM_API_KEY`：`GET /api/analysis/1` → 200，`action=HOLD`、`source=rule_fallback`；行情/账户/价格历史均正常 |
+
+> 线上数据核对（B，`GET /api/players/1/prices`）：**11 个点**、`ts` 升序、
+> 末点 `108.75` = `current_price`、`reason` 为「本轮得分 xx，S=±x.xx」；
+> 8 人价格与本地 `bootstrap_demo_data.py --rounds 9` 的输出逐条一致（108.75/131.45/85.08/58.11/127.04/105.27/136.50/74.45）。
 
 ## 7. 本地持久化验证（T3-05，2026-10-24）
 
