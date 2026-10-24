@@ -22,12 +22,10 @@ import json
 import sys
 from pathlib import Path
 
+from app.core.price_update import apply_updates
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts"))
-
-from update_prices import plan_from_engine, plan_from_json, with_score_in_reason  # noqa: E402
-
-from app.core.price_update import apply_updates  # noqa: E402
 
 PLAYER_ID = 1
 CURRENT_PRICE = 126.0
@@ -66,6 +64,8 @@ def _c_export(tmp_path: Path) -> Path:
 
 def test_plan_from_json_reason_carries_signal_and_score(tmp_path: Path) -> None:
     """C 的导出经 B 的落库计划后，reason 同时带 S 与得分（可追溯）。"""
+    from update_prices import plan_from_json
+
     planned = plan_from_json(_c_export(tmp_path))
 
     assert len(planned) == 1
@@ -79,6 +79,7 @@ def test_plan_from_json_reason_carries_signal_and_score(tmp_path: Path) -> None:
 def test_plan_from_engine_reason_carries_signal_and_score(session_factory) -> None:
     """不传 JSON、进程内直调 C 引擎时，reason 同样带 S 与得分。"""
     from app.models import Player
+    from update_prices import plan_from_engine
 
     with session_factory() as db:
         player = db.get(Player, PLAYER_ID)
@@ -95,6 +96,8 @@ def test_plan_from_engine_reason_carries_signal_and_score(session_factory) -> No
 
 def test_db_and_prices_api_keep_traceable_reason(session_factory, client, tmp_path: Path) -> None:
     """落库后换会话也能从 /prices 读到可追溯的 reason（读路径；进程级重启由 T3-05 覆盖）。"""
+    from update_prices import plan_from_json
+
     planned = plan_from_json(_c_export(tmp_path))
     with session_factory() as db:
         apply_updates(db, planned)
@@ -115,6 +118,8 @@ def test_db_and_prices_api_keep_traceable_reason(session_factory, client, tmp_pa
 
 def test_reason_truncated_to_db_limit() -> None:
     """reason 超过 price_history.reason 的 200 字上限时安全截断，不能写库失败。"""
+    from update_prices import with_score_in_reason
+
     text = with_score_in_reason("很长的原因" * 50, MATCH_SCORE)
 
     assert len(text) <= 200

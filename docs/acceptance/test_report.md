@@ -15,8 +15,8 @@
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
 | 自动化用例总数 | **120**（单元 107 + 集成 13） |
 | 通过 / 失败 / 跳过 | **120 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
-| 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 14 张，见 §2.5） |
-| 通过 / 失败 | 14 张证据截图全过 / 0 |
+| 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
+| 通过 / 失败 | 16 张证据截图全过 / 0 |
 
 > 复跑说明（2026-10-24，D 核对）：总数由 B 已合入的 **120** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
@@ -95,7 +95,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
-> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 14 张截图补齐（T3-04 / T4）。
+> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
 
 ### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
 
@@ -112,6 +112,8 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | [06-trades.png](evidence/06-trades.png) | T3-04 交易流水（倒序 + 每笔字段） |
 | [07-err-insufficient-balance.png](evidence/07-err-insufficient-balance.png) … [11-suspended.png](evidence/11-suspended.png) | T3-03 五条错误分支（中文 message 原样展示） |
 | [12-state-loading.png](evidence/12-state-loading.png) / [13-state-empty.png](evidence/13-state-empty.png) / [14-state-offline-error.png](evidence/14-state-offline-error.png) | **T4-05** 加载中 / 空数据 / 失败三态（断网真实停后端触发） |
+| [15-t4-02-point-reason.png](evidence/15-t4-02-point-reason.png) | **T4-02** 每点 reason：悬停 tooltip + 价格变动明细列表（10 点逐点展示时间/价格/reason） |
+| [16-tc307-refresh-persist.png](evidence/16-tc307-refresh-persist.png) | **TC-307** 深链 `/players/1` F5 刷新后数据仍由后端重建 |
 
 > 结论：**M3（浏览器交易闭环）与 M4（图表+原因+AI 卡）均已有可复核证据**；剩余未验项只在线上部署（第 5 天）。
 
@@ -219,10 +221,14 @@ SAME balance=True total=True qty=True trades=True points=True
 
 | 指标 | 目标 | 实测 | 结论 |
 | --- | --- | --- | --- |
-| 行情列表响应 | ≤ 300ms | ______ | |
-| 买入接口响应 | ≤ 500ms | ______ | |
-| AI 分析响应 | ≤ 8s（上限 20s） | ______ | |
-| 前端首屏 | ≤ 3s | ______ | |
+| 行情列表响应 | ≤ 300ms | **24.17ms**（P95，20 次采样） | ✅ |
+| 买入/卖出接口响应 | ≤ 500ms | **买 36.24ms / 卖 28.86ms**（P95） | ✅ |
+| AI 分析响应 | ≤ 8s（上限 20s） | **25.15ms**（`rule_fallback`；有密钥的 LLM 延迟待第 5 天线上） | ✅ |
+| 前端首屏 | ≤ 3s | 未测（本机无浏览器依赖，待第 5 天线上） | 🟡 |
+| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（待第 5/6 天浏览器实测） | 🟡 |
+
+> 环境：本地真实 `uvicorn :8011` + 临时 SQLite（`bootstrap_demo_data.py` 灌数），每个接口 20 次采样取 P95；
+> AI 路径为无密钥兜底（`rule_fallback`）；前端两项待浏览器/线上补测。
 
 ## 9. 缺陷清单
 
@@ -263,7 +269,7 @@ SAME balance=True total=True qty=True trades=True points=True
 ## 12. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
-- [x] 浏览器验收证据：`docs/acceptance/evidence/`（14 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 120 passed / 0 skipped；本机 BUG-03 见 §9）
+- [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 120 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [ ] 部署持久化验证截图（线上，第 5 天）

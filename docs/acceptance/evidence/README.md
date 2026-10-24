@@ -44,4 +44,10 @@
 | --- | --- | --- |
 | `16-tc307-refresh-persist.png` | 深链 `/players/1` 直接打开后 F5 刷新全页 | 余额 / 价格历史（10 点）/ AI 卡 / 持仓提示全部由后端重建，无丢数据、控制台零报错 |
 
+## 代码质量扫描报告（第 4 天补）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `17-code-quality-scan.png` | 代码质量报告截图（实际命令输出渲染） | `pytest` 120 passed；`ruff check --statistics .` 第 3 次扫描 72 项（D 负责文件 0）；CI 三门槛全绿；含重构前后对比 |
+
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。

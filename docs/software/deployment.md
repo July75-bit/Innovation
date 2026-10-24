@@ -251,7 +251,7 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 | 代码侧铺垫 | ✅ 已完成（驱动、URL 归一化、连接探活、误用 SQLite 告警） |
 | `render.yaml` | ✅ 已改为 `DATABASE_URL` 由控制台填写（`sync: false`） |
 | Render 账号 / 服务 | ⬜ 未创建（D 本人操作） |
-| 种子数据落库 | ⬜ 待 B 实现 `scripts/seed_db.py` |
+| 种子数据落库 | ✅ 脚本就绪：`scripts/bootstrap_demo_data.py`（种子 + 9 轮价格；线上用 External URL 执行） |
 | 实测回填 | ⬜ 第 5 天部署后填：冷启动秒数、重启后数据是否仍在 |
 
 > 提醒：免费实例休眠（15 分钟无流量，冷启动约 1 分钟）→ 演示前 10–15 分钟预热，见 4.4。
@@ -301,10 +301,11 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 | --- | --- |
 | 新版本后端启动失败 | Render → 该服务 → Deploys → 选上一个成功版本 → Redeploy |
 | 前端构建失败 | 同上 |
-| 数据库被改坏 | 重新 `python scripts/seed_db.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
+| 数据库被改坏 | 重新 `python scripts/bootstrap_demo_data.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
 
 ## 9. TODO
 
 - [ ] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
 - [ ] D 第 5 天：完成第 5 节全部打勾，填第 6 节
+- [ ] **B/D 上线前**：把 `app/main.py` 的临时提交 `allow_origins=["*"]`（`9abacf9`）改回 `settings.cors_origin_list`，Render 配 `CORS_ORIGINS` 为前端公网地址（合规与安全要求）
 - [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 `docs/acceptance/test_report.md`
