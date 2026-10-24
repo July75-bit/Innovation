@@ -16,6 +16,7 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import { refreshAccount } from '../composables/useAccount'
+import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingState from '../components/LoadingState.vue'
@@ -45,6 +46,7 @@ async function loadCore(silent = false) {
     player.value = null
     analysis.value = null
   }
+  checkBackendHealth()
   try {
     const id = playerId.value
     const [detail, history, positions] = await Promise.all([
