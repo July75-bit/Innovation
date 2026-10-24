@@ -13,8 +13,8 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **79**（单元 77 + 集成 2） |
-| 通过 / 失败 / 跳过 | **79 / 0 / 0** |
+| 自动化用例总数 | **81**（单元 79 + 集成 2） |
+| 通过 / 失败 / 跳过 | **81 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §9） |
 | 通过 / 失败 | 未执行 / 未执行 |
 
@@ -24,8 +24,8 @@
 
 ```text
 $ python -m pytest
-.......................................................................   [100%]
-79 passed, 1 warning in 5.74s
+.................................................................................   [100%]
+81 passed, 1 warning in 5.20s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -37,7 +37,7 @@ $ python -m pytest
 | `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
-| `tests/unit/test_pricing.py` | 8 | 8 | 0 | 0 | C 第 3 天实现，5 条 skip 全部转绿 + 对称 clamp/触底/标准化 |
+| `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
@@ -75,11 +75,11 @@ $ python -m pytest
 | TC-104 | 触底保护 | ≥ floor | 1.00（`test_price_never_below_floor` / `test_floor_applies_after_clamp`） | ✅ |
 | TC-106 | 同 seed 可复现 | 一致 | 模拟器已实现，但缺同 seed 自动断言 | 🟡 建议 C 补 |
 | TC-107 | 历史升序 | 升序 | e2e + `test_apply_updates_writes_price_and_history` | ✅ |
-| TC-108 | 3σ 归一化 | z=1.5→S=0.5 | `standardize_score` 已实现 `Z_FULL_SCALE=3.0`，测试只断言符号/范围 | 🟡 建议 C 补数值断言 |
+| TC-108 | 3σ 归一化 | z=1.5→S=0.5 | 1σ→0.333、2σ→0.667、3σ→1.0、>3σ 饱和；`Z_FULL_SCALE=1.0` 时 1σ 即满格 | ✅ `test_standardize_score_three_sigma_scale` / `test_z_full_scale_one_matches_literal_mapping` |
 | TC-109 | 对称 clamp ±20% | 涨跌都封顶 | `test_step_is_capped_symmetrically` | ✅ |
 
 > 说明：C 第 3 天已实现 `update_price` / `standardize_score` 与 `simulate_match.py`，5 条 skip 全部转绿（新增 `test_pricing.py` 共 8 条）；
-> 剩余 TC-106/108 两条**数值断言**是补强项，不影响功能验收。
+> 剩余 TC-106（同 seed 可复现）一条**数值断言**是补强项，不影响功能验收。
 
 ## 5. AI 降级测试结果
 
@@ -123,7 +123,7 @@ $ python -m pytest
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
-| 定价 TC-106/108 数值断言 | C 的实现已有、测试只断言符号/范围 | 不影响功能验收 | 建议 C 补 2 条断言（同 seed 可复现、3σ 数值） |
+| 定价 TC-106 同 seed 断言 | 模拟器已实现，测试还没写“同 seed 两次结果一致” | 不影响功能验收 | 建议 C 补 1 条断言 |
 | 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收 | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
@@ -134,9 +134,9 @@ $ python -m pytest
 
 ## 10. 结论
 
-- P0 缺陷：**0** 个（自动化层 79 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 81 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
-- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署、TC-106/108 数值断言待补
+- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署、TC-106 同 seed 断言待补
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
 
 ## 11. 附件
