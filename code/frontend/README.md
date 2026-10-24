@@ -8,7 +8,7 @@ Vue 3 + TypeScript + Vite，由官方脚手架 `npm create vue@latest` 生成
 ```powershell
 cd code/frontend
 npm install                  # 首次或依赖变化时
-# .env.local 已包含 VITE_API_BASE_URL=http://127.0.0.1:8000
+Copy-Item .env.example .env.local   # 每台机器首次执行一次（.env.local 不入库，新克隆没有）
 npm run dev                  # http://localhost:5173（后端 CORS 默认放行该源）
 ```
 
@@ -39,7 +39,8 @@ src/
 ├── mock/
 │   └── players.ts   # VITE_USE_MOCK=true 时的内存模拟数据（含交易校验，仅开发兜底）
 ├── composables/
-│   └── useAccount.ts  # 余额共享状态（模块级 ref，未用 Pinia）
+│   ├── useAccount.ts        # 余额共享状态（模块级 ref，未用 Pinia）
+│   └── useBackendHealth.ts # 后端连接检测共享（顶栏徽标，各页刷新时同步复检）
 ├── components/
 │   ├── PriceChart.vue   # 价格历史折线图（零依赖 SVG，升序直接用）
 │   ├── TradePanel.vue   # 数量输入 + 买入/卖出 + 后端 message 展示
@@ -66,6 +67,6 @@ src/
 
 ## 待办（对齐里程碑）
 
-- [ ] 后端启动后联调：查行情 → 买入 → 看持仓 → 卖出（第 3 天验收）
+- [x] 后端启动后联调：查行情 → 买入 → 看持仓 → 卖出（2026-10-24 实机两轮通过：5 条错误分支 + AI 卡 + 三态均验证）
 - [ ] 折线图悬停显示 `reason`（第 4 天，答辩归因用）
 - [ ] 每日签到补给入口（若后端第 4 天提供接口）

@@ -8,6 +8,7 @@ import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PlayerSummary } from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
+import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingState from '../components/LoadingState.vue'
@@ -19,6 +20,7 @@ const error = ref<string | null>(null)
 async function load() {
   loading.value = true
   error.value = null
+  checkBackendHealth()
   try {
     players.value = await api.listPlayers()
   } catch (err) {

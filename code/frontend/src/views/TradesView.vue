@@ -7,6 +7,7 @@ import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { TradeItem } from '../api/types'
 import { dateTime, money } from '../utils/format'
+import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingState from '../components/LoadingState.vue'
@@ -18,6 +19,7 @@ const error = ref<string | null>(null)
 async function load() {
   loading.value = true
   error.value = null
+  checkBackendHealth()
   try {
     trades.value = await api.listTrades()
   } catch (err) {

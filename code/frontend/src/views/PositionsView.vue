@@ -9,6 +9,7 @@ import { ApiError } from '../api/client'
 import type { PositionItem } from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
 import { useAccount } from '../composables/useAccount'
+import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingState from '../components/LoadingState.vue'
@@ -21,6 +22,7 @@ const { account, refreshAccount } = useAccount()
 async function load() {
   loading.value = true
   error.value = null
+  checkBackendHealth()
   try {
     const [list] = await Promise.all([api.getPositions(), refreshAccount()])
     positions.value = list

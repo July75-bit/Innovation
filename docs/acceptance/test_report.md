@@ -13,15 +13,15 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **97**（单元 91 + 集成 6） |
-| 通过 / 失败 / 跳过 | **97 / 0 / 0** |
+| 自动化用例总数 | **106**（单元 100 + 集成 6） |
+| 通过 / 失败 / 跳过 | **106 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
 | 通过 / 失败 | 未执行 / 未执行 |
 
-> 复跑说明（2026-10-24）：自动化用例由 B 在仓库根目录复跑一次（Windows + 仓库内 `.venv`，
-> Python 3.13.5），与 D 的 conda 环境计数一致；本节数字以复跑结果为准。
-> 增量来自 C 的 `test_simulator.py`（+3，TC-106 同 seed 断言）、`test_price_reason_traceability.py`（+4）
-> 与 B 的 `test_update_prices_script.py` 增至 9 条（+2）。
+> 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
+> 从第 3 天的 88 条增至 **106** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
+> B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
+> C 的 `test_simulate_match_cli.py`（+2，原先未计入）。
 
 ## 2. 自动化测试结果
 
@@ -30,7 +30,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-97 passed, 1 warning in 7.21s
+106 passed, 1 warning in 4.82s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -45,9 +45,11 @@ $ python -m pytest
 | `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增：`--from-json` / 跳过 suspended / 同 seed 可复现 / reason 幂等不双写 / 非法输入 |
 | `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
 | `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 第 3 天新增，TC-106：同 seed 序列逐条相等 / 单场稳定 / 换 seed 必变 |
+| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 3 天补：`simulate_match.py` CLI 冒烟（8 条输出 + `ts` ISO 8601） |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 
 ### 2.2 集成测试
 
@@ -56,7 +58,23 @@ $ python -m pytest
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
 
-### 2.3 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
+### 2.3 覆盖率（课程 p.177，第 4 天新增）
+
+> 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（106 条用例）。
+
+| 范围 | 语句数 | 未覆盖 | 覆盖率 |
+| --- | --- | --- | --- |
+| **全部（app + core_engine）** | 839 | 79 | **91%** |
+| 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
+| 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
+| 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
+| 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
+| 模型 + 响应 schema | 238 | 0 | 100% |
+
+> 结论：核心逻辑 **91% ≥ 课程要求的 60%**；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+
+### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
 > CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
 > 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
@@ -88,6 +106,12 @@ $ python -m pytest
 | TC-010 | 暂停交易 | ✅ | `test_buy_suspended_player`：400 `PLAYER_TRADING_SUSPENDED` |
 | TC-011 | 用最新价成交 | ✅ | `test_trade_uses_latest_price`：成交价 = 数据库 `current_price` |
 | TC-012 | 事务回滚 | ✅ | `test_transaction_rollback_on_failure`：失败后余额/持仓/流水均不变 |
+
+### 3.1 核心异常矩阵（T4-06，第 4 天新增）
+
+| ID | 用例 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| TC-120 | 卖出暂停选手 / 未知选手、买入缺字段 422、未知价格历史 404、卖超持仓回滚 | ✅ | `tests/unit/test_core_exceptions.py` 7 条（5 个用例，含 3 组缺字段参数化） |
 
 ## 4. 定价引擎测试结果
 
@@ -187,7 +211,7 @@ SAME balance=True total=True qty=True trades=True points=True
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
-| 前端手工用例 TC-301~307 | 依赖已装齐（`npm ci` 380 包），`npm run build` / oxlint / eslint / vitest 全绿（见 §2.3），但**尚未在浏览器里点过** | 浏览器闭环、三态、AI 卡未验 | 起 `npm run dev` + 后端后走一遍（M3 唯一闸门） |
+| 前端手工用例 TC-301~307 | 依赖已装齐（`npm ci` 380 包），`npm run build` / oxlint / eslint / vitest 全绿（见 §2.4），但**尚未在浏览器里点过** | 浏览器闭环、三态、AI 卡未验 | 起 `npm run dev` + 后端后走一遍（M3 唯一闸门） |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
@@ -197,7 +221,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 97 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 106 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
