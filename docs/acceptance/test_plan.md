@@ -53,6 +53,10 @@
 | TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ✅ `test_buy_suspended_player` |
 | TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ✅ `test_trade_uses_latest_price` |
 | TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ✅ `test_transaction_rollback_on_failure` |
+| TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
+| TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **91%**（839 语句 / 79 未覆盖，2026-10-24） |
+
+> **执行记录（2026-10-24 第 4 天，D）**：补 7 条核心异常用例后全仓 → **104 passed / 0 skipped**（单元 98 + 集成 6）；覆盖率 **91%**，课程 ≥60% 检查点达标。
 
 > **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
 > 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
@@ -77,9 +81,9 @@
 > 当前实现：B 在落库层临时拼接“本轮模拟得分”（`update_prices.with_score_in_reason`），C 接管后由 C 直接拼好、B 只透传（见 `database_design.md` §3.2 分工待办）。详见 `architecture.md` §5 ADR。
 
 > **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
-> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补。
+> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补（后续均已补齐：TC-108 见 `dfe9f26`，TC-106 见 `506b564`）。
 >
-> **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补。
+> **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补（已于 `506b564` 补齐，见下方 15:00 记录）。
 >
 > **执行记录（2026-10-24 11:45，D）**：B 的 `--from-json` + reason 拼接（`adcc848`/`24496ee`）合入，加 D 的 TC-110 4 条后全仓 → **92 passed / 0 skipped**（另含 B 的 `test_update_prices_script.py` 7 条）。
 >
