@@ -52,14 +52,17 @@ def test_suspended_players_are_skipped(session_factory) -> None:
 
 
 def test_reason_carries_signal_and_score(session_factory) -> None:
-    """reason 必须能追溯到"哪场表现"：带 S 值 + 本轮得分，且是中文。"""
+    """reason 必须能追溯到"哪场表现"：带 S 值 + 本轮得分，且是中文。
+
+    这里只断言语义（含"得分"），不钉死具体措辞——得分最终由 C 拼，措辞由 C 定。
+    """
     with session_factory() as db:
         planned, _ = update_prices.plan_from_engine(_players(db), seed=42)
 
     for item in planned:
         assert item.new_price > 0
         assert ZH.search(item.reason), f"reason 不是中文：{item.reason}"
-        assert "本轮模拟得分" in item.reason, f"reason 缺得分：{item.reason}"
+        assert "得分" in item.reason, f"reason 缺得分：{item.reason}"
         assert "S=" in item.reason, f"reason 缺 S 值：{item.reason}"
 
 
@@ -92,8 +95,8 @@ def test_engine_result_writes_history_and_keeps_money(session_factory, client) -
     after = client.get(f"/api/players/{SEED_ZYWOO}/prices").json()["points"]
     assert len(after) == 3
     assert after[-1]["reason"].startswith("本场表现") or "S=" in after[-1]["reason"]
-    assert after[-1]["reason"].endswith("）")
-    assert "本轮模拟得分" in after[-1]["reason"]
+    # 只断言"带得分"这一语义，措辞留给 C 定（C 接管后这里仍然成立）
+    assert "得分" in after[-1]["reason"]
     # 契约要的是"时间升序"，价格本身当然可以涨也可以跌（这次 ZywOo 是 -15%）
     timestamps = [p["ts"] for p in after]
     assert timestamps == sorted(timestamps)
@@ -109,6 +112,52 @@ def test_reason_is_truncated_to_column_limit() -> None:
     text = update_prices.with_score_in_reason("涨" * 500, 88.5)
     assert len(text) <= 200
     assert text.endswith("…")
+
+
+def test_score_is_not_duplicated_when_c_already_added_it() -> None:
+    """C 接管后 reason 里本来就有得分，B 必须原样透传（不许拼第二遍）。
+
+    这是"C 先合、B 后删"的过渡期保护：两边谁先谁后，写进 price_history 的
+    reason 都只有一个得分。
+    """
+    c_reason = "本场表现提升（S=+0.50），价格上涨 7.50%（本轮模拟得分 88.5）"
+
+    assert update_prices.with_score_in_reason(c_reason, 88.5) == c_reason
+    # 即便传入的得分与 C 写的不一致，也不覆盖、不追加第二遍
+    assert update_prices.with_score_in_reason(c_reason, 91.0) == c_reason
+    assert update_prices.with_score_in_reason(c_reason, 88.5).count("得分") == 1
+
+    # 换一种措辞（C 可能不用"本轮模拟得分"这四个字）同样不重复
+    other = "本场表现提升（S=+0.50），本场得分 88.5"
+    assert update_prices.with_score_in_reason(other, 88.5) == other
+
+    # B 自己拼过之后再走一遍也不能变长（幂等）
+    once = update_prices.with_score_in_reason("本场表现提升（S=+0.50）", 88.5)
+    assert update_prices.with_score_in_reason(once, 88.5) == once
+
+
+def test_plan_from_json_passes_through_c_reason(tmp_path) -> None:
+    """`--from-json` 吃到的 reason 若已带得分，落库内容与 C 给的完全一致。"""
+    reason = "本场表现下滑（S=-0.58），价格下跌 8.72%（本轮模拟得分 81.6）"
+    payload = {
+        "updates": [
+            {
+                "player_id": 1,
+                "ts": "2026-10-20T00:00:00Z",
+                "score": 81.6,
+                "old_price": 108.9,
+                "new_price": 99.27,
+                "change_pct": -8.72,
+                "reason": reason,
+            }
+        ]
+    }
+    path = tmp_path / "c_export.json"
+    path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+
+    planned = update_prices.plan_from_json(path, {1: "ZywOo"})
+    assert planned[0].reason == reason
+    assert planned[0].reason.count("得分") == 1
 
 
 def test_plan_from_json_reads_c_export(tmp_path) -> None:

@@ -66,15 +66,24 @@
 | TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ✅ `test_zero_demand_signal_keeps_price_when_score_zero` |
 | TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ✅ `test_price_never_below_floor` + `test_floor_applies_after_clamp` |
 | TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ✅ `test_invalid_current_price_raises` |
-| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | 🟡 模拟器已实现（`generate_match(seed=...)`），但**缺同 seed 可复现的自动化断言**，建议 C 补 |
+| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | ✅ 2026-10-24（C 补 `tests/unit/test_simulator.py` 3 条：同 seed 序列逐条相等 / 单场稳定 / 换 seed 不同，防"假复现"） |
 | TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ✅ e2e 价格历史升序断言 + `test_price_update.py::test_apply_updates_writes_price_and_history` |
 | TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | ✅ 2026-10-24（C 补：`test_standardize_score_three_sigma_scale` 断言 1σ→0.333/2σ→0.667/3σ→1.0/>3σ 饱和；`test_z_full_scale_one_matches_literal_mapping` 验证开关） |
 | TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
+| TC-110 | 价格历史 reason 可追溯（方案 A） | C 的 `simulate_match.py --json` 导出 → B 的 `update_prices.py --from-json` 落库 | `/api/players/{id}/prices` 每条模拟调价 reason 同时含 `S=` 与本轮模拟得分；换会话/读库后仍可读（进程级重启由 T3-05 覆盖），价格升序 | FR-M2-04 / FR-M2-05 | ✅ 2026-10-24（`tests/integration/test_price_reason_traceability.py` 4 条：from-json / 进程内引擎 / 落库+API / 200 字截断） |
+
+> **决策（2026-10-24）**：不新增 `score` 列或 `matches` 表（选项 B），改为把 `S(t)` 与本轮模拟得分写进 `reason`（选项 A）。
+> 理由：不改表/契约，详情页、AI 上下文、答辩讲解都能直接用到；精确复现靠 `simulate_match.py` 固定 seed + reason 里的得分对齐。
+> 当前实现：B 在落库层临时拼接“本轮模拟得分”（`update_prices.with_score_in_reason`），C 接管后由 C 直接拼好、B 只透传（见 `database_design.md` §3.2 分工待办）。详见 `architecture.md` §5 ADR。
 
 > **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
 > 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补。
 >
 > **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补。
+>
+> **执行记录（2026-10-24 11:45，D）**：B 的 `--from-json` + reason 拼接（`adcc848`/`24496ee`）合入，加 D 的 TC-110 4 条后全仓 → **92 passed / 0 skipped**（另含 B 的 `test_update_prices_script.py` 7 条）。
+>
+> **执行记录（2026-10-24 15:00，D）**：C 补同 seed 断言（`506b564`）+ B 的 `update_prices` 脚本测试补到 9 条后，全仓 → **97 passed / 0 skipped**（单元 91 + 集成 6）；TC-106 转 ✅，TC-101~110 全部有自动化断言。
 
 ### 4.3 AI 智能体
 

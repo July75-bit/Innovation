@@ -142,6 +142,7 @@ flowchart LR
 | 智能体编排 | 单智能体 | LangGraph 多智能体 DAG | 时间不够，单智能体已能体现"智能体肌肉" |
 | 真实赛事数据 | 模拟数据 + 适配器接口 | 直接接 SportScore | 接口可用性未知，模拟数据保证演示稳定 |
 | 鉴权 | 单演示账户 | JWT + 注册登录 | 不是课程考察重点 |
+| 价格归因（score/S） | 写进 `price_history.reason`：`S=…` + 本轮模拟得分（方案 A，2026-10-24） | 给 `price_history` 加 `score` 列 / 新建 `matches` 表（方案 B） | 6 天课程优先"可解释、可复现"：reason 文本直接服务详情页、AI 上下文与答辩，且**不改表、不改契约**；方案 B 要走契约 §6 变更流程 + 第 5 天 Postgres 迁移，风险高。精确复现靠 `simulate_match.py` 固定 seed 与 reason 里的得分对齐；结构化统计列入课程后 backlog（对应验收 `TC-110`） |
 
 ## 6. 部署拓扑
 
