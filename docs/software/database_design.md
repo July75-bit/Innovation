@@ -242,7 +242,7 @@ erDiagram
 
 ```powershell
 python scripts/seed_db.py --reset
-python scripts/simulate_match.py --seed 42 --rounds 8 --json data/price_updates.json
+python scripts/simulate_match.py --seed 42 --rounds 9 --json data/price_updates.json
 python scripts/update_prices.py --from-json data/price_updates.json
 ```
 
@@ -256,10 +256,12 @@ python scripts/update_prices.py --from-json data/price_updates.json
 - 暂停交易（`status != trading`）的选手不会被定价，`sh1ro` 会停在种子的 2 个点——这是预期行为，
   不是漏点。
 
-实测（2026-10-24，`--rounds 8`）：`ZywOo` / `donk` / `m0NESY` / `NiKo` / `jL` / `flameZ`
-各 **10 个点**，`ropz` **9 个点**（种子只给它 1 条：`initial_price` 与 `current_price` 相等），
-`sh1ro` 2 个点（暂停交易）。`ts` 严格升序、每点带中文 `reason`、最后一点等于 `current_price`。
-`ropz` 要凑到 10 把 `--rounds` 改成 `9` 即可（所有人会变成 11）。
+实测（2026-10-24，`--rounds 9`）：**6 人 11 个点、`ropz` 10 个点、`sh1ro` 2 个点**，
+合计 78 条 `price_history`；`ts` 严格升序、每点带中文 `reason`、最后一点等于 `current_price`，
+库为单个 `.db` 文件（WAL 已归并）。
+
+> 为什么是 9 轮而不是 8 轮：种子只给 `ropz` 1 条历史（它的 `initial_price` 与 `current_price` 相等，
+> 省掉了"当前价"那条），8 轮只能到 9 个点；9 轮才能让**所有可交易选手都 ≥10**。
 
 ## 5. 变更记录
 

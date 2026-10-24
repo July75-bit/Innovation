@@ -56,40 +56,7 @@ $ python -m pytest
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | 价格 `reason` 可追溯（TC-110）：from-json / 引擎 / 落库 + `/prices` API / 超 200 字截断 |
 
-### 2.3 数据持久化复验（T3-05，手工 + 接口核对）
-
-> 目的：证明余额 / 持仓 / 流水 / 价格历史真的落在 SQLite 文件里，**进程重启后不丢**。
-> 库：`code/backend/playerstock.db`（WAL 已归并，单文件）。执行：B，2026-10-24。
-
-步骤：起 uvicorn → 买入 2 股 → 查三项 → 停掉进程 → 重新起 uvicorn → 再查三项。
-
-| 项 | 重启前 | 重启后 | 一致 |
-| --- | --- | --- | --- |
-| 余额 | 4747.46 | 4747.46 | ✅ |
-| 持仓 | 1 条：ZywOo ×2，均价 126.27，市值 252.54 | 同左 | ✅ |
-| 流水 | 1 条：`BUY 2 @126.27`，`balance_after 4747.46`，`2026-10-24T04:01:15Z` | 同左 | ✅ |
-| 价格历史（player 1） | 10 个点，末点 126.27 | 10 个点，末点 126.27 | ✅ |
-
-附带两条旁证：
-
-- 买入成交价 **126.27 = 当时的 `current_price`**，证明成交用最新价，不是缓存价（TC-011 的实机侧）；
-- `GET /api/analysis/1` 返回 200、`source=rule_fallback`、`action=HOLD`，调用前后余额与持仓不变（TC-205 的实机侧）。
-
-复现命令（仓库根目录）：
-
-```powershell
-cd code/backend
-python -m uvicorn app.main:app --reload --port 8000
-# 另开窗口
-curl.exe -X POST http://127.0.0.1:8000/api/trades/buy -H "Content-Type: application/json" -d "{\"player_id\":1,\"quantity\":2}"
-curl.exe http://127.0.0.1:8000/api/account
-curl.exe http://127.0.0.1:8000/api/positions
-curl.exe http://127.0.0.1:8000/api/trades
-curl.exe http://127.0.0.1:8000/api/players/1/prices
-# Ctrl+C 停掉后再起，重复上面四条 GET，数字应完全一致
-```
-
-### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
+### 2.3 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
 > CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
 > 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
