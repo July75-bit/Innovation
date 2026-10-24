@@ -17,6 +17,8 @@ import pytest
 # 与 tests/conftest.py 的固定演示数据对应
 SEED_ZYWOO = 1
 SEED_SH1RO = 7
+# flameZ：63.00 一股，用来构造"只超上限、不超余额"的场景
+SEED_FLAMEZ = 8
 
 
 def _buy(client, player_id: int, quantity: int):
@@ -96,15 +98,57 @@ def test_buy_invalid_player(client) -> None:
 
 
 def test_buy_exceeds_position_limit(client) -> None:
-    """单选手持仓超过 50 股 -> 400。"""
-    assert _buy(client, SEED_ZYWOO, 30).status_code == 200
+    """单选手持仓超过 50 股 -> 400。
 
-    response = _buy(client, SEED_ZYWOO, 25)
+    用 63.00 一股的 flameZ，保证两次买入之后余额仍然充足，
+    这样只有"持仓上限"一条规则被违反，测的是上限而不是余额。
+    """
+    assert _buy(client, SEED_FLAMEZ, 30).status_code == 200
+
+    # 30 + 25 = 55 > 50；25 × 63.00 = 1575.00 < 剩余余额，不触发余额不足
+    response = _buy(client, SEED_FLAMEZ, 25)
     assert response.status_code == 400
     assert response.json()["code"] == "POSITION_LIMIT_EXCEEDED"
     assert "持仓上限" in response.json()["message"]
 
     assert client.get("/api/positions").json()[0]["quantity"] == 30
+
+
+def test_buy_checks_balance_before_position_limit(client, session_factory) -> None:
+    """契约 §4.7 第 4 步（余额）必须早于第 5 步（持仓上限）报错。
+
+    前端按 code 给提示，顺序错了会提示"超过持仓上限"，
+    用户其实真正的问题是没钱——这条用例把顺序钉死。
+    """
+    from decimal import Decimal
+
+    from sqlalchemy import select
+
+    from app.models import Position, User
+
+    with session_factory() as db:
+        user = db.scalar(select(User).where(User.nickname == "demo"))
+        user.balance = Decimal("50.00")
+        db.add(
+            Position(
+                user_id=user.user_id,
+                player_id=SEED_FLAMEZ,
+                quantity=49,
+                avg_cost=Decimal("63.00"),
+            )
+        )
+        db.commit()
+
+    # 同时违反两条：余额 50.00 < 2 × 63.00，且 49 + 2 = 51 > 50
+    response = _buy(client, SEED_FLAMEZ, 2)
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "INSUFFICIENT_BALANCE"
+    assert "余额不足" in response.json()["message"]
+
+    # 失败后钱和货都不许变
+    assert client.get("/api/account").json()["balance"] == pytest.approx(50.00)
+    assert client.get("/api/positions").json()[0]["quantity"] == 49
 
 
 def test_buy_suspended_player(client) -> None:
