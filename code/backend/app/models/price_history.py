@@ -8,7 +8,9 @@ price_id / player_id / price / reason / ts。
 - 每条必须带 reason（涨跌归因，答辩要拆解）；
 - 空历史返回空数组，不返回 404。
 
-写入方：C 的定价模块（scripts/simulate_match.py）与种子脚本；B 的交易接口只读不改价。
+写入方（第 3 天定死，见 `docs/software/database_design.md` §3.2）：C 只算 `PriceUpdate`，
+**B 负责落库**——`app/core/price_update.py` 与 `scripts/update_prices.py`；
+种子脚本也写首条（reason = 初始价格）。B 的交易接口只读改价后的结果，绝不改价。
 """
 
 from __future__ import annotations

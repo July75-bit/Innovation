@@ -181,6 +181,29 @@ erDiagram
 **不是**正确性的依据；正确性由上面四个条件更新保证（`tests/unit/test_trades_concurrency.py`
 用两个独立连接稳定复现交错并逐条断言）。
 
+### 3.2 价格更新落库：C 只算，B 写库（第 3 天定死）
+
+第 3 天 09:40 对齐的结论，也是答辩"谁改价格"这一问的标准答案：
+
+| 角色 | 职责 | 落点 |
+| --- | --- | --- |
+| C | 只算，不碰数据库：输入现价 + 表现信号 S(t)，输出 `PriceUpdate(new_price, change_pct, reason)` | `code/core_engine/pricing.py::update_price` |
+| B | 只落库，不算公式：同一个事务里 `UPDATE players SET prev_price = current_price, current_price = 新价` + `INSERT price_history(price, reason, ts)` | `code/backend/app/core/price_update.py`、`scripts/update_prices.py` |
+
+三条硬约定：
+
+1. **`prev_price` 用 SQL 表达式赋值**（`prev_price = players.current_price`），取数据库
+   那一刻的值，不依赖调用方读到的快照，与 §3.1 的条件更新同一个思路；
+2. **一批一个事务**：任一选手的 `reason` 为空/超 200 字、新价 ≤ 0，整批回滚，不会出现
+   "改了一半价格、写了一半历史"；
+3. **永远只碰 `players` 与 `price_history`**：余额与持仓（含股数、均价）一动不动。
+   市值 `position_value` / 总资产 `total_asset` 会随新价重估，这是"按市价计"的正常结果，
+   不算改持仓——`tests/unit/test_price_update.py` 专门断言了这一点。
+
+`scripts/update_prices.py` 的引擎选项：`pricing`（C 的正式公式，需 `--score`）、
+`stub`（C 就绪前的临时规则，同日固定种子可复现）、`auto`（默认，未实现则回落）。
+`stub` 与脚本里的 `_temporary_price_rule()` 是临时脚手架，C 接管后删掉即可，脚本行为不变。
+
 ## 4. 迁移与初始化
 
 | 项 | 方案 |
@@ -197,6 +220,7 @@ erDiagram
 | | 初版表结构 | B | A/C/D 确认字段名 |
 | 第 1 天 | 按本文落成 ORM：5 张表 + `uq_positions_user_player` + `ck_positions_quantity_range` + 三条索引；金额改用 `NUMERIC(12,2)`（应用层 Decimal 计算，JSON 仍是两位小数）；SQLite 开启 `foreign_keys=ON` / WAL / `busy_timeout=5000` | B | 无接口字段变更；A/C/D 无需适配 |
 | 第 2 天 | 交易写入改成"条件更新"（见 §3.1）：扣款/加仓/减仓/清仓四个动作的守卫写进 SQL 的 `WHERE`，用 `rowcount` 判断成败；清仓改为 `DELETE` 以免违反 `quantity >= 1` 的 CHECK；买入的校验顺序按契约 §4.7 改为"余额先于持仓上限" | B | 表结构与接口字段均无变更；`trades` / `positions` 语义不变，A/C/D 无需适配 |
+| 第 3 天 | 价格更新落库（T3-01，见 §3.2）：新增 `app/core/price_update.py` + `scripts/update_prices.py`，`players.current_price/prev_price` 与 `price_history` 同事务写入；定死"C 只算、B 写库"。**表结构无变更** | B | 无字段变更；C 只需按 `PriceUpdate(new_price, change_pct, reason)` 返回，A 直接消费 `/prices` |
 
 ## 6. TODO
 
