@@ -344,6 +344,7 @@
 | 2026-10-17 | 初版定稿 | B | A/B/C/D |
 | 2026-10-23 | 第 10 项 `GET /api/analysis/{player_id}` 实现并生效：固定 6 字段（去掉 `suggested_price_band` 输出）、AI 故障一律 200 + `rule_fallback`、404 仅用于选手不存在 | D | A/B |
 | 2026-10-23（第 2 天） | 补 §4.7"并发与重复提交的语义"说明；买入的校验顺序在代码侧对齐本文（余额先于持仓上限，此前实现把上限提到了前面）。**字段与错误码均无变更** | B | 无（A 按 `code` 提示即可；D 的 AI 只读，不受影响） |
+| 2026-10-25（第 4 天） | **新增运维接口** `POST /api/prices/recalc`（赛后结算）：请求 `{round_no, played_at, items:[{player_id, score, signal}]}`，响应区分 `applied` / `skipped`；幂等去重键 `(player_id, round)`（用 `played_at` 写入 `price_history.ts` 定位轮次）；算价只用 C 的 `update_price`（reason 带"本轮得分"），落库复用 B 的 `app/core/price_update.py`。**已有 10 个对外接口的字段与错误码均无变更**，前端无需改动 | C | B（落库服务被复用，无改动）、D（验收清单 +1 条） |
 
 ## 7. 契约验收（第 1 天）
 
