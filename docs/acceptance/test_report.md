@@ -1,6 +1,6 @@
 # 测试报告
 
-> **负责人**：D ｜ **截止**：第 6 天 ｜ **状态**：🟡 模板就绪，待第 4–6 天执行回填
+> **负责人**：D ｜ **截止**：第 6 天 ｜ **状态**：🟡 第 3 天（2026-10-24）已回填自动化实测；前端/线上/手工用例待第 4–5 天
 > **对应交付物清单第 4 项**：测试用例集与测试报告（含交易规则边界测试、定价引擎单元测试）
 
 > 填表规则：**只填真实跑出来的结果**。没跑的写"未执行"，不要写"通过"充数。
@@ -9,55 +9,60 @@
 
 | 项 | 内容 |
 | --- | --- |
-| 测试日期 | ______ |
-| 执行人 | ______ |
-| 代码版本 | commit `______` |
-| 环境 | 本地 / 线上（分别列） |
-| 自动化用例总数 | ______ |
-| 通过 / 失败 / 跳过 | ______ / ______ / ______ |
-| 手工用例总数 | ______ |
-| 通过 / 失败 | ______ / ______ |
+| 测试日期 | 2026-10-24（第 3 天） |
+| 执行人 | D（王泽棠） |
+| 代码版本 | `develop` 分支第 3 天提交（含 B 的并发修复 + D 的代码质量重构；`git log --oneline -1`） |
+| 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
+| 自动化用例总数 | **70**（单元 68 + 集成 2） |
+| 通过 / 失败 / 跳过 | **65 / 0 / 5** |
+| 手工用例总数 | 未执行（前端未完成，见 §9） |
+| 通过 / 失败 | 未执行 / 未执行 |
 
 ## 2. 自动化测试结果
 
 ### 2.1 单元测试
 
 ```text
-# 贴真实输出，例：
-$ python -m pytest tests/unit -q
-..............                                    [100%]
-14 passed in 1.23s
+$ python -m pytest
+...........................................sssss......................   [100%]
+65 passed, 5 skipped, 1 warning in 5.34s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
 | --- | --- | --- | --- | --- | --- |
-| `tests/unit/test_health.py` | 2 | | | | 已实现 |
-| `tests/unit/test_pricing.py` | 5 | | | 5 | C 实现后取消 skip |
-| `tests/unit/test_trades_rule.py` | 9 | | | 9 | B 实现后取消 skip |
-| `tests/unit/test_api_*.py` | ______ | | | | 待补 |
+| `tests/unit/test_health.py` | 2 | 2 | 0 | 0 | |
+| `tests/unit/test_api_players.py` | 7 | 7 | 0 | 0 | 市场/详情/价格历史/账户/持仓 |
+| `tests/unit/test_api_trades.py` | 6 | 6 | 0 | 0 | B 第 2 天新增，守交易返回契约 |
+| `tests/unit/test_trades_rule.py` | 14 | 14 | 0 | 0 | 9 条 skip 已全部转绿 |
+| `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
+| `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
+| `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
+| `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
+| `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_pricing.py` | 5 | 0 | 0 | 5 | C 实现后取消 skip（第 3 天进行中） |
 
 ### 2.2 集成测试
 
 | 文件 | 用例数 | 通过 | 失败 | 备注 |
 | --- | --- | --- | --- | --- |
-| `tests/integration/test_e2e_flow.py` | 2 | | | |
+| `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
 | ID | 用例 | 结果 | 实际现象 / 截图 |
 | --- | --- | --- | --- |
-| TC-001 | 正常买入 | ⬜ | |
-| TC-002 | 余额不足 | ⬜ | |
-| TC-003 | 数量为 0 | ⬜ | |
-| TC-004 | 数量为负 | ⬜ | |
-| TC-005 | 数量为小数 | ⬜ | |
-| TC-006 | 选手不存在 | ⬜ | |
-| TC-007 | 超持仓上限 | ⬜ | |
-| TC-008 | 正常卖出 | ⬜ | |
-| TC-009 | 持仓不足 | ⬜ | |
-| TC-010 | 暂停交易 | ⬜ | |
-| TC-011 | 用最新价成交 | ⬜ | |
-| TC-012 | 事务回滚 | ⬜ | |
+| TC-001 | 正常买入 | ✅ | `test_buy_normal`；余额 5000 → 4748.00、持仓 +2、流水 +1（e2e 同链路） |
+| TC-002 | 余额不足 | ✅ | `test_buy_insufficient_balance`：400 `INSUFFICIENT_BALANCE`，三者不变 |
+| TC-003 | 数量为 0 | ✅ | `test_buy_invalid_quantity[0]`：422 `VALIDATION_ERROR` |
+| TC-004 | 数量为负 | ✅ | `test_buy_invalid_quantity[-1]`：422 |
+| TC-005 | 数量为小数 | ✅ | `test_buy_invalid_quantity[1.5]`：422 |
+| TC-006 | 选手不存在 | ✅ | `test_buy_invalid_player`：404 `PLAYER_NOT_FOUND`（e2e 同断言） |
+| TC-007 | 超持仓上限 | ✅ | `test_buy_exceeds_position_limit`：400 `POSITION_LIMIT_EXCEEDED` |
+| TC-008 | 正常卖出 | ✅ | `test_sell_normal` + e2e：卖出后余额增加、持仓减少、流水 +1 |
+| TC-009 | 持仓不足 | ✅ | `test_sell_more_than_held`：400 `INSUFFICIENT_POSITION`，不产生负持仓 |
+| TC-010 | 暂停交易 | ✅ | `test_buy_suspended_player`：400 `PLAYER_TRADING_SUSPENDED` |
+| TC-011 | 用最新价成交 | ✅ | `test_trade_uses_latest_price`：成交价 = 数据库 `current_price` |
+| TC-012 | 事务回滚 | ✅ | `test_transaction_rollback_on_failure`：失败后余额/持仓/流水均不变 |
 
 ## 4. 定价引擎测试结果
 
@@ -70,16 +75,18 @@ $ python -m pytest tests/unit -q
 | TC-106 | 同 seed 可复现 | 一致 | | ⬜ |
 | TC-107 | 历史升序 | 升序 | | ⬜ |
 
+> **未执行**：C 的 `pricing.py` 第 3 天实现中（S 采用 3σ 归一化，口径见 `test_plan.md` TC-108 / `code_quality_report.md`）；5 条 skip 待 C 的 PR 合入后转绿。
+
 ## 5. AI 降级测试结果
 
 | ID | 用例 | 结果 | 证据 |
 | --- | --- | --- | --- |
-| TC-201 | 正常分析 | ⬜ | 接口响应 JSON |
-| TC-202 | 无密钥降级 | ⬜ | `source` 值截图 |
-| TC-203 | 非法输出兜底 | ⬜ | 日志 |
-| TC-204 | 超时保护 | ⬜ | 耗时记录 |
-| TC-205 | AI 不改余额 | ⬜ | 前后对比截图 |
-| TC-206 | 密钥不外泄 | ⬜ | 前端 bundle 检索结果 |
+| TC-201 | 正常分析 | ✅ | `test_api_ai.py` + e2e：200，`action ∈ {BUY,SELL,HOLD}`，假 client 合法输出时 `source=llm` |
+| TC-202 | 无密钥降级 | ✅ | 清空 `llm_api_key` → 200 + `source=rule_fallback`（单元层 + 接口层） |
+| TC-203 | 非法输出兜底 | ✅ | 假 client 返回非 JSON → 200 + 规则版；不 500 |
+| TC-204 | 超时保护 | 🟡 | 注入超时 client → 200 + 规则版（`test_llm_timeout_still_returns_200_fallback`）；真实 20s 延迟未压测 |
+| TC-205 | AI 不改余额 | ✅ | `test_analysis_never_modifies_balance_or_positions` + e2e：调用前后 `/api/account`、`/api/positions` 完全不变 |
+| TC-206 | 密钥不外泄 | 🟡 | 接口层已断言响应不含密钥；前端 bundle 与线上抓包待第 5 天 |
 
 ## 6. 线上验收结果
 
@@ -112,6 +119,10 @@ $ python -m pytest tests/unit -q
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
+| 定价引擎 TC-101~107 | C 第 3 天实现中 | 5 条 skip，价格历史暂不自动更新 | C 的 PR 合入后转绿 |
+| 前端手工用例 TC-301~307 | 前端未完成（A） | 浏览器闭环、三态、AI 卡未验 | 第 4 天补做 |
+| 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
+| 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留，其余按归属移交 B/C |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
 | 真实赛事数据 | 接口不可用 | 用模拟数据 | 架构留适配器 |
 | 浏览器兼容性 | 只测 Chrome/Edge | 未测 Safari | 演示只用 Chrome |
@@ -119,10 +130,10 @@ $ python -m pytest tests/unit -q
 
 ## 10. 结论
 
-- P0 缺陷：______ 个
-- P1 缺陷：______ 个
-- 是否达到答辩出口标准：⬜ 是 / ⬜ 否
-- 签字：A____ B____ C____ D____
+- P0 缺陷：**0** 个（自动化层；浏览器闭环/线上待验）
+- P1 缺陷：**0** 个
+- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——前端未完成、未部署、定价 5 条 skip
+- 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层）**
 
 ## 11. 附件
 

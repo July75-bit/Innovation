@@ -22,8 +22,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 try:  # 正常以包方式导入
     from ai.fallback import DISCLAIMER, rule_based_advice
@@ -59,6 +61,8 @@ OUTPUT_KEYS = ("player_id", "action", "reason", "risk_level", "source", "disclai
 
 ChatFn = Callable[[str], str]
 
+logger = logging.getLogger(__name__)
+
 
 class LLMOutputError(ValueError):
     """模型输出不可用（非 JSON / 枚举非法 / 缺理由 / 响应结构异常）。"""
@@ -71,7 +75,7 @@ def _load_settings() -> Any:
         from app.core.config import settings
 
         return settings
-    except Exception:
+    except (ImportError, ValueError):  # 没装 pydantic-settings / .env 配置非法
         return None
 
 
@@ -177,7 +181,7 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
     try:
         with urllib.request.urlopen(request, timeout=_timeout(settings)) as response:
             body = json.loads(response.read().decode("utf-8"))
-    except Exception as exc:  # URLError / HTTPError / TimeoutError / 非 JSON 响应
+    except (OSError, ValueError) as exc:  # URLError/HTTPError/TimeoutError 均属 OSError；非 JSON 属 ValueError
         raise LLMOutputError(f"模型调用失败：{type(exc).__name__}: {exc}") from exc
 
     try:
@@ -285,8 +289,8 @@ def analyze(
         caller: ChatFn = chat if chat is not None else (lambda prompt: _default_chat(prompt, settings=resolved))
         raw = caller(build_user_prompt(context))
         parsed = _parse_and_validate(raw)
-    except Exception:
-        # 超时 / 网络错误 / 非 JSON / 枚举非法 / 缺字段 全部走这里
+    except Exception as exc:  # noqa: BLE001 —— AI 故障必须回落规则版，不得向上抛；这里记录原因便于排查
+        logger.warning("LLM 输出不可用，回落规则版：%s: %s", type(exc).__name__, exc)
         return _fallback(context)
 
     return {
