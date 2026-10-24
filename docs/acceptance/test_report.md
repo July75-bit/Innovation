@@ -13,8 +13,8 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **97**（单元 91 + 集成 6） |
-| 通过 / 失败 / 跳过 | **97 / 0 / 0** |
+| 自动化用例总数 | **104**（单元 98 + 集成 6） |
+| 通过 / 失败 / 跳过 | **104 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §9） |
 | 通过 / 失败 | 未执行 / 未执行 |
 
@@ -25,7 +25,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-97 passed, 1 warning in 7.21s
+104 passed, 1 warning in 5.44s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -43,6 +43,7 @@ $ python -m pytest
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 
 ### 2.2 集成测试
 
@@ -50,6 +51,22 @@ $ python -m pytest
 | --- | --- | --- | --- | --- |
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
+
+### 2.3 覆盖率（课程 p.177，第 4 天新增）
+
+> 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（104 条用例）。
+
+| 范围 | 语句数 | 未覆盖 | 覆盖率 |
+| --- | --- | --- | --- |
+| **全部（app + core_engine）** | 839 | 79 | **91%** |
+| 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
+| 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
+| 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
+| 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
+| 模型 + 响应 schema | 238 | 0 | 100% |
+
+> 结论：核心逻辑 **91% ≥ 课程要求的 60%**；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -67,6 +84,12 @@ $ python -m pytest
 | TC-010 | 暂停交易 | ✅ | `test_buy_suspended_player`：400 `PLAYER_TRADING_SUSPENDED` |
 | TC-011 | 用最新价成交 | ✅ | `test_trade_uses_latest_price`：成交价 = 数据库 `current_price` |
 | TC-012 | 事务回滚 | ✅ | `test_transaction_rollback_on_failure`：失败后余额/持仓/流水均不变 |
+
+### 3.1 核心异常矩阵（T4-06，第 4 天新增）
+
+| ID | 用例 | 结果 | 证据 |
+| --- | --- | --- | --- |
+| TC-120 | 卖出暂停选手 / 未知选手、买入缺字段 422、未知价格历史 404、卖超持仓回滚 | ✅ | `tests/unit/test_core_exceptions.py` 7 条（5 个用例，含 3 组缺字段参数化） |
 
 ## 4. 定价引擎测试结果
 
@@ -176,7 +199,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 97 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 104 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
