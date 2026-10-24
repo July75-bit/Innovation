@@ -25,6 +25,11 @@ def _run_bootstrap(db_path: Path, *extra: str) -> subprocess.CompletedProcess:
     """用独立 DATABASE_URL 跑脚本；不捕获输出（子进程直接继承，避免管道问题）。"""
     env = {**os.environ, "DATABASE_URL": f"sqlite:///{db_path.as_posix()}"}
     env.pop("PYTHONPATH", None)  # 让脚本自己的 sys.path 生效，避免被测试环境带偏
+    # Windows 控制台默认 GBK：子进程若按 GBK 输出，pytest 的 fd 捕获会按 UTF-8 解码并
+    # 抛 UnicodeDecodeError(0xd2)（第 4 天 BUG-03，CI 的 ubuntu 不暴露）。
+    # 这里显式让子进程统一说 UTF-8，测试结果就不依赖跑测试的人是什么控制台。
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     return subprocess.run(
         [sys.executable, str(SCRIPT), *extra],
         cwd=REPO_ROOT,

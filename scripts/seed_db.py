@@ -30,6 +30,15 @@ SEED_FILE = ROOT / "data" / "seed_players.json"
 # 让脚本能 import 到 code/backend/app（避免依赖 PYTHONPATH）
 sys.path.insert(0, str(ROOT / "code/backend"))
 
+# Windows 控制台/被重定向到管道时默认是 GBK，中文会乱码、也会让"按 UTF-8 解码父进程"
+# 的场景失败（第 4 天 BUG-03：pytest 的 fd 捕获按 UTF-8 读子进程输出 → UnicodeDecodeError 0xd2）。
+# 与 simulate_match.py / update_prices.py / bootstrap_demo_data.py 保持一致，统一转 UTF-8。
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:  # noqa: BLE001 - stdout 被替换成不支持重配置的对象时忽略
+        pass
+
 CENT = Decimal("0.01")
 
 

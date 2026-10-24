@@ -120,10 +120,10 @@
 
 - [ ] T3-04 浏览器全链路截图/录屏（A）
 - [ ] 折线图 / 涨跌原因 / AI 卡 / 三态截图（A，M4 证据）
-- [ ] 10+ 价格点数据（B，`data/price_updates.json` + 落库后 `/prices` 点数）
+- [x] 10+ 价格点数据（B：`python scripts/bootstrap_demo_data.py` 一条命令；**实测 8 人 78 条历史**，6 人 11 点 / `ropz` 10 点 / `sh1ro` 2 点（暂停交易，预期），`ts` 升序、末点 = `current_price`）
 - [x] 契约 §7 四人签字齐全（C 已补签 `94ea9aa`）
 - [ ] 新增异常测试用例 + 覆盖率报告（D）
-- [ ] 缺陷清单更新（B/C/D，P0/P1 清零或记录）
+- [x] 缺陷清单更新（B 部分：`test_report.md` §9 已登记 **9 条已修缺陷**，其中 2 条 P0——并发超卖、Postgres 驱动阻断；P0/P1 清零。C/D 侧待补）
 - [ ] `docs/acceptance/cross_test.md`（D，课程 p.179–182 问卷）
 - [ ] `scripts/backtest.py` + `docs/algorithm/backtest_result.json` + `backtest_report.md` 初版数字（D）
 - [ ] `pricing_model.md` §7 正式回测数据 + 100 seed 统计（C）
