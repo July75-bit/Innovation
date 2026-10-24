@@ -108,7 +108,44 @@ $ python -m pytest
 | TC-405 | 子路由刷新 | ⬜ | 截图 |
 | TC-406 | 无密钥全站可用 | ⬜ | 截图 |
 
-## 7. 性能实测（对照非功能需求）
+## 7. 本地持久化验证（T3-05，2026-10-24）
+
+> 目的：验证「重启后端后数据仍在」，而不是只写进内存/临时库。做法：真实 `uvicorn` 进程 + 独立 SQLite 文件（`DATABASE_URL` 指向工作区临时库），**杀掉进程再起一个新进程**，对比重启前后的余额/持仓/流水/价格历史。
+
+**执行命令（可复现）**
+
+```powershell
+$env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
+python scripts/seed_db.py                  # 建表 + 8 名选手 + demo 账户
+cd code/backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
+```
+
+```powershell
+# 进程 A：健康检查 → 买入 2 股（价 126.00）→ 记录四个读接口
+Invoke-RestMethod http://127.0.0.1:8010/api/health
+Invoke-RestMethod -Method Post http://127.0.0.1:8010/api/trades/buy `
+  -ContentType 'application/json' -Body '{"player_id":1,"quantity":2}'
+Invoke-RestMethod http://127.0.0.1:8010/api/account
+Invoke-RestMethod http://127.0.0.1:8010/api/positions
+Invoke-RestMethod http://127.0.0.1:8010/api/trades
+Invoke-RestMethod http://127.0.0.1:8010/api/players/1/prices
+# 然后 Stop-Process 杀掉进程 A，重新起进程 B，再查同样四个接口
+```
+
+**实测输出（2026-10-24，D 本机）**
+
+```text
+BEFORE_RESTART health=ok buy_balance=4748.0 balance=4748.0 total_asset=5000.0 positions=1 qty=2 trades=1 price_points=2
+AFTER_RESTART  health=ok balance=4748.0 total_asset=5000.0 positions=1 qty=2 trades=1 price_points=2
+SAME balance=True total=True qty=True trades=True points=True
+```
+
+**结论**：进程级重启前后，余额（4748.00）、总资产（5000.00）、持仓（ZywOo ×2）、流水（1 条）、价格历史（2 点）完全一致 → **T3-05 ✅**。
+
+> 注意：这验证的是本地 SQLite 持久化；线上 Render 免费实例的磁盘仍是临时的，必须用 Postgres（见 `deployment.md` §4），线上重启验收对应 TC-404（第 5 天）。
+
+## 8. 性能实测（对照非功能需求）
 
 | 指标 | 目标 | 实测 | 结论 |
 | --- | --- | --- | --- |
@@ -117,14 +154,14 @@ $ python -m pytest
 | AI 分析响应 | ≤ 8s（上限 20s） | ______ | |
 | 前端首屏 | ≤ 3s | ______ | |
 
-## 8. 缺陷清单
+## 9. 缺陷清单
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
 | BUG-01 | | P0/P1/P2 | | | 待修/已修/不修 | |
 | BUG-02 | | | | | | |
 
-## 9. 未覆盖与已知限制
+## 10. 未覆盖与已知限制
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
@@ -137,14 +174,14 @@ $ python -m pytest
 | 浏览器兼容性 | 只测 Chrome/Edge | 未测 Safari | 演示只用 Chrome |
 | 移动端适配 | 非重点 | 手机端体验一般 | 如实说明 |
 
-## 10. 结论
+## 11. 结论
 
 - P0 缺陷：**0** 个（自动化层 97 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
 
-## 11. 附件
+## 12. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
 - [ ] pytest 输出文本
