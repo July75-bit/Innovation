@@ -8,6 +8,9 @@ import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PlayerSummary } from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import LoadingState from '../components/LoadingState.vue'
 
 const players = ref<PlayerSummary[]>([])
 const loading = ref(true)
@@ -35,11 +38,9 @@ onMounted(load)
       <button class="refresh" :disabled="loading" @click="load">刷新</button>
     </div>
 
-    <p v-if="loading" class="state">加载中…</p>
-    <div v-else-if="error" class="state error">
-      <span>{{ error }}</span>
-      <button @click="load">重试</button>
-    </div>
+    <LoadingState v-if="loading" />
+    <ErrorState v-else-if="error" :message="error" @retry="load" />
+    <EmptyState v-else-if="players.length === 0">市场暂无选手</EmptyState>
 
     <ul v-else class="grid">
       <li
@@ -92,24 +93,6 @@ onMounted(load)
 .refresh:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.state {
-  color: var(--muted);
-  padding: 24px 0;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.state.error {
-  color: var(--up);
-}
-.state button {
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
 }
 .grid {
   list-style: none;

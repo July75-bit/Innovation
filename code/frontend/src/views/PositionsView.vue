@@ -9,6 +9,9 @@ import { ApiError } from '../api/client'
 import type { PositionItem } from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
 import { useAccount } from '../composables/useAccount'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import LoadingState from '../components/LoadingState.vue'
 
 const positions = ref<PositionItem[]>([])
 const loading = ref(true)
@@ -56,14 +59,11 @@ onMounted(load)
       </div>
     </div>
 
-    <p v-if="loading" class="state">加载中…</p>
-    <div v-else-if="error" class="state error">
-      <span>{{ error }}</span>
-      <button @click="load">重试</button>
-    </div>
-    <p v-else-if="positions.length === 0" class="state">
+    <LoadingState v-if="loading" />
+    <ErrorState v-else-if="error" :message="error" @retry="load" />
+    <EmptyState v-else-if="positions.length === 0">
       暂无持仓，去 <RouterLink to="/">市场</RouterLink> 看看。
-    </p>
+    </EmptyState>
 
     <table v-else>
       <thead>
@@ -135,24 +135,6 @@ onMounted(load)
 }
 .summary strong {
   font-size: 18px;
-}
-.state {
-  color: var(--muted);
-  padding: 24px 0;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.state.error {
-  color: var(--up);
-}
-.state button {
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
 }
 table {
   width: 100%;
