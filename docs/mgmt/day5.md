@@ -8,16 +8,16 @@
 
 | 项 | 状态 | 证据 |
 | --- | --- | --- |
-| M3 / M4 | ✅ 均已达成 | A 的 14 张浏览器证据：`docs/acceptance/evidence/` |
-| 测试 | **120 passed / 0 skipped**（CI 与本机一致；BUG-03 已修，见下） | `test_report.md` §1/§9 |
+| M3 / M4 | ✅ 均已达成 | A 的 16 张浏览器证据：`docs/acceptance/evidence/` |
+| 测试 | **120 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，见下） | `test_report.md` §1/§9 |
 | 部署准备 | 🟡 只到“脚本/驱动/文档”：`bootstrap_demo_data.py`、PG 连接串归一化、`pool_pre_ping`、`deployment.md` §3.9 | `scripts/bootstrap_demo_data.py`、`deployment.md` |
 | Render / Postgres | ❌ 未注册、未建库、未配环境变量；`deployment.md` 检查单大部分仍是 `[ ]` | `deployment.md` §3 |
-| 待修 | ~~BUG-03~~ **已修**（2026-10-25，`eb0d7e7`：测试改文件捕获 + `errors="replace"`，`seed_db.py` 输出转 UTF-8）；TC-307 刷新回归未单独截图 | `test_report.md` §9 BUG-10 / `test_plan.md` §4.4 |
+| 待修 | ~~BUG-03~~ **已修**（2026-10-25，`eb0d7e7`：测试改文件捕获 + `errors="replace"`，`seed_db.py` 输出转 UTF-8；编号记为 BUG-10）；TC-307 已由 A 补截图 | `test_report.md` §9 BUG-10 / `test_plan.md` §4.4 |
 | 外部交叉原型测试 | 🟡 内部互测已记录，外部组未约 | `docs/acceptance/cross_test.md` |
 | 答辩材料 | ❌ 未开始（幻灯片/演示脚本/QA） | — |
 
 > **今天两条主线**：① **M5 上线**：Render 前后端 + 免费 Postgres，数据持久化，线上全流程验收；② **完善作品 + 答辩准备**：优化迭代清单、8 分钟幻灯片、2 分钟演示脚本、5 分钟 QA。
-> **硬前提**：上线前必须先把 **BUG-03 修掉**（否则本机 120 条不绿）；部署分支固定选 **`develop`**，否则 Render 不会随 push 自动部署。
+> **硬前提**：部署分支固定选 **`develop`**（否则 Render 不会随 push 自动部署）；BUG-10 已修，本机/CI 均 120 绿；上线前需处理 **CORS 临时放开**（见 §4 风险表）。
 
 ## 1. 全员共同段（09:00–09:40）
 
@@ -100,6 +100,7 @@
 
 | 风险 | 症状 | 缓解 / 回滚 |
 | --- | --- | --- |
+| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | 部署前改回 `settings.cors_origin_list`，并在 Render 配 `CORS_ORIGINS`=前端公网地址（B/D 执行） |
 | 免费 Postgres 30 天到期 | 答辩后数据消失 | 文档写明；如需要可换 Neon（同样只改 `DATABASE_URL`） |
 | 免费实例 15 分钟休眠 | 冷启动约 1 分钟，演示卡顿 | 演示前 5 分钟预热 `/api/health`；录屏兜底 |
 | `DATABASE_URL` 填 Internal/External 混用 | 本地连不上/线上报错 | 后端用 **Internal**，本地灌数用 **External**；填错立即改并重启 |

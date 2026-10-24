@@ -2,6 +2,7 @@
 
 > **负责人**：D ｜ **日期**：2026-10-24 ｜ **对应课程要求**：第 3 天第 2 部分「代码质量」实践与检查点（SWIEP.pdf p.144–158）：配置至少一个静态分析工具 → 扫描并记录指标 → 选 Top5 最严重问题逐一重构（先补测试）→ 重新扫描对比 → 形成质量报告（**检查点：扫描报告截图 + 重构前后对比**）。
 > **对应交付物**：`docs/acceptance/test_report.md`、`docs/acceptance/test_plan.md`
+> **扫描报告截图**：`docs/acceptance/evidence/17-code-quality-scan.png`（实际命令输出渲染：pytest + `ruff --statistics` + CI 三门槛结果）
 
 ## 1. 工具与配置
 
@@ -80,11 +81,11 @@ A 的前端初版、C 的定价实现、B 的价格落库脚本陆续合入后�
 | 指标 | 第 1 次（10:30 前） | 第 2 次（11:00） | 说明 |
 | --- | --- | --- | --- |
 | 扫描规模 | 52 个 `.py` / 3325 有效行 | **55 个 `.py` / 4274 有效行** | 新增定价、价格落库脚本与测试 |
-| ruff 总问题 | 51 | **51** | D 负责文件仍 **0** 残留；当前 51 项全部来自 B/C 的新代码 |
+| ruff 总问题 | 51 | **72（第 3 次扫描，第 4 天末）** | 第 4 天新增测试/脚本使总数上升（第 2 次扫描时为 51）；D 负责文件仍 **0**；50 项可 `--fix` |
 | Bug 级（E4/E7/E9/F） | 0 | 0 | 仍无真实缺陷 |
 | 圈复杂度 | 业务代码最大 6 | **业务代码最大 7；全仓最大 11**（`scripts/simulate_match.py::main`） | 该 11 触发了 CI 新门槛，原因与处理见 §4.2 |
 | 重复率（5 行窗口粗算） | 16.09% | **12.52%**（535 / 4274） | 新增代码结构较规范，重复率下降 3.57pp |
-| pytest | 65 passed / 5 skipped | **120 passed / 0 skipped**（CI；本机 Windows 118/1/1，BUG-03 见 `test_report.md` §9） | C 的定价/recalc、B 的落库与部署预检、D 的 TC-110/120 异常矩阵；单元 107 + 集成 13 |
+| pytest | 65 passed / 5 skipped | **120 passed / 0 skipped**（CI 与本机一致；BUG-10 已修） | C 的定价/recalc、B 的落库与部署预检、D 的 TC-110/120 异常矩阵；单元 107 + 集成 13 |
 | 覆盖率（app + core_engine） | 未统计 | **91%**（839 语句 / 79 未覆盖） | 第 4 天课程 p.177 检查点新增；pricing 81%、simulator 86%、price_update 92%、rules/models/schemas 100% |
 
 **第 2 次扫描剩余问题归属（共 51 项）**
@@ -93,7 +94,9 @@ A 的前端初版、C 的定价实现、B 的价格落库脚本陆续合入后�
 | --- | --- | --- | --- |
 | B（`app/`、`scripts/seed_db.py`、`scripts/update_prices.py`、`tests/conftest.py` 等） | 46 | B008 14、UP037 10、I001 8、RUF100 5、UP017 3、FURB157 3、RUF022 2、B017 1 | `ruff check --fix` 可自动修 30+ 项；B008 建议框架豁免 |
 | C（`core_engine/`、`scripts/simulate_match.py`、`tests/unit/test_pricing.py`） | 5 | UP035 2、RUF100 2、RUF022 1 | 自动修复 + 导入现代化 |
-| D（`ai/`、`app/api/ai.py`、D 的测试与 `.github/`） | **0** | — | 保持 |
+| D（`ai/`、`app/api/ai.py`、D 的测试与 `.github/`） | **0** | — | 保持（第 4 天修复 5 项 RUF100/I001 后仍为 0） |
+
+> **第 3 次扫描（2026-10-24 第 4 天末）**：`ruff check --statistics .` → **72 项**（RUF100 16 / B008 15 / I001 15 / UP037 10 / …；50 项可自动修），全部来自第 4 天新增的 B/C 代码与测试；**D 负责文件 0 残留**；CI 三类门槛（业务+测试 / scripts / scripts 复杂度）全部通过。实际输出截图见 `docs/acceptance/evidence/17-code-quality-scan.png`。
 
 ### 4.2 CI 门槛的作用域（为什么首次 push 后 CI 会红）
 
@@ -130,12 +133,12 @@ python - <<'PY'
 PY
 
 # 回归（重构前后一致）
-python -m pytest   # 120 passed / 0 skipped（CI；本机 BUG-03 见 test_report §9）
+python -m pytest   # 120 passed / 0 skipped（CI 与本机；BUG-10 已修）
 ```
 
 ## 7. 结论
 
 - 项目**没有 Bug 级**静态问题；主要问题是风格/一致性（第 2 次扫描 51 项中 36 项可自动修）。
 - D 负责的 AI 模块与测试已做到 **ruff 0 残留**，并通过"收窄异常 + 补日志 + 抽公共函数 + 拆分长测试"完成 Top5 重构；pytest 从 65 passed / 5 skipped 变为合入新代码后的 **120 passed / 0 skipped**（CI；本机 Windows 有 1 个 BUG-03 测试编码问题），核心逻辑覆盖率 **91%**。
-- 剩余 51 项已按归属移交 B（46）/C（5）；B008 建议作为框架惯用法统一豁免。
+- 剩余 51 项（第 2 次扫描）已按归属移交 B（46）/C（5）；第 4 天末第 3 次扫描为 72 项（新增测试/脚本，50 项可自动修，D 负责文件 0），截图见 `evidence/17-code-quality-scan.png`；B008 建议作为框架惯用法统一豁免。
 - CI 门槛已按目录分档（业务代码/测试阈值 10，脚本 12）并通过本地同款命令；首次 CI 红的根因（`simulate_match.main` 复杂度 11）已定位，属于 CLI 入口装配，不阻塞交付。
