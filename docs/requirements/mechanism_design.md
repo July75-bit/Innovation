@@ -96,3 +96,4 @@ stateDiagram-v2
 | 日期 | 参与人 | 结论 |
 | --- | --- | --- |
 | 第 1 天 | A/B/C/D | 字段与接口口径确认；上述 4 项决议通过（C 提出"触发方式与去重键"，B 确认落库边界） |
+| 第 3 天 09:40 | B / C | **定价与落库分工复核（T3-01）**：C 只算 `PriceUpdate(new_price, change_pct, reason)`、B 写 `price_history` 并在同一事务更新 `players.current_price / prev_price`；第 3 天仍用手动脚本 `scripts/simulate_match.py` 触发（赛后事件接口第 4 天接）；`ts` 统一 UTC ISO 8601（`2026-11-01T00:00:00Z`）。与第 1 天决议一致，**无字段变更** |
