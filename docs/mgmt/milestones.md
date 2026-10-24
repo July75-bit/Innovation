@@ -54,7 +54,7 @@
 | T1-04 | 09:30–09:45 | **解除目录阻塞**：`Move-Item code/frontend/README.md docs/software/frontend_setup.md`（否则脚手架会因目录非空失败；该说明要保留，不要直接删） | T1-03 | `code/frontend/` 为空目录；`docs/software/frontend_setup.md` 存在 | ⬜ |
 | T1-05 | 09:45–10:15 | `npm create vue@latest code/frontend`；选项：TS=Yes / JSX=No / Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes | T1-04 | 脚手架生成成功 | ⬜ |
 | T1-06 | 10:15–10:35 | `cd code/frontend` → `npm install` → `npm run dev` | T1-05 | 浏览器打开 `localhost:5173` 显示初始页 | ⬜ |
-| T1-07 | 10:35–10:55 | 新建 `code/frontend/.env.example`（`VITE_API_BASE_URL=http://127.0.0.1:8000`）+ `src/api/client.ts`（从 `import.meta.env` 读地址，封装 `get/post`） | T1-06 | 代码里搜不到硬编码的 `127.0.0.1` | ⬜ |
+| T1-07 | 10:35–10:55 | 新建 `code/frontend/.env.example`（`VITE_API_BASE_URL=http://127.0.0.1:8000`）+ `src/api/client.ts`（从 `import.meta.env` 读地址，封装 `get/post`） | T1-06 | 代码里搜不到硬编码的 `127.0.0.1` | ✅ 2026-10-24（`.env.example` + `client.ts` 已建；client.ts 只读 `VITE_API_BASE_URL`、缺省与错误文案不再写死地址；CI 前端 job 加地址检查防回归） |
 | T1-08 | 10:55–11:30 | **今日最关键交付**：HomeView 调 `GET /api/health`，页面显示“连接成功：playerstock-backend” | T1-07, T1-13 | 页面出现连接成功文案 | ⬜ |
 | T1-09 | 13:00–14:00 | 配 4 条路由：`/` 市场、`/players/:id` 详情、`/positions` 持仓、`/trades` 流水；各建空 view | T1-06 | 4 个路径可切换、不白屏 | ⬜ |
 | T1-10 | 14:00–15:30 | 统一顶部导航（Logo / 市场 / 持仓 / 流水 / 余额占位）+ 抽 `LoadingState` / `EmptyState` / `ErrorState` 三个组件 | T1-09 | 每个页面都有统一顶栏 | ⬜ |
@@ -210,7 +210,7 @@
 | --- | --- | --- | --- |
 | 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 23 完成 + 2 部分 | A 前端 8 项、C 定价 7 项未开始；T1-16 契约仅 D 签字、T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页） |
 | 第 2 天 | 12 | 8（B 3 + D 5） | A 前端 2 项、C 定价 2 项未开始（第 2 天末实测，交接速查 2026-10-23 20:20） |
-| 第 3 天 | 7 | 3 完成 + 1 部分（T3-01/T3-06/T3-07 ✅，T3-02 🟡） | T3-03/04/05 待 A 前端联调与 B 持久化验证；自动化层 79 passed / 0 skipped（2026-10-24 11:00 实测） |
+| 第 3 天 | 7 | 3 完成 + 1 部分（T3-01/T3-06/T3-07 ✅，T3-02 🟡） | T3-03/04/05 待 A 前端联调与 B 持久化验证；自动化层 81 passed / 0 skipped（2026-10-24 11:00 后复核） |
 | 第 4 天 | 7 | | |
 | 第 5 天 | 6 | | |
 | 第 6 天 | 6 | | |

@@ -7,6 +7,9 @@ import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { TradeItem } from '../api/types'
 import { dateTime, money } from '../utils/format'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import LoadingState from '../components/LoadingState.vue'
 
 const trades = ref<TradeItem[]>([])
 const loading = ref(true)
@@ -34,12 +37,9 @@ onMounted(load)
       <button class="refresh" :disabled="loading" @click="load">刷新</button>
     </div>
 
-    <p v-if="loading" class="state">加载中…</p>
-    <div v-else-if="error" class="state error">
-      <span>{{ error }}</span>
-      <button @click="load">重试</button>
-    </div>
-    <p v-else-if="trades.length === 0" class="state">暂无交易记录。</p>
+    <LoadingState v-if="loading" />
+    <ErrorState v-else-if="error" :message="error" @retry="load" />
+    <EmptyState v-else-if="trades.length === 0">暂无交易记录。</EmptyState>
 
     <table v-else>
       <thead>
@@ -94,24 +94,6 @@ onMounted(load)
 .refresh:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-.state {
-  color: var(--muted);
-  padding: 24px 0;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.state.error {
-  color: var(--up);
-}
-.state button {
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
 }
 table {
   width: 100%;

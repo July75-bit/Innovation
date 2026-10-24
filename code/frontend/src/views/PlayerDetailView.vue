@@ -16,6 +16,9 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import { refreshAccount } from '../composables/useAccount'
+import EmptyState from '../components/EmptyState.vue'
+import ErrorState from '../components/ErrorState.vue'
+import LoadingState from '../components/LoadingState.vue'
 
 const route = useRoute()
 const playerId = computed(() => Number(route.params.id))
@@ -75,11 +78,8 @@ watch(playerId, () => loadCore())
 <template>
   <div>
     <RouterLink to="/" class="back">← 返回市场</RouterLink>
-    <p v-if="loading" class="state">加载中…</p>
-    <div v-else-if="error" class="state error">
-      <span>{{ error }}</span>
-      <button @click="loadCore()">重试</button>
-    </div>
+    <LoadingState v-if="loading" />
+    <ErrorState v-else-if="error" :message="error" @retry="loadCore()" />
 
     <template v-else-if="player">
       <header class="head">
@@ -125,7 +125,7 @@ watch(playerId, () => loadCore())
         <p class="ai-reason">{{ analysis.reason }}</p>
         <p class="disclaimer">{{ analysis.disclaimer }}</p>
       </section>
-      <p v-else class="state">AI 建议暂不可用（不影响交易）。</p>
+      <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
 
       <h3>交易</h3>
       <TradePanel
@@ -150,24 +150,6 @@ watch(playerId, () => loadCore())
 }
 .back:hover {
   color: var(--text);
-}
-.state {
-  color: var(--muted);
-  padding: 24px 0;
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-.state.error {
-  color: var(--up);
-}
-.state button {
-  padding: 4px 12px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  cursor: pointer;
 }
 .head {
   display: flex;

@@ -18,11 +18,15 @@ npm run dev                  # http://localhost:5173（后端 CORS 默认放行�
 
 | 文件 | 用途 |
 | --- | --- |
-| `.env.example` | 模板：`VITE_API_BASE_URL=http://127.0.0.1:8000` |
+| `.env.example` | 模板：`VITE_API_BASE_URL=http://127.0.0.1:8000` + `VITE_USE_MOCK=false` |
 | `.env.local` | 本地实际值（已被 .gitignore 忽略，新克隆后从 example 复制） |
 | Render 环境变量 | 第 5 天部署时注入线上后端地址 |
 
-代码统一从 `import.meta.env.VITE_API_BASE_URL` 读取（封装在 `src/api/client.ts`）。
+代码统一从 `import.meta.env.VITE_API_BASE_URL` 读取（封装在 `src/api/client.ts`，代码里 grep 不到任何具体地址——未配置时页面会明确报"未配置后端地址"）。
+
+**Mock 开关（day2 T2 产出物）**：`VITE_USE_MOCK=true` 时全部接口切到 `src/mock/players.ts`
+的内存模拟数据（数据逐字来自 `data/seed_players.json`，含 50 股上限/暂停交易/余额与持仓校验，
+刷新页面即重置），供后端未就绪时开发演示；**联调与上线必须为 `false`**。
 
 ## 结构
 
@@ -32,11 +36,16 @@ src/
 │   ├── types.ts       # 契约 §4 全部响应类型（snake_case，不做驼峰转换）
 │   ├── client.ts      # fetch 封装：环境变量、统一错误体 {success,message,code}
 │   └── index.ts       # 10 个业务接口函数（api.listPlayers / api.buy / ...）
+├── mock/
+│   └── players.ts   # VITE_USE_MOCK=true 时的内存模拟数据（含交易校验，仅开发兜底）
 ├── composables/
 │   └── useAccount.ts  # 余额共享状态（模块级 ref，未用 Pinia）
 ├── components/
-│   ├── PriceChart.vue # 价格历史折线图（零依赖 SVG，升序直接用）
-│   └── TradePanel.vue # 数量输入 + 买入/卖出 + 后端 message 展示
+│   ├── PriceChart.vue   # 价格历史折线图（零依赖 SVG，升序直接用）
+│   ├── TradePanel.vue   # 数量输入 + 买入/卖出 + 后端 message 展示
+│   ├── LoadingState.vue # 三态组件（day1 统一布局要求，4 页共用）
+│   ├── EmptyState.vue   # 空态（可插槽放引导链接）
+│   └── ErrorState.vue   # 错误态（展示后端中文 message + 重试，不自动重放交易）
 ├── views/
 │   ├── MarketView.vue        # /            市场列表
 │   ├── PlayerDetailView.vue  # /players/:id 详情 + 折线图 + AI 建议 + 交易

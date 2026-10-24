@@ -200,9 +200,26 @@ erDiagram
    市值 `position_value` / 总资产 `total_asset` 会随新价重估，这是"按市价计"的正常结果，
    不算改持仓——`tests/unit/test_price_update.py` 专门断言了这一点。
 
-`scripts/update_prices.py` 的引擎选项：`pricing`（C 的正式公式，需 `--score`）、
-`stub`（C 就绪前的临时规则，同日固定种子可复现）、`auto`（默认，未实现则回落）。
-`stub` 与脚本里的 `_temporary_price_rule()` 是临时脚手架，C 接管后删掉即可，脚本行为不变。
+`scripts/update_prices.py` 已接上 C 的真实引擎（第 3 天晚些时候 C 落地后即切换，
+临时规则已删除），两条入口共用同一套落库逻辑：
+
+| 入口 | 用法 | 说明 |
+| --- | --- | --- |
+| 进程内（默认） | `python scripts/update_prices.py` | 直接调 `simulator.generate_match()` → `pricing.standardize_score()` → `pricing.update_price()`；约定与 `scripts/simulate_match.py` 完全一致（`--warmup` 用负数轮次回填内存历史、`--window` 默认 5、基准评分取 `players.rating`），实测同 seed 两边算出的数一致 |
+| 吃导出的明细 | `python scripts/update_prices.py --from-json data/price_updates.json` | 用 C 的 `simulate_match.py --json` 产物；`ts` 取明细里的比赛日期，C 调模型不用等 B，B 落库也不用懂模型 |
+
+另外两条：
+
+- **暂停交易（`status != trading`）的选手不定价**，与买卖规则一致；
+- **可追溯性走 `reason`，不加表**（第 3 天决策）：`reason` 统一追加
+  `（本轮模拟得分 xx.x）`，C 生成的 S(t) 与涨跌幅本来就在里面，于是每条历史价格都能
+  回答"哪场比赛、什么得分、信号多少"；代价是精确复现要同 seed，
+  不为此新增 `matches` 表或给 `price_history` 加列（避免改表走契约流程）。
+
+**分工待办（第 3 天追加）**：这段"得分"文案目前是 B 在写库侧用
+`with_score_in_reason()` 临时拼的，后续**交给 C 在 `update_price` 的 `reason` 里直接拼好**
+（得分本来就在 C 手里，B 不该替它组织文案），C 改完后 B 删掉这层拼接、只做透传；
+同时 **B 提供 `--from-json` 入口**（已完成，见上表），让 C 可以只算不落库、两边互不等。
 
 ## 4. 迁移与初始化
 
@@ -220,7 +237,7 @@ erDiagram
 | | 初版表结构 | B | A/C/D 确认字段名 |
 | 第 1 天 | 按本文落成 ORM：5 张表 + `uq_positions_user_player` + `ck_positions_quantity_range` + 三条索引；金额改用 `NUMERIC(12,2)`（应用层 Decimal 计算，JSON 仍是两位小数）；SQLite 开启 `foreign_keys=ON` / WAL / `busy_timeout=5000` | B | 无接口字段变更；A/C/D 无需适配 |
 | 第 2 天 | 交易写入改成"条件更新"（见 §3.1）：扣款/加仓/减仓/清仓四个动作的守卫写进 SQL 的 `WHERE`，用 `rowcount` 判断成败；清仓改为 `DELETE` 以免违反 `quantity >= 1` 的 CHECK；买入的校验顺序按契约 §4.7 改为"余额先于持仓上限" | B | 表结构与接口字段均无变更；`trades` / `positions` 语义不变，A/C/D 无需适配 |
-| 第 3 天 | 价格更新落库（T3-01，见 §3.2）：新增 `app/core/price_update.py` + `scripts/update_prices.py`，`players.current_price/prev_price` 与 `price_history` 同事务写入；定死"C 只算、B 写库"。**表结构无变更** | B | 无字段变更；C 只需按 `PriceUpdate(new_price, change_pct, reason)` 返回，A 直接消费 `/prices` |
+| 第 3 天 | 价格更新落库（T3-01，见 §3.2）：新增 `app/core/price_update.py` + `scripts/update_prices.py`，`players.current_price/prev_price` 与 `price_history` 同事务写入；定死"C 只算、B 写库"。C 的 `update_price`/`simulator` 落地后脚本改走真实引擎，临时规则已删除；`reason` 追加"本轮模拟得分"以保证可追溯（不加表）。**表结构无变更** | B | 无字段变更；C 只需按 `PriceUpdate(new_price, change_pct, reason)` 返回，A 直接消费 `/prices` |
 
 ## 6. TODO
 
