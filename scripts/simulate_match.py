@@ -74,7 +74,12 @@ def format_history(history: list[float], window: int) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成模拟比赛并更新选手价格")
-    parser.add_argument("--rounds", type=int, default=3, help="生成几轮比赛（默认 3）")
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=1,
+        help="生成几轮比赛（默认 1：8 名选手各一条更新，正好覆盖 Day2 验收）",
+    )
     parser.add_argument("--seed", type=int, default=42, help="随机种子（演示必须固定）")
     parser.add_argument("--window", type=int, default=5, help="标准化窗口（默认 5 场）")
     parser.add_argument(
@@ -112,7 +117,7 @@ def main() -> None:
     print(
         f"参数：α={args.alpha if args.alpha is not None else 0.15}，"
         f"β={args.beta if args.beta is not None else 0.0}，"
-        f"单次涨幅上限 +{MAX_STEP_PCT * 100:.0f}%，窗口 N={args.window}，"
+        f"单次变动上限 ±{MAX_STEP_PCT * 100:.0f}%，窗口 N={args.window}，"
         f"回填历史 {args.warmup} 场"
     )
     print("说明：rating 为项目模拟评分，非 HLTV / 官方数据；回填历史只在内存，不改种子文件")
@@ -177,7 +182,7 @@ def main() -> None:
                 {
                     "player_id": match.player_id,
                     "round_no": round_no,
-                    "ts": match.played_at,          # 与 api_contract 的 price_history.ts 对齐
+                    "ts": f"{match.played_at}T00:00:00Z",  # price_history.ts：ISO 8601 UTC
                     "score": match.score,
                     "signal": update.signal,
                     "old_price": update.old_price,
@@ -200,7 +205,7 @@ def main() -> None:
             f"最大单次涨幅 {best['change_pct']:+.2f}%（{best['player']} 第 {best['round']} 轮），"
             f"最大单次跌幅 {worst['change_pct']:+.2f}%（{worst['player']} 第 {worst['round']} 轮）"
         )
-    print(f"触发 +{MAX_STEP_PCT * 100:.0f}% 涨幅上限 {capped_count} 次，触及价格下限 {floored_count} 次")
+    print(f"触发 ±{MAX_STEP_PCT * 100:.0f}% 单次变动上限 {capped_count} 次，触及价格下限 {floored_count} 次")
 
     if args.json:
         out = Path(args.json)
