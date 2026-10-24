@@ -15,6 +15,9 @@
   **不写进 data/seed_players.json**，种子文件保持数据合约不变；
 - 同一 --seed 下输出完全可复现；
 - `status != trading` 的选手跳过定价（与 B 的暂停交易规则一致）。
+
+结构说明：`main()` 只做编排，参数装配 / 单场更新 / 汇总 / 导出各自成 helper，
+这样 ruff C901 圈复杂度能稳定落在 10 以内（与业务代码同一阈值）。
 """
 
 from __future__ import annotations
@@ -33,6 +36,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 from core_engine import (  # noqa: E402
     MAX_STEP_PCT,
+    MatchResult,
+    PriceUpdate,
     generate_match,
     generate_match_series,
     standardize_score,
@@ -42,6 +47,7 @@ from core_engine import (  # noqa: E402
 SEED_FILE = ROOT / "data" / "seed_players.json"
 
 
+# ---------------------------------------------------------------- 数据装载
 def load_players(path: Path = SEED_FILE) -> list[dict]:
     """读取固定演示数据（8 名真实 CS2 选手，价格与评分为模拟值）。"""
     if not path.exists():
@@ -72,9 +78,16 @@ def format_history(history: list[float], window: int) -> str:
     return f"近 {len(recent)} 场均分 {sum(recent) / len(recent):.1f}"
 
 
-def main() -> None:
+# ---------------------------------------------------------------- CLI 装配
+def _build_parser() -> argparse.ArgumentParser:
+    """命令行参数定义（纯装配，不含业务分支）。"""
     parser = argparse.ArgumentParser(description="生成模拟比赛并更新选手价格")
-    parser.add_argument("--rounds", type=int, default=3, help="生成几轮比赛（默认 3）")
+    parser.add_argument(
+        "--rounds",
+        type=int,
+        default=1,
+        help="生成几轮比赛（默认 1：8 名选手各一条更新，正好覆盖 Day2 验收）",
+    )
     parser.add_argument("--seed", type=int, default=42, help="随机种子（演示必须固定）")
     parser.add_argument("--window", type=int, default=5, help="标准化窗口（默认 5 场）")
     parser.add_argument(
@@ -87,7 +100,155 @@ def main() -> None:
     parser.add_argument("--beta", type=float, default=None, help="覆盖需求权重 β")
     parser.add_argument("--floor", type=float, default=None, help="覆盖价格下限")
     parser.add_argument("--json", type=str, default=None, help="导出更新明细，交给 B 落库")
-    args = parser.parse_args()
+    return parser
+
+
+# ---------------------------------------------------------------- 统计与输出
+def _new_stats() -> dict:
+    """本轮运行的计数器与极值（避免 main 里散落一堆局部变量）。"""
+    return {
+        "up": 0,
+        "down": 0,
+        "flat": 0,
+        "capped": 0,
+        "floored": 0,
+        "best": None,
+        "worst": None,
+    }
+
+
+def _direction(change_pct: float) -> str:
+    if change_pct > 0:
+        return "up"
+    if change_pct < 0:
+        return "down"
+    return "flat"
+
+
+def _track_extremes(stats: dict, label: str, round_no: int, change_pct: float) -> None:
+    record = {"player": label, "round": round_no, "change_pct": change_pct}
+    best, worst = stats["best"], stats["worst"]
+    if best is None or change_pct > best["change_pct"]:
+        stats["best"] = dict(record)
+    if worst is None or change_pct < worst["change_pct"]:
+        stats["worst"] = dict(record)
+
+
+def _print_update(
+    label: str,
+    match: MatchResult,
+    update: PriceUpdate,
+    history: list[float],
+    signal: float,
+    window: int,
+) -> None:
+    flag = "胜" if match.won else "负"
+    print(
+        f"  {label:<32} 评分 {match.score:5.1f} 评级 {match.rating} {flag}  "
+        f"{update.old_price:>7.2f} → {update.new_price:>7.2f}  {update.change_pct:+6.2f}%"
+    )
+    print(
+        f"  {'':<32} {format_history(history, window)}，"
+        f"S={signal:+.2f} ｜ {update.reason}"
+    )
+
+
+def _print_summary(updates: list[dict], stats: dict) -> None:
+    print("\n" + "-" * 104)
+    print(
+        f"共 {len(updates)} 条价格更新："
+        f"上涨 {stats['up']} / 下跌 {stats['down']} / 持平 {stats['flat']}"
+    )
+    best, worst = stats["best"], stats["worst"]
+    if best and worst:
+        print(
+            f"最大单次涨幅 {best['change_pct']:+.2f}%（{best['player']} 第 {best['round']} 轮），"
+            f"最大单次跌幅 {worst['change_pct']:+.2f}%（{worst['player']} 第 {worst['round']} 轮）"
+        )
+    print(
+        f"触发 ±{MAX_STEP_PCT * 100:.0f}% 单次变动上限 {stats['capped']} 次，"
+        f"触及价格下限 {stats['floored']} 次"
+    )
+
+
+def _export_json(path: str | None, updates: list[dict], args: argparse.Namespace) -> None:
+    """把更新明细写成 JSON（path 为空时只打印使用提示）。"""
+    if not path:
+        print("提示：加 --json data/price_updates.json 可导出明细，交给 B 落库。")
+        return
+
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "seed": args.seed,
+        "rounds": args.rounds,
+        "window": args.window,
+        "updates": updates,
+    }
+    out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"更新明细已写入：{out.resolve()}（交给 B 写入 price_history / 更新 current_price）")
+
+
+# ---------------------------------------------------------------- 单场更新
+def _process_match(
+    match: MatchResult,
+    round_no: int,
+    by_id: dict[int, dict],
+    state: dict[int, dict],
+    args: argparse.Namespace,
+    updates: list[dict],
+    stats: dict,
+) -> None:
+    """算一名选手这一场的价格，打印并把结果记入 updates / stats。"""
+    player = by_id[match.player_id]
+    label = f"{player.get('display_name', player['name'])}（{player['team']} / {player['role']}）"
+    st = state[match.player_id]
+
+    if player.get("status") != "trading":
+        print(f"  {label:<32} 状态 {player.get('status')}，本轮跳过定价")
+        return
+
+    signal = standardize_score(match.score, st["history"], window=args.window)
+    update = update_price(
+        st["price"],
+        signal,
+        demand_signal=0.0,
+        alpha=args.alpha,
+        beta=args.beta,
+        floor=args.floor,
+    )
+
+    _print_update(label, match, update, st["history"], signal, args.window)
+
+    stats[_direction(update.change_pct)] += 1
+    stats["capped"] += int(update.capped)
+    stats["floored"] += int(update.floored)
+    _track_extremes(stats, label, round_no, update.change_pct)
+
+    updates.append(
+        {
+            "player_id": match.player_id,
+            "round_no": round_no,
+            "ts": f"{match.played_at}T00:00:00Z",  # price_history.ts：ISO 8601 UTC
+            "score": match.score,
+            "signal": update.signal,
+            "old_price": update.old_price,
+            "new_price": update.new_price,
+            "change_pct": update.change_pct,
+            "prev_price": st["prev_price"],
+            "reason": update.reason,
+        }
+    )
+
+    st["prev_price"] = update.old_price
+    st["price"] = update.new_price
+    st["history"].append(match.score)
+
+
+# ---------------------------------------------------------------- 主流程
+def main() -> None:
+    args = _build_parser().parse_args()
 
     players = load_players()
     by_id = {p["player_id"]: p for p in players}
@@ -112,16 +273,14 @@ def main() -> None:
     print(
         f"参数：α={args.alpha if args.alpha is not None else 0.15}，"
         f"β={args.beta if args.beta is not None else 0.0}，"
-        f"单次涨幅上限 +{MAX_STEP_PCT * 100:.0f}%，窗口 N={args.window}，"
+        f"单次变动上限 ±{MAX_STEP_PCT * 100:.0f}%，窗口 N={args.window}，"
         f"回填历史 {args.warmup} 场"
     )
     print("说明：rating 为项目模拟评分，非 HLTV / 官方数据；回填历史只在内存，不改种子文件")
     print("-" * 104)
 
     updates: list[dict] = []
-    up = down = flat = capped_count = floored_count = 0
-    best: dict | None = None
-    worst: dict | None = None
+    stats = _new_stats()
 
     for round_no in range(1, args.rounds + 1):
         round_matches = [m for m in matches if m.round_no == round_no]
@@ -131,91 +290,10 @@ def main() -> None:
             print("  （无历史评分 → S=0，价格不变；历史不足 2 场时标准差为 0）")
 
         for match in round_matches:
-            player = by_id[match.player_id]
-            label = f"{player.get('display_name', player['name'])}（{player['team']} / {player['role']}）"
-            st = state[match.player_id]
+            _process_match(match, round_no, by_id, state, args, updates, stats)
 
-            if player.get("status") != "trading":
-                print(f"  {label:<32} 状态 {player.get('status')}，本轮跳过定价")
-                continue
-
-            signal = standardize_score(match.score, st["history"], window=args.window)
-            update = update_price(
-                st["price"],
-                signal,
-                demand_signal=0.0,
-                alpha=args.alpha,
-                beta=args.beta,
-                floor=args.floor,
-            )
-
-            flag = "胜" if match.won else "负"
-            print(
-                f"  {label:<32} 评分 {match.score:5.1f} 评级 {match.rating} {flag}  "
-                f"{update.old_price:>7.2f} → {update.new_price:>7.2f}  {update.change_pct:+6.2f}%"
-            )
-            print(
-                f"  {'':<32} {format_history(st['history'], args.window)}，"
-                f"S={signal:+.2f} ｜ {update.reason}"
-            )
-
-            if update.change_pct > 0:
-                up += 1
-            elif update.change_pct < 0:
-                down += 1
-            else:
-                flat += 1
-            capped_count += 1 if update.capped else 0
-            floored_count += 1 if update.floored else 0
-
-            if best is None or update.change_pct > best["change_pct"]:
-                best = {"player": label, "round": round_no, "change_pct": update.change_pct}
-            if worst is None or update.change_pct < worst["change_pct"]:
-                worst = {"player": label, "round": round_no, "change_pct": update.change_pct}
-
-            updates.append(
-                {
-                    "player_id": match.player_id,
-                    "round_no": round_no,
-                    "ts": match.played_at,          # 与 api_contract 的 price_history.ts 对齐
-                    "score": match.score,
-                    "signal": update.signal,
-                    "old_price": update.old_price,
-                    "new_price": update.new_price,
-                    "change_pct": update.change_pct,
-                    "prev_price": st["prev_price"],
-                    "reason": update.reason,
-                }
-            )
-
-            st["prev_price"] = update.old_price
-            st["price"] = update.new_price
-            st["history"].append(match.score)
-
-    # ---------------- 汇总 ----------------
-    print("\n" + "-" * 104)
-    print(f"共 {len(updates)} 条价格更新：上涨 {up} / 下跌 {down} / 持平 {flat}")
-    if best and worst:
-        print(
-            f"最大单次涨幅 {best['change_pct']:+.2f}%（{best['player']} 第 {best['round']} 轮），"
-            f"最大单次跌幅 {worst['change_pct']:+.2f}%（{worst['player']} 第 {worst['round']} 轮）"
-        )
-    print(f"触发 +{MAX_STEP_PCT * 100:.0f}% 涨幅上限 {capped_count} 次，触及价格下限 {floored_count} 次")
-
-    if args.json:
-        out = Path(args.json)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "generated_at": datetime.now().isoformat(timespec="seconds"),
-            "seed": args.seed,
-            "rounds": args.rounds,
-            "window": args.window,
-            "updates": updates,
-        }
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        print(f"更新明细已写入：{out.resolve()}（交给 B 写入 price_history / 更新 current_price）")
-    else:
-        print("提示：加 --json data/price_updates.json 可导出明细，交给 B 落库。")
+    _print_summary(updates, stats)
+    _export_json(args.json, updates, args)
 
 
 if __name__ == "__main__":

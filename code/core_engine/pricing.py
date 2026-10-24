@@ -21,11 +21,11 @@
 
 三条护栏：
 
-1. **涨幅上限** `MAX_STEP_PCT = +20%`：只封顶上涨，不封顶下跌。
-   下跌由 `floor` 兜底；若上下都封顶，`P=2、S=-1、α=5` 只能跌到 1.60，
-   永远碰不到 `floor=1.0`，与"触底"测试用例冲突。
-2. **价格下限** `floor`：跌破就停在 floor，并在 reason 里说明。
+1. **单次变动上限** `MAX_STEP_PCT = ±20%`（对称 clamp）：无论涨跌，单次最多 20%；
+2. **价格下限** `floor`：clamp 之后若仍低于 floor（α 被调大、价格已经很低），
+   就停在 floor，并在 reason 里说明；
 3. **信号截断**：`|S| ≤ 1`，入参再 clamp 一次，防调用方传超范围值把价格拉爆。
+   `Z_FULL_SCALE` 可调：设为 1.0 即"z 值直接 clamp 到 [-1,1]"的字面口径。
 
 参数优先级：**显式传参 > `app.core.config.settings` > 环境变量 > 模块常量**。
 `settings` 用 try/except 可选导入：在 backend 里跑时用 B 的配置，
@@ -45,7 +45,7 @@ DEFAULT_ALPHA = 0.15
 DEFAULT_BETA = 0.0
 DEFAULT_FLOOR = 1.0
 
-#: 单次涨幅上限（第 1 天定稿，写死，不通过配置暴露）
+#: 单次变动上限（±20%，第 1 天定稿，写死，不通过配置暴露）
 MAX_STEP_PCT = 0.20
 
 #: 多少倍标准差记"满格信号"（S = ±1）
@@ -69,7 +69,7 @@ class PriceUpdate:
     old_price: float = 0.0
     signal: float = 0.0     # 实际生效的 S(t)
     step_pct: float = 0.0   # 实际生效的变动（已应用护栏），百分数
-    capped: bool = False    # 是否触发 +20% 涨幅上限
+    capped: bool = False    # 是否触发 ±20% 单次变动上限
     floored: bool = False   # 是否触及价格下限
 
 
@@ -135,7 +135,7 @@ def _build_reason(
         reason += f"，{side}，净买入占比 {demand_signal * 100:.0f}%"
 
     if capped:
-        reason += f"，单次涨幅超过 +{MAX_STEP_PCT * 100:.0f}% 上限，已按上限执行"
+        reason += f"，单次变动超过 ±{MAX_STEP_PCT * 100:.0f}% 上限，已按上限执行"
     if floored:
         reason += "，已触及价格下限，停止下跌"
 
@@ -192,8 +192,8 @@ def update_price(
     demand = _clip(float(demand_signal), -1.0, 1.0)
 
     raw_step = alpha_value * signal + beta_value * demand
-    capped = raw_step > MAX_STEP_PCT
-    step = min(raw_step, MAX_STEP_PCT)  # 只封顶上涨，下跌交给 floor
+    capped = abs(raw_step) > MAX_STEP_PCT
+    step = _clip(raw_step, -MAX_STEP_PCT, MAX_STEP_PCT)  # 对称 clamp：涨跌都封顶 ±20%
 
     # ---------------- 价格与护栏 ----------------
     new_price = round(float(current_price) * (1 + step), PRICE_DECIMALS)

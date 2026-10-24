@@ -47,11 +47,14 @@ def test_price_falls_when_score_negative() -> None:
 
 
 def test_price_never_below_floor() -> None:
+    """无论参数多极端，价格都不会低于 floor（原 Day1 用例，保留最弱断言）。"""
+
     result = update_price(2.0, score_delta=-1.0, alpha=5.0, floor=1.0)
 
     assert result.new_price >= 1.0
-    assert result.floored is True
-    assert "下限" in result.reason
+    assert result.new_price > 0
+    # 对称 clamp 下这一档先被截到 1.60（未触底），触底细节见 test_floor_applies_after_clamp
+    assert _close(result.new_price, 1.6), result.new_price
 
 
 def test_zero_demand_signal_keeps_price_when_score_zero() -> None:
@@ -70,18 +73,29 @@ def test_invalid_current_price_raises() -> None:
     raise AssertionError("current_price <= 0 时必须抛 ValueError")
 
 
-def test_step_is_capped_upwards_only() -> None:
-    """单次涨幅封顶 +20%；下跌不封顶，交给 floor 兜底。"""
+def test_step_is_capped_symmetrically() -> None:
+    """单次变动封顶 ±20%（对称）：涨跌都按上限执行。"""
 
-    capped = update_price(100.0, score_delta=1.0, alpha=5.0)
-    assert capped.capped is True
-    assert _close(capped.new_price, 100.0 * (1 + MAX_STEP_PCT)), capped.new_price
+    up = update_price(100.0, score_delta=1.0, alpha=5.0)   # 原始 +500%
+    assert up.capped is True
+    assert _close(up.new_price, 100.0 * (1 + MAX_STEP_PCT)), up.new_price
+    assert "上限" in up.reason
 
-    # 下跌不封顶：P=2、S=-1、α=5 → 直接打到 floor，而不是停在 1.60
-    floored = update_price(2.0, score_delta=-1.0, alpha=5.0)
-    assert floored.capped is False
-    assert floored.floored is True
-    assert _close(floored.new_price, 1.0), floored.new_price
+    down = update_price(100.0, score_delta=-1.0, alpha=5.0)  # 原始 -500%
+    assert down.capped is True
+    assert _close(down.new_price, 100.0 * (1 - MAX_STEP_PCT)), down.new_price
+    assert _close(down.change_pct, -MAX_STEP_PCT * 100), down.change_pct
+
+
+def test_floor_applies_after_clamp() -> None:
+    """clamp 之后若仍低于 floor（价格已经很低），价格停在 floor。"""
+
+    # P=1.1、S=-1、α=0.15 → -15% → 0.935 < floor=1.0 → 停在 1.00
+    result = update_price(1.1, score_delta=-1.0, alpha=0.15, floor=1.0)
+    assert result.capped is False
+    assert result.floored is True
+    assert _close(result.new_price, 1.0), result.new_price
+    assert "下限" in result.reason
 
 
 def test_standardize_score_basics() -> None:
@@ -92,6 +106,34 @@ def test_standardize_score_basics() -> None:
     low = standardize_score(50.0, [70.0, 72.0, 74.0])
     assert high > 0 > low
     assert -1.0 <= low <= high <= 1.0
+
+
+def test_standardize_score_three_sigma_scale() -> None:
+    """1σ → S≈0.333、2σ → 0.667、3σ → 满格 1.0：证明实现的是 z/Z_FULL_SCALE 而非 clamp(z)。"""
+
+    history = [70.0, 72.0, 74.0]        # 均值 72，总体标准差 ≈ 1.6330
+    sd = 1.632993161855452
+
+    assert _close(standardize_score(72 + sd, history), 1 / 3, 1e-3)
+    assert _close(standardize_score(72 + 2 * sd, history), 2 / 3, 1e-3)
+    assert _close(standardize_score(72 + 3 * sd, history), 1.0, 1e-3)
+    assert _close(standardize_score(72 + 10 * sd, history), 1.0)  # 超过 3σ 仍饱和
+
+
+def test_z_full_scale_one_matches_literal_mapping() -> None:
+    """Z_FULL_SCALE 改成 1.0 时回到字面口径 clamp(z,-1,1)：1σ 即满格。"""
+
+    import core_engine.pricing as pricing_mod
+
+    history = [70.0, 72.0, 74.0]
+    sd = 1.632993161855452
+    original = pricing_mod.Z_FULL_SCALE
+    try:
+        pricing_mod.Z_FULL_SCALE = 1.0
+        assert _close(standardize_score(72 + sd, history), 1.0)
+        assert _close(standardize_score(72 + 0.5 * sd, history), 0.5)
+    finally:
+        pricing_mod.Z_FULL_SCALE = original
 
 
 # ---------------------------------------------------------------- 零依赖运行器

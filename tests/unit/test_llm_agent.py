@@ -14,7 +14,6 @@ import json
 from types import SimpleNamespace
 
 import pytest
-
 from ai.fallback import rule_based_advice
 from ai.llm_agent import OUTPUT_KEYS, LLMOutputError, _parse_and_validate, analyze
 

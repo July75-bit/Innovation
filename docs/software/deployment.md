@@ -108,6 +108,25 @@
 - [ ] **重新部署后端后，交易记录仍在**（证明 Postgres 真的生效）
 - [ ] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告
 
+### 3.8 第 3 天部署预检（2026-10-24，不部署）
+
+> 目的：第 5 天正式部署前先过一遍代码侧可检查项，避免当天才发现配置缺失。**只做静态检查，没有创建任何 Render 服务。**
+
+| # | 检查项 | 结果 | 说明 / 待办 |
+| --- | --- | --- | --- |
+| 1 | `render.yaml` 后端：`rootDir: code/backend`、`startCommand: uvicorn app.main:app`、`healthCheckPath: /api/health` | ✅ | 与仓库一致，不是手册里的 `main:app` |
+| 2 | `render.yaml` 前端：`rootDir: code/frontend`、`npm install && npm run build`、`staticPublishPath: dist`、SPA rewrite 回退 | ✅ | 等 A 的脚手架生成 `package.json` 后才真正生效 |
+| 3 | `DATABASE_URL` 用控制台 `sync: false`，填 Render Postgres 的 Internal Database URL | ✅ | 第 5 天填；忘填会回落本地 SQLite，数据随部署丢失 |
+| 4 | `postgres://` 自动归一化、`pool_pre_ping`、Render 上误用 SQLite 的告警日志 | ✅ | 已在 `config.py` / `database.py` / `main.py` 实现 |
+| 5 | `LLM_API_KEY`、`CORS_ORIGINS` 均为 `sync: false` | ✅ | 第 5 天填；CORS 不填前端会跨域失败 |
+| 6 | `.env.example` 字段与 `Settings` 一致（含 `LLM_TIMEOUT_SECONDS=20`） | ✅ | 小瑕疵：注释仍写"挂载磁盘后改 SQLite"，与方案 B 不一致，建议 B 顺手改注释（不影响运行） |
+| 7 | `requirements.lock.txt` 已入库（B，第 2 天） | ✅ | 部署 build 仍用 `requirements.txt`；锁定文件作为"可复现"证据保留 |
+| 8 | 演示数据初始化方式 | 🟡 | 免费实例没有 Shell，必须本地连 **External** Database URL 跑 `seed_db.py`（§3.6） |
+| 9 | 线上验收清单（第 5 节 TC-401~406） | ⬜ | 第 5 天执行 |
+| 10 | 前端构建产物（`dist/`） | 🟡 | A 的脚手架未生成（第 3 天进行中），前端服务暂不能部署 |
+
+**预检结论**：**后端代码侧已就绪**，第 5 天可先单独部署后端验证 `/api/health` 与 Postgres 持久化；前端部署与线上全流程验收阻塞在 A 的脚手架（第 3–4 天）与第 5 天的控制台操作。**今天不做任何线上操作。**
+
 ## 4. 数据持久化（必须解决，否则第 5 天验收不过）
 
 ### 4.1 已确认的平台事实
