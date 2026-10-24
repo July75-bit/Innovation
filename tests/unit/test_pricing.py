@@ -47,11 +47,14 @@ def test_price_falls_when_score_negative() -> None:
 
 
 def test_price_never_below_floor() -> None:
+    """无论参数多极端，价格都不会低于 floor（原 Day1 用例，保留最弱断言）。"""
+
     result = update_price(2.0, score_delta=-1.0, alpha=5.0, floor=1.0)
 
     assert result.new_price >= 1.0
-    assert result.floored is True
-    assert "下限" in result.reason
+    assert result.new_price > 0
+    # 对称 clamp 下这一档先被截到 1.60（未触底），触底细节见 test_floor_applies_after_clamp
+    assert _close(result.new_price, 1.6), result.new_price
 
 
 def test_zero_demand_signal_keeps_price_when_score_zero() -> None:
@@ -70,18 +73,29 @@ def test_invalid_current_price_raises() -> None:
     raise AssertionError("current_price <= 0 时必须抛 ValueError")
 
 
-def test_step_is_capped_upwards_only() -> None:
-    """单次涨幅封顶 +20%；下跌不封顶，交给 floor 兜底。"""
+def test_step_is_capped_symmetrically() -> None:
+    """单次变动封顶 ±20%（对称）：涨跌都按上限执行。"""
 
-    capped = update_price(100.0, score_delta=1.0, alpha=5.0)
-    assert capped.capped is True
-    assert _close(capped.new_price, 100.0 * (1 + MAX_STEP_PCT)), capped.new_price
+    up = update_price(100.0, score_delta=1.0, alpha=5.0)   # 原始 +500%
+    assert up.capped is True
+    assert _close(up.new_price, 100.0 * (1 + MAX_STEP_PCT)), up.new_price
+    assert "上限" in up.reason
 
-    # 下跌不封顶：P=2、S=-1、α=5 → 直接打到 floor，而不是停在 1.60
-    floored = update_price(2.0, score_delta=-1.0, alpha=5.0)
-    assert floored.capped is False
-    assert floored.floored is True
-    assert _close(floored.new_price, 1.0), floored.new_price
+    down = update_price(100.0, score_delta=-1.0, alpha=5.0)  # 原始 -500%
+    assert down.capped is True
+    assert _close(down.new_price, 100.0 * (1 - MAX_STEP_PCT)), down.new_price
+    assert _close(down.change_pct, -MAX_STEP_PCT * 100), down.change_pct
+
+
+def test_floor_applies_after_clamp() -> None:
+    """clamp 之后若仍低于 floor（价格已经很低），价格停在 floor。"""
+
+    # P=1.1、S=-1、α=0.15 → -15% → 0.935 < floor=1.0 → 停在 1.00
+    result = update_price(1.1, score_delta=-1.0, alpha=0.15, floor=1.0)
+    assert result.capped is False
+    assert result.floored is True
+    assert _close(result.new_price, 1.0), result.new_price
+    assert "下限" in result.reason
 
 
 def test_standardize_score_basics() -> None:
