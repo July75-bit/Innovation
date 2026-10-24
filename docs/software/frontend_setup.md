@@ -1,78 +1,82 @@
-# 前端脚手架与本地运行说明
+> 本文件由 `code/frontend/README.md` 移入（T1-04，脚手架要求目标目录为空）。
+> 脚手架生成后的最新开发说明见 [code/frontend/README.md](../../code/frontend/README.md)。
 
-> **负责人**：A ｜ **补充**：D（第 3 天补回该文件，对应 T1-04「把原脚手架 README 移到这里，别直接删」）
-> **适用目录**：`code/frontend/` ｜ **技术栈**：Vue 3 + TypeScript + Vite（Router / Vitest / ESLint / Prettier）
+---
 
-## 1. 脚手架是怎么生成的
+# code/frontend/ —— 由 A 同学用官方脚手架生成，请勿手工预置文件
+
+## 为什么这个目录现在是空的
+
+6 天手册第 1 天要求 A 同学在**仓库根目录**执行：
 
 ```powershell
-cd D:\projects\innovation\Innovation
-# 生成前 code/frontend/ 必须为空目录（原来的 README 已移走/或先备份）
 npm create vue@latest code/frontend
-#   TypeScript          Yes
-#   JSX                 No
-#   Vue Router          Yes
-#   Pinia               No
-#   Vitest              Yes
-#   E2E                 No
-#   ESLint              Yes
-#   Prettier            Yes
 ```
 
-生成后提交了 `package.json` / `package-lock.json` / `tsconfig*.json` / `vite.config.ts` / `vitest.config.ts` / `eslint.config.ts` 等。
+脚手架要求 `code/frontend/` 目录**不存在或为空**，否则会提示目录非空而失败。因此这里只放这份说明，不预置 `package.json`、`vite.config.ts` 等文件。
 
-## 2. 本地跑起来（前后端一起）
+## A 同学第 1 天的操作
 
 ```powershell
-# 1) 后端（另开终端）
-cd D:\projects\innovation\Innovation
-python scripts\seed_db.py                     # 建表 + 8 名选手 + demo 账户（幂等）
-cd code\backend
-python -m uvicorn app.main:app --reload --port 8000
-
-# 2) 前端
-cd D:\projects\innovation\Innovation\code\frontend
-npm ci                                        # 依赖未入库，首次必须装
-Copy-Item .env.example .env.local             # 本地地址模板；.env.local 已被 gitignore
-npm run dev                                   # http://localhost:5173
+# 在仓库根目录执行
+npm create vue@latest code/frontend
 ```
 
-前端默认 `VITE_USE_MOCK=false`，所有页面走真实后端；`VITE_USE_MOCK=true` 时切到 `src/mock/players.ts` 的内存数据（后端没起时的开发兜底）。
+选项（与手册一致）：
 
-## 3. 目录与脚本
+| 配置项 | 选择 |
+| --- | --- |
+| Project name | frontend |
+| TypeScript | Yes |
+| JSX Support | No |
+| Vue Router | Yes |
+| Pinia | No |
+| Vitest | Yes |
+| End-to-End Testing | No |
+| ESLint | Yes |
+| Prettier | Yes |
 
-```text
-src/
-├── api/           # client.ts（fetch 封装）+ index.ts（接口函数）+ types.ts（契约类型）
-├── components/    # TradePanel / PriceChart / LoadingState / EmptyState / ErrorState
-├── composables/   # useAccount（余额共享状态）
-├── mock/          # players.ts（VITE_USE_MOCK=true 时的内存数据）
-├── router/        # / 市场、/players/:id 详情、/positions 持仓、/trades 流水
-├── utils/         # format.ts（金额/百分比格式化）+ __tests__/format.spec.ts
-├── views/         # MarketView / PlayerDetailView / PositionsView / TradesView
-└── App.vue        # 顶部导航 + 余额/健康徽标 + 合规页脚
+生成后：
+
+```powershell
+cd code/frontend
+npm install
+npm run dev
 ```
 
-| 脚本 | 用途 |
-| --- | --- |
-| `npm run dev` | 本地开发（5173） |
-| `npm run build` | `type-check` + 生产构建到 `dist/` |
-| `npm run type-check` | `vue-tsc --build` |
-| `npm run lint` | oxlint + eslint（带 `--fix`） |
-| `npm run test:unit` | Vitest（`src/utils/__tests__/format.spec.ts`） |
+## 必须手工补的三件事
 
-## 4. 环境变量与硬约束
+1. 建 `code/frontend/.env.example`：
 
-| 变量 | 说明 |
-| --- | --- |
-| `VITE_API_BASE_URL` | 后端地址；**唯一来源**，代码里不允许出现写死的 `127.0.0.1`/`localhost:8000`（CI 有 grep 检查） |
-| `VITE_USE_MOCK` | `true` 时全部接口切内存 mock；默认 `false` |
+   ```text
+   VITE_API_BASE_URL=http://127.0.0.1:8000
+   ```
 
-- 未配置 `VITE_API_BASE_URL` 时，`src/api/client.ts` 会明确报「未配置后端地址」，不会静默连错地址；
-- 后端 CORS 默认放行 `http://localhost:5173` / `http://127.0.0.1:5173`（见 `code/backend/.env.example` 的 `CORS_ORIGINS`）。
+   所有请求**从环境变量读后端地址**，不要写死 `127.0.0.1:8000`（第 5 天线上部署会改）。
 
-## 5. 当前状态（2026-10-24）
+   代码里的用法：
 
-- 页面/组件/路由/接口封装均已提交（A 的 `9782dc7`、`dbff9bd`）；
-- **本工作区尚未 `npm ci`**：`node_modules` 不存在，所以“浏览器里跑通全链路”的运行证据仍待 A 补（对应 T1-06/T1-08、T3-02/T3-04）；
-- 前端 `dist/` 也未生成，Render Static Site 部署要等 A 本地 `npm run build` 验证后再走第 5 天流程。
+   ```ts
+   const baseUrl = import.meta.env.VITE_API_BASE_URL
+   ```
+
+2. 确认 `npm run dev` 的端口是 `5173`（后端 CORS 默认放行这个源）。
+
+3. 把 `package-lock.json` 提交到仓库（CI 用 `npm ci`，缺它就会失败）。
+
+## 路由约定
+
+| 路由 | 页面 | 主要内容 |
+| --- | --- | --- |
+| `/` | 市场页 | 选手名称、当前价格、涨跌幅、表现评分 |
+| `/players/:id` | 选手详情页 | 价格、表现、涨跌原因、历史价格折线图、AI 建议（BUY/SELL/HOLD + 理由 + 风险等级） |
+| `/positions` | 持仓页 | 持有数量、买入均价、当前估值 |
+| `/trades` | 交易记录页 | 时间倒序的买卖流水 |
+
+交易区域：数量输入框 + 买入按钮 + 卖出按钮，成功或失败都要刷新余额/持仓/流水，并把后端返回的 `message` 展示给用户（余额不足、数量不合法等）。
+
+## 不要做的事
+
+- 不要修改 `code/backend/` 下任何文件（A 的边界）
+- 不要在本地只改页面数字伪造交易成功 —— 交易是否成功以后端数据库为准
+
