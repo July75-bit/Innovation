@@ -29,6 +29,8 @@ onMounted(() => {
 </script>
 
 <template>
+  <!-- CS2 氛围背景（纯装饰）：雷达网格 + 红色氛围光 + 警示斜纹 -->
+  <div class="backdrop" aria-hidden="true"></div>
   <header class="nav">
     <div class="nav-inner">
       <RouterLink to="/" class="brand">PlayerStock <span class="sub">虚拟选手股</span></RouterLink>
@@ -108,7 +110,7 @@ nav a.router-link-active {
   white-space: nowrap;
 }
 .health.good {
-  background: rgba(10, 143, 74, 0.12);
+  background: var(--down-bg);
   color: var(--down);
 }
 .health.bad {
@@ -143,5 +145,37 @@ nav a.router-link-active {
   font-size: 12px;
   color: var(--muted);
   border-top: 1px solid var(--border);
+}
+
+/* ===== CS2 氛围背景层：雷达网格 + 氛围光 + 警示斜纹 ===== */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    /* 顶部红色氛围光（赛场灯光感） */
+    radial-gradient(55% 42% at 50% 0%, rgba(229, 72, 77, 0.1), transparent 70%),
+    /* 雷达式细网格 */
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, 0.028) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.028) 39px 40px);
+}
+.backdrop::after {
+  /* 左下角警示斜纹（CS2 加载条风格），向右上淡出 */
+  content: '';
+  position: absolute;
+  left: -60px;
+  bottom: -60px;
+  width: 360px;
+  height: 240px;
+  transform: rotate(-8deg);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(229, 72, 77, 0.1) 0 10px,
+    transparent 10px 22px
+  );
+  mask-image: linear-gradient(55deg, #000 0%, transparent 72%);
+  -webkit-mask-image: linear-gradient(55deg, #000 0%, transparent 72%);
 }
 </style>

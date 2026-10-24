@@ -178,7 +178,7 @@ watch(playerId, () => loadCore())
   border-radius: 999px;
 }
 .status.ok {
-  background: rgba(10, 143, 74, 0.12);
+  background: var(--down-bg);
   color: var(--down);
 }
 .status.halt {

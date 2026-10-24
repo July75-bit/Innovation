@@ -1,13 +1,20 @@
 /* 全局设计令牌与基础样式（替代脚手架演示样式） */
 :root {
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --text: #1f2328;
-  --muted: #6b7280;
-  --border: #e2e5ea;
-  /* 中国市场习惯：红涨绿跌 */
-  --up: #d33a3a;
-  --down: #0a8f4a;
+  /* 黑红主题：黑底 + 红色点缀；涨红跌绿沿用中国市场习惯 */
+  --bg: #0b0c0e;
+  --surface: #16181c;
+  --text: #ececef;
+  --muted: #9a9da6;
+  --border: #2a2d33;
+  --up: #e5484d; /* 涨 / 买入 / 强调红 */
+  --down: #2fbf71; /* 跌 / 卖出 / 成功绿 */
+  /* 深色主题统一色底（徽标/提示用，替代散落 rgba） */
+  --up-bg: rgba(229, 72, 77, 0.16);
+  --down-bg: rgba(47, 191, 113, 0.14);
+  --warn: #e8a33d; /* 暂停交易等警示黄 */
+  --warn-bg: rgba(232, 163, 61, 0.16);
+  --neutral-bg: rgba(255, 255, 255, 0.08);
+  --shadow: rgba(0, 0, 0, 0.45);
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
 }
 

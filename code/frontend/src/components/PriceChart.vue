@@ -280,7 +280,7 @@ svg {
   font-size: 12px;
   max-width: 260px;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px var(--shadow);
   z-index: 2;
 }
 .tip.tip-near-left {
