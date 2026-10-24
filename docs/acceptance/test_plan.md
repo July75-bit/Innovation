@@ -56,7 +56,7 @@
 | TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
 | TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **91%**（839 语句 / 79 未覆盖，2026-10-24） |
 
-> **执行记录（2026-10-24 第 4 天，D）**：补 7 条核心异常用例、C 再补 2 条 CLI 冒烟后全仓 → **106 passed / 0 skipped**（单元 100 + 集成 6）；覆盖率 **91%**，课程 ≥60% 检查点达标。
+> **执行记录（2026-10-24 第 4 天末，D 核对）**：A 的浏览器证据（14 张）、C 的 recalc 5 条用例、B 的部署预检/一键灌数 8 条用例合入后全仓 → **120 passed / 0 skipped**（CI ubuntu：单元 107 + 集成 13；本机 Windows 因 BUG-03 为 118 passed + 1 failed + 1 error，见 `test_report.md` §9）；覆盖率 **91%**，课程 p.177 ≥60% 检查点达标。
 
 > **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
 > 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
@@ -75,6 +75,7 @@
 | TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | ✅ 2026-10-24（C 补：`test_standardize_score_three_sigma_scale` 断言 1σ→0.333/2σ→0.667/3σ→1.0/>3σ 饱和；`test_z_full_scale_one_matches_literal_mapping` 验证开关） |
 | TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
 | TC-110 | 价格历史 reason 可追溯（方案 A） | C 的 `simulate_match.py --json` 导出 → B 的 `update_prices.py --from-json` 落库 | `/api/players/{id}/prices` 每条模拟调价 reason 同时含 `S=` 与本轮模拟得分；换会话/读库后仍可读（进程级重启由 T3-05 覆盖），价格升序 | FR-M2-04 / FR-M2-05 | ✅ 2026-10-24（`tests/integration/test_price_reason_traceability.py` 4 条：from-json / 进程内引擎 / 落库+API / 200 字截断） |
+| TC-122 | 赛后重算接口 `POST /api/prices/recalc` | 重复 round 幂等去重、暂停选手跳过、未知选手 404、非法参数 422 | 接口返回 applied/skipped 明细，重复调用不重复落库 | FR-M2-04 | ✅ 2026-10-24（C：`test_prices_recalc.py` 5 条集成用例） |
 
 > **决策（2026-10-24）**：不新增 `score` 列或 `matches` 表（选项 B），改为把 `S(t)` 与本轮得分写进 `reason`（选项 A）。
 > 理由：不改表/契约，详情页、AI 上下文、答辩讲解都能直接用到；精确复现靠 `simulate_match.py` 固定 seed + reason 里的得分对齐。
@@ -112,13 +113,13 @@
 
 | ID | 用例 | 期望 | 状态 |
 | --- | --- | --- | --- |
-| TC-301 | 行情列表渲染 | 8 行，价格 2 位小数，涨跌带色 | ⬜ |
-| TC-302 | 买卖后自动刷新 | 余额/持仓/流水同步更新，不用手动刷新 | ⬜ |
-| TC-303 | 错误提示 | 后端 message 中文直出 | ⬜ |
-| TC-304 | 加载中/无数据/失败三态 | 三种状态都有 UI | ⬜ |
-| TC-305 | 折线图 | ≥10 个点，时间升序 | ⬜ |
-| TC-306 | AI 建议卡 | action 徽标 + 理由 + 风险等级 + 免责声明 | ⬜ |
-| TC-307 | 刷新页面数据仍在 | F5 后数据不变 | ⬜ |
+| TC-301 | 行情列表渲染 | 8 行，价格 2 位小数，涨跌带色 | ✅ 2026-10-24（`evidence/01-market.png`） |
+| TC-302 | 买卖后自动刷新 | 余额/持仓/流水同步更新，不用手动刷新 | ✅ 2026-10-24（`evidence/03/04/05/06`） |
+| TC-303 | 错误提示 | 后端 message 中文直出 | ✅ 2026-10-24（`evidence/07~11` 五条分支） |
+| TC-304 | 加载中/无数据/失败三态 | 三种状态都有 UI | ✅ 2026-10-24（`evidence/12/13/14`） |
+| TC-305 | 折线图 | ≥10 个点，时间升序 | ✅ 2026-10-24（`evidence/02-detail-chart-ai.png`） |
+| TC-306 | AI 建议卡 | action 徽标 + 理由 + 风险等级 + 免责声明 | ✅ 2026-10-24（`evidence/02-detail-chart-ai.png`） |
+| TC-307 | 刷新页面数据仍在 | F5 后数据不变 | 🟡 后端持久化已验（`test_report.md` §7）；浏览器刷新未单独截图，第 6 天回归补 |
 
 ### 4.5 部署与系统
 

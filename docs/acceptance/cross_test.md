@@ -39,11 +39,11 @@
 | --- | --- | --- | --- |
 | D | 后端 API（按 `user_manual.md` 主路径） | `pytest tests/integration/test_e2e_flow.py` + 异常矩阵 | 全链路 2 条 + `test_core_exceptions.py` 7 条全绿 |
 | D | AI 建议（规则版） | `tests/unit/test_ai_fallback.py` / `test_api_ai.py` | 6 + 7 条全绿；无密钥自动降级 `rule_fallback` |
-| A | 前端页面 | 待 `npm ci` + `npm run dev` 后在浏览器走查 | ⏳（本工作区无 `node_modules`） |
-| B | 前端页面 | 待 A 起服务后按问卷走查 | ⏳ |
-| C | AI 建议卡 / 价格原因文案 | 待 A 页面可看后核对 `reason` 与金额 | ⏳ |
+| A | 前端页面 | 真实后端 + 真实浏览器走查并截图 | ✅ 14 张证据 `docs/acceptance/evidence/`（M3/M4 闭环） |
+| B | 前端页面 | `npm ci` / build / lint / vitest + 复核 A 的证据 | ✅ 见 `test_report.md` §2.4 / §2.5 |
+| C | AI 建议卡 / 价格原因文案 | 复核 A 的详情页证据（reason 与金额一致） | ✅ `evidence/02-detail-chart-ai.png` |
 
-内部结论：后端接口与 AI 降级路径没有阻塞性问题；**页面层（点击路径、文案、三态）必须在浏览器里验证**，这是 M3/M4 的共同闸门。
+内部结论：后端接口、AI 降级路径与页面层（点击路径、文案、三态）都已有证据闭环（M3/M4 达成）；外部组问卷仍需另约，或按团队决定在第 5–6 天补。
 
 ## 4. 外部组问卷记录（待填）
 
