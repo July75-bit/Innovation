@@ -266,6 +266,57 @@ python scripts/update_prices.py --from-json data/price_updates.json
 > 为什么是 9 轮而不是 8 轮：种子只给 `ropz` 1 条历史（它的 `initial_price` 与 `current_price` 相等，
 > 省掉了"当前价"那条），8 轮只能到 9 个点；9 轮才能让**所有可交易选手都 ≥10**。
 
+### 4.2 部署环境（Render + Postgres）初始化与灌数
+
+> 演示数据不靠提交文件共享（`*.db` 与 `data/price_updates.json` 都被忽略），
+> 靠的是同一套配方能在任意库上重跑出同样的数据。`scripts/bootstrap_demo_data.py`
+> 就是这条配方的一键版，本地 SQLite 与 Render Postgres 通用。
+
+**架构**（见 `render.yaml`）：后端 `playerstock-backend`（Python web service，
+`rootDir=code/backend`，`startCommand=uvicorn app.main:app`，`healthCheckPath=/api/health`）
++ 前端 `playerstock-frontend`（static site，`rootDir=code/frontend`，带 SPA rewrite）。
+
+**必填环境变量**（Render 控制台填，`sync: false` 不进仓库）：
+
+| Key | 取值 |
+| --- | --- |
+| `DATABASE_URL` | Postgres 服务的 **Internal Database URL**（`postgresql://...`） |
+| `CORS_ORIGINS` | 前端公网地址，如 `https://playerstock-frontend.onrender.com` |
+| `LLM_API_KEY` | 可选；不填则 `/api/analysis` 自动降级 `source=rule_fallback` |
+| `VITE_API_BASE_URL`（前端服务） | 后端公网地址，如 `https://playerstock-backend.onrender.com` |
+
+**建表 + 灌数**（后端服务 → Shell，仓库根目录执行）：
+
+```bash
+python scripts/bootstrap_demo_data.py
+```
+
+等价于 §4.1 的三条命令（脚本内部就是顺序调用它们），跑完退出码 0 表示
+「每名可交易选手 ≥10 个价格点」。只想补价格不动库时加 `--keep`；
+想留一份明细加 `--json-out /tmp/price_updates.json`。
+
+**两个坑（都已修，并有用例守着 `tests/unit/test_config_db_url.py`）**：
+
+1. **驱动**：SQLAlchemy 2.1 起 `postgresql://` 默认解析到 psycopg **3**（包名 `psycopg`），
+   而本项目依赖 `psycopg2-binary`。`config.py` 会把裸 `postgresql://` / `postgres://`
+   补成 **`postgresql+psycopg2://`**，否则线上启动直接
+   `ModuleNotFoundError: No module named 'psycopg'`（第 4 天部署预检实测）。
+2. **临时磁盘**：Render 免费实例的文件系统是临时的，**必须用 Postgres**，
+   否则每次重新部署/休眠后数据归零；`app/main.py` 在 Render 上检测到 SQLite 会打 WARNING。
+
+**免费 Postgres 注意**：Render 免费库有约 30 天有效期（够答辩），到期前导出或升级；
+连接串含密码，只能用 `sync: false` 在控制台填，绝不提交明文。
+
+**上线后验收清单**：
+
+| 检查 | 期望 |
+| --- | --- |
+| `GET /api/health` | `{"status":"ok"}` |
+| `GET /api/players` | 8 条，字段与契约一致 |
+| `GET /api/players/1/prices` | ≥10 个点、升序、带中文 `reason` |
+| `POST /api/trades/buy` | 200，余额与持仓同步变化 |
+| 重启服务后再查 | 数据仍在（Postgres 生效） |
+
 ## 5. 变更记录
 
 | 日期 | 变更 | 变更人 | 影响 |
@@ -274,6 +325,7 @@ python scripts/update_prices.py --from-json data/price_updates.json
 | 第 1 天 | 按本文落成 ORM：5 张表 + `uq_positions_user_player` + `ck_positions_quantity_range` + 三条索引；金额改用 `NUMERIC(12,2)`（应用层 Decimal 计算，JSON 仍是两位小数）；SQLite 开启 `foreign_keys=ON` / WAL / `busy_timeout=5000` | B | 无接口字段变更；A/C/D 无需适配 |
 | 第 2 天 | 交易写入改成"条件更新"（见 §3.1）：扣款/加仓/减仓/清仓四个动作的守卫写进 SQL 的 `WHERE`，用 `rowcount` 判断成败；清仓改为 `DELETE` 以免违反 `quantity >= 1` 的 CHECK；买入的校验顺序按契约 §4.7 改为"余额先于持仓上限" | B | 表结构与接口字段均无变更；`trades` / `positions` 语义不变，A/C/D 无需适配 |
 | 第 3 天 | 价格更新落库（T3-01，见 §3.2）：新增 `app/core/price_update.py` + `scripts/update_prices.py`，`players.current_price/prev_price` 与 `price_history` 同事务写入；定死"C 只算、B 写库"。C 的 `update_price`/`simulator` 落地后脚本改走真实引擎，临时规则已删除；`reason` 追加"本轮模拟得分"以保证可追溯（不加表）。**表结构无变更** | B | 无字段变更；C 只需按 `PriceUpdate(new_price, change_pct, reason)` 返回，A 直接消费 `/prices` |
+| 第 4 天（部署预检） | 见 §4.2：新增 `scripts/bootstrap_demo_data.py`（一条命令把演示数据灌进任意 `DATABASE_URL`，本地/Postgres 通用）；`config.py` 把裸 `postgresql://` 补成 `postgresql+psycopg2://`——SQLAlchemy 2.1 默认改成 psycopg3，不补会在 Render 上 `ModuleNotFoundError: psycopg` | B | **表结构无变更**；部署时只需在 Render Shell 跑一条命令 |
 
 ## 6. TODO
 

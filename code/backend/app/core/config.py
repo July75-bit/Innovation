@@ -51,13 +51,25 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def _normalize_database_url(cls, v: str) -> str:
-        """Render 给的连接串可能以 postgres:// 开头，SQLAlchemy 2.x 只认 postgresql://。
+        """把 Render 给的连接串归一化成 SQLAlchemy 认得的写法。
 
-        不转换的话，线上启动会直接抛
-        `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`。
+        两个坑都要在这里处理：
+
+        1. Render 的地址可能以 `postgres://` 开头，SQLAlchemy 只认 `postgresql://`，
+           不转换会抛 `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`；
+        2. **SQLAlchemy 2.1 起，`postgresql://` 默认解析到 psycopg 3（包名 psycopg）**，
+           而本项目依赖的是 `psycopg2-binary`。不显式写驱动时，线上启动会直接
+           `ModuleNotFoundError: No module named 'psycopg'`（第 4 天部署预检实测）。
+           所以这里统一补成 `postgresql+psycopg2://`，与 requirements.txt 对齐，
+           也避免 SQLAlchemy 版本变化再次改变默认驱动。
         """
         if v.startswith("postgres://"):
-            return "postgresql://" + v[len("postgres://") :]
+            v = "postgresql://" + v[len("postgres://") :]
+
+        # 只补齐"没写驱动"的裸 postgresql://；显式写了 +psycopg / +asyncpg 的保持原样
+        bare = "postgresql://"
+        if v.startswith(bare):
+            return "postgresql+psycopg2://" + v[len(bare) :]
 
         # SQLite 相对路径统一相对 code/backend 解析：否则"在仓库根目录 seed、
         # 在 code/backend 启动服务"会各自生成一个 playerstock.db，看起来像数据丢了。

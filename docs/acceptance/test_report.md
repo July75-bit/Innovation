@@ -13,15 +13,16 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **107**（单元 101 + 集成 6） |
-| 通过 / 失败 / 跳过 | **107 / 0 / 0** |
+| 自动化用例总数 | **115**（单元 107 + 集成 8） |
+| 通过 / 失败 / 跳过 | **115 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
 | 通过 / 失败 | 未执行 / 未执行 |
 
 > 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
-> 从第 3 天的 88 条增至 **107** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
+> 从第 3 天的 88 条增至 **115** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
 > B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
-> C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）。
+> C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）、
+> B 的部署预检 `test_config_db_url.py`（+6，PG 连接串归一化/驱动）与 `test_bootstrap_demo_data.py`（+2，一键灌数）。
 
 ## 2. 自动化测试结果
 
@@ -30,7 +31,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-107 passed, 1 warning in 4.53s
+115 passed, 1 warning in 15.02s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -49,8 +50,8 @@ $ python -m pytest
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
-| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 4 天新增：`simulate_match.py` CLI 8 条输出 + ts ISO 8601 冒烟 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
+| `tests/unit/test_config_db_url.py` | 6 | 6 | 0 | 0 | B 部署预检新增：`postgres://`/裸 `postgresql://` 补成 `+psycopg2`、显式驱动不改写、建引擎解析到 psycopg2、SQLite 相对路径归一化 |
 
 ### 2.2 集成测试
 
@@ -58,6 +59,7 @@ $ python -m pytest
 | --- | --- | --- | --- | --- |
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
+| `tests/integration/test_bootstrap_demo_data.py` | 2 | 2 | 0 | 一键灌数（`scripts/bootstrap_demo_data.py`）：独立临时库跑到「每名可交易选手 ≥N 点」，且 `--keep` 可重复追加 |
 
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
@@ -222,7 +224,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 107 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 115 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
