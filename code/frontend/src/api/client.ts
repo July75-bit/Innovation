@@ -8,10 +8,7 @@
  */
 import type { ApiErrorBody } from './types'
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000').replace(
-  /\/+$/,
-  '',
-)
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
 
 /** 网络层 / 业务层统一错误：message 直接给用户看，code 用于程序判断 */
 export class ApiError extends Error {
@@ -27,6 +24,14 @@ export class ApiError extends Error {
 }
 
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  if (!API_BASE_URL) {
+    throw new ApiError(
+      '未配置后端地址：请在 .env.local 填写 VITE_API_BASE_URL（参考 .env.example）',
+      'MISSING_API_BASE_URL',
+      0,
+    )
+  }
+
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -35,7 +40,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     })
   } catch {
     throw new ApiError(
-      '无法连接后端服务，请确认后端已启动（http://127.0.0.1:8000）',
+      `无法连接后端服务（当前地址：${API_BASE_URL}），请确认后端已启动`,
       'NETWORK_ERROR',
       0,
     )
