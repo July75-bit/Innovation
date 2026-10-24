@@ -225,7 +225,9 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 - [ ] D：注册 Render、建 Postgres、建两个服务、填环境变量
 - [ ] D：把 `DATABASE_URL` 设为 **Internal Database URL**
-- [ ] B：实现 `scripts/seed_db.py`，然后用 **External Database URL** 从本地灌种子数据（3.6 节）
+- [x] B：`scripts/seed_db.py` 与一键灌数脚本 `scripts/bootstrap_demo_data.py` 均已实现并在干净库验证（每人 ≥10 点，见 §3.9）
+- [ ] B：等 1–2 完成拿到 **External Database URL** 后，从本地跑一次 `bootstrap_demo_data.py` 灌线上库（3.6 节）
+- [ ] B：线上跑一次 `python scripts/smoke_test_api.py --base https://<后端>.onrender.com`（第 5 天线上验收的第 4/6 项证据）
 - [ ] 全员：第 5 天按第 5 节验收清单逐条打勾
 
 **风险与兜底**：
