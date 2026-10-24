@@ -89,6 +89,22 @@ curl.exe http://127.0.0.1:8000/api/players/1/prices
 # Ctrl+C 停掉后再起，重复上面四条 GET，数字应完全一致
 ```
 
+### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
+
+> CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
+> 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
+
+| 步骤 | 命令 | 结果 |
+| --- | --- | --- |
+| 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
+| 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
+| 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
+| 单元测试 | `npx vitest run`（CI 未纳入，顺带补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+
+> 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
+> 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
+> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互（TC-301~307）仍需人验。
+
 ## 3. 交易规则边界测试结果（P0 必过）
 
 | ID | 用例 | 结果 | 实际现象 / 截图 |
@@ -167,7 +183,7 @@ curl.exe http://127.0.0.1:8000/api/players/1/prices
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
-| 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收（`node_modules` 未安装） | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
+| 前端手工用例 TC-301~307 | 依赖已装齐（`npm ci` 380 包），`npm run build` / oxlint / eslint / vitest 全绿（见 §2.4），但**尚未在浏览器里点过** | 浏览器闭环、三态、AI 卡未验 | 起 `npm run dev` + 后端后走一遍（M3 唯一闸门） |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
