@@ -8,7 +8,7 @@ Vue 3 + TypeScript + Vite，由官方脚手架 `npm create vue@latest` 生成
 ```powershell
 cd code/frontend
 npm install                  # 首次或依赖变化时
-# .env.local 已包含 VITE_API_BASE_URL=http://127.0.0.1:8000
+Copy-Item .env.example .env.local   # 每台机器首次执行一次（.env.local 不入库，新克隆没有）
 npm run dev                  # http://localhost:5173（后端 CORS 默认放行该源）
 ```
 

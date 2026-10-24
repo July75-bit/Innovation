@@ -150,6 +150,19 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 - [x] C 第 1 天：实现 `update_price` + `standardize_score`，`tests/unit/test_pricing.py` 去掉 skip 并全绿
 - [x] C 第 2 天：补 3σ 归一化（1σ→0.33 / 3σ→满格）与 `Z_FULL_SCALE=1.0` 开关断言，测试 10 条全绿
 - [x] C 第 1 天：实现 `simulator`，`python scripts/simulate_match.py --seed 42` 可打印"旧价 → 新价 + 原因"
+- [x] C 第 3 天：与 B 复核落库分工（C 只算 `PriceUpdate`、B 写 `price_history`；`ts` 用 UTC ISO 8601），结论写进 `mechanism_design.md` §6
 - [ ] C 第 4 天：用正式回测脚本替换第 7 节试跑数据，补 100 seed 稳定性统计
+- [ ] C 第 4 天：接 `POST /api/prices/recalc` 的触发与去重（`(player_id, round_no)`）
 - [ ] C 第 6 天：配合答辩讲解"哪部分来自比赛数据、哪部分来自需求"
-- [ ] 与 B 对齐：`POST /api/prices/recalc` 的触发与去重（`(player_id, round_no)`）
+
+## 10. 第 3 天验收证据（2026-10-24）
+
+| 验收项 | 命令 | 结果 |
+| --- | --- | --- |
+| 定价测试（要求 5 条，实际覆盖 10 条） | `python -m pytest tests/unit/test_pricing.py` | **10 passed**，0 skipped |
+| 模拟器可复现 | `python -m pytest tests/unit/test_simulator.py` | **3 passed**（同 seed 一致 / 跨 seed 不同） |
+| CLI 输出 8 条变化及原因 | `python scripts/simulate_match.py --seed 42` | 8 行 = 7 条更新 + 1 条 `suspended` 跳过，每行带中文 `reason` |
+| JSON 交给 B 落库 | `python scripts/simulate_match.py --seed 42 --json data/price_updates.json` | `ts` 形如 `2026-11-01T00:00:00Z`，字段与 `price_history` 对齐 |
+| 静态检查 | `ruff check --select E4,E7,E9,F,C901 code/core_engine scripts` | All checks passed；`simulate_match.main` 圈复杂度 4 |
+
+> 本机实测：pytest 9.1.1；跑 C 的两个测试文件时若未装后端依赖，可加 `--noconftest`（`tests/conftest.py` 会 import `app.main` 需要 fastapi）。

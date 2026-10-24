@@ -4,16 +4,15 @@
  * 余额始终从后端 GET /api/account 拉取（交易后由各页面触发 refreshAccount）。
  * 连接徽标走 GET /api/health（day1 验收项：页面显示"连接成功：<service>"）。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
-import { api } from './api'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
+import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
 
 const { account } = useAccount()
 
-/** null = 检测中；true = 已连接（记录 service 名）；false = 未连接 */
-const backend = ref<string | null | false>(null)
+const { service: backend } = useBackendHealth()
 
 const healthText = computed(() => {
   if (backend.value === null) return '检测后端连接…'
@@ -22,14 +21,7 @@ const healthText = computed(() => {
 })
 
 onMounted(() => {
-  api
-    .health()
-    .then((h) => {
-      backend.value = h.service
-    })
-    .catch(() => {
-      backend.value = false
-    })
+  checkBackendHealth()
   refreshAccount().catch(() => {
     /* 后端未启动时头部不展示余额即可，页面各自有错误提示 */
   })
