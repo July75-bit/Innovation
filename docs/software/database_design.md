@@ -313,3 +313,8 @@ CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
 自查结果：`players=8`、`price_history=15`、`users=1`、`positions=0`、`trades=0`（seed 后的干净状态）。
 `positions` 唯一约束与 `quantity 1–50` CHECK、`trades(user_id, created_at)` 索引、
 `price_history(player_id, ts)` 索引均已实际生成。
+
+**第 2 天复核（2026-10-24）**：按本节命令重新生成 `code/backend/playerstock.db` 后，结果与上面逐条一致——
+恰好 5 张表、4 条索引，`players=8`（价格 126.00 / 143.50 / 91.20 / 74.40 / 105.00 / 90.20 / 136.50 / 63.00，
+其中 `sh1ro` 为 `suspended`）、`price_history=15`。表结构自第 1 天起**未变**，所以第 2 天的并发加固
+（§3.1）只改写入方式，不改 schema，A/C/D 无需适配。
