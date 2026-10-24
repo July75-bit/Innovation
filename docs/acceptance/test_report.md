@@ -9,14 +9,19 @@
 
 | 项 | 内容 |
 | --- | --- |
-| 测试日期 | 2026-10-24（第 3 天） |
+| 测试日期 | 2026-10-24（第 3 天末 + 第 4 天） |
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **104**（单元 98 + 集成 6） |
-| 通过 / 失败 / 跳过 | **104 / 0 / 0** |
-| 手工用例总数 | 未执行（前端未完成，见 §9） |
+| 自动化用例总数 | **107**（单元 101 + 集成 6） |
+| 通过 / 失败 / 跳过 | **107 / 0 / 0** |
+| 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
 | 通过 / 失败 | 未执行 / 未执行 |
+
+> 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
+> 从第 3 天的 88 条增至 **107** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
+> B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
+> C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）。
 
 ## 2. 自动化测试结果
 
@@ -25,7 +30,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-104 passed, 1 warning in 5.44s
+107 passed, 1 warning in 4.53s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -37,12 +42,14 @@ $ python -m pytest
 | `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
-| `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增，`--from-json` / reason 幂等 / 非法输入 |
-| `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 补：同 seed 序列逐条相等 / 单场稳定 / 换 seed 不同（TC-106） |
-| `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
+| `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增：`--from-json` / 跳过 suspended / 同 seed 可复现 / reason 幂等不双写 / 非法输入 |
+| `tests/unit/test_pricing.py` | 11 | 11 | 0 | 0 | C 第 3 天实现（第 4 天增至 11 条）：含 3σ 归一化、`Z_FULL_SCALE` 开关与 reason 带得分断言 |
+| `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 第 3 天新增，TC-106：同 seed 序列逐条相等 / 单场稳定 / 换 seed 必变 |
+| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 3 天补：`simulate_match.py` CLI 冒烟（8 条输出 + `ts` ISO 8601） |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 4 天新增：`simulate_match.py` CLI 8 条输出 + ts ISO 8601 冒烟 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 
 ### 2.2 集成测试
@@ -55,7 +62,7 @@ $ python -m pytest
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（104 条用例）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（当时 106 条用例；新增的 1 条定价断言不影响覆盖率口径）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
@@ -67,6 +74,22 @@ $ python -m pytest
 | 模型 + 响应 schema | 238 | 0 | 100% |
 
 > 结论：核心逻辑 **91% ≥ 课程要求的 60%**；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+
+### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
+
+> CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
+> 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
+
+| 步骤 | 命令 | 结果 |
+| --- | --- | --- |
+| 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
+| 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
+| 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
+| 单元测试 | `npx vitest run`（CI 未纳入，顺带补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+
+> 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
+> 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
+> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互（TC-301~307）仍需人验。
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -103,7 +126,7 @@ $ python -m pytest
 | TC-107 | 历史升序 | 升序 | e2e + `test_apply_updates_writes_price_and_history` | ✅ |
 | TC-108 | 3σ 归一化 | z=1.5→S=0.5 | 1σ→0.333、2σ→0.667、3σ→1.0、>3σ 饱和；`Z_FULL_SCALE=1.0` 时 1σ 即满格 | ✅ `test_standardize_score_three_sigma_scale` / `test_z_full_scale_one_matches_literal_mapping` |
 | TC-109 | 对称 clamp ±20% | 涨跌都封顶 | `test_step_is_capped_symmetrically` | ✅ |
-| TC-110 | 价格历史 reason 可追溯（方案 A） | `/prices` 每条模拟调价 reason 含 `S=` + 本轮模拟得分；重启后仍可读 | `test_price_reason_traceability.py` 4 条（from-json / 引擎 / 落库+API / 200 字截断） | ✅ |
+| TC-110 | 价格历史 reason 可追溯（方案 A） | `/prices` 每条模拟调价 reason 含 `S=` + 本轮得分（C 现用措辞「本轮得分 76.6，S=-1.00」）；重启后仍可读 | `test_price_reason_traceability.py` 4 条（from-json / 引擎 / 落库+API / 200 字截断） | ✅ |
 
 > 说明：C 第 3 天已实现 `update_price` / `standardize_score` 与 `simulate_match.py`，5 条 skip 全部转绿（`test_pricing.py` 共 10 条）；
 > TC-101~110 已全部有自动化断言（TC-106 由 `test_simulator.py` 覆盖，3 条）。
@@ -189,7 +212,7 @@ SAME balance=True total=True qty=True trades=True points=True
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
-| 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收 | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
+| 前端手工用例 TC-301~307 | 依赖已装齐（`npm ci` 380 包），`npm run build` / oxlint / eslint / vitest 全绿（见 §2.4），但**尚未在浏览器里点过** | 浏览器闭环、三态、AI 卡未验 | 起 `npm run dev` + 后端后走一遍（M3 唯一闸门） |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
@@ -199,7 +222,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 104 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 107 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
@@ -207,5 +230,6 @@ SAME balance=True total=True qty=True trades=True points=True
 ## 12. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
-- [ ] pytest 输出文本
-- [ ] 部署持久化验证截图
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（97 passed, 0 skipped）
+- [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
+- [ ] 部署持久化验证截图（线上，第 5 天）

@@ -108,6 +108,16 @@ def test_standardize_score_basics() -> None:
     assert -1.0 <= low <= high <= 1.0
 
 
+def test_reason_includes_score_when_provided() -> None:
+    """第 4 天验收：reason 要能追溯到"本轮得分"；不传 score 时保持旧文案（B 会补）。"""
+    with_score = update_price(100.0, score_delta=0.5, alpha=0.2, score=88.0)
+    assert "本轮得分 88.0" in with_score.reason, with_score.reason
+    assert "S=+0.50" in with_score.reason, with_score.reason
+
+    without_score = update_price(100.0, score_delta=0.5, alpha=0.2)
+    assert "得分" not in without_score.reason, without_score.reason
+
+
 def test_standardize_score_three_sigma_scale() -> None:
     """1σ → S≈0.333、2σ → 0.667、3σ → 满格 1.0：证明实现的是 z/Z_FULL_SCALE 而非 clamp(z)。"""
 

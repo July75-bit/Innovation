@@ -217,6 +217,7 @@ def _process_match(
         alpha=args.alpha,
         beta=args.beta,
         floor=args.floor,
+        score=match.score,  # reason 里带"本轮得分"，与 B 的落库幂等
     )
 
     _print_update(label, match, update, st["history"], signal, args.window)

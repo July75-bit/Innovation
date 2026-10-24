@@ -56,7 +56,7 @@
 | TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
 | TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **91%**（839 语句 / 79 未覆盖，2026-10-24） |
 
-> **执行记录（2026-10-24 第 4 天，D）**：补 7 条核心异常用例后全仓 → **104 passed / 0 skipped**（单元 98 + 集成 6）；覆盖率 **91%**，课程 ≥60% 检查点达标。
+> **执行记录（2026-10-24 第 4 天，D）**：补 7 条核心异常用例、C 再补 2 条 CLI 冒烟后全仓 → **106 passed / 0 skipped**（单元 100 + 集成 6）；覆盖率 **91%**，课程 ≥60% 检查点达标。
 
 > **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
 > 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
@@ -76,9 +76,12 @@
 | TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
 | TC-110 | 价格历史 reason 可追溯（方案 A） | C 的 `simulate_match.py --json` 导出 → B 的 `update_prices.py --from-json` 落库 | `/api/players/{id}/prices` 每条模拟调价 reason 同时含 `S=` 与本轮模拟得分；换会话/读库后仍可读（进程级重启由 T3-05 覆盖），价格升序 | FR-M2-04 / FR-M2-05 | ✅ 2026-10-24（`tests/integration/test_price_reason_traceability.py` 4 条：from-json / 进程内引擎 / 落库+API / 200 字截断） |
 
-> **决策（2026-10-24）**：不新增 `score` 列或 `matches` 表（选项 B），改为把 `S(t)` 与本轮模拟得分写进 `reason`（选项 A）。
+> **决策（2026-10-24）**：不新增 `score` 列或 `matches` 表（选项 B），改为把 `S(t)` 与本轮得分写进 `reason`（选项 A）。
 > 理由：不改表/契约，详情页、AI 上下文、答辩讲解都能直接用到；精确复现靠 `simulate_match.py` 固定 seed + reason 里的得分对齐。
-> 当前实现：B 在落库层临时拼接“本轮模拟得分”（`update_prices.with_score_in_reason`），C 接管后由 C 直接拼好、B 只透传（见 `database_design.md` §3.2 分工待办）。详见 `architecture.md` §5 ADR。
+> 当前实现（已切换完成）：**C 直接拼好**——`update_price(..., score=...)` 生成
+> `…（本轮得分 76.6，S=-1.00）`；B 的 `update_prices.with_score_in_reason` 以"得分"为幂等标记，
+> 命中即透传、只在吃到早期不带得分的导出明细时才补一次，并负责 200 字截断。
+> 见 `database_design.md` §3.2「分工结论」。
 
 > **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
 > 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补（后续均已补齐：TC-108 见 `dfe9f26`，TC-106 见 `506b564`）。
