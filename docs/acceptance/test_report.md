@@ -13,16 +13,17 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **115**（单元 107 + 集成 8） |
-| 通过 / 失败 / 跳过 | **115 / 0 / 0** |
+| 自动化用例总数 | **120**（单元 107 + 集成 13） |
+| 通过 / 失败 / 跳过 | **120 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
 | 通过 / 失败 | 未执行 / 未执行 |
 
-> 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
-> 从第 3 天的 88 条增至 **115** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
+> 复跑说明（2026-10-25）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
+> 从第 3 天的 88 条增至 **120** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
 > B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）、
-> B 的部署预检 `test_config_db_url.py`（+6，PG 连接串归一化/驱动）与 `test_bootstrap_demo_data.py`（+2，一键灌数）。
+> B 的部署预检 `test_config_db_url.py`（+6）与 `test_bootstrap_demo_data.py`（+2）、
+> C 第 4 天的赛后结算 `test_prices_recalc.py`（+5）。
 
 ## 2. 自动化测试结果
 
@@ -31,7 +32,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-115 passed, 1 warning in 15.02s
+120 passed, 1 warning in 25.69s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -60,6 +61,7 @@ $ python -m pytest
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
 | `tests/integration/test_bootstrap_demo_data.py` | 2 | 2 | 0 | 一键灌数（`scripts/bootstrap_demo_data.py`）：独立临时库跑到「每名可交易选手 ≥N 点」，且 `--keep` 可重复追加 |
+| `tests/integration/test_prices_recalc.py` | 5 | 5 | 0 | C 第 4 天的赛后结算 `POST /api/prices/recalc`：落库且 reason 带得分、同轮幂等、跳过 suspended、未知选手 404、空 items 422 |
 
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
@@ -204,10 +206,19 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 9. 缺陷清单
 
+> 只登记**真实发现并修掉**的缺陷；每条都给了能复跑的用例或实测记录。当前 P0/P1 全部清零。
+
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| BUG-01 | | P0/P1/P2 | | | 待修/已修/不修 | |
-| BUG-02 | | | | | | |
+| BUG-01 | **并发卖出超卖且重复入账**：两条连接各卖 2 股、实际只持 3 股，结果卖出 4 股、余额 5000.00 → 5504.00，还剩 1 股（凭空多卖一股） | P0 | 交易 `api/trades.py` | B | 已修 | 根因是"先 SELECT 判断再 UPDATE"。改为条件更新：减仓 `WHERE quantity > n`、卖光 `DELETE ... AND quantity = n`。`test_trades_concurrency.py` 3 条；修复前后实测对比见 `database_design.md` §3.1 |
+| BUG-02 | 买入校验顺序违反契约 §4.7：先查持仓上限、后查余额，用户没钱却提示"超过持仓上限 50 股" | P1 | 交易 | B | 已修 | 顺序改为 选手→数量→可交易→余额→上限；`test_buy_checks_balance_before_position_limit` |
+| BUG-03 | 清仓把 `positions.quantity` 更新成 0，触发 `ck_positions_quantity_range`（1–50）CHECK，卖光最后一笔报 500 `INTERNAL_ERROR` | P1 | 交易 | B | 已修 | 卖光分支改走 `DELETE`；`test_sell_normal` 的"卖光后持仓行删除"覆盖 |
+| BUG-04 | 价格 `reason` 的"得分"可能被拼两遍（C 拼一次 + B 再拼一次） | P2 | 价格落库 | B | 已修 | `with_score_in_reason()` 幂等化（以"得分"为标记，命中即透传）；`test_score_is_not_duplicated_when_c_already_added_it` / `test_plan_from_json_passes_through_c_reason` |
+| BUG-05 | 临时定价规则污染价格历史：`reason` 被写成"（定价引擎由 C 接管后替换）"，会直接展示给前端和 AI | P1 | 价格落库 | B | 已修 | C 引擎落地后改走真实链路，临时规则整段删除；`test_update_prices_script.py` 9 条 |
+| BUG-06 | 暂停交易（`suspended`）的选手仍被改价，与"比赛中暂停交易"规则冲突 | P1 | 价格落库 | B | 已修 | `plan_from_engine` 跳过非 trading 并在输出中说明；`test_suspended_players_are_skipped` |
+| BUG-07 | `price_history.reason` 超过 `VARCHAR(200)` 会写库失败（长 reason 场景） | P2 | 价格落库 | B | 已修 | 统一截断到 200 并加省略号；`test_reason_is_truncated_to_column_limit` |
+| BUG-08 | **部署阻断**：SQLAlchemy 2.1 起 `postgresql://` 默认驱动换成 psycopg 3，而项目只装 `psycopg2-binary`；Render 按 `render.yaml` 填连接串会 `ModuleNotFoundError: No module named 'psycopg'`，服务直接起不来 | P0（部署） | 配置 `core/config.py` | B | 已修 | 把裸 `postgres://` / `postgresql://` 归一化为 `postgresql+psycopg2://`（显式驱动不改写）；`test_config_db_url.py` 6 条，含"建引擎必须解析到 psycopg2" |
+| BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中 |
 
 ## 10. 未覆盖与已知限制
 
@@ -224,7 +235,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 115 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 120 条全绿；缺陷清单里 2 个 P0 已修并有用例守着；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**

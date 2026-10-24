@@ -44,7 +44,7 @@
 ### 3.0 前置条件（代码侧已就绪）
 
 - [x] `code/backend/requirements.txt` 已含 `psycopg2-binary`（连 Postgres 的驱动）
-- [x] `code/backend/app/core/config.py` 已把 Render 的 `postgres://` 自动转成 `postgresql://`（不转会启动报 `Can't load plugin: sqlalchemy.dialects:postgres`）
+- [x] `code/backend/app/core/config.py` 已把 `postgres://` / 裸 `postgresql://` 归一化成 **`postgresql+psycopg2://`**：① 不转 `postgres://` 会报 `Can't load plugin: sqlalchemy.dialects:postgres`；② **SQLAlchemy 2.1 起裸 `postgresql://` 默认驱动是 psycopg 3（包名 `psycopg`）**，而项目只装 `psycopg2-binary`，不显式写驱动会 `ModuleNotFoundError: No module named 'psycopg'` 直接起不来（第 4 天预检实测，`tests/unit/test_config_db_url.py` 6 条守着）
 - [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
 - [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
 - [ ] 代码已推到 GitHub；确认 **要部署的分支**（团队当前用 `develop`，Blueprint 创建时选它，否则推了不自动部署）
@@ -90,16 +90,18 @@
 > 要连 Render 的 **External Database URL** 从本地写入。
 
 1. 后端启动时会自动建表（`init_db()`），此时表是空的 → 前端会显示"没有选手"
-2. 本地仓库根目录执行：
+2. 本地仓库根目录执行（**一条命令**：种子 + 9 轮价格，让每人 ≥10 个价格点）：
 
    ```powershell
-   cd code/backend
    $env:DATABASE_URL="<External Database URL>"
-   python ../scripts/seed_db.py
+   python scripts/bootstrap_demo_data.py
+   Remove-Item Env:\DATABASE_URL   # 用完清掉，别让本地测试连到线上库
    ```
 
-3. 刷新线上前端 → 能看到 8 名 CS2 选手即成功
-4. 依赖：**B 必须先实现 `scripts/seed_db.py`**（当前仍是 TODO 桩，属第 2 天任务）
+3. 刷新线上前端 → 能看到 8 名选手、进详情页有 10+ 个价格点即成功
+4. 依赖已就绪：`scripts/seed_db.py`（B，第 1 天）、`scripts/update_prices.py`（B，第 3 天）
+   均已实现；`bootstrap_demo_data.py`（B，第 4 天）只是把这两步 + C 的 `simulate_match.py`
+   串成一条命令。只想补价格不动库时加 `--keep`
 
 ### 3.7 最终验证
 
@@ -117,13 +119,13 @@
 | 1 | `render.yaml` 后端：`rootDir: code/backend`、`startCommand: uvicorn app.main:app`、`healthCheckPath: /api/health` | ✅ | 与仓库一致，不是手册里的 `main:app` |
 | 2 | `render.yaml` 前端：`rootDir: code/frontend`、`npm install && npm run build`、`staticPublishPath: dist`、SPA rewrite 回退 | ✅ | 等 A 的脚手架生成 `package.json` 后才真正生效 |
 | 3 | `DATABASE_URL` 用控制台 `sync: false`，填 Render Postgres 的 Internal Database URL | ✅ | 第 5 天填；忘填会回落本地 SQLite，数据随部署丢失 |
-| 4 | `postgres://` 自动归一化、`pool_pre_ping`、Render 上误用 SQLite 的告警日志 | ✅ | 已在 `config.py` / `database.py` / `main.py` 实现 |
+| 4 | `postgres://` 自动归一化、`pool_pre_ping`、Render 上误用 SQLite 的告警日志 | ✅ | 已在 `config.py` / `database.py` / `main.py` 实现。**第 4 天补充**：归一化目标改为 `postgresql+psycopg2://`——SQLAlchemy 2.1 的裸 `postgresql://` 默认用 psycopg 3，不写死驱动会 `ModuleNotFoundError: psycopg`（`test_config_db_url.py` 守卫） |
 | 5 | `LLM_API_KEY`、`CORS_ORIGINS` 均为 `sync: false` | ✅ | 第 5 天填；CORS 不填前端会跨域失败 |
-| 6 | `.env.example` 字段与 `Settings` 一致（含 `LLM_TIMEOUT_SECONDS=20`） | ✅ | 小瑕疵：注释仍写"挂载磁盘后改 SQLite"，与方案 B 不一致，建议 B 顺手改注释（不影响运行） |
+| 6 | `.env.example` 字段与 `Settings` 一致（含 `LLM_TIMEOUT_SECONDS=20`） | ✅ | 第 4 天已把注释里"挂载磁盘后改 SQLite"改为"线上必须填 Postgres"并写明驱动归一化，与方案 B 一致 |
 | 7 | `requirements.lock.txt` 已入库（B，第 2 天） | ✅ | 部署 build 仍用 `requirements.txt`；锁定文件作为"可复现"证据保留 |
-| 8 | 演示数据初始化方式 | 🟡 | 免费实例没有 Shell，必须本地连 **External** Database URL 跑 `seed_db.py`（§3.6） |
+| 8 | 演示数据初始化方式 | ✅ | 免费实例无 Shell → 本地连 **External** URL 跑 `python scripts/bootstrap_demo_data.py` 一条命令（种子 + 9 轮价格 = 每人 ≥10 点，见 §3.6） |
 | 9 | 线上验收清单（第 5 节 TC-401~406） | ⬜ | 第 5 天执行 |
-| 10 | 前端构建产物（`dist/`） | 🟡 | A 的脚手架未生成（第 3 天进行中），前端服务暂不能部署 |
+| 10 | 前端构建产物（`dist/`） | ✅ | A 的脚手架已入库；第 4 天 B 本地复跑 `npm ci` / `npm run build`（58 modules，exit 0）/ oxlint / eslint / vitest 全绿，CI run #30 前端 job 亦绿（见 `test_report.md` §2.4） |
 
 **预检结论**：**后端代码侧已就绪**，第 5 天可先单独部署后端验证 `/api/health` 与 Postgres 持久化；前端部署与线上全流程验收阻塞在 A 的脚手架（第 3–4 天）与第 5 天的控制台操作。**今天不做任何线上操作。**
 

@@ -285,15 +285,22 @@ python scripts/update_prices.py --from-json data/price_updates.json
 | `LLM_API_KEY` | 可选；不填则 `/api/analysis` 自动降级 `source=rule_fallback` |
 | `VITE_API_BASE_URL`（前端服务） | 后端公网地址，如 `https://playerstock-backend.onrender.com` |
 
-**建表 + 灌数**（后端服务 → Shell，仓库根目录执行）：
+**建表 + 灌数**：⚠️ **免费实例没有 Shell / one-off job**，所以灌数必须在**本地**连
+**External Database URL** 跑（不要用 Internal，那个只在 Render 内网可达）。
 
-```bash
+```powershell
+# 本地仓库根目录（不是 code/backend）
+$env:DATABASE_URL = "<External Database URL>"   # postgresql://... 含密码，别提交
 python scripts/bootstrap_demo_data.py
 ```
 
-等价于 §4.1 的三条命令（脚本内部就是顺序调用它们），跑完退出码 0 表示
+表不用手动建：后端启动时 `init_db()` 会建；`bootstrap_demo_data.py` 也会先确保表存在。
+脚本等价于 §4.1 的三条命令（内部就是顺序调用它们），跑完退出码 0 表示
 「每名可交易选手 ≥10 个价格点」。只想补价格不动库时加 `--keep`；
-想留一份明细加 `--json-out /tmp/price_updates.json`。
+想留一份明细加 `--json-out ./price_updates.json`。
+
+> 免费 Postgres 的 External URL 有连接数限制（约 5 个并发），本地灌数时别同时开别的客户端。
+> 用完后把 `$env:DATABASE_URL` 清掉（`Remove-Item Env:\DATABASE_URL`），免得本地跑测试连到线上库。
 
 **两个坑（都已修，并有用例守着 `tests/unit/test_config_db_url.py`）**：
 

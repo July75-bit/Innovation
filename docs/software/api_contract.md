@@ -58,10 +58,13 @@
 | 8 | POST | `/api/trades/sell` | 卖出 | A + B | ✅ 已实现（提前完成） |
 | 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
 | 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ✅ 已实现（第 3 天 D 接线） |
+| 11 | POST | `/api/prices/recalc` | **赛后结算（运维接口，不对前端开放）**：写入一轮比赛后的价格 | B + C | ✅ 已实现（第 4 天 C；`tests/integration/test_prices_recalc.py` 5 条） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
 > 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进
 > `app/api/ai.py`（B 的路由外壳，接线改动已同步本契约与测试）。
+> 第 11 项是第 4 天新增的**运维接口**（结算不是玩家动作）：前端不调用、A 无需适配；
+> 请求/响应、幂等去重键与 409 语义见 §6 变更记录与 `mechanism_design.md` §5 第 4 条。
 > 卖出（第 8 项）原计划第 2 天，因与买入共用同一套事务与校验、提前一并完成。
 
 ---
