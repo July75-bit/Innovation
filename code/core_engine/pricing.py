@@ -121,14 +121,26 @@ def _build_reason(
     change_pct: float,
     capped: bool,
     floored: bool,
+    score: float | None = None,
 ) -> str:
-    """生成给用户看的中文原因，必须能对应到公式里的某一项。"""
+    """生成给用户看的中文原因，必须能对应到公式里的某一项。
+
+    传入 `score` 时 reason 会带"本轮得分 XX"，让 `price_history.reason` 能直接
+    追溯到是哪一场表现算出来的（第 4 天验收：reason 含 S + 得分）。
+    用词必须是"**得分**"：B 的 `with_score_in_reason()` 以它为幂等标记，
+    命中就不再追加，避免"C 拼一次、B 又拼一次"的双写。
+    """
     if signal > 0.3:
-        reason = f"本场表现提升（S={signal:+.2f}）"
+        head = "本场表现提升"
     elif signal < -0.3:
-        reason = f"本场表现下滑（S={signal:+.2f}）"
+        head = "本场表现下滑"
     else:
-        reason = f"表现与近期均值接近（S={signal:+.2f}）"
+        head = "表现与近期均值接近"
+
+    if score is None:
+        reason = f"{head}（S={signal:+.2f}）"
+    else:
+        reason = f"{head}（本轮得分 {score:.1f}，S={signal:+.2f}）"
 
     if beta > 0 and abs(demand_signal) > 0.3:
         side = "买盘集中" if demand_signal > 0 else "卖盘集中"
@@ -155,6 +167,7 @@ def update_price(
     alpha: float | None = None,
     beta: float | None = None,
     floor: float | None = None,
+    score: float | None = None,
 ) -> PriceUpdate:
     """按方案 A 计算新价格。
 
@@ -163,6 +176,9 @@ def update_price(
         score_delta: 标准化表现信号 S(t)，建议先用 ``standardize_score()`` 算好。
         demand_signal: 需求信号 D(t)，初版传 0.0。
         alpha / beta / floor: 不传则按 settings → 环境变量 → 默认值解析。
+        score: 本轮原始得分（0-100）。传入后 reason 里会带"本轮得分 XX"，
+            便于 `price_history` 追溯；不传则维持旧文案（B 的
+            `with_score_in_reason()` 会补上，两边不重复）。
 
     Returns:
         PriceUpdate，价格与涨跌幅保留 2 位小数。
@@ -177,6 +193,8 @@ def update_price(
         raise ValueError(f"score_delta 必须是有限数值，收到 {score_delta!r}")
     if demand_signal is None or not math.isfinite(float(demand_signal)):
         raise ValueError(f"demand_signal 必须是有限数值，收到 {demand_signal!r}")
+    if score is not None and not math.isfinite(float(score)):
+        raise ValueError(f"score 必须是有限数值，收到 {score!r}")
 
     alpha_value = _resolve(alpha, "pricing_alpha", _ENV_ALPHA, DEFAULT_ALPHA)
     beta_value = _resolve(beta, "pricing_beta", _ENV_BETA, DEFAULT_BETA)
@@ -211,6 +229,7 @@ def update_price(
         change_pct=change_pct,
         capped=capped,
         floored=floored,
+        score=score,
     )
 
     return PriceUpdate(
