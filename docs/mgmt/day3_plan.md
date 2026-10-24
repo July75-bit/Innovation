@@ -22,7 +22,7 @@
 > **11:00 更新**：A 前端初版（`9782dc7`）、C 定价实现（`59186a5`）、B 价格落库（`5f069ee`）已合入 develop；C 补 3σ/同 seed 断言（`dfe9f26`/`506b564`）、B 补 `--from-json` + reason 幂等（`adcc848`/`19e68bd`）后全仓 pytest **97 passed / 0 skipped**。
 > CI 首次 push 因新增 ruff 门槛红在 `scripts/simulate_match.py::main` 复杂度 11（CLI 入口装配），已把 scripts 的 C901 阈值放宽到 12（业务代码/测试仍为 10），见 `code_quality_report.md` §4.2。剩余 M3 卡点 = 浏览器联调 + 持久化验证。
 >
-> **15:30 更新（D 复核）**：自动化层 **97 passed / 0 skipped**；T3-01/03/05/06/07 已完成，T3-02 代码已接真实接口、**T3-04 浏览器全链路尚未跑**（当前工作区 `node_modules`/`dist` 都没有，A 侧依赖待装）；T3-05 重启持久化已由 D 用真实 uvicorn 进程复现（见 `test_report.md` §7）；契约 §7 **3/4 已签（C 待签）**；CI run #30（`0bc2f14`）三 job 绿。今日剩余 = A 浏览器联调 + B 灌 10+ 价格点 + C 签字。
+> **15:30 更新（D 复核）**：自动化层 **97 passed / 0 skipped**；T3-01/03/05/06/07 已完成，T3-02 代码已接真实接口、**T3-04 浏览器全链路尚未跑**（当前工作区 `node_modules`/`dist` 都没有，A 侧依赖待装）；T3-05 重启持久化已由 D 用真实 uvicorn 进程复现（见 `test_report.md` §7）；契约 §7 **4/4 已签（C 于 `94ea9aa` 补签）**；CI run #30（`0bc2f14`）三 job 绿。今日剩余 = A 浏览器联调 + B 灌 10+ 价格点。
 
 ## 1. 全员共同段（09:00–09:40）
 

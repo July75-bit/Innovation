@@ -8,10 +8,10 @@
 
 | 项 | 状态 | 证据 |
 | --- | --- | --- |
-| 仓库 | `develop` 工作区干净，本地比 origin 多 1 个 commit（`3e5a4cd` 文档更新，待 push） | `git status -sb` |
+| 仓库 | `develop` 工作区干净，本地比 origin 多 2 个 commit（今日文档更新，待 push） | `git status -sb` |
 | 测试 | **97 passed / 0 skipped**（单元 91 + 集成 6）；TC-101~110 全绿，TC-106 已由 `test_simulator.py` 覆盖 | `pytest` |
 | T3 收尾 | 5 完成 + 2 部分：T3-02（真实接口已接、浏览器未验）、T3-04（全链路未跑）；**M3 未达成** | `milestones.md` |
-| 契约 | D/B/A 已签（3/4），**C 未签** §7 | `api_contract.md` |
+| 契约 | **四人已签**（D/B/A 已在 develop；C 于 `94ea9aa` 补签 §7） | `api_contract.md` |
 | 数据 | `playerstock.db` 0 字节（未 seed）；按 B 的配方可灌到每人 10+ 点 | `database_design.md` §4.1 |
 | 前端 | 代码就绪；本工作区无 `node_modules`/`dist`；CI run #30 前端 job（安装依赖 + lint + build）全绿 | GitHub Actions |
 | 质量工具 | 未装 `pytest-cov`；无 `scripts/backtest.py`；`backtest_report.md` 只有模板 | — |
@@ -23,9 +23,9 @@
 
 | 时间 | 事项 | 动作 | 产出 |
 | --- | --- | --- | --- |
-| 09:00–09:15 | 站会三问 | 昨天 T3 收尾 / 今天 T4+测试 / 卡在哪；确认 A 装依赖、C 签字、B 灌数据 | 口头对齐 |
+| 09:00–09:15 | 站会三问 | 昨天 T3 收尾 / 今天 T4+测试 / 卡在哪；确认 A 装依赖、B 灌数据、C 回测数据 | 口头对齐 |
 | 09:15–09:25 | 基线复跑 | 仓库根 `python -m pytest`，确认 **97 passed / 0 skipped** | 终端输出 |
-| 09:25–10:00 | 三线并行启动 | A 起前后端跑 T3-04；B 跑 seed + `simulate_match --rounds 8` + `update_prices --from-json`；C 签契约 §7 | A 截图、B 的 10+ 点数据、C 签字 |
+| 09:25–10:00 | 三线并行启动 | A 起前后端跑 T3-04；B 跑 seed + `simulate_match --rounds 8` + `update_prices --from-json`；C 准备回测数据（契约已由 C 于 `94ea9aa` 补签） | A 截图、B 的 10+ 点数据、C 的回测草稿 |
 
 ## 2. 分工与任务
 
@@ -57,13 +57,13 @@
 | 15:00–17:30 | 配合 A 联调错误码/并发/成交价语义；交叉原型测试当被测方 | 前端无 `undefined`；问题有记录 |
 | 17:30–18:00 | CI 后端 job 绿；接口变更同步契约（如无变更注明） | run 绿 |
 
-### 2.3 C 同学：定价（约 5h，签字 + 回测数据 + 修缺陷）
+### 2.3 C 同学：定价（约 5h，回测数据 + 修缺陷）
 
 **边界**：`code/core_engine/`、`data/seed_players.json`、`docs/algorithm/pricing_model.md`、`scripts/simulate_match.py`。
 
 | 时段 | 任务 | 完成标准 |
 | --- | --- | --- |
-| 09:20–09:40 | **契约 §7 签字**（唯一硬缺口） | `api_contract.md` 四人签字齐全 |
+| 09:20–09:40 | 契约 §7 **已签**（C 于 `94ea9aa` 补签）——本轮无需再签；转到回测数据准备 | 确认 `api_contract.md` 四人记录齐全 |
 | 09:40–11:00 | 给 B 的 8 轮明细核对：同 seed 下 `simulate_match.py` 与 `update_prices.py` 算出的价格一致；`reason` 含 S + 得分 | 抽样 3 条一致 |
 | 11:00–15:00 | **回测数据**：`pricing_model.md` §7 用正式数据替换第 1 天试跑；补 100 seed 稳定性统计（涨跌方向/幅度分布） | §7 有数字 + 100 seed 表；一涨一跌案例 |
 | 15:00–17:00 | 修复定价/模拟器缺陷；审 `reason` 文案（与 B 的幂等拼接对齐，避免双写得分） | 缺陷清单更新 |
@@ -111,7 +111,7 @@
 | 回测做不完 | 17:30 报告空白 | 1 策略 3 指标 + 3 组 seed；限制写清楚 |
 | 覆盖率工具装不上 | 无覆盖率数字 | `pip install --user pytest-cov` 或 `coverage run -m pytest`；仍不行则记录命令 + 用测试数/分支覆盖口头说明 |
 | 交叉测试约不到组 | 无问卷记录 | 组内互测（A↔B、C↔D），用同一份课件问卷，标注"组内互测" |
-| C 仍未签契约 | §7 不齐 | 站会当场签；D 在当天 18:00 汇总时点名 |
+| 回测数据口径不一致 | C 的 100 seed 统计与 B 落库价格对不上 | 上午先对 3 条抽样，统一 `reason`/价格口径 |
 | 部署凭据/账号没就绪 | 第 5 天卡住 | B 今天下午只做"清单 + 账号可登录"，真正部署留第 5 天 |
 
 ## 5. 今日产出物清单
@@ -119,7 +119,7 @@
 - [ ] T3-04 浏览器全链路截图/录屏（A）
 - [ ] 折线图 / 涨跌原因 / AI 卡 / 三态截图（A，M4 证据）
 - [ ] 10+ 价格点数据（B，`data/price_updates.json` + 落库后 `/prices` 点数）
-- [ ] 契约 §7 四人签字齐全（C）
+- [x] 契约 §7 四人签字齐全（C 已补签 `94ea9aa`）
 - [ ] 新增异常测试用例 + 覆盖率报告（D）
 - [ ] 缺陷清单更新（B/C/D，P0/P1 清零或记录）
 - [ ] `docs/acceptance/cross_test.md`（D，课程 p.179–182 问卷）
