@@ -9,19 +9,19 @@
 
 | 项 | 内容 |
 | --- | --- |
-| 测试日期 | 2026-10-24（第 3 天） |
+| 测试日期 | 2026-10-24（第 3 天末 + 第 4 天） |
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **106**（单元 100 + 集成 6） |
-| 通过 / 失败 / 跳过 | **106 / 0 / 0** |
+| 自动化用例总数 | **107**（单元 101 + 集成 6） |
+| 通过 / 失败 / 跳过 | **107 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
 | 通过 / 失败 | 未执行 / 未执行 |
 
 > 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
-> 从第 3 天的 88 条增至 **106** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
+> 从第 3 天的 88 条增至 **107** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
 > B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
-> C 的 `test_simulate_match_cli.py`（+2，原先未计入）。
+> C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）。
 
 ## 2. 自动化测试结果
 
@@ -30,7 +30,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-106 passed, 1 warning in 4.82s
+107 passed, 1 warning in 4.53s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -43,12 +43,13 @@ $ python -m pytest
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
 | `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增：`--from-json` / 跳过 suspended / 同 seed 可复现 / reason 幂等不双写 / 非法输入 |
-| `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
+| `tests/unit/test_pricing.py` | 11 | 11 | 0 | 0 | C 第 3 天实现（第 4 天增至 11 条）：含 3σ 归一化、`Z_FULL_SCALE` 开关与 reason 带得分断言 |
 | `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 第 3 天新增，TC-106：同 seed 序列逐条相等 / 单场稳定 / 换 seed 必变 |
 | `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 3 天补：`simulate_match.py` CLI 冒烟（8 条输出 + `ts` ISO 8601） |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
+| `tests/unit/test_simulate_match_cli.py` | 2 | 2 | 0 | 0 | C 第 4 天新增：`simulate_match.py` CLI 8 条输出 + ts ISO 8601 冒烟 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 
 ### 2.2 集成测试
@@ -61,7 +62,7 @@ $ python -m pytest
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（106 条用例）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（当时 106 条用例；新增的 1 条定价断言不影响覆盖率口径）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
@@ -221,7 +222,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 106 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 107 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**

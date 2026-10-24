@@ -62,6 +62,9 @@ def test_cli_prints_one_line_per_trading_player(script_module) -> None:
     reason_lines = [line for line in lines if "｜" in line]
     assert len(price_lines) == 7, price_lines
     assert len(reason_lines) == 7, reason_lines
+    # 第 4 天验收：每条 reason 都要能追溯到"本轮得分"
+    assert all("本轮得分" in line for line in reason_lines), reason_lines
+    assert all("S=" in line for line in reason_lines), reason_lines
 
 
 def test_json_payload_uses_iso_utc_ts(script_module, monkeypatch) -> None:
