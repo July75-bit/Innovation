@@ -79,6 +79,10 @@ def with_score_in_reason(reason: str, score: float) -> str:
     """把本轮得分补进 reason，保证一条历史价格能追溯到具体表现。
 
     C 的 reason 已经带了 S(t) 和涨跌幅，这里只补"得分"这一项缺失的上下文。
+
+    **这层拼接是临时的**（见 `database_design.md` §3.2「分工待办」）：得分本来在 C 手里，
+    约定由 C 直接在 `update_price` 的 `reason` 里拼好；C 改完后删掉本函数、
+    B 只做透传即可。
     """
     text = f"{reason}（本轮模拟得分 {score:.1f}）"
     if len(text) > MAX_REASON_LENGTH:
