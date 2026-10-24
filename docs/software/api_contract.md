@@ -1,6 +1,6 @@
 # 前后端接口契约（API Contract）
 
-> **负责人**：B（定稿） ｜ **截止**：**第 1 天必须确认**，之后不得随意改字段 ｜ **状态**：⬜ 待四人签字确认
+> **负责人**：B（定稿） ｜ **截止**：**第 1 天必须确认**，之后不得随意改字段 ｜ **状态**：🟡 3/4 已签（D/B/A 已签，C 待签）
 > **对应课程指标**：#9 接口文档；分工文档第五节"最关键的是接口约定"
 
 > 🔴 铁律：**交易是否成功以后端和数据库为准，不允许前端只改页面数字。**
@@ -348,9 +348,10 @@
 ## 7. 契约验收（第 1 天）
 
 - [x] A 确认所有字段都能在页面上渲染（不需要额外请求）（2026-10-24，实测 10 接口全通过，见下方 A 签字）
-- [ ] C 确认价格字段与 `price_history` 结构一致
+- [x] C 确认价格字段与 `price_history` 结构一致（2026-10-24，见下方 C 签字）
 - [x] D 确认 AI 分析接口的输入数据都能从上述接口拼出来（2026-10-23）
-- [ ] 四人在这份文档下各留一行"确认"记录
+- [x] 四人在这份文档下各留一行"确认"记录（2026-10-24，A/B/C/D 签字齐全）
 - [x] **D 签字**（2026-10-23，T1-33）：`GET /api/analysis/{player_id}` 的**固定 6 字段**（2026-10-23 决策：不输出 `suggested_price_band`，契约中该字段保留为可缺省）、4 个错误码、"AI 绝不改余额"的只读保证已写入 §4.10；规则版兜底 `code/backend/ai/fallback.py` 已实现并通过自测。（2026-10-24 更正：此行原文写"7 个字段"，与 §4.10 / §6 变更记录统一为 6 字段）
 - [x] **B 签字**（2026-10-24，第 2 天契约冻结复查，B 主持）：逐条核对 10 个接口的请求/响应字段，与 §4 一致，**无新增/改名字段**；`role` 为选手真实位置、`rating` 为项目模拟综合评分（UI 必须标注"模拟"）；`hltv_rating` / `kast` / `adr` 已删除且模型、schema、种子数据、AI 上下文里均无残留；第 10 项由 D 的改动已记入 §6 变更记录并可追溯。核对方式：`/openapi.json` 路径清单 + `tests/unit/test_api_players.py` / `test_api_trades.py` 逐字段断言 + 实机 25 项验收全绿
 - [x] **A 签字**（2026-10-24，第 2 天契约冻结复查，A 补签）：逐条核对 10 个接口的请求/响应字段，与 §4 一致，**全部字段可在页面渲染、无需额外请求**；`change_pct` / `profit` / `profit_pct` 直接展示后端计算值，前端不重算、不二次截断；`rating` 在市场卡片与详情页均标注「模拟数据，非官方统计」；错误体 `message` 原样展示（无映射表），业务失败**不自动重试**；AI 分析按固定 6 字段渲染、以 `source` 区分 `llm` / `rule_fallback`，AI 故障不阻塞交易展示；地址全部走 `VITE_API_BASE_URL`（源码 grep 无字面本地地址），`VITE_USE_MOCK` 开关已同步 `.env.example` 与 README。核对方式：`code/frontend/src/api/types.ts` 与 §4 逐字段对照 + 前后端实机联调全链路（查行情 → 买 2 股 → 持仓 → 卖 1 股 → 流水 + 余额不足/持仓不足/超上限/非法数量/暂停交易 5 条错误分支）实测通过
+- [x] **C 签字**（2026-10-24，第 2 天契约冻结复查，C 补签）：价格相关字段与本文一致，**无新增/改名**。① `players.current_price` 为唯一权威价（定价与交易都读它），`players.prev_price` 保存上一次价格、用于算涨跌幅；② 历史表为 `price_history(price_id, player_id, price, reason, ts)`（与 `database_design.md` §2.5 一致），`ts` 为带时区 UTC（`DateTime(timezone=True)`，接口返回形如 `2026-11-01T00:00:00Z`），按 `ts` 升序返回、空数组不 404；③ `change_pct` 是接口字段（百分数数值、保留 2 位），由取整后的新价反算，保证「价格 ×（1+涨跌幅）」自洽；④ `reason` 为中文短句且必非空，落库列 `VARCHAR(200)`、写入前按 200 字符截断；⑤ 价格更新只写 `players.current_price / prev_price` 与 `price_history`，**不碰 `users.balance` / `positions` / `trades`**；⑥ 信号映射为 `S = clamp(z / Z_FULL_SCALE, -1, 1)`（`Z_FULL_SCALE=3.0`），只影响 S 的取值、**不改变任何字段口径**。核对方式：`code/core_engine/pricing.py` 与 §4.4 逐字段对照 + `tests/unit/test_pricing.py`（10 条）+ `tests/unit/test_simulator.py`（3 条，同 seed 可复现）+ `python scripts/simulate_match.py --seed 42 --json` 实测 `ts` 形态与 JSON 字段 + `code/backend/app/core/price_update.py` 落库字段对照

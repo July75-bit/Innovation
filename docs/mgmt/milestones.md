@@ -51,14 +51,14 @@
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-04 | 09:30–09:45 | **解除目录阻塞**：`Move-Item code/frontend/README.md docs/software/frontend_setup.md`（否则脚手架会因目录非空失败；该说明要保留，不要直接删） | T1-03 | `code/frontend/` 为空目录；`docs/software/frontend_setup.md` 存在 | ⬜ |
-| T1-05 | 09:45–10:15 | `npm create vue@latest code/frontend`；选项：TS=Yes / JSX=No / Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes | T1-04 | 脚手架生成成功 | ⬜ |
-| T1-06 | 10:15–10:35 | `cd code/frontend` → `npm install` → `npm run dev` | T1-05 | 浏览器打开 `localhost:5173` 显示初始页 | ⬜ |
+| T1-04 | 09:30–09:45 | **解除目录阻塞**：`Move-Item code/frontend/README.md docs/software/frontend_setup.md`（否则脚手架会因目录非空失败；该说明要保留，不要直接删） | T1-03 | `code/frontend/` 为空目录；`docs/software/frontend_setup.md` 存在 | ✅ 2026-10-24（脚手架已生成；脚手架/启动说明已补到 `docs/software/frontend_setup.md`） |
+| T1-05 | 09:45–10:15 | `npm create vue@latest code/frontend`；选项：TS=Yes / JSX=No / Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint=Yes / Prettier=Yes | T1-04 | 脚手架生成成功 | ✅ 2026-10-24（`package.json` / `package-lock.json` 已提交，Vue3+TS+Router+Vitest+ESLint+Prettier） |
+| T1-06 | 10:15–10:35 | `cd code/frontend` → `npm install` → `npm run dev` | T1-05 | 浏览器打开 `localhost:5173` 显示初始页 | 🟡 代码/脚手架就绪；本工作区未装 `node_modules`、未跑 `npm run dev`（A 本机运行证据待补） |
 | T1-07 | 10:35–10:55 | 新建 `code/frontend/.env.example`（`VITE_API_BASE_URL=http://127.0.0.1:8000`）+ `src/api/client.ts`（从 `import.meta.env` 读地址，封装 `get/post`） | T1-06 | 代码里搜不到硬编码的 `127.0.0.1` | ✅ 2026-10-24（`.env.example` + `client.ts` 已建；client.ts 只读 `VITE_API_BASE_URL`、缺省与错误文案不再写死地址；CI 前端 job 加地址检查防回归） |
-| T1-08 | 10:55–11:30 | **今日最关键交付**：HomeView 调 `GET /api/health`，页面显示“连接成功：playerstock-backend” | T1-07, T1-13 | 页面出现连接成功文案 | ⬜ |
-| T1-09 | 13:00–14:00 | 配 4 条路由：`/` 市场、`/players/:id` 详情、`/positions` 持仓、`/trades` 流水；各建空 view | T1-06 | 4 个路径可切换、不白屏 | ⬜ |
-| T1-10 | 14:00–15:30 | 统一顶部导航（Logo / 市场 / 持仓 / 流水 / 余额占位）+ 抽 `LoadingState` / `EmptyState` / `ErrorState` 三个组件 | T1-09 | 每个页面都有统一顶栏 | ⬜ |
-| T1-11 | 15:30–17:30 | 对着契约核对字段（`player_id` / `current_price` / `change_pct` / `rating` / `role` / `latest_reason` / `avg_cost` / `market_value` / `profit`）→ 缺的当场提给 B → 与 B 联调 5173×8000 → 提 PR（模板勾“接口变更：否”）+ 补 `docs/requirements/wireframes/README.md` | T1-08, T1-16 | PR 已建；CI 前端 job 转绿；契约下留一行确认 | ⬜ |
+| T1-08 | 10:55–11:30 | **今日最关键交付**：HomeView 调 `GET /api/health`，页面显示“连接成功：playerstock-backend” | T1-07, T1-13 | 页面出现连接成功文案 | 🟡 代码已实现（`App.vue` 顶部健康徽标调 `/api/health`，显示“连接成功：<service>”）；浏览器运行证据待补 |
+| T1-09 | 13:00–14:00 | 配 4 条路由：`/` 市场、`/players/:id` 详情、`/positions` 持仓、`/trades` 流水；各建空 view | T1-06 | 4 个路径可切换、不白屏 | ✅ 2026-10-24（`src/router/index.ts` 4 条路由，页面均已实现） |
+| T1-10 | 14:00–15:30 | 统一顶部导航（Logo / 市场 / 持仓 / 流水 / 余额占位）+ 抽 `LoadingState` / `EmptyState` / `ErrorState` 三个组件 | T1-09 | 每个页面都有统一顶栏 | ✅ 2026-10-24（`App.vue` 顶部导航 + 余额/健康徽标 + 三个状态组件） |
+| T1-11 | 15:30–17:30 | 对着契约核对字段（`player_id` / `current_price` / `change_pct` / `rating` / `role` / `latest_reason` / `avg_cost` / `market_value` / `profit`）→ 缺的当场提给 B → 与 B 联调 5173×8000 → 提 PR（模板勾“接口变更：否”）+ 补 `docs/requirements/wireframes/README.md` | T1-08, T1-16 | PR 已建；CI 前端 job 转绿；契约下留一行确认 | 🟡 契约字段已核对并在 §7 签字；`docs/requirements/wireframes/README.md` 仍标“未开始”，线框图/截图待 A 补 |
 
 #### 2.3 B 同学：后端与交易系统（9 项，约 6h）
 
@@ -70,7 +70,7 @@
 | T1-13 | 09:55–10:20 | **后端三验**：`python -m uvicorn app.main:app --reload --port 8000`，验证 `/`、`/api/health`、`/docs` | T1-12 | 三个页面截图发群（第 1 个里程碑） | ✅（`/`、`/api/health`、`/docs` 可用，`test_health.py` 覆盖） |
 | T1-14 | 10:20–11:30 | 按 `database_design.md` 建 5 张表：`User/Player/Position/Trade/PriceHistory`；`players` 含 `role`（真实位置）与 `rating`（模拟评分）；`positions` 加 `UNIQUE(user_id, player_id)`；`trades` 加 `INDEX(user_id, created_at)`；跑通 `init_db()`；把 `database_design.md` 定稿 | T1-13 | `playerstock.db` 生成成功；文档无空白节 | ✅（5 张表 `init_db()` 通过，见 `database_design.md`） |
 | T1-15 | 11:30–12:00 | `sqlite3 playerstock.db ".schema"`（或 Python 读 `sqlite_master`）自测，把实际 schema 贴进 `database_design.md` 附录 | T1-14 | 文档与实际表 100% 一致 | ✅（实际 schema 已写入 `database_design.md` §2） |
-| T1-16 | 13:00–14:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 `role`（真实位置）与 `rating`（模拟评分，UI 需标注）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | 🟡 契约已冻结并全部实现；确认记录仅 D 签字，A/C 待签 |
+| T1-16 | 13:00–14:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 `role`（真实位置）与 `rating`（模拟评分，UI 需标注）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | 🟡 契约已冻结并全部实现；D/B/A 已签，仅 C 待签 |
 | T1-17 | 14:00–15:00 | 实现只读接口 `GET /api/players`、`GET /api/account`（demo 用户 + 5000 余额） | T1-16 | Swagger 能试出数据 | ✅（`test_api_players.py` 覆盖） |
 | T1-18 | 15:00–16:30 | 实现 `POST /api/trades/buy` 骨架：正整数校验 → 查选手 → 查余额 → 事务内扣款+加持仓+写流水，失败返回 400 + 中文 `message` | T1-17 | 买 2 股（价 126.00）后余额 4748.00、持仓 +2、流水 +1 | ✅（买入/卖出事务已实现） |
 | T1-19 | 16:30–17:30 | 写第一批真测试：正常买入 / 余额不足 / 非法数量（把 `tests/unit/test_trades_rule.py` 对应 skip 去掉） | T1-18 | `python -m pytest` 全绿 | ✅（`test_trades_rule.py` 9 条全绿） |
@@ -148,10 +148,10 @@
 | T2-01 | 行情/详情/账户/持仓/流水接口 | B | T1-14 | Swagger 可测 | ✅ 2026-10-23（B 提交 5 表 / 9 接口） |
 | T2-02 | 买入/卖出接口 + 事务 | B | T2-01 | 余额与持仓同步变化 | ✅ 2026-10-23（交易闭环 + 27 条新测试） |
 | T2-03 | 交易边界测试（余额不足/超上限/非法数量） | B | T2-02 | pytest 通过 | ✅ 2026-10-23（`test_trades_rule.py` 等全绿） |
-| T2-04 | 市场页 + 选手详情页（模拟数据） | A | T1-06 | 页面有可见内容 | ✅ 2026-10-24（`MarketView` / `PlayerDetailView` + 路由已就绪，见 A 的 `9782dc7`） |
-| T2-05 | 买卖表单 + 持仓页 | A | T2-04 | 表单可提交（可先 mock） | ✅ 2026-10-24（`TradePanel` 买卖表单 + `PositionsView` / `TradesView`，均已接真实接口） |
+| T2-04 | 市场页 + 选手详情页（模拟数据） | A | T1-06 | 页面有可见内容 | ✅ 2026-10-24（`MarketView` / `PlayerDetailView` + 路由已就绪，见 A 的 `9782dc7`；浏览器运行证据待补，见 T3-04） |
+| T2-05 | 买卖表单 + 持仓页 | A | T2-04 | 表单可提交（可先 mock） | ✅ 2026-10-24（`TradePanel` 买卖表单 + `PositionsView` / `TradesView`，均已接真实接口；浏览器运行证据待补） |
 | T2-06 | `update_price` + `standardize_score` | C | T1-21 | 定价脚本独立可跑 | ✅ 2026-10-24（`pricing.py` 实现完成，`test_pricing.py` 10 条全绿） |
-| T2-07 | 模拟比赛发生器（固定 seed） | C | T1-21 | 同 seed 结果一致 | ✅ 2026-10-24（`simulator.py` 实现完成；同 seed 复现断言见 TC-106，待 C 补） |
+| T2-07 | 模拟比赛发生器（固定 seed） | C | T1-21 | 同 seed 结果一致 | ✅ 2026-10-24（`simulator.py` 实现完成；同 seed 断言 TC-106 ✅，`test_simulator.py` 3 条） |
 | T2-08 | AI 原型（给数据出结构化建议） | D | T1-30 | 命令行能输出 JSON | ✅ 2026-10-23（三态实测） |
 | T2-09 | 规则版兜底建议 | D | T2-08 | 无密钥时返回合法结构 | ✅ 2026-10-23（第 1 天提前完成） |
 | T2-10 | 用户故事清单 `docs/requirements/user_stories.md`（≥5 条 INVEST + 验收条件） | D（A 补前端视角） | T1-29 | 每条故事有 AC，后端可验证的 AC 有测试证据 | ✅ 2026-10-24（7 条 INVEST + AC，附验收落地状态表） |
@@ -166,7 +166,7 @@
 | T3-02 | 前端接真实接口（列表/账户/买卖/持仓/流水） | A | T2-02 | 不刷新页面也能更新 | 🟡 2026-10-24（5 个视图已接真实接口：`api.listPlayers/getPlayer/getPriceHistory/getPositions/listTrades/buy/sell/getAnalysis`；浏览器端尚待 A 装依赖后验证） |
 | T3-03 | 错误提示展示（后端 message 直出） | A | T3-02 | 余额不足有中文提示 | ✅ 2026-10-24（`TradePanel` + 4 个视图统一 `err instanceof ApiError ? err.message`，后端中文 message 原样展示） |
 | T3-04 | **全链路联调**：查行情→买入→看持仓→卖出 | A+B+C | T3-01, T3-02 | 浏览器里真实跑通 | ⬜（代码已就绪；等 A 装依赖起前后端做浏览器验证，M3 唯一闸门） |
-| T3-05 | 数据持久化验证（重启后端数据仍在） | B | T3-04 | 重启后持仓仍正确 | ✅ 2026-10-24（B 会话实测：重启前后余额/持仓/流水/价格历史一致；命令输出待 B 贴入 `test_report.md`） |
+| T3-05 | 数据持久化验证（重启后端数据仍在） | B | T3-04 | 重启后持仓仍正确 | ✅ 2026-10-24（D 用真实 uvicorn 进程复现：重启前后余额/持仓/流水/价格历史一致，命令与输出见 `test_report.md` §7） |
 | T3-06 | 集成测试用例（e2e） | D | T3-04 | `tests/integration/` 有可用用例 | ✅ 2026-10-23（接口级 2 条已跑通；浏览器全链路 T3-04 待 A） |
 | T3-07 | 代码质量闭环（课件第 3 天 p.144–158）：ruff 静态扫描 + Top5 重构（先补测试）+ 质量报告 + CI 加 lint 门槛 | D | T1-37 | 扫描报告 + 重构前后对比（检查点要求） | ✅ 2026-10-24（`docs/acceptance/code_quality_report.md`：51→44，D 负责文件 0 残留，pytest 65/5 不变） |
 
@@ -208,9 +208,9 @@
 
 | 天 | 计划任务数 | 完成 | 未完成及原因 |
 | --- | --- | --- | --- |
-| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 23 完成 + 2 部分 | A 前端 8 项、C 定价 7 项未开始；T1-16 契约仅 D 签字、T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页） |
-| 第 2 天 | 12 | 12 完成 | —（A 前端、C 定价补齐后复核；2026-10-24 更新） |
-| 第 3 天 | 7 | 5 完成 + 1 部分（T3-01/03/05/06/07 ✅，T3-02 🟡） | T3-04 浏览器全链路待 A 装依赖后验证（M3 唯一闸门）；C 契约 §7 待签字；自动化层 92 passed / 0 skipped |
+| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 28 完成 + 5 部分 | C 定价 7 项未开始；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-16 仅差 C 签字、T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页） |
+| 第 2 天 | 12 | 12 完成 | —（A 前端、C 定价补齐后复核；A 两项浏览器运行证据待补，见 T3-04） |
+| 第 3 天 | 7 | 5 完成 + 1 部分（T3-01/03/05/06/07 ✅，T3-02 🟡） | T3-04 浏览器全链路待 A 装依赖后验证（M3 唯一闸门）；C 契约 §7 待签字；自动化层 97 passed / 0 skipped |
 | 第 4 天 | 7 | | |
 | 第 5 天 | 6 | | |
 | 第 6 天 | 6 | | |

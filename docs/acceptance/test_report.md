@@ -13,8 +13,8 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **92**（单元 86 + 集成 6） |
-| 通过 / 失败 / 跳过 | **92 / 0 / 0** |
+| 自动化用例总数 | **97**（单元 91 + 集成 6） |
+| 通过 / 失败 / 跳过 | **97 / 0 / 0** |
 | 手工用例总数 | 未执行（前端未完成，见 §9） |
 | 通过 / 失败 | 未执行 / 未执行 |
 
@@ -25,7 +25,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-92 passed, 1 warning in 6.92s
+97 passed, 1 warning in 7.21s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -37,7 +37,8 @@ $ python -m pytest
 | `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
-| `tests/unit/test_update_prices_script.py` | 7 | 7 | 0 | 0 | B 第 3 天新增，`--from-json` / reason 拼接 / 非法输入 |
+| `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增，`--from-json` / reason 幂等 / 非法输入 |
+| `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 补：同 seed 序列逐条相等 / 单场稳定 / 换 seed 不同（TC-106） |
 | `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
@@ -48,6 +49,7 @@ $ python -m pytest
 | 文件 | 用例数 | 通过 | 失败 | 备注 |
 | --- | --- | --- | --- | --- |
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
+| `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -74,14 +76,14 @@ $ python -m pytest
 | TC-102 | 下跌 | 90.00 | 90.00（`test_price_falls_when_score_negative`） | ✅ |
 | TC-103 | 不变 | 100.00 | 100.00（`test_zero_demand_signal_keeps_price_when_score_zero`） | ✅ |
 | TC-104 | 触底保护 | ≥ floor | 1.00（`test_price_never_below_floor` / `test_floor_applies_after_clamp`） | ✅ |
-| TC-106 | 同 seed 可复现 | 一致 | 模拟器已实现，但缺同 seed 自动断言 | 🟡 建议 C 补 |
+| TC-106 | 同 seed 可复现 | 一致 | `test_simulator.py` 3 条：同 seed 序列逐条相等 / 单场稳定 / 换 seed 不同 | ✅ |
 | TC-107 | 历史升序 | 升序 | e2e + `test_apply_updates_writes_price_and_history` | ✅ |
 | TC-108 | 3σ 归一化 | z=1.5→S=0.5 | 1σ→0.333、2σ→0.667、3σ→1.0、>3σ 饱和；`Z_FULL_SCALE=1.0` 时 1σ 即满格 | ✅ `test_standardize_score_three_sigma_scale` / `test_z_full_scale_one_matches_literal_mapping` |
 | TC-109 | 对称 clamp ±20% | 涨跌都封顶 | `test_step_is_capped_symmetrically` | ✅ |
 | TC-110 | 价格历史 reason 可追溯（方案 A） | `/prices` 每条模拟调价 reason 含 `S=` + 本轮模拟得分；重启后仍可读 | `test_price_reason_traceability.py` 4 条（from-json / 引擎 / 落库+API / 200 字截断） | ✅ |
 
 > 说明：C 第 3 天已实现 `update_price` / `standardize_score` 与 `simulate_match.py`，5 条 skip 全部转绿（`test_pricing.py` 共 10 条）；
-> 剩余 TC-106（同 seed 可复现）一条**数值断言**是补强项，不影响功能验收。
+> TC-101~110 已全部有自动化断言（TC-106 由 `test_simulator.py` 覆盖，3 条）。
 > TC-110 对应决策：**不新增 `score` 列/`matches` 表，归因写进 `reason`**（选项 A，见 `architecture.md` §5 / `test_plan.md` §4.2）。
 
 ## 5. AI 降级测试结果
@@ -106,7 +108,44 @@ $ python -m pytest
 | TC-405 | 子路由刷新 | ⬜ | 截图 |
 | TC-406 | 无密钥全站可用 | ⬜ | 截图 |
 
-## 7. 性能实测（对照非功能需求）
+## 7. 本地持久化验证（T3-05，2026-10-24）
+
+> 目的：验证「重启后端后数据仍在」，而不是只写进内存/临时库。做法：真实 `uvicorn` 进程 + 独立 SQLite 文件（`DATABASE_URL` 指向工作区临时库），**杀掉进程再起一个新进程**，对比重启前后的余额/持仓/流水/价格历史。
+
+**执行命令（可复现）**
+
+```powershell
+$env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
+python scripts/seed_db.py                  # 建表 + 8 名选手 + demo 账户
+cd code/backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
+```
+
+```powershell
+# 进程 A：健康检查 → 买入 2 股（价 126.00）→ 记录四个读接口
+Invoke-RestMethod http://127.0.0.1:8010/api/health
+Invoke-RestMethod -Method Post http://127.0.0.1:8010/api/trades/buy `
+  -ContentType 'application/json' -Body '{"player_id":1,"quantity":2}'
+Invoke-RestMethod http://127.0.0.1:8010/api/account
+Invoke-RestMethod http://127.0.0.1:8010/api/positions
+Invoke-RestMethod http://127.0.0.1:8010/api/trades
+Invoke-RestMethod http://127.0.0.1:8010/api/players/1/prices
+# 然后 Stop-Process 杀掉进程 A，重新起进程 B，再查同样四个接口
+```
+
+**实测输出（2026-10-24，D 本机）**
+
+```text
+BEFORE_RESTART health=ok buy_balance=4748.0 balance=4748.0 total_asset=5000.0 positions=1 qty=2 trades=1 price_points=2
+AFTER_RESTART  health=ok balance=4748.0 total_asset=5000.0 positions=1 qty=2 trades=1 price_points=2
+SAME balance=True total=True qty=True trades=True points=True
+```
+
+**结论**：进程级重启前后，余额（4748.00）、总资产（5000.00）、持仓（ZywOo ×2）、流水（1 条）、价格历史（2 点）完全一致 → **T3-05 ✅**。
+
+> 注意：这验证的是本地 SQLite 持久化；线上 Render 免费实例的磁盘仍是临时的，必须用 Postgres（见 `deployment.md` §4），线上重启验收对应 TC-404（第 5 天）。
+
+## 8. 性能实测（对照非功能需求）
 
 | 指标 | 目标 | 实测 | 结论 |
 | --- | --- | --- | --- |
@@ -115,18 +154,17 @@ $ python -m pytest
 | AI 分析响应 | ≤ 8s（上限 20s） | ______ | |
 | 前端首屏 | ≤ 3s | ______ | |
 
-## 8. 缺陷清单
+## 9. 缺陷清单
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
 | BUG-01 | | P0/P1/P2 | | | 待修/已修/不修 | |
 | BUG-02 | | | | | | |
 
-## 9. 未覆盖与已知限制
+## 10. 未覆盖与已知限制
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
-| 定价 TC-106 同 seed 断言 | 模拟器已实现，测试还没写“同 seed 两次结果一致” | 不影响功能验收 | 建议 C 补 1 条断言 |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
 | 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收 | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
@@ -136,14 +174,14 @@ $ python -m pytest
 | 浏览器兼容性 | 只测 Chrome/Edge | 未测 Safari | 演示只用 Chrome |
 | 移动端适配 | 非重点 | 手机端体验一般 | 如实说明 |
 
-## 10. 结论
+## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 92 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 97 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
-- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署、TC-106 同 seed 断言待补
+- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
 
-## 11. 附件
+## 12. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
 - [ ] pytest 输出文本
