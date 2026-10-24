@@ -24,6 +24,8 @@ htmlcov/
 *.sqlite3
 # 但保留演示种子数据（JSON 不是数据库文件）
 !data/seed_players.json
+# C 的定价脚本导出的价格更新明细（生成物，每次跑 simulate_match.py 重出，不提交）
+data/price_updates.json
 
 # ---------- Node / Vue ----------
 node_modules/
