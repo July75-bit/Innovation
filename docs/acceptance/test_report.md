@@ -1,6 +1,6 @@
 # 测试报告
 
-> **负责人**：D ｜ **截止**：第 6 天 ｜ **状态**：🟡 第 3 天（2026-10-24）已回填自动化实测；前端/线上/手工用例待第 4–5 天
+> **负责人**：D ｜ **截止**：第 6 天 ｜ **状态**：🟡 第 3–4 天已回填自动化实测 + 浏览器验收证据（`docs/acceptance/evidence/`）；线上验收待第 5 天
 > **对应交付物清单第 4 项**：测试用例集与测试报告（含交易规则边界测试、定价引擎单元测试）
 
 > 填表规则：**只填真实跑出来的结果**。没跑的写"未执行"，不要写"通过"充数。
@@ -13,25 +13,27 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **115**（单元 107 + 集成 8） |
-| 通过 / 失败 / 跳过 | **115 / 0 / 0** |
-| 手工用例总数 | 未执行（前端未完成，见 §10）；T3-05 本地持久化验证已做，见 §7 |
-| 通过 / 失败 | 未执行 / 未执行 |
+| 自动化用例总数 | **120**（单元 107 + 集成 13） |
+| 通过 / 失败 / 跳过 | **120 / 0 / 0**（CI ubuntu-latest）；本机 Windows 见 §9 BUG-03 |
+| 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 14 张，见 §2.5） |
+| 通过 / 失败 | 14 张证据截图全过 / 0 |
 
-> 复跑说明（2026-10-24）：本表数字由 B 在仓库根目录复跑核对（Windows + 仓库内 `.venv`，Python 3.13.5）。
-> 从第 3 天的 88 条增至 **115** 条：C 的 `test_simulator.py`（+3，TC-106）、`test_price_reason_traceability.py`（+4）、
-> B 的 `test_update_prices_script.py` 增至 9 条（+2）、D 第 4 天的 `test_core_exceptions.py`（+7）、
-> C 的 `test_simulate_match_cli.py`（+2，原先未计入）与 `test_pricing.py` 增至 11 条（+1，第 4 天）、
-> B 的部署预检 `test_config_db_url.py`（+6，PG 连接串归一化/驱动）与 `test_bootstrap_demo_data.py`（+2，一键灌数）。
+> 复跑说明（2026-10-24，D 核对）：总数由 B 已合入的 **120** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
+> B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
+> C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
+> B 的部署预检 `test_config_db_url.py`（+6）与 `test_bootstrap_demo_data.py`（+2）。
+> CI（ubuntu-latest）全绿；本机 Windows 中文控制台因 BUG-03 有 1 failed + 1 error（见 §9）。
 
 ## 2. 自动化测试结果
 
 ### 2.1 单元测试
 
 ```text
-$ python -m pytest
-..........................................................................................   [100%]
-115 passed, 1 warning in 15.02s
+$ python -m pytest -q          # CI ubuntu-latest
+120 passed
+$ python -m pytest -q          # 本机 Windows（当前有 BUG-03，见 §9）
+118 passed, 1 failed, 1 error
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -59,12 +61,13 @@ $ python -m pytest
 | --- | --- | --- | --- | --- |
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
 | `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | TC-110：`--from-json` / 进程内引擎 / 落库后 `/prices` 可读 S+得分 / 200 字截断 |
-| `tests/integration/test_bootstrap_demo_data.py` | 2 | 2 | 0 | 一键灌数（`scripts/bootstrap_demo_data.py`）：独立临时库跑到「每名可交易选手 ≥N 点」，且 `--keep` 可重复追加 |
+| `tests/integration/test_prices_recalc.py` | 5 | 5 | 0 | TC-122：`POST /api/prices/recalc` 幂等去重 / 暂停跳过 / 404 / 422 |
+| `tests/integration/test_bootstrap_demo_data.py` | 2 | 2 | 0 | 一键灌数（`scripts/bootstrap_demo_data.py`）：每名可交易选手 ≥N 点、可重复追加；⚠️ 本机 Windows 触发 BUG-03 |
 
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（当时 106 条用例；新增的 1 条定价断言不影响覆盖率口径）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（当时 104 条用例；后续新增用例未重跑覆盖率）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
@@ -91,7 +94,25 @@ $ python -m pytest
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
-> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互（TC-301~307）仍需人验。
+> 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 14 张截图补齐（T3-04 / T4）。
+
+### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
+
+> 采集方式：真实后端（uvicorn :8000，seed + 8 轮模拟价格）+ 真实浏览器截图（1280×900 全页）；
+> 目录：`docs/acceptance/evidence/`（README 有逐张关键断言）。
+
+| 证据 | 对应验收 |
+| --- | --- |
+| [01-market.png](evidence/01-market.png) | T3-04 行情页：8 名选手、涨跌色、模拟数据标注、连接成功徽标 |
+| [02-detail-chart-ai.png](evidence/02-detail-chart-ai.png) | **T4-01** 折线图（10 点）+ **T4-02** 最近变动 reason + **T4-04** AI 建议卡（6 字段） |
+| [03-buy2-success.png](evidence/03-buy2-success.png) | T3-04 买入 2 股成功（余额 5000→4747.46） |
+| [04-positions.png](evidence/04-positions.png) | T3-04 持仓页（数量/均价/现价/市值/盈亏） |
+| [05-sell1-success.png](evidence/05-sell1-success.png) | T3-04 卖出 1 股成功（余额→4873.73） |
+| [06-trades.png](evidence/06-trades.png) | T3-04 交易流水（倒序 + 每笔字段） |
+| [07-err-insufficient-balance.png](evidence/07-err-insufficient-balance.png) … [11-suspended.png](evidence/11-suspended.png) | T3-03 五条错误分支（中文 message 原样展示） |
+| [12-state-loading.png](evidence/12-state-loading.png) / [13-state-empty.png](evidence/13-state-empty.png) / [14-state-offline-error.png](evidence/14-state-offline-error.png) | **T4-05** 加载中 / 空数据 / 失败三态（断网真实停后端触发） |
+
+> 结论：**M3（浏览器交易闭环）与 M4（图表+原因+AI 卡）均已有可复核证据**；剩余未验项只在线上部署（第 5 天）。
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -206,15 +227,13 @@ SAME balance=True total=True qty=True trades=True points=True
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| BUG-01 | | P0/P1/P2 | | | 待修/已修/不修 | |
-| BUG-02 | | | | | | |
+| BUG-03 | Windows 中文控制台下 `test_bootstrap_demo_data.py` 把子进程输出按 UTF-8 解码失败（0xd2），本机 1 failed + 1 error；CI ubuntu-latest 不暴露 | P1 | 测试代码 | B | 待修 | 修法：`subprocess.run(..., encoding="utf-8", errors="replace")` 或按 locale 容错；不影响线上功能 |
 
 ## 10. 未覆盖与已知限制
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
-| 前端手工用例 TC-301~307 | 依赖已装齐（`npm ci` 380 包），`npm run build` / oxlint / eslint / vitest 全绿（见 §2.4），但**尚未在浏览器里点过** | 浏览器闭环、三态、AI 卡未验 | 起 `npm run dev` + 后端后走一遍（M3 唯一闸门） |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
@@ -224,14 +243,15 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 115 条全绿；浏览器闭环/线上待验）
-- P1 缺陷：**0** 个
-- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
+- P0 缺陷：**0** 个（自动化层 120 条，CI 全绿；浏览器证据见 §2.5）
+- P1 缺陷：**1** 个（BUG-03：仅本机 Windows 测试代码编码问题，不影响线上功能）
+- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 4 天）**——浏览器闭环与 M4 已有证据，**线上尚未部署**
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
 
 ## 12. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（97 passed, 0 skipped）
+- [x] 浏览器验收证据：`docs/acceptance/evidence/`（14 张 + README）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 120 passed / 0 skipped；本机 BUG-03 见 §9）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [ ] 部署持久化验证截图（线上，第 5 天）

@@ -19,7 +19,7 @@
 > **今天两条主线**：① **课程检查点**：测试用例 + 覆盖率 ≥60% + 修复缺陷 + 交叉原型测试；② **项目亮点 M4**：折线图 / 涨跌原因 / AI 卡 / 三态 + 回测初版。
 > **硬前提**：A 必须上午完成 **T3-04 浏览器全链路收口**（`npm ci` → `.env.local` → uvicorn 8000 → `npm run dev`），否则 M3 继续挂、T4 全部没有真实数据可看。
 >
-> **实际进展（2026-10-24 16:05，D 先做）**：T4-06 核心异常 +7 条、C 再补 CLI 冒烟 2 条 → 全仓 **106 passed / 0 skipped**（单元 100 + 集成 6）；覆盖率 **91%**（app + core_engine，≥60% 达标）；T4-07 回测初版完成（`scripts/backtest.py` + `backtest_result.json` + 报告数字，3 seed 验证）；`docs/acceptance/cross_test.md` 已建（内部互测已记录，外部组待约）；T4-03 接口早已绿灯。剩余：A 的 T4-01/02/04/05（浏览器）、B 灌 10+ 点、C 回测数据。
+> **实际进展（2026-10-24 17:15，D 汇总）**：**M3/M4 已达成**——A 提交 14 张浏览器证据（`docs/acceptance/evidence/`，含 10 点折线图 / 原因 / AI 卡 / 三态 / 5 条错误分支）；C 补 `POST /api/prices/recalc` + 5 条用例、§7 正式回测与 100 seed、reason 带得分；B 补一键灌数 `bootstrap_demo_data.py` + 部署预检 8 条用例、reason 分工闭环。全仓 **120 passed（CI ubuntu）/ 0 skipped**；本机 Windows 因 BUG-03 为 118 passed + 1 failed + 1 error（B 的 bootstrap 子进程 UTF-8 解码，见 `test_report.md` §9）。剩余：部署（第 5 天）、外部交叉原型测试组、LLM 版回测 S1'（第 5 天）、TC-307 刷新回归。
 
 ## 1. 全员共同段（09:00–10:00）
 
