@@ -16,7 +16,7 @@
 | 线上交易验收 | ✅ TC-403 已跑通（2026-10-25，B）：买 2 @108.75 → 卖 1 → 并发卖 1 = [200,400]，余额回到 5000.00、持仓清空、流水 3 条；6 类错误码全对 | `test_report.md` §6 |
 | 线上部署对齐 | ✅ 2026-10-25 Manual Deploy 后端 + 前端，已与 `develop` 对齐（证据：CORS 头 `*`、前端 bundle 更新为 `assets/index-we8cxpp9.js`） | `deployment.md` §6 |
 | 线上持久化验收 | ✅ TC-404 通过：重新部署前后余额 5000.00 / 持仓 0 / 流水 3 条（行内容不变）/ 价格点 11 个完全一致 → Postgres 生效 | `test_report.md` §6 |
-| 线上待做 | ⬜ 只剩 **TC-405**（浏览器刷新 `/market`、`/players/1`，A 按 F5 + 截图） | `test_report.md` §6 |
+| 线上待做 | ✅ 无；TC-405 由 D 2026-10-25 复核 `GET /players/1` → 200（SPA rewrite 生效），M5 达成；A 浏览器截图可选归档 | `test_report.md` §6 |
 | 待修 | ~~BUG-03~~ **已修**（2026-10-25，`eb0d7e7`：测试改文件捕获 + `errors="replace"`，`seed_db.py` 输出转 UTF-8；编号记为 BUG-10）；TC-307 已由 A 补截图 | `test_report.md` §9 BUG-10 / `test_plan.md` §4.4 |
 | 外部交叉原型测试 | 🟡 内部互测已记录，外部组未约 | `docs/acceptance/cross_test.md` |
 | 答辩材料 | ❌ 未开始（幻灯片/演示脚本/QA） | — |
