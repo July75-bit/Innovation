@@ -95,6 +95,7 @@ jobs:
             docs/software/api_contract.md \
             docs/software/database_design.md \
             docs/software/deployment.md \
+            docs/software/prototype/index.html \
             docs/mgmt/communication_plan.md \
             docs/mgmt/risk_plan.md \
             docs/mgmt/milestones.md \
