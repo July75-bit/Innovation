@@ -53,6 +53,10 @@
 | TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ✅ `test_buy_suspended_player` |
 | TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ✅ `test_trade_uses_latest_price` |
 | TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ✅ `test_transaction_rollback_on_failure` |
+| TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
+| TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **91%**（839 语句 / 79 未覆盖，2026-10-24） |
+
+> **执行记录（2026-10-24 第 4 天，D）**：补 7 条核心异常用例后全仓 → **104 passed / 0 skipped**（单元 98 + 集成 6）；覆盖率 **91%**，课程 ≥60% 检查点达标。
 
 > **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
 > 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
