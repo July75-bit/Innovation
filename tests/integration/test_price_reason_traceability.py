@@ -88,7 +88,9 @@ def test_plan_from_engine_reason_carries_signal_and_score(session_factory) -> No
     assert not skipped
     assert len(planned) == 1
     assert "S=" in planned[0].reason
-    assert "本轮模拟得分" in planned[0].reason
+    # C 已接管文案（`update_price(..., score=...)` → "本轮得分 76.6，S=-1.00"），
+    # 这里只断言"带得分"这一语义，不钉死具体用词，免得两边切换措辞就误报。
+    assert "得分" in planned[0].reason
 
 
 def test_db_and_prices_api_keep_traceable_reason(session_factory, client, tmp_path: Path) -> None:

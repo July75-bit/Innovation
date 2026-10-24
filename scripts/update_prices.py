@@ -82,15 +82,16 @@ _SCORE_MARKERS = ("得分",)
 def with_score_in_reason(reason: str, score: float) -> str:
     """确保 reason 里能追溯到"本轮得分"，且**幂等**不重复拼接。
 
-    C 的 reason 已经带了 S(t) 和涨跌幅，缺的是"得分"这一项上下文。
+    **C 已接管**（`pricing.py` 提交 `5cd321c` 起，`update_price` 的 reason 直接生成
+    `…（本轮得分 88.5，S=+0.50）`），所以现在正常路径下本函数**只做透传**：
+    `reason` 里只要有"得分"就原样返回，不会追加第二遍。
 
-    **这层拼接是临时的**（见 `database_design.md` §3.2「分工待办」）：得分本来在 C 手里，
-    约定由 C 直接在 `update_price` 的 `reason` 里拼好。为了避免"谁先合谁后删"的窗口里
-    把得分写两遍，这里做成幂等——**只要 reason 里已经有得分字样就原样返回**，
-    所以 C 先落地、或 B 先删拼接，两种顺序都安全。
+    保留它有两个理由：
+    1. 兜底历史数据——`--from-json` 若吃到 C 早期导出的、不带得分的明细，仍能补一次；
+    2. 长度兜底——`price_history.reason` 是 VARCHAR(200)，超长必须截断而不是写库失败。
 
-    C 正式接管后，本函数剩下的只是长度兜底（`price_history.reason` 是 VARCHAR(200)），
-    可以保留也可以连同调用一起删掉。
+    换句话说：**这里不再是"临时拼接"，而是幂等的文案守卫**（详见
+    `database_design.md` §3.2「分工结论」）。
     """
     text = reason if any(marker in reason for marker in _SCORE_MARKERS) else (
         f"{reason}（本轮模拟得分 {score:.1f}）"
@@ -126,7 +127,9 @@ def plan_from_engine(
                 player.player_id, seed=seed, round_no=round_no, base_rating=base_rating
             )
             signal = standardize_score(match.score, history, window=window)
-            result = update_price(float(player.current_price), signal)
+            # 把本轮得分交给 C：reason 由 C 直接拼成「…（本轮得分 76.6，S=-1.00）」，
+            # B 只透传（见 database_design.md §3.2「分工结论」）。
+            result = update_price(float(player.current_price), signal, score=match.score)
             history.append(match.score)
             last_score = match.score
 
