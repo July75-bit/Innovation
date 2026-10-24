@@ -238,23 +238,28 @@ erDiagram
 ### 4.1 把价格历史灌到 10+ 个点（给 T4-01 折线图用）
 
 种子脚本只写 1–2 个历史点，折线图验收要求"至少 10 个点"。用 C 的赛程 + B 的落库脚本补，
-不用碰任何代码：
+不用碰任何代码（仓库根目录执行）：
 
 ```powershell
 python scripts/seed_db.py --reset
-python scripts/simulate_match.py --seed 42 --rounds 10 --json .tmp/demo_updates.json
-python scripts/update_prices.py --from-json .tmp/demo_updates.json
+python scripts/simulate_match.py --seed 42 --rounds 8 --json data/price_updates.json
+python scripts/update_prices.py --from-json data/price_updates.json
 ```
 
-两点注意：
+三点注意：
 
+- **`data/price_updates.json` 是生成物**，已加入 `.gitignore`，每次按上面第二条命令重新生成即可，
+  不要提交（C 调完模型换任何参数都能重出这份明细）。
 - `simulate_match.py` 的赛程日期取自它的默认排期（`start_date=2026-11-01`，可能晚于当天）。
   时间轴仍是**严格递增**、最后一点等于 `players.current_price`，所以不影响前端画图；
-  若希望历史落在"过去 → 今天"，在落库前把导出明细的 `ts` 整体平移即可（当前演示库是这么处理的）。
-- 暂停交易（`status != trading`）的选手不会被定价，`sh1ro` 会停在种子的 2 个点——这是预期行为。
+  若希望历史落在"过去 → 今天"，在落库前把导出明细的 `ts` 整体平移即可。
+- 暂停交易（`status != trading`）的选手不会被定价，`sh1ro` 会停在种子的 2 个点——这是预期行为，
+  不是漏点。
 
-实测（2026-10-24）：7 名可交易选手各 **11–12 个点**，`ts` 严格升序，
-每个点都带中文 `reason`，且最后一点等于 `current_price`。
+实测（2026-10-24，`--rounds 8`）：`ZywOo` / `donk` / `m0NESY` / `NiKo` / `jL` / `flameZ`
+各 **10 个点**，`ropz` **9 个点**（种子只给它 1 条：`initial_price` 与 `current_price` 相等），
+`sh1ro` 2 个点（暂停交易）。`ts` 严格升序、每点带中文 `reason`、最后一点等于 `current_price`。
+`ropz` 要凑到 10 把 `--rounds` 改成 `9` 即可（所有人会变成 11）。
 
 ## 5. 变更记录
 
