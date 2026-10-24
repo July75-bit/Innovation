@@ -17,6 +17,9 @@ htmlcov/
 # ---------- SQLite ----------
 *.db
 *.db-journal
+# SQLite 开 WAL 后还会生成这两个边车文件，跑一次后端就会冒出来，别提交
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 # 但保留演示种子数据（JSON 不是数据库文件）
