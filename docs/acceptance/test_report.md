@@ -182,7 +182,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | TC-402 | CORS 正常 | ✅ | 前端（`*-frontend-mdlk.onrender.com`）成功跨域取到 8 名选手与价格，"连接成功 / 余额 5000.00"；Network 无 CORS 报错（A 的线上截图） |
 | TC-403 | 线上交易闭环 | ✅ | **2026-10-25 线上实测**：`GET /api/account` 5000.00 → 买 #1 × 2 @ **108.75**（= 当时最新价）→ 4782.50 → 卖 1 → 4891.25 → 并发两个「卖 1」→ **[200, 400]** 只入账一次 → 5000.00；持仓归零、流水 3 条（#1 BUY ×2 / #2 SELL ×1 / #3 SELL ×1）。同轮把 6 类错误分支全打了一遍（余额不足 / 超上限 / 非法数量 ×3 / 选手不存在 / 暂停交易 / 持仓不足），错误码与契约 §5 完全一致。执行命令：`python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com` |
 | TC-404 | 重启后数据持久 | ✅ | **2026-10-25 重新部署后实测**（Manual Deploy 后端 + 前端，现网已对齐 `develop`）：部署前后逐项一致 —— 余额 5000.00、总资产 5000.00、持仓 0 条、流水 **3 条**（#1 BUY ×2 @108.75→4782.50 / #2 SELL ×1→4891.25 / #3 SELL ×1→5000.00）、`/api/players/1/prices` 仍 **11 点**且末点 108.75。→ **Postgres 生效，不是临时 SQLite**（免费实例若用 SQLite，重新部署后这些行会全部消失） |
-| TC-405 | 子路由刷新 | ⬜ | **待做**：浏览器直接刷新 `/market`、`/players/1` 不 404（A，SPA rewrite 已在 `render.yaml`） |
+| TC-405 | 子路由刷新 | 🟡 | **2026-10-25 线上实测**：`/players/1` 按 F5 → ✅ 正常（ZywOo 详情、折线图 11 点、「最近变动：本轮得分 81.3，S=-0.92」全部渲染）。**但 `/market` 按 F5 → 白屏**：路由表里市场页在 `/`，`/market` 无匹配且没有兜底路由（静态站 rewrite 仍返回 `index.html`，所以连 404 都没有）。**已修**（`router/index.ts` 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` 兜底，见 §9 BUG-11），`vitest` 新增 4 条路由用例守门；**需重新部署前端后复验** |
 | TC-406 | 无密钥全站可用 | ✅ | 线上未配 `LLM_API_KEY`：`GET /api/analysis/1` → 200，`action=HOLD`、`source=rule_fallback`；行情/账户/价格历史均正常 |
 
 > 线上数据核对（B，`GET /api/players/1/prices`）：**11 个点**、`ts` 升序、
@@ -259,6 +259,7 @@ SAME balance=True total=True qty=True trades=True points=True
 | BUG-08 | **部署阻断**：SQLAlchemy 2.1 起 `postgresql://` 默认驱动换成 psycopg 3，而项目只装 `psycopg2-binary`；Render 按 `render.yaml` 填连接串会 `ModuleNotFoundError: No module named 'psycopg'`，服务直接起不来 | P0（部署） | 配置 `core/config.py` | B | 已修 | 把裸 `postgres://` / `postgresql://` 归一化为 `postgresql+psycopg2://`（显式驱动不改写）；`test_config_db_url.py` 6 条，含"建引擎必须解析到 psycopg2" |
 | BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中 |
 | BUG-10 | Windows 中文控制台（GBK）下 `test_bootstrap_demo_data.py` 让 pytest 抛 `UnicodeDecodeError 0xd2`，本机 1 failed + 1 error；CI 的 ubuntu 不暴露 | P1 | 测试代码 / `seed_db.py` | B | 已修 | 根因：`seed_db.py` 没把 stdout 切成 UTF-8，子进程按 GBK 输出、pytest 的 fd 捕获按 UTF-8 解码。修法：① `seed_db.py` 统一 `reconfigure(encoding="utf-8")`；② 测试给子进程显式 `PYTHONIOENCODING=utf-8` + `PYTHONUTF8=1`。已用旧版脚本复现出 `0xd2` 并验证修复后 `PYTHONIOENCODING=gbk` 下也全过 |
+| BUG-11 | **线上 `/market` 直接访问/刷新白屏**：路由表里市场页在 `/`，`/market` 没有任何路由匹配，又没有兜底路由；静态站 rewrite 仍返回 `index.html`，于是"没有 404、也没有页面"，只剩头部——比 404 更像站点挂了 | P2 | 前端路由 `router/index.ts` | B（A 的文件，经 A 授权代改） | 已修 | 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` → `/` 兜底；新增 `src/router/__tests__/router.spec.ts` 4 条用例（`/market` 与未知路径都要落到市场页、正常子路由不受影响）。`vitest` 12 passed、`npm run build` exit 0、oxlint 0/0、eslint exit 0。**需重新部署前端后线上复验** |
 
 ## 10. 未覆盖与已知限制
 
