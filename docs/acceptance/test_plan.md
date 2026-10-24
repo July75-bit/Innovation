@@ -41,30 +41,38 @@
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 关联风险 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| TC-001 | 正常买入 | 余额 5000，价 126.00，买 2 | 余额 4748.00，持仓 +2，流水 +1 | FR-M1-03 | — | ⬜ |
-| TC-002 | 余额不足买入 | 余额 50，价 126.00，买 1 | 400 `INSUFFICIENT_BALANCE`，三者不变 | FR-M1-03 | R06 | ⬜ |
-| TC-003 | 数量为 0 | quantity=0 | 422 | FR-M1-03 | — | ⬜ |
-| TC-004 | 数量为负 | quantity=-1 | 422 | FR-M1-03 | — | ⬜ |
-| TC-005 | 数量为小数 | quantity=1.5 | 422 | FR-M1-03 | — | ⬜ |
-| TC-006 | 选手不存在 | player_id=999 | 404 `PLAYER_NOT_FOUND` | FR-M1-03 | — | ⬜ |
-| TC-007 | 超过持仓上限 | 已持 50，再买 1 | 400 `POSITION_LIMIT_EXCEEDED` | FR-M1-03 | — | ⬜ |
-| TC-008 | 正常卖出 | 持 3，卖 1 | 余额 +，持仓 2，流水 +1 | FR-M1-04 | — | ⬜ |
-| TC-009 | 持仓不足卖出 | 持 0，卖 1 | 400 `INSUFFICIENT_POSITION`，不产生负持仓 | FR-M1-04 | R06 | ⬜ |
-| TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ⬜ |
-| TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ⬜ |
-| TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ⬜ |
+| TC-001 | 正常买入 | 余额 5000，价 126.00，买 2 | 余额 4748.00，持仓 +2，流水 +1 | FR-M1-03 | — | ✅ `test_trades_rule.py::test_buy_normal` + e2e 买入链路 |
+| TC-002 | 余额不足买入 | 余额 50，价 126.00，买 1 | 400 `INSUFFICIENT_BALANCE`，三者不变 | FR-M1-03 | R06 | ✅ `test_buy_insufficient_balance` |
+| TC-003 | 数量为 0 | quantity=0 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[0]` |
+| TC-004 | 数量为负 | quantity=-1 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[-1]` |
+| TC-005 | 数量为小数 | quantity=1.5 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[1.5]` |
+| TC-006 | 选手不存在 | player_id=999 | 404 `PLAYER_NOT_FOUND` | FR-M1-03 | — | ✅ `test_buy_invalid_player` + e2e 404 断言 |
+| TC-007 | 超过持仓上限 | 已持 50，再买 1 | 400 `POSITION_LIMIT_EXCEEDED` | FR-M1-03 | — | ✅ `test_buy_exceeds_position_limit` |
+| TC-008 | 正常卖出 | 持 3，卖 1 | 余额 +，持仓 2，流水 +1 | FR-M1-04 | — | ✅ `test_sell_normal` + e2e 卖出链路 |
+| TC-009 | 持仓不足卖出 | 持 0，卖 1 | 400 `INSUFFICIENT_POSITION`，不产生负持仓 | FR-M1-04 | R06 | ✅ `test_sell_more_than_held` |
+| TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ✅ `test_buy_suspended_player` |
+| TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ✅ `test_trade_uses_latest_price` |
+| TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ✅ `test_transaction_rollback_on_failure` |
+
+> **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
+> 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
 
 ### 4.2 定价引擎
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ⬜ |
-| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ⬜ |
-| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ⬜ |
-| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ⬜ |
-| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ⬜ |
-| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | ⬜ |
-| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ⬜ |
+| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ✅ `test_pricing.py::test_price_rises_when_score_positive` |
+| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ✅ `test_price_falls_when_score_negative` |
+| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ✅ `test_zero_demand_signal_keeps_price_when_score_zero` |
+| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ✅ `test_price_never_below_floor` + `test_floor_applies_after_clamp` |
+| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ✅ `test_invalid_current_price_raises` |
+| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | 🟡 模拟器已实现（`generate_match(seed=...)`），但**缺同 seed 可复现的自动化断言**，建议 C 补 |
+| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ✅ e2e 价格历史升序断言 + `test_price_update.py::test_apply_updates_writes_price_and_history` |
+| TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | 🟡 `standardize_score` 已实现（`Z_FULL_SCALE=3.0`），但现有测试只断言符号/范围，**缺 3σ 数值断言**，建议 C 补 |
+| TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
+
+> **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
+> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补。
 
 ### 4.3 AI 智能体
 

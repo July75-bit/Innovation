@@ -19,12 +19,15 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 # code/backend/ai/context.py -> parents[3] == 仓库根
 ROOT = Path(__file__).resolve().parents[3]
 SEED_FILE = ROOT / "data" / "seed_players.json"
+
+logger = logging.getLogger(__name__)
 
 # 演示用假持仓：只给 1 号选手，方便规则版/LLM 版都能给出"有持仓"的建议
 DEMO_POSITIONS: dict[int, dict[str, float]] = {
@@ -35,7 +38,12 @@ DEMO_POSITION_DEFAULT = {"quantity": 0.0, "avg_cost": 0.0}
 
 # ---------------------------------------------------------------- 工具函数
 
-def _pct(prev_price: float, current_price: float) -> float:
+def pct_change(prev_price: float, current_price: float) -> float:
+    """涨跌幅（%，未四舍五入）。
+
+    context 的两条路径与接口层的「最小上下文」共用这一份实现，避免 `_pct` 重复；
+    调用方按需自行 `round(..., 2)`。
+    """
     if not prev_price:
         return 0.0
     return (current_price - prev_price) / prev_price * 100.0
@@ -80,7 +88,7 @@ def mock_context(player_id: int) -> dict[str, Any]:
         "team": player.get("team", ""),
         "role": player.get("role", ""),
         "current_price": current,
-        "change_pct": round(_pct(prev, current), 2),
+        "change_pct": round(pct_change(prev, current), 2),
         "rating": player.get("rating", 50),
         "recent_prices": [
             {"ts": "初始价格", "price": initial},
@@ -144,7 +152,7 @@ def _read_context(db: Any, player_id: int) -> dict[str, Any]:
         "team": player.get("team") or "",
         "role": player.get("role") or "",
         "current_price": float(player["current_price"]),
-        "change_pct": round(_pct(float(player["prev_price"]), float(player["current_price"])), 2),
+        "change_pct": round(pct_change(float(player["prev_price"]), float(player["current_price"])), 2),
         "rating": player.get("rating") or 50,
         "recent_prices": recent_prices,
         "recent_reasons": reasons[-5:],
@@ -185,7 +193,8 @@ def build_player_context(
     if prefer_db:
         try:
             return db_context(player_id, db=db)
-        except Exception as exc:  # B 未实现 / 表未建 / 驱动缺失 都走这里
+        except Exception as exc:  # noqa: BLE001 —— 兜底链路：查库失败必须回落 mock，不能把 AI 故障升级成 5xx
+            logger.warning("AI 上下文查库失败，回落 seed 数据：player_id=%s %s: %s", player_id, type(exc).__name__, exc)
             context = mock_context(player_id)
             context["context_fallback_reason"] = f"{type(exc).__name__}: {exc}"
             return context

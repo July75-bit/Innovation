@@ -29,6 +29,16 @@ jobs:
         run: pip install -r code/backend/requirements.txt
       - name: 运行 pytest
         run: python -m pytest
+      # 第 3 天代码质量检查点：静态分析门槛
+      # 规则：业务代码/测试卡「真实缺陷 + 圈复杂度(10)」；scripts/ 是 CLI 入口（argparse 装配分支多），
+      #      只卡真实缺陷，圈复杂度阈值放宽到 12（当前 scripts/simulate_match.py::main = 11）。
+      - name: 代码质量检查 (ruff)
+        run: |
+          pip install ruff
+          ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine
+          ruff check --select E4,E7,E9,F,C901 tests
+          ruff check --select E4,E7,E9,F scripts
+          ruff check --select C901 --config "lint.mccabe.max-complexity = 12" scripts
 
   # ---------------- 前端：eslint + build ----------------
   frontend:
