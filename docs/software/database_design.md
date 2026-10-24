@@ -221,6 +221,11 @@ erDiagram
 （得分本来就在 C 手里，B 不该替它组织文案），C 改完后 B 删掉这层拼接、只做透传；
 同时 **B 提供 `--from-json` 入口**（已完成，见上表），让 C 可以只算不落库、两边互不等。
 
+**过渡期已做成幂等**：B 侧的 `with_score_in_reason()` 会先看 `reason` 里有没有"得分"，
+**有就原样透传、没有才追加**。这样"C 先合、B 后删"或"B 先删、C 后合"两种顺序都安全，
+不会出现 `…（本轮模拟得分 81.6）（本轮模拟得分 81.6）` 这种双写。切换后该函数只剩
+`VARCHAR(200)` 长度兜底，可留可删。
+
 ## 4. 迁移与初始化
 
 | 项 | 方案 |
@@ -229,6 +234,27 @@ erDiagram
 | 种子数据 | `python scripts/seed_db.py`（读 `data/seed_players.json`） |
 | schema 迁移 | 6 天版不做 Alembic；若改表结构，删库重建 + 重新 seed，并在本文件记录 |
 | 线上持久化 | 挂载 Persistent Disk 到 `/var/data`，`DATABASE_URL=sqlite:////var/data/playerstock.db` |
+
+### 4.1 把价格历史灌到 10+ 个点（给 T4-01 折线图用）
+
+种子脚本只写 1–2 个历史点，折线图验收要求"至少 10 个点"。用 C 的赛程 + B 的落库脚本补，
+不用碰任何代码：
+
+```powershell
+python scripts/seed_db.py --reset
+python scripts/simulate_match.py --seed 42 --rounds 10 --json .tmp/demo_updates.json
+python scripts/update_prices.py --from-json .tmp/demo_updates.json
+```
+
+两点注意：
+
+- `simulate_match.py` 的赛程日期取自它的默认排期（`start_date=2026-11-01`，可能晚于当天）。
+  时间轴仍是**严格递增**、最后一点等于 `players.current_price`，所以不影响前端画图；
+  若希望历史落在"过去 → 今天"，在落库前把导出明细的 `ts` 整体平移即可（当前演示库是这么处理的）。
+- 暂停交易（`status != trading`）的选手不会被定价，`sh1ro` 会停在种子的 2 个点——这是预期行为。
+
+实测（2026-10-24）：7 名可交易选手各 **11–12 个点**，`ts` 严格升序，
+每个点都带中文 `reason`，且最后一点等于 `current_price`。
 
 ## 5. 变更记录
 
