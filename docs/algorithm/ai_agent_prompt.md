@@ -42,13 +42,14 @@
 
 ## 3. 输出 JSON 契约（固定，不可随意改）
 
+> 契约示例即**当前实现**：固定 6 字段，`suggested_price_band` 本期不输出（见本节末说明）。
+
 ```json
 {
   "player_id": 1,
   "action": "BUY",
   "reason": "近 3 场表现评分由 74 升至 82，价格上涨 3.5% 但低于表现提升幅度",
   "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 100.0, "high": 108.0 },
   "source": "llm",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
@@ -56,10 +57,11 @@
 
 | 字段 | 类型 | 约束 |
 | --- | --- | --- |
+| `player_id` | int | 与请求路径一致 |
 | `action` | enum | 只能是 `BUY` / `SELL` / `HOLD`，大写 |
 | `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 120 字 |
 | `risk_level` | enum | `LOW` / `MEDIUM` / `HIGH` |
-| `suggested_price_band` | object | `low` ≤ `high`，可缺省 |
+| `suggested_price_band` | object | **本期不输出**（契约 §4.10 中保留为可缺省字段），`low` ≤ `high`；前端按缺省容错 |
 | `source` | enum | `llm` / `rule_fallback` |
 | `disclaimer` | string | 固定文案，前端必显示 |
 
