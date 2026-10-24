@@ -40,7 +40,11 @@ class PriceCalculator(Protocol):
 
 @dataclass(frozen=True)
 class PlannedUpdate:
-    """一条待落库的价格变化（还没写库，便于 --dry-run 与单测）。"""
+    """一条待落库的价格变化（还没写库，便于 --dry-run 与单测）。
+
+    ``ts`` 可选：C 导出的明细里带比赛时间（`played_at`），用它能保住价格历史
+    与比赛轮次的时间对应关系；不传则用写入时刻。
+    """
 
     player_id: int
     name: str
@@ -48,6 +52,7 @@ class PlannedUpdate:
     new_price: Decimal
     change_pct: float
     reason: str
+    ts: datetime | None = None
 
     @property
     def display(self) -> str:
@@ -121,11 +126,12 @@ def apply_updates(
 
     `prev_price` 用 SQL 表达式 `players.current_price` 赋值，取的是数据库里
     那一刻的值，不依赖调用方读到的快照——和第 2 天交易侧的条件更新同一个思路。
+
+    时间取每条自己的 `ts`（C 导出的明细里有比赛时间），没有则用 `ts` 参数或当前时刻。
     """
     if not planned:
         return []
 
-    moment = ts or utcnow()
     try:
         for item in planned:
             db.execute(
@@ -138,7 +144,7 @@ def apply_updates(
                     player_id=item.player_id,
                     price=item.new_price,
                     reason=item.reason,
-                    ts=moment,
+                    ts=item.ts or ts or utcnow(),
                 )
             )
         db.commit()
