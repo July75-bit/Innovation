@@ -29,7 +29,7 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 
 其中：
   z(t)   = (x - mean(最近 N 场)) / std(最近 N 场)        （std = 0 时取 0）
-  S(t)   = clamp( z(t) / 3 , -1 , +1 )                    （3σ 记"满格"）
+  S(t)   = clamp( z(t) / Z_FULL_SCALE , -1 , +1 )          （Z_FULL_SCALE 默认 3.0，3σ 记"满格"）
   D(t)   = 该选手净买入量 / 该选手总成交量                  ∈ [-1, +1]
 ```
 
@@ -146,8 +146,9 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 
 ## 9. TODO
 
-- [x] C 第 1 天：定稿参数与护栏（α=0.15 / β=0 / floor=1.0 / N=5 / clamp +20% / 3σ 满格）
+- [x] C 第 1 天：定稿参数与护栏（α=0.15 / β=0 / floor=1.0 / N=5 / clamp ±20% / 3σ 满格）
 - [x] C 第 1 天：实现 `update_price` + `standardize_score`，`tests/unit/test_pricing.py` 去掉 skip 并全绿
+- [x] C 第 2 天：补 3σ 归一化（1σ→0.33 / 3σ→满格）与 `Z_FULL_SCALE=1.0` 开关断言，测试 10 条全绿
 - [x] C 第 1 天：实现 `simulator`，`python scripts/simulate_match.py --seed 42` 可打印"旧价 → 新价 + 原因"
 - [ ] C 第 4 天：用正式回测脚本替换第 7 节试跑数据，补 100 seed 稳定性统计
 - [ ] C 第 6 天：配合答辩讲解"哪部分来自比赛数据、哪部分来自需求"
