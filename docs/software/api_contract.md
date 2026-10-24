@@ -49,15 +49,20 @@
 | # | 方法 | 路径 | 功能 | 对接人 | 状态 |
 | --- | --- | --- | --- | --- | --- |
 | 1 | GET | `/api/health` | 健康检查 | 全员 | ✅ 已实现 |
-| 2 | GET | `/api/players` | 市场选手列表 | A + B | ⬜ |
-| 3 | GET | `/api/players/{player_id}` | 单个选手详情 | A + B | ⬜ |
-| 4 | GET | `/api/players/{player_id}/prices` | 价格历史 | A + B + C | ⬜ |
-| 5 | GET | `/api/account` | 账户余额 | A + B | ⬜ |
-| 6 | GET | `/api/positions` | 持仓列表 | A + B | ⬜ |
-| 7 | POST | `/api/trades/buy` | 买入 | A + B | ⬜ |
-| 8 | POST | `/api/trades/sell` | 卖出 | A + B | ⬜ |
-| 9 | GET | `/api/trades` | 交易流水 | A + B | ⬜ |
-| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ⬜ |
+| 2 | GET | `/api/players` | 市场选手列表 | A + B | ✅ 已实现 |
+| 3 | GET | `/api/players/{player_id}` | 单个选手详情 | A + B | ✅ 已实现 |
+| 4 | GET | `/api/players/{player_id}/prices` | 价格历史 | A + B + C | ✅ 已实现 |
+| 5 | GET | `/api/account` | 账户余额 | A + B | ✅ 已实现 |
+| 6 | GET | `/api/positions` | 持仓列表 | A + B | ✅ 已实现 |
+| 7 | POST | `/api/trades/buy` | 买入 | A + B | ✅ 已实现 |
+| 8 | POST | `/api/trades/sell` | 卖出 | A + B | ✅ 已实现（提前完成） |
+| 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
+| 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ✅ 已实现（第 3 天 D 接线） |
+
+> 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
+> 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进
+> `app/api/ai.py`（B 的路由外壳，接线改动已同步本契约与测试）。
+> 卖出（第 8 项）原计划第 2 天，因与买入共用同一套事务与校验、提前一并完成。
 
 ---
 
@@ -197,6 +202,16 @@
 5. 买入后持仓 ≤ 50 → 否则 400
 6. 事务内扣款 + 加持仓 + 写流水 → COMMIT
 
+**并发与重复提交的语义（第 2 天补充，无字段变更）**
+
+- 同一账户的并发下单由后端串行化，**不会**出现超卖、超持仓上限或余额变负；
+  判断写在数据库的条件更新里，详见 `database_design.md` §3.1。
+- 并发下单或前端连点时，后一笔可能直接收到 §2 的统一错误体
+  （`INSUFFICIENT_BALANCE` / `POSITION_LIMIT_EXCEEDED` / `INSUFFICIENT_POSITION`）。
+  前端**按 `code` 提示即可，不要自动重试**——重试会变成第二笔真实交易。
+- 本契约暂**不提供幂等键**（如 `client_order_id`）。若第 3 天要支持"重复提交只成交一次"，
+  按 §6 流程提字段变更后再改，禁止前后端各自先实现。
+
 ### 4.8 `POST /api/trades/sell`
 
 请求同买入。成功：
@@ -239,29 +254,35 @@
 
 ### 4.10 `GET /api/analysis/{player_id}`
 
+> **状态**：✅ 已实现（2026-10-23 第 3 天，D 接线）。
+> 链路：`app/api/ai.py` → `ai.context.build_player_context()`（只读查库，失败回落 seed 数据）
+> → `ai.llm_agent.analyze()`（无密钥/超时/非 JSON/枚举非法内部回落规则版）→ 固定 6 字段裸对象。
+> 测试：`tests/unit/test_api_ai.py`、`tests/integration/test_e2e_flow.py`。
+
 ```json
 {
   "player_id": 1,
-  "action": "BUY",
-  "reason": "近 3 图 Rating 由 1.18 升至 1.32，价格上涨 5.0% 但低于表现提升幅度",
-  "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 120.00, "high": 130.00 },
-  "source": "llm",
+  "action": "HOLD",
+  "reason": "近 5 个价格点累计变动 +5.0%，综合表现分 88，未触发买卖阈值（规则版建议）",
+  "risk_level": "LOW",
+  "source": "rule_fallback",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
 ```
 
-**字段定义（7 个，前端按此渲染）**
+**字段定义（6 个，前端按此渲染）**
 
 | 字段 | 类型 | 必填 | 取值 / 约束 |
 | --- | --- | --- | --- |
-| `player_id` | int | ✅ | 与请求路径一致 |
+| `player_id` | int | ✅ | 与请求路径一致（实现以路径为准回填） |
 | `action` | enum | ✅ | `BUY` / `SELL` / `HOLD`（大写，不接受中文或小写 `buy`） |
-| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/Rating） |
+| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/表现分） |
 | `risk_level` | enum | ✅ | `LOW` / `MEDIUM` / `HIGH` |
-| `suggested_price_band` | object | ❌ **可缺省** | `{ "low": number, "high": number }`，且 `low ≤ high`。**前端必须容错**：缺省时隐藏区间条，不能直接取 `band.low` |
 | `source` | enum | ✅ | `llm`（模型生成）/ `rule_fallback`（规则兜底） |
 | `disclaimer` | string | ✅ | 固定文案，前端**必须**展示 |
+
+> `suggested_price_band`：本期**不输出**（2026-10-23 决策：LLM 版与规则版字段集合完全一致，
+> 规则版不编造价格区间）。契约保留该字段为"可缺省"，前端按缺省容错；将来恢复输出也不必改渲染逻辑。
 
 **错误码（本接口专属规则）**
 
@@ -269,12 +290,17 @@
 | --- | --- | --- | --- |
 | 200 | — | 正常返回，**包含 AI 失败降级** | 默认路径；用 `source` 区分来源 |
 | 404 | `PLAYER_NOT_FOUND` | `player_id` 不存在 | 返回 §2 统一错误体 |
-| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 可选实现；未启用则不会出现 |
+| 429 | `AI_RATE_LIMITED` | 启用了限流且已超限 | 本期未启用限流，不会出现 |
 | 500 | `INTERNAL_ERROR` | **仅**非 AI 故障（如数据库不可用） | 兜底逻辑本身也失败才算 |
 
 > 🔴 **硬规则：AI 相关故障一律不得用 4xx / 5xx 表达。**
 > 模型超时、未配置密钥、返回非法 JSON、调用被限流 —— 都必须返回 **200 + `source=rule_fallback`**，
 > 保证前端只有一套渲染逻辑，且"AI 挂了不影响交易"这条设计目标可验证。
+>
+> **实现保证（2026-10-23）**：无密钥直接规则版、不碰网络；调模型超时取
+> `settings.llm_timeout_seconds`（默认 20s）；超时/网络错误/非 JSON/枚举非法 → 200 + 规则版；
+> 连上下文组装都失败时用「最小上下文」走规则版，同样不升级成 5xx。只有选手不存在（404）
+> 与非 AI 故障（500）才用非 200 表达。
 
 **只读保证（AI 绝不改余额）**
 
@@ -283,7 +309,7 @@
 | 数据操作 | 本接口只做 `SELECT`，**禁止**调用 `Session.commit()`，禁止任何 INSERT / UPDATE / DELETE |
 | 依赖注入 | 路由只依赖 `get_db`（只读使用），不得注入交易服务 |
 | 权限边界 | AI 只产出建议；真正下单必须由用户显式调用 `/api/trades/buy` / `sell` |
-| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；此用例须在 CI 通过 |
+| 验证方式 | `docs/acceptance/test_plan.md` **TC-205**：调用本接口前后对比余额与持仓，必须完全不变；已在 `tests/unit/test_api_ai.py` 与 `tests/integration/test_e2e_flow.py` 断言 |
 
 **响应形态注意**：本接口成功时返回**裸对象**（无 `success` 字段），失败时返回 §2 的统一错误体 `{success:false, message, code}`；前端按 HTTP 状态码分支处理。
 
@@ -315,12 +341,15 @@
 
 | 日期 | 变更内容 | 提出人 | 影响方 |
 | --- | --- | --- | --- |
-| | 初版定稿 | B | A/B/C/D |
+| 2026-10-17 | 初版定稿 | B | A/B/C/D |
+| 2026-10-23 | 第 10 项 `GET /api/analysis/{player_id}` 实现并生效：固定 6 字段（去掉 `suggested_price_band` 输出）、AI 故障一律 200 + `rule_fallback`、404 仅用于选手不存在 | D | A/B |
+| 2026-10-23（第 2 天） | 补 §4.7"并发与重复提交的语义"说明；买入的校验顺序在代码侧对齐本文（余额先于持仓上限，此前实现把上限提到了前面）。**字段与错误码均无变更** | B | 无（A 按 `code` 提示即可；D 的 AI 只读，不受影响） |
 
 ## 7. 契约验收（第 1 天）
 
 - [ ] A 确认所有字段都能在页面上渲染（不需要额外请求）
 - [ ] C 确认价格字段与 `price_history` 结构一致
-- [ ] D 确认 AI 分析接口的输入数据都能从上述接口拼出来
+- [x] D 确认 AI 分析接口的输入数据都能从上述接口拼出来（2026-10-23）
 - [ ] 四人在这份文档下各留一行"确认"记录
-- [x] **AI 分析接口字段与错误码已确认**（T1-33，2026-10-17）：7 个字段、4 个错误码、只读保证已写入 §4.10
+- [x] **D 签字**（2026-10-23，T1-33）：`GET /api/analysis/{player_id}` 的**固定 6 字段**（2026-10-23 决策：不输出 `suggested_price_band`，契约中该字段保留为可缺省）、4 个错误码、"AI 绝不改余额"的只读保证已写入 §4.10；规则版兜底 `code/backend/ai/fallback.py` 已实现并通过自测。（2026-10-24 更正：此行原文写"7 个字段"，与 §4.10 / §6 变更记录统一为 6 字段）
+- [x] **B 签字**（2026-10-24，第 2 天契约冻结复查，B 主持）：逐条核对 10 个接口的请求/响应字段，与 §4 一致，**无新增/改名字段**；`role` 为选手真实位置、`rating` 为项目模拟综合评分（UI 必须标注"模拟"）；`hltv_rating` / `kast` / `adr` 已删除且模型、schema、种子数据、AI 上下文里均无残留；第 10 项由 D 的改动已记入 §6 变更记录并可追溯。核对方式：`/openapi.json` 路径清单 + `tests/unit/test_api_players.py` / `test_api_trades.py` 逐字段断言 + 实机 25 项验收全绿

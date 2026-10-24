@@ -27,15 +27,17 @@ SYSTEM_PROMPT = """你是一名虚拟选手股市场的分析助手。你只输�
 1. action 只能是 BUY、SELL、HOLD 三者之一；
 2. reason 必须提到当前价格或涨跌幅或近期表现，禁止空泛表述；
 3. 若数据不足以判断，输出 HOLD 并在 reason 中说明缺少什么数据；
-4. 你只提供分析建议，不执行任何交易。
+4. 你只提供分析建议，不执行任何交易；
+5. 只输出 action、reason、risk_level 三个字段，**不要**输出价格区间、额外解释或 markdown 代码块。
 """
 
 USER_PROMPT_TEMPLATE = """请分析以下选手行情数据：
 
 - 选手：{name}（ID: {player_id}）
+- 战队：{team}　位置：{role}
 - 当前价格：{current_price}
 - 近期涨跌幅：{change_pct}%
-- 表现评分：{rating}
+- 表现评分（项目模拟值，非官方统计）：{rating}
 - 最近价格序列：{recent_prices}
 - 近期价格变化原因：{recent_reasons}
 - 当前持仓：{position}

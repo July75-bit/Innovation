@@ -1,10 +1,13 @@
 name: CI
 
 on:
+  # 团队日常在 develop 上开发；只监听 main 会导致 develop 的 push 完全不跑 CI（已踩坑：10-17 之后 develop 的提交全无 CI 记录）
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
+  # 允许在 Actions 页面手动点 "Run workflow"，便于排查与答辩演示
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -92,6 +95,7 @@ jobs:
             docs/software/api_contract.md \
             docs/software/database_design.md \
             docs/software/deployment.md \
+            docs/software/prototype/index.html \
             docs/mgmt/communication_plan.md \
             docs/mgmt/risk_plan.md \
             docs/mgmt/milestones.md \

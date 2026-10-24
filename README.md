@@ -130,6 +130,19 @@ python -m pytest
 
 **文档归属（补充约定）**：`docs/requirements/`、`docs/mgmt/`、`docs/acceptance/` 由 **D 牵头**，A/B/C 各自补齐本模块章节（需求条目、风险条目、测试用例）。否则第 6 天会集中爆炸。
 
+### 联系方式
+
+> 群聊 / 电话由各人补填真值（不把私人联系方式写进公开仓库）；以下为协作入口与写权限边界，对应 `project_management_plan.md` §8.1。
+
+| 成员 | 负责目录 | 沟通入口 | 升级路径 |
+| --- | --- | --- | --- |
+| A | `code/frontend/` | 小组群（待填） | 前端阻塞影响验收时直接找 D 升级 |
+| B | `code/backend/app/{api,models,schemas,core}`、`requirements.txt` | 小组群（待填） | 接口字段有异议 → 契约评审，2 小时内定 |
+| C | `code/core_engine/`、`data/seed_players.json` | 小组群（待填） | 价格口径与 B 冲突时以 `api_contract.md` 为准 |
+| D | `code/backend/ai/`、`docs/`、`.github/`、`render.yaml` | 小组群（待填） | 协调人，负责汇总进度与风险升级 |
+
+> GitHub 协作账号（取自 `git log` 提交记录）：`July75-bit`（仓库所有者）、`wlkaqw`、`weedflame`、`Hu De Hao`；与 A/B/C/D 的对应关系请各人补填。
+
 ## 接口一览
 
 接口契约以 [`docs/software/api_contract.md`](docs/software/api_contract.md) 为准，第 1 天确认后**不再随意改字段**。
@@ -173,7 +186,7 @@ python -m pytest
 | --- | --- | --- |
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图 | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明 | B + D |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明 | D |
 | [`docs/presentation/`](docs/presentation/) | 答辩幻灯片 | 全员 |

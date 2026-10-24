@@ -89,6 +89,15 @@ erDiagram
 
 > 说明：`data/seed_players.json` 里的 `initial_price`（上市价）**不是本表字段**，落库时写成 `price_history` 的第一条记录（`reason = 初始价格`）。
 
+### 2.2.1 实现说明（第 1 天补充）
+
+- 金额字段（`balance` / `initial_balance` / `current_price` / `prev_price` / `price` / `amount` / `balance_after`）
+  在 ORM 中用 `NUMERIC(12,2)`，`avg_cost` 用 `NUMERIC(12,4)`；SQLite 下仍按 REAL 存储，
+  但应用层统一用 `Decimal` 计算，避免浮点误差。对外 JSON 仍是两位小数 `number`，契约不变。
+- 种子数据会为每名选手写 `price_history` 第一条（`reason = 初始价格`）；若
+  `current_price != initial_price`，再补一条当前价（`reason = 模拟比赛表现调整（种子数据…）`），
+  保证前端折线图与 D 的 AI 输入都有可解释的历史点。
+
 ### 2.3 `positions` 持仓
 
 | 字段 | 类型 | 约束 | 说明 |
@@ -143,6 +152,35 @@ erDiagram
 
 **C 的边界**：价格更新只写 `players` 和 `price_history`，**永不**碰 `users.balance` 与 `positions`。
 
+### 3.1 并发下怎么保证不超卖（第 2 天）
+
+只用"先 `SELECT` 判断、再 `UPDATE` 写入"是不够的：两个连接（多 worker / 多实例 /
+多标签页）可以同时读到"持仓 3 股"，各自都判断"卖 2 股够"，最后卖掉 4 股、钱按 4 股
+入账。第 2 天的实测复现：初始 5000.00 / 3 股，两条连接各卖 2 股后余额变成 5504.00，
+而持仓还剩 1 股——凭空多卖了一股。
+
+所以真正的判断必须交给数据库，写成**条件更新**，读出来的值只用来拼中文提示：
+
+| 动作 | 语句里的守卫 | 守卫不成立时 |
+| --- | --- | --- |
+| 扣款 | `UPDATE users SET balance = balance - :amount WHERE user_id = :uid AND balance >= :amount` | `rowcount = 0` → 400 `INSUFFICIENT_BALANCE` |
+| 加仓 | `UPDATE positions SET quantity = quantity + :n WHERE user_id = :uid AND player_id = :pid AND quantity + :n <= 50` | `rowcount = 0` → 400 `POSITION_LIMIT_EXCEEDED` |
+| 减仓 | `UPDATE positions SET quantity = quantity - :n WHERE user_id = :uid AND player_id = :pid AND quantity > :n` | `rowcount = 0` 再试清仓 |
+| 清仓 | `DELETE FROM positions WHERE user_id = :uid AND player_id = :pid AND quantity = :n` | `rowcount = 0` → 400 `INSUFFICIENT_POSITION` |
+
+三条配套约定：
+
+1. **加锁顺序一致**：买入先扣款、卖出先入账，都是先拿账户行、再动持仓行，
+   两条路径不会互相死锁；
+2. **减仓不写 0**：`positions.quantity` 有 `CHECK (quantity BETWEEN 1 AND 50)`，
+   一次卖光走 `DELETE`，写成 0 会直接违反约束；
+3. **失败即回滚**：任何一步守卫不成立都整体 rollback，钱和货一起回到原样，
+   所以"先扣款后校验上限""先入账后校验持仓"不会留下半个交易。
+
+`code/backend/app/api/trades.py` 里的进程内 `_trade_lock` 只是减少同进程的写冲突，
+**不是**正确性的依据；正确性由上面四个条件更新保证（`tests/unit/test_trades_concurrency.py`
+用两个独立连接稳定复现交错并逐条断言）。
+
 ## 4. 迁移与初始化
 
 | 项 | 方案 |
@@ -157,9 +195,126 @@ erDiagram
 | 日期 | 变更 | 变更人 | 影响 |
 | --- | --- | --- | --- |
 | | 初版表结构 | B | A/C/D 确认字段名 |
+| 第 1 天 | 按本文落成 ORM：5 张表 + `uq_positions_user_player` + `ck_positions_quantity_range` + 三条索引；金额改用 `NUMERIC(12,2)`（应用层 Decimal 计算，JSON 仍是两位小数）；SQLite 开启 `foreign_keys=ON` / WAL / `busy_timeout=5000` | B | 无接口字段变更；A/C/D 无需适配 |
+| 第 2 天 | 交易写入改成"条件更新"（见 §3.1）：扣款/加仓/减仓/清仓四个动作的守卫写进 SQL 的 `WHERE`，用 `rowcount` 判断成败；清仓改为 `DELETE` 以免违反 `quantity >= 1` 的 CHECK；买入的校验顺序按契约 §4.7 改为"余额先于持仓上限" | B | 表结构与接口字段均无变更；`trades` / `positions` 语义不变，A/C/D 无需适配 |
 
 ## 6. TODO
 
-- [ ] B 第 1 天：按本文建 models，跑通 `init_db()`
-- [ ] B 第 2 天：补唯一索引与 CHECK 约束
+- [x] B 第 1 天：按本文建 models，跑通 `init_db()`
+- [x] B 第 1 天：补唯一索引与 CHECK 约束（提前于 D2 完成）
 - [ ] B 第 6 天：把实际表结构（`sqlite3 .schema` 输出）贴到附录，证明与文档一致
+      —— 第 1 天已先贴一版实测结果，见 §7，第 6 天只做复核
+
+## 7. 附录 A：第 1 天实测 `.schema`（`code/backend/playerstock.db`）
+
+生成方式：
+
+```powershell
+# 有 sqlite3 命令行时
+sqlite3 code/backend/playerstock.db ".schema"
+
+# 没有 sqlite3 时用 Python（本次实际采用）
+python -c "import sqlite3;print('\n'.join(r[0] for r in sqlite3.connect('code/backend/playerstock.db').execute('select sql from sqlite_master where sql is not null')))"
+```
+
+```sql
+-- table: players
+CREATE TABLE players (
+	player_id INTEGER NOT NULL, 
+	name VARCHAR(50) NOT NULL, 
+	display_name VARCHAR(50), 
+	team VARCHAR(50), 
+	current_price NUMERIC(12, 2) NOT NULL, 
+	prev_price NUMERIC(12, 2) NOT NULL, 
+	role VARCHAR(20), 
+	rating INTEGER NOT NULL, 
+	status VARCHAR(20) DEFAULT 'trading' NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (player_id), 
+	CONSTRAINT ck_players_current_price_positive CHECK (current_price > 0), 
+	CONSTRAINT ck_players_prev_price_positive CHECK (prev_price > 0), 
+	CONSTRAINT ck_players_rating_range CHECK (rating >= 0 AND rating <= 100), 
+	UNIQUE (name)
+);
+
+-- table: positions
+CREATE TABLE positions (
+	position_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	avg_cost NUMERIC(12, 4) NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (position_id), 
+	CONSTRAINT uq_positions_user_player UNIQUE (user_id, player_id), 
+	CONSTRAINT ck_positions_quantity_range CHECK (quantity >= 1 AND quantity <= 50), 
+	CONSTRAINT ck_positions_avg_cost_non_negative CHECK (avg_cost >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: price_history
+CREATE TABLE price_history (
+	price_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	reason VARCHAR(200) NOT NULL, 
+	ts DATETIME NOT NULL, 
+	PRIMARY KEY (price_id), 
+	CONSTRAINT ck_price_history_price_positive CHECK (price > 0), 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: trades
+CREATE TABLE trades (
+	trade_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	amount NUMERIC(12, 2) NOT NULL, 
+	balance_after NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (trade_id), 
+	CONSTRAINT ck_trades_side CHECK (side IN ('BUY', 'SELL')), 
+	CONSTRAINT ck_trades_quantity_positive CHECK (quantity > 0), 
+	CONSTRAINT ck_trades_price_positive CHECK (price > 0), 
+	CONSTRAINT ck_trades_amount_non_negative CHECK (amount >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+
+-- table: users
+CREATE TABLE users (
+	user_id INTEGER NOT NULL, 
+	nickname VARCHAR(50) NOT NULL, 
+	balance NUMERIC(12, 2) NOT NULL, 
+	initial_balance NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (user_id), 
+	CONSTRAINT ck_users_balance_non_negative CHECK (balance >= 0), 
+	CONSTRAINT ck_users_initial_balance_non_negative CHECK (initial_balance >= 0)
+);
+
+-- index: ix_positions_player_id
+CREATE INDEX ix_positions_player_id ON positions (player_id);
+
+-- index: ix_positions_user_id
+CREATE INDEX ix_positions_user_id ON positions (user_id);
+
+-- index: ix_price_history_player_ts
+CREATE INDEX ix_price_history_player_ts ON price_history (player_id, ts);
+
+-- index: ix_trades_user_created
+CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
+```
+
+自查结果：`players=8`、`price_history=15`、`users=1`、`positions=0`、`trades=0`（seed 后的干净状态）。
+`positions` 唯一约束与 `quantity 1–50` CHECK、`trades(user_id, created_at)` 索引、
+`price_history(player_id, ts)` 索引均已实际生成。
+
+**第 2 天复核（2026-10-24）**：按本节命令重新生成 `code/backend/playerstock.db` 后，结果与上面逐条一致——
+恰好 5 张表、4 条索引，`players=8`（价格 126.00 / 143.50 / 91.20 / 74.40 / 105.00 / 90.20 / 136.50 / 63.00，
+其中 `sh1ro` 为 `suspended`）、`price_history=15`。表结构自第 1 天起**未变**，所以第 2 天的并发加固
+（§3.1）只改写入方式，不改 schema，A/C/D 无需适配。

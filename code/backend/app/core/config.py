@@ -58,6 +58,17 @@ class Settings(BaseSettings):
         """
         if v.startswith("postgres://"):
             return "postgresql://" + v[len("postgres://") :]
+
+        # SQLite 相对路径统一相对 code/backend 解析：否则"在仓库根目录 seed、
+        # 在 code/backend 启动服务"会各自生成一个 playerstock.db，看起来像数据丢了。
+        prefix = "sqlite:///"
+        if v.startswith(prefix):
+            raw = v[len(prefix) :]
+            if raw and raw != ":memory:" and not raw.startswith("file:"):
+                path = Path(raw)
+                if not path.is_absolute():
+                    backend_dir = Path(__file__).resolve().parents[2]  # code/backend
+                    return prefix + (backend_dir / path).resolve().as_posix()
         return v
 
     @property
