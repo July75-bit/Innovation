@@ -9,10 +9,10 @@
 | 项 | 状态 | 证据 |
 | --- | --- | --- |
 | M3 / M4 | ✅ 均已达成 | A 的 14 张浏览器证据：`docs/acceptance/evidence/` |
-| 测试 | **120 passed / 0 skipped（CI）**；本机 Windows 因 BUG-03 为 118/1/1 | `test_report.md` §1/§9 |
-| 部署准备 | 🟡 只到“脚本/驱动/文档”：`bootstrap_demo_data.py`、PG 连接串归一化、`pool_pre_ping` | `scripts/bootstrap_demo_data.py`、`deployment.md` |
+| 测试 | **120 passed / 0 skipped**（CI 与本机一致；BUG-03 已修，见下） | `test_report.md` §1/§9 |
+| 部署准备 | 🟡 只到“脚本/驱动/文档”：`bootstrap_demo_data.py`、PG 连接串归一化、`pool_pre_ping`、`deployment.md` §3.9 | `scripts/bootstrap_demo_data.py`、`deployment.md` |
 | Render / Postgres | ❌ 未注册、未建库、未配环境变量；`deployment.md` 检查单大部分仍是 `[ ]` | `deployment.md` §3 |
-| 待修 | **BUG-03**（B 的 bootstrap 测试 Windows 编码，P1）；TC-307 刷新回归未单独截图 | `test_report.md` §9 / `test_plan.md` §4.4 |
+| 待修 | ~~BUG-03~~ **已修**（2026-10-25，`eb0d7e7`：测试改文件捕获 + `errors="replace"`，`seed_db.py` 输出转 UTF-8）；TC-307 刷新回归未单独截图 | `test_report.md` §9 BUG-10 / `test_plan.md` §4.4 |
 | 外部交叉原型测试 | 🟡 内部互测已记录，外部组未约 | `docs/acceptance/cross_test.md` |
 | 答辩材料 | ❌ 未开始（幻灯片/演示脚本/QA） | — |
 
