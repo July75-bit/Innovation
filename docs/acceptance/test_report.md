@@ -13,10 +13,15 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **92**（单元 86 + 集成 6） |
-| 通过 / 失败 / 跳过 | **92 / 0 / 0** |
-| 手工用例总数 | 未执行（前端未完成，见 §9） |
+| 自动化用例总数 | **97**（单元 91 + 集成 6） |
+| 通过 / 失败 / 跳过 | **97 / 0 / 0** |
+| 手工用例总数 | 未执行（前端未完成，见 §9）；**T3-05 持久化复验已做，见 §2.3** |
 | 通过 / 失败 | 未执行 / 未执行 |
+
+> 复跑说明（2026-10-24）：自动化用例由 B 在仓库根目录复跑一次（Windows + 仓库内 `.venv`，
+> Python 3.13.5），与 D 的 conda 环境计数一致；本节数字以复跑结果为准。
+> 增量来自 C 的 `test_simulator.py`（+3，TC-106 同 seed 断言）、`test_price_reason_traceability.py`（+4）
+> 与 B 的 `test_update_prices_script.py` 增至 9 条（+2）。
 
 ## 2. 自动化测试结果
 
@@ -25,7 +30,7 @@
 ```text
 $ python -m pytest
 ..........................................................................................   [100%]
-92 passed, 1 warning in 6.92s
+97 passed, 1 warning in 4.35s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -37,8 +42,9 @@ $ python -m pytest
 | `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
-| `tests/unit/test_update_prices_script.py` | 7 | 7 | 0 | 0 | B 第 3 天新增，`--from-json` / reason 拼接 / 非法输入 |
+| `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增：`--from-json` / 跳过 suspended / 同 seed 可复现 / reason 幂等不双写 / 非法输入 |
 | `tests/unit/test_pricing.py` | 10 | 10 | 0 | 0 | C 第 3 天实现；含 3σ 归一化与 `Z_FULL_SCALE` 开关断言（`dfe9f26`） |
+| `tests/unit/test_simulator.py` | 3 | 3 | 0 | 0 | C 第 3 天新增，TC-106：同 seed 序列逐条相等 / 单场稳定 / 换 seed 必变 |
 | `tests/unit/test_ai_fallback.py` | 6 | 6 | 0 | 0 | 规则版兜底 |
 | `tests/unit/test_llm_agent.py` | 13 | 13 | 0 | 0 | 注入假 client，不碰网络 |
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
@@ -48,6 +54,40 @@ $ python -m pytest
 | 文件 | 用例数 | 通过 | 失败 | 备注 |
 | --- | --- | --- | --- | --- |
 | `tests/integration/test_e2e_flow.py` | 2 | 2 | 0 | 全链路（查行情→买入→持仓→流水→卖出→账户→AI 建议）+ AI 结构/降级/只读；第 3 天已拆 2 个 skip |
+| `tests/integration/test_price_reason_traceability.py` | 4 | 4 | 0 | 价格 `reason` 可追溯（TC-110）：from-json / 引擎 / 落库 + `/prices` API / 超 200 字截断 |
+
+### 2.3 数据持久化复验（T3-05，手工 + 接口核对）
+
+> 目的：证明余额 / 持仓 / 流水 / 价格历史真的落在 SQLite 文件里，**进程重启后不丢**。
+> 库：`code/backend/playerstock.db`（WAL 已归并，单文件）。执行：B，2026-10-24。
+
+步骤：起 uvicorn → 买入 2 股 → 查三项 → 停掉进程 → 重新起 uvicorn → 再查三项。
+
+| 项 | 重启前 | 重启后 | 一致 |
+| --- | --- | --- | --- |
+| 余额 | 4747.46 | 4747.46 | ✅ |
+| 持仓 | 1 条：ZywOo ×2，均价 126.27，市值 252.54 | 同左 | ✅ |
+| 流水 | 1 条：`BUY 2 @126.27`，`balance_after 4747.46`，`2026-10-24T04:01:15Z` | 同左 | ✅ |
+| 价格历史（player 1） | 10 个点，末点 126.27 | 10 个点，末点 126.27 | ✅ |
+
+附带两条旁证：
+
+- 买入成交价 **126.27 = 当时的 `current_price`**，证明成交用最新价，不是缓存价（TC-011 的实机侧）；
+- `GET /api/analysis/1` 返回 200、`source=rule_fallback`、`action=HOLD`，调用前后余额与持仓不变（TC-205 的实机侧）。
+
+复现命令（仓库根目录）：
+
+```powershell
+cd code/backend
+python -m uvicorn app.main:app --reload --port 8000
+# 另开窗口
+curl.exe -X POST http://127.0.0.1:8000/api/trades/buy -H "Content-Type: application/json" -d "{\"player_id\":1,\"quantity\":2}"
+curl.exe http://127.0.0.1:8000/api/account
+curl.exe http://127.0.0.1:8000/api/positions
+curl.exe http://127.0.0.1:8000/api/trades
+curl.exe http://127.0.0.1:8000/api/players/1/prices
+# Ctrl+C 停掉后再起，重复上面四条 GET，数字应完全一致
+```
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -74,14 +114,14 @@ $ python -m pytest
 | TC-102 | 下跌 | 90.00 | 90.00（`test_price_falls_when_score_negative`） | ✅ |
 | TC-103 | 不变 | 100.00 | 100.00（`test_zero_demand_signal_keeps_price_when_score_zero`） | ✅ |
 | TC-104 | 触底保护 | ≥ floor | 1.00（`test_price_never_below_floor` / `test_floor_applies_after_clamp`） | ✅ |
-| TC-106 | 同 seed 可复现 | 一致 | 模拟器已实现，但缺同 seed 自动断言 | 🟡 建议 C 补 |
+| TC-106 | 同 seed 可复现 | 一致 | `test_simulator.py` 3 条：同 seed 序列逐条相等（含得分/胜负/评级/轮次/日期）、单场稳定、**换 seed 必变**（防假复现） | ✅ |
 | TC-107 | 历史升序 | 升序 | e2e + `test_apply_updates_writes_price_and_history` | ✅ |
 | TC-108 | 3σ 归一化 | z=1.5→S=0.5 | 1σ→0.333、2σ→0.667、3σ→1.0、>3σ 饱和；`Z_FULL_SCALE=1.0` 时 1σ 即满格 | ✅ `test_standardize_score_three_sigma_scale` / `test_z_full_scale_one_matches_literal_mapping` |
 | TC-109 | 对称 clamp ±20% | 涨跌都封顶 | `test_step_is_capped_symmetrically` | ✅ |
 | TC-110 | 价格历史 reason 可追溯（方案 A） | `/prices` 每条模拟调价 reason 含 `S=` + 本轮模拟得分；重启后仍可读 | `test_price_reason_traceability.py` 4 条（from-json / 引擎 / 落库+API / 200 字截断） | ✅ |
 
 > 说明：C 第 3 天已实现 `update_price` / `standardize_score` 与 `simulate_match.py`，5 条 skip 全部转绿（`test_pricing.py` 共 10 条）；
-> 剩余 TC-106（同 seed 可复现）一条**数值断言**是补强项，不影响功能验收。
+> TC-106（同 seed 可复现）已由 `test_simulator.py` 3 条断言补齐，本表 10 条定价用例全部 ✅。
 > TC-110 对应决策：**不新增 `score` 列/`matches` 表，归因写进 `reason`**（选项 A，见 `architecture.md` §5 / `test_plan.md` §4.2）。
 
 ## 5. AI 降级测试结果
@@ -126,9 +166,8 @@ $ python -m pytest
 
 | 项 | 原因 | 影响 | 后续 |
 | --- | --- | --- | --- |
-| 定价 TC-106 同 seed 断言 | 模拟器已实现，测试还没写“同 seed 两次结果一致” | 不影响功能验收 | 建议 C 补 1 条断言 |
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
-| 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收 | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
+| 前端手工用例 TC-301~307 | A 已提交前端初版（`9782dc7`），但尚未在浏览器里联调验收（`node_modules` 未安装） | 浏览器闭环、三态、AI 卡未验 | 第 3 天下午联调 / 第 4 天补做 |
 | 线上验收 TC-401~406 | 未部署 | 公网不可用 | 第 5 天 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
 | 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
@@ -138,13 +177,14 @@ $ python -m pytest
 
 ## 10. 结论
 
-- P0 缺陷：**0** 个（自动化层 92 条全绿；浏览器闭环/线上待验）
+- P0 缺陷：**0** 个（自动化层 97 条全绿；浏览器闭环/线上待验）
 - P1 缺陷：**0** 个
-- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署、TC-106 同 seed 断言待补
+- 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 3 天）**——浏览器闭环未验、未部署
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
 
 ## 11. 附件
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
-- [ ] pytest 输出文本
-- [ ] 部署持久化验证截图
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（97 passed, 0 skipped）
+- [x] 数据持久化验证（T3-05）→ 见 §2.3（重启前后四项一致，含复现命令）
+- [ ] 部署持久化验证截图（线上，第 5 天）
