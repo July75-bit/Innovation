@@ -16,27 +16,46 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = REPO_ROOT / "scripts" / "bootstrap_demo_data.py"
 
 
-def _run_bootstrap(db_path: Path, *extra: str) -> subprocess.CompletedProcess:
-    """用独立 DATABASE_URL 跑脚本；不捕获输出（子进程直接继承，避免管道问题）。"""
+class BootstrapRun(NamedTuple):
+    returncode: int
+    output: str  # 已按 UTF-8 解码，坏字节替换为 \ufffd，不会抛异常
+
+
+def _run_bootstrap(db_path: Path, *extra: str) -> BootstrapRun:
+    """用独立 DATABASE_URL 跑脚本。
+
+    输出写进**文件**而不是管道：① 避免沙箱/CI 对管道 stdio 的限制；② 读回来时统一
+    `decode("utf-8", errors="replace")`，这样即使子进程吐的是 GBK 字节也不会抛
+    `UnicodeDecodeError`（第 4 天 BUG-10：Windows 中文控制台 0xd2，CI 的 ubuntu 不暴露）。
+    """
     env = {**os.environ, "DATABASE_URL": f"sqlite:///{db_path.as_posix()}"}
     env.pop("PYTHONPATH", None)  # 让脚本自己的 sys.path 生效，避免被测试环境带偏
-    # Windows 控制台默认 GBK：子进程若按 GBK 输出，pytest 的 fd 捕获会按 UTF-8 解码并
-    # 抛 UnicodeDecodeError(0xd2)（第 4 天 BUG-03，CI 的 ubuntu 不暴露）。
-    # 这里显式让子进程统一说 UTF-8，测试结果就不依赖跑测试的人是什么控制台。
+    # 双保险：子进程自己也说 UTF-8（seed_db/simulate_match 都会 reconfigure），
+    # 测试结果不依赖跑测试的人是什么控制台。
     env["PYTHONIOENCODING"] = "utf-8"
     env["PYTHONUTF8"] = "1"
-    return subprocess.run(
-        [sys.executable, str(SCRIPT), *extra],
-        cwd=REPO_ROOT,
-        env=env,
-        check=False,
-        timeout=180,
-    )
+
+    log_path = db_path.parent / "bootstrap.log"
+    with log_path.open("wb") as log_file:
+        completed = subprocess.run(
+            [sys.executable, str(SCRIPT), *extra],
+            cwd=REPO_ROOT,
+            env=env,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=180,
+        )
+    output = log_path.read_bytes().decode("utf-8", errors="replace")
+    if completed.returncode != 0:  # 失败时把日志打出来，方便定位是哪个步骤挂了
+        print(output[-4000:])
+    return BootstrapRun(completed.returncode, output)
 
 
 def test_bootstrap_fills_points_for_every_trading_player(tmp_path: Path) -> None:
@@ -44,6 +63,9 @@ def test_bootstrap_fills_points_for_every_trading_player(tmp_path: Path) -> None
 
     completed = _run_bootstrap(db, "--rounds", "2", "--min-points", "2", "--seed", "42")
     assert completed.returncode == 0, "bootstrap 应当成功并返回 0"
+    # 脚本自己的自检行必须在输出里（证明它真的核对了点数，而不只是"跑完没报错"）
+    assert "结果核对" in completed.output
+    assert "OK" in completed.output
 
     conn = sqlite3.connect(db)
     try:

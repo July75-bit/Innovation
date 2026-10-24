@@ -47,7 +47,9 @@
 - [x] `code/backend/app/core/config.py` 已把 `postgres://` / 裸 `postgresql://` 归一化成 **`postgresql+psycopg2://`**：① 不转 `postgres://` 会报 `Can't load plugin: sqlalchemy.dialects:postgres`；② **SQLAlchemy 2.1 起裸 `postgresql://` 默认驱动是 psycopg 3（包名 `psycopg`）**，而项目只装 `psycopg2-binary`，不显式写驱动会 `ModuleNotFoundError: No module named 'psycopg'` 直接起不来（第 4 天预检实测，`tests/unit/test_config_db_url.py` 6 条守着）
 - [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
 - [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
-- [ ] 代码已推到 GitHub；确认 **要部署的分支**（团队当前用 `develop`，Blueprint 创建时选它，否则推了不自动部署）
+- [x] 灌数命令就绪：`python scripts/bootstrap_demo_data.py`（种子 + 9 轮价格，干净库实测每人 ≥10 点，见 §3.9）
+- [ ] 代码已推到 GitHub 并确认 **要部署的分支**（团队用 `develop`，Blueprint 创建时选它）
+      ——⚠️ 当前 `develop` 仍有未推送的本地提交，**部署前必须先 push**，否则 Render 拉不到最新代码
 
 ### 3.1 注册并授权 Render
 
@@ -128,6 +130,54 @@
 | 10 | 前端构建产物（`dist/`） | ✅ | A 的脚手架已入库；第 4 天 B 本地复跑 `npm ci` / `npm run build`（58 modules，exit 0）/ oxlint / eslint / vitest 全绿，CI run #30 前端 job 亦绿（见 `test_report.md` §2.4） |
 
 **预检结论**：**后端代码侧已就绪**，第 5 天可先单独部署后端验证 `/api/health` 与 Postgres 持久化；前端部署与线上全流程验收阻塞在 A 的脚手架（第 3–4 天）与第 5 天的控制台操作。**今天不做任何线上操作。**
+
+### 3.9 第 4 天预检（第二步）：代码侧全部就绪，只差控制台点击
+
+> 2026-10-25，B。§3.8 是"不部署的静态预检"，这一节是把**能提前做的都做完**：
+> 灌数配方在干净库上跑通、用真实 API 核到点数、把 4 步操作要填的东西写死。
+> ⚠️ **第 1–3 步必须用 Render 账号在浏览器里点**（B 没有账号凭据，无法代做）；
+> 第 4 步的命令已经就绪并在干净库验证过，等库建好后照抄即可。
+
+| # | 步骤 | 命令 / 要点 | 状态 |
+| --- | --- | --- | --- |
+| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**（必须与后端同区，才能用 Internal URL）；Plan = Free；建好复制 **Internal Database URL** | ⬜ 待控制台（需账号） |
+| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ⬜ 待控制台 |
+| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS` = 先留空后在 §3.5 回填、`LLM_API_KEY` = 没有就留空（自动走 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ⬜ 待控制台 |
+| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | 🟡 命令已就绪，干净库实测通过（见下）；线上那一次要等 1–3 完成 |
+
+**第 4 步的配方在干净库上的实测（2026-10-25，B 本机）**
+
+```powershell
+$env:DATABASE_URL = "sqlite:///<一个不存在的文件>"     # 模拟"全新库"
+python scripts/bootstrap_demo_data.py                  # 一条命令：种子 + 9 轮价格
+```
+
+脚本自检输出（`--min-points 10` 默认值）：
+
+```text
+=== 结果核对 ===
+  OK #1 ZywOo   11 点  现价 108.75
+  OK #2 donk    11 点  现价 131.45
+  OK #3 m0NESY  11 点  现价 85.08
+  OK #4 NiKo    11 点  现价 58.11
+  OK #5 ropz    10 点  现价 127.04
+  OK #6 jL      11 点  现价 105.27
+  OK #7 sh1ro    2 点  现价 136.50（suspended，按规则不定价）
+  OK #8 flameZ  11 点  现价 74.45
+  price_history 合计 = 78 条；demo 余额 = 5000.00；持仓 = 0 条；流水 = 0 条
+```
+
+再用**真实 uvicorn**（同一个库）走 HTTP 核一遍，证明"10+ 点"不是只写在文档里：
+
+| 接口 | 结果 |
+| --- | --- |
+| `GET /api/players` | 8 名选手 |
+| `GET /api/players/1/prices` | **11 个点**，`ts` 升序（`2026-10-24T08:20:21Z` → `2026-11-09T00:00:00Z`），末点 `108.75` = `current_price`，末点 `reason` 含"得分"与 `S=` |
+| 其余 7 人点数 | 11 / 11 / 11 / 10 / 11 / 2 / 11（`ropz` 10、`sh1ro` 2 属预期） |
+| `GET /api/health` | `{"status":"ok"}` |
+
+> 这一步只证明"命令在任何空库上都能灌出同样的数"；**线上 Render Postgres 上的一次还没做**
+> （要等第 1–3 步建库拿 External URL）。做法与上面完全一致，只是把 `DATABASE_URL` 换成 External URL。
 
 ## 4. 数据持久化（必须解决，否则第 5 天验收不过）
 
