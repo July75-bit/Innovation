@@ -84,7 +84,7 @@ A 的前端初版、C 的定价实现、B 的价格落库脚本陆续合入后�
 | Bug 级（E4/E7/E9/F） | 0 | 0 | 仍无真实缺陷 |
 | 圈复杂度 | 业务代码最大 6 | **业务代码最大 7；全仓最大 11**（`scripts/simulate_match.py::main`） | 该 11 触发了 CI 新门槛，原因与处理见 §4.2 |
 | 重复率（5 行窗口粗算） | 16.09% | **12.52%**（535 / 4274） | 新增代码结构较规范，重复率下降 3.57pp |
-| pytest | 65 passed / 5 skipped | **81 passed / 0 skipped** | C 的定价 5 条 skip 全部转绿 + 3σ 断言补齐（`dfe9f26`），另新增 6 条 `update_prices` 测试 |
+| pytest | 65 passed / 5 skipped | **92 passed / 0 skipped** | C 的定价 5 条 skip 全部转绿 + 3σ 断言补齐，B 新增 `update_prices` 脚本测试 7 条，D 新增价格归因 TC-110 4 条 |
 
 **第 2 次扫描剩余问题归属（共 51 项）**
 
@@ -129,12 +129,12 @@ python - <<'PY'
 PY
 
 # 回归（重构前后一致）
-python -m pytest   # 81 passed / 0 skipped（第 3 天末）
+python -m pytest   # 92 passed / 0 skipped（第 3 天末）
 ```
 
 ## 7. 结论
 
 - 项目**没有 Bug 级**静态问题；主要问题是风格/一致性（第 2 次扫描 51 项中 36 项可自动修）。
-- D 负责的 AI 模块与测试已做到 **ruff 0 残留**，并通过"收窄异常 + 补日志 + 抽公共函数 + 拆分长测试"完成 Top5 重构；pytest 从 65 passed / 5 skipped 变为合入新代码后的 **81 passed / 0 skipped**（行为不变 + 定价/3σ 用例补齐）。
+- D 负责的 AI 模块与测试已做到 **ruff 0 残留**，并通过"收窄异常 + 补日志 + 抽公共函数 + 拆分长测试"完成 Top5 重构；pytest 从 65 passed / 5 skipped 变为合入新代码后的 **92 passed / 0 skipped**（行为不变 + 定价/3σ/价格归因用例补齐）。
 - 剩余 51 项已按归属移交 B（46）/C（5）；B008 建议作为框架惯用法统一豁免。
 - CI 门槛已按目录分档（业务代码/测试阈值 10，脚本 12）并通过本地同款命令；首次 CI 红的根因（`simulate_match.main` 复杂度 11）已定位，属于 CLI 入口装配，不阻塞交付。
