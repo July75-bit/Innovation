@@ -186,7 +186,7 @@ python -m pytest
 | --- | --- | --- |
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图 | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明 | B + D |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明 | D |
 | [`docs/presentation/`](docs/presentation/) | 答辩幻灯片 | 全员 |

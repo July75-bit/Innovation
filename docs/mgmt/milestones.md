@@ -7,8 +7,8 @@
 
 | 里程碑 | 时间 | 验收标准（必须是看得见的结果） | 状态 |
 | --- | --- | --- | --- |
-| M1 骨架可运行 | 第 1 天 | 四人环境都能跑；前端连上后端；接口契约确认 | ⬜ |
-| M2 四大模块各自跑通 | 第 2 天 | 市场数据 / 交易接口 / 定价脚本 / AI 原型分别可演示 | ⬜ |
+| M1 骨架可运行 | 第 1 天 | 四人环境都能跑；前端连上后端；接口契约确认 | 🟡 后端可跑、接口契约已实现（仅 D 签字，A/C 待签）；前端未完成（A） |
+| M2 四大模块各自跑通 | 第 2 天 | 市场数据 / 交易接口 / 定价脚本 / AI 原型分别可演示 | 🟡 后端交易闭环与 AI 建议已可演示；前端（A）、定价脚本（C）未跑通 |
 | M3 交易闭环打通 | 第 3 天 | 浏览器里完成「查行情 → 买入 → 看持仓 → 卖出」，数据入库 | ⬜ |
 | M4 亮点完成 | 第 4 天 | 价格折线图 + 涨跌原因 + AI 建议正常展示 | ⬜ |
 | M5 上线可用 | 第 5 天 | 有公网地址；线上买卖/查询/AI 各成功一次；重启后数据仍在 | ⬜ |
@@ -41,9 +41,9 @@
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-01 | 08:30–08:45 | 站会，三问各 60 秒：昨天做了啥 / 今天做啥 / 卡在哪 | — | 当日计划口头对齐，无分歧 | ⬜ |
-| T1-02 | 08:45–09:15 | 环境三验：`python --version`（3.12/3.13）、`node --version`（≥20 LTS）、`git --version` | — | 三条版本号截图发群 | ⬜ |
-| T1-03 | 09:15–09:30 | `git clone` 仓库 → 切分支（`feat/a-frontend` / `feat/b-backend` / `feat/c-pricing` / `feat/d-ai-deploy`）→ 读 `docs/software/api_contract.md` 与 `architecture.md` | T1-02 | 每人回一句“已读，我有 X 个疑问” | ⬜ |
+| T1-01 | 08:30–08:45 | 站会，三问各 60 秒：昨天做了啥 / 今天做啥 / 卡在哪 | — | 当日计划口头对齐，无分歧 | ✅ 第 1 天（`daily_summary.md` 有站会记录） |
+| T1-02 | 08:45–09:15 | 环境三验：`python --version`（3.12/3.13）、`node --version`（≥20 LTS）、`git --version` | — | 三条版本号截图发群 | ✅（第 2 天补验：conda 环境 Python 3.13 / Node 24 / Git 可用，测试可跑） |
+| T1-03 | 09:15–09:30 | `git clone` 仓库 → 切分支（`feat/a-frontend` / `feat/b-backend` / `feat/c-pricing` / `feat/d-ai-deploy`）→ 读 `docs/software/api_contract.md` 与 `architecture.md` | T1-02 | 每人回一句“已读，我有 X 个疑问” | ✅（仓库 + develop/main 已建；`feat/*` 未采用，团队直接提交 develop，已定案） |
 
 #### 2.2 A 同学：前端（8 项，约 5.5h）
 
@@ -66,15 +66,15 @@
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-12 | 09:30–09:55 | `cd code/backend` → `py -3.12 -m venv .venv` → `.\venv\Scripts\Activate.ps1` → `pip install -r requirements.txt` → `Copy-Item .env.example .env` | T1-03 | 终端出现 `(.venv)`；`git status` 看不到 `.env` | ⬜ |
-| T1-13 | 09:55–10:20 | **后端三验**：`python -m uvicorn app.main:app --reload --port 8000`，验证 `/`、`/api/health`、`/docs` | T1-12 | 三个页面截图发群（第 1 个里程碑） | ⬜ |
-| T1-14 | 10:20–11:30 | 按 `database_design.md` 建 5 张表：`User/Player/Position/Trade/PriceHistory`；`players` 含 `role`（真实位置）与 `rating`（模拟评分）；`positions` 加 `UNIQUE(user_id, player_id)`；`trades` 加 `INDEX(user_id, created_at)`；跑通 `init_db()`；把 `database_design.md` 定稿 | T1-13 | `playerstock.db` 生成成功；文档无空白节 | ⬜ |
-| T1-15 | 11:30–12:00 | `sqlite3 playerstock.db ".schema"`（或 Python 读 `sqlite_master`）自测，把实际 schema 贴进 `database_design.md` 附录 | T1-14 | 文档与实际表 100% 一致 | ⬜ |
-| T1-16 | 13:00–14:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 `role`（真实位置）与 `rating`（模拟评分，UI 需标注）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | ⬜ |
-| T1-17 | 14:00–15:00 | 实现只读接口 `GET /api/players`、`GET /api/account`（demo 用户 + 5000 余额） | T1-16 | Swagger 能试出数据 | ⬜ |
-| T1-18 | 15:00–16:30 | 实现 `POST /api/trades/buy` 骨架：正整数校验 → 查选手 → 查余额 → 事务内扣款+加持仓+写流水，失败返回 400 + 中文 `message` | T1-17 | 买 2 股（价 126.00）后余额 4748.00、持仓 +2、流水 +1 | ⬜ |
-| T1-19 | 16:30–17:30 | 写第一批真测试：正常买入 / 余额不足 / 非法数量（把 `tests/unit/test_trades_rule.py` 对应 skip 去掉） | T1-18 | `python -m pytest` 全绿 | ⬜ |
-| T1-20 | 17:30–18:00 | 提后端 PR（勾“接口变更：是，已更新 api_contract”），CI 后端 job 绿 | T1-19 | PR 已建 | ⬜ |
+| T1-12 | 09:30–09:55 | `cd code/backend` → `py -3.12 -m venv .venv` → `.\venv\Scripts\Activate.ps1` → `pip install -r requirements.txt` → `Copy-Item .env.example .env` | T1-03 | 终端出现 `(.venv)`；`git status` 看不到 `.env` | ✅（用 conda 环境 `playerstock` 代替 venv；依赖已装、测试可跑） |
+| T1-13 | 09:55–10:20 | **后端三验**：`python -m uvicorn app.main:app --reload --port 8000`，验证 `/`、`/api/health`、`/docs` | T1-12 | 三个页面截图发群（第 1 个里程碑） | ✅（`/`、`/api/health`、`/docs` 可用，`test_health.py` 覆盖） |
+| T1-14 | 10:20–11:30 | 按 `database_design.md` 建 5 张表：`User/Player/Position/Trade/PriceHistory`；`players` 含 `role`（真实位置）与 `rating`（模拟评分）；`positions` 加 `UNIQUE(user_id, player_id)`；`trades` 加 `INDEX(user_id, created_at)`；跑通 `init_db()`；把 `database_design.md` 定稿 | T1-13 | `playerstock.db` 生成成功；文档无空白节 | ✅（5 张表 `init_db()` 通过，见 `database_design.md`） |
+| T1-15 | 11:30–12:00 | `sqlite3 playerstock.db ".schema"`（或 Python 读 `sqlite_master`）自测，把实际 schema 贴进 `database_design.md` 附录 | T1-14 | 文档与实际表 100% 一致 | ✅（实际 schema 已写入 `database_design.md` §2） |
+| T1-16 | 13:00–14:00 | **主持接口契约评审**：逐条过 10 个接口 + 字段防扯皮表；确认 `role`（真实位置）与 `rating`（模拟评分，UI 需标注）已进契约；A 确认能渲染、C 确认价格字段、D 确认 AI 输入可拼；四人各留一行确认 | T1-14 | `api_contract.md` 有 4 行确认记录 | 🟡 契约已冻结并全部实现；确认记录仅 D 签字，A/C 待签 |
+| T1-17 | 14:00–15:00 | 实现只读接口 `GET /api/players`、`GET /api/account`（demo 用户 + 5000 余额） | T1-16 | Swagger 能试出数据 | ✅（`test_api_players.py` 覆盖） |
+| T1-18 | 15:00–16:30 | 实现 `POST /api/trades/buy` 骨架：正整数校验 → 查选手 → 查余额 → 事务内扣款+加持仓+写流水，失败返回 400 + 中文 `message` | T1-17 | 买 2 股（价 126.00）后余额 4748.00、持仓 +2、流水 +1 | ✅（买入/卖出事务已实现） |
+| T1-19 | 16:30–17:30 | 写第一批真测试：正常买入 / 余额不足 / 非法数量（把 `tests/unit/test_trades_rule.py` 对应 skip 去掉） | T1-18 | `python -m pytest` 全绿 | ✅（`test_trades_rule.py` 9 条全绿） |
+| T1-20 | 17:30–18:00 | 提后端 PR（勾“接口变更：是，已更新 api_contract”），CI 后端 job 绿 | T1-19 | PR 已建 | ✅（PR 流程已走通，CI 后端 job 绿） |
 
 > **可砍规则**：若 16:00 前还在挣扎环境，立刻砍掉 T1-18/T1-19，今天必须保住 **T1-13 三验 + T1-14 表结构 + T1-16 契约签字** 三件事，买入留到第 2 天。
 
@@ -100,16 +100,19 @@
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-28 | 09:30–10:00 | 仓库体检：确认 `git status` 里**没有** `.env`、`*.db`、`node_modules`；`.gitignore` 生效；确认 GitHub 仓库地址与分支约定 | T1-03 | 一次干净提交，无关文件 0 | ⬜ |
-| T1-29 | 10:00–10:45 | 填 `docs/requirements/problem_definition.md`：5W1H 五维 + 痛点映射 + **产品边界（明确不做什么 ≥5 条）** | T1-03 | 五个维度无空白 | ⬜ |
-| T1-30 | 10:45–11:30 | 填 `docs/algorithm/ai_agent_prompt.md`：输入上下文 JSON（B 要能拼出来，含 CS2 指标）、输出必须含 `action/reason/risk_level/source/disclaimer`、超时 20s、无密钥降级 | T1-29 | 与 B 确认“你要给我的字段”清单 | ⬜ |
-| T1-31 | 13:00–13:45 | 主持需求评审（15 分钟）：过一遍 5W1H 与“不做什么”，A/B/C 各提 1 个反对意见并记录 | T1-29 | 评审结论写进 `daily_summary.md` | ⬜ |
-| T1-32 | 13:45–14:30 | 部署方案预研（**今天不部署**）：注册 Render；确认 Static Site / Web Service 配置、免费实例会休眠、**SQLite 临时盘会丢数据**；结论补进 `deployment.md` 第 4 节 | — | 明确第 5 天走持久盘还是 PostgreSQL | ⬜ |
-| T1-33 | 14:30–15:00 | 参加契约评审，确认 `GET /api/analysis/{player_id}` 字段与错误码，并确认“AI 绝不改余额”写进契约 | T1-16 | 契约签字 | ⬜ |
-| T1-34 | 15:00–16:00 | 在 `code/backend/ai/fallback.py` 实现 `rule_based_advice`（纯阈值规则，不调模型） | T1-30 | 给定上下文返回合法 JSON（无需模型） | ⬜ |
-| T1-35 | 16:00–17:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ⬜ |
-| T1-36 | 17:00–17:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ⬜ |
-| T1-37 | 17:30–18:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ⬜ |
+| T1-28 | 09:30–10:00 | 仓库体检：确认 `git status` 里**没有** `.env`、`*.db`、`node_modules`；`.gitignore` 生效；确认 GitHub 仓库地址与分支约定 | T1-03 | 一次干净提交，无关文件 0 | ✅（`.gitignore` 生效，无 `.env` / `*.db` / `node_modules` 提交） |
+| T1-29 | 10:00–10:45 | 填 `docs/requirements/problem_definition.md`：5W1H 五维 + 痛点映射 + **产品边界（明确不做什么 ≥5 条）** | T1-03 | 五个维度无空白 | ✅（5W1H + 不做清单已落文档） |
+| T1-30 | 10:45–11:30 | 填 `docs/algorithm/ai_agent_prompt.md`：输入上下文 JSON（B 要能拼出来，含 CS2 指标）、输出必须含 `action/reason/risk_level/source/disclaimer`、超时 20s、无密钥降级 | T1-29 | 与 B 确认“你要给我的字段”清单 | ✅（输入/输出契约与失败链路已定稿） |
+| T1-31 | 13:00–13:45 | 主持需求评审（15 分钟）：过一遍 5W1H 与“不做什么”，A/B/C 各提 1 个反对意见并记录 | T1-29 | 评审结论写进 `daily_summary.md` | ✅（评审问题与决策记录在 `daily_summary.md` 第 1 天「今日问题与决策」） |
+| T1-32 | 13:45–14:30 | 部署方案预研（**今天不部署**）：注册 Render；确认 Static Site / Web Service 配置、免费实例会休眠、**SQLite 临时盘会丢数据**；结论补进 `deployment.md` 第 4 节 | — | 明确第 5 天走持久盘还是 PostgreSQL | ✅（`deployment.md` §3–§4 已定方案 B：Static Site + Web Service + 免费 Postgres） |
+| T1-33 | 14:30–15:00 | 参加契约评审，确认 `GET /api/analysis/{player_id}` 字段与错误码，并确认“AI 绝不改余额”写进契约 | T1-16 | 契约签字 | ✅（`api_contract.md` §4.10 已签字，含 AI 只读保证） |
+| T1-34 | 15:00–16:00 | 在 `code/backend/ai/fallback.py` 实现 `rule_based_advice`（纯阈值规则，不调模型） | T1-30 | 给定上下文返回合法 JSON（无需模型） | ✅（`fallback.py` + `test_ai_fallback.py` 6 条） |
+| T1-35 | 16:00–17:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ✅（README 已含分工/启动/已知偏差） |
+| T1-36 | 17:00–17:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ✅（风险 Top3 预案 + 第 1 天记录已落盘） |
+| T1-37 | 17:30–18:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ✅（CI 已改为监听 main+develop，三 job 绿） |
+| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | 🟡 仓库 + README + PR 流程 + 2 条 Issue 已有；Kanban / Team Planning / Milestones 尚未建（需 GitHub 网页操作，用户/B 执行） |
+| T1-39 | —（2026-10-24 补记） | **需求规范书**（课件第 1 天 p.52）：`docs/requirements/functional_spec.md` + `nonfunctional_spec.md` + **领域类图 UML**（3 分钟汇报用） | T1-29 | 两份需求文档齐全；UML 领域类图可讲解 | ✅ 2026-10-24（两份文档已有；`functional_spec.md` §3 补 UML 领域类图 + 类到实现映射） |
+| T1-40 | —（2026-10-24 补记） | **沟通 / 风险管理计划**（课件第 1 天 p.53）：沟通管理计划 + 风险管理计划（本项目合并进根目录 `project_management_plan.md`，`docs/mgmt/communication_plan.md` / `risk_plan.md` 为指针文件） | — | 两份计划有实质内容且为唯一事实来源 | ✅ 2026-10-24（沟通 §1–8 / 风险 §9–11 已合并定稿；与课件命名不同，映射关系已注明） |
 
 #### 2.6 19:30 晚验收（20–30 分钟，逐条打勾）
 
@@ -134,19 +137,26 @@
 | 密钥/数据库被提交 | PR 里出现 `.env`、`playerstock.db` | `.gitignore` 已配，提交前 `git status` 自查（T1-28） |
 | C 和 B 都以为对方会存历史价 | 第 3 天发现 `price_history` 空表 | T1-23 那场对齐会必须定“谁写入” |
 
+> **状态回填口径（2026-10-24）**：上表 40 项的 ✅ 是**当前已验证的最终状态**，不代表第 1 天 19:30 晚验收时已绿——
+> 当晚实况见 `daily_summary.md` 第 1 天段（环境未验证、后端 5 表未建、契约仅 D 签字、A 前端 0 项），
+> 多数在当晚 19:46 与第 2 天补完。**T1-38~40 是课件第 1 天实践/检查点要求，原 WBS 漏项，2026-10-24 补记**。
+
 ### 第 2 天：四大模块各自跑通
 
 | ID | 任务 | 负责人 | 依赖 | 验收 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T2-01 | 行情/详情/账户/持仓/流水接口 | B | T1-14 | Swagger 可测 | ⬜ |
-| T2-02 | 买入/卖出接口 + 事务 | B | T2-01 | 余额与持仓同步变化 | ⬜ |
-| T2-03 | 交易边界测试（余额不足/超上限/非法数量） | B | T2-02 | pytest 通过 | ⬜ |
+| T2-01 | 行情/详情/账户/持仓/流水接口 | B | T1-14 | Swagger 可测 | ✅ 2026-10-23（B 提交 5 表 / 9 接口） |
+| T2-02 | 买入/卖出接口 + 事务 | B | T2-01 | 余额与持仓同步变化 | ✅ 2026-10-23（交易闭环 + 27 条新测试） |
+| T2-03 | 交易边界测试（余额不足/超上限/非法数量） | B | T2-02 | pytest 通过 | ✅ 2026-10-23（`test_trades_rule.py` 等全绿） |
 | T2-04 | 市场页 + 选手详情页（模拟数据） | A | T1-06 | 页面有可见内容 | ⬜ |
 | T2-05 | 买卖表单 + 持仓页 | A | T2-04 | 表单可提交（可先 mock） | ⬜ |
 | T2-06 | `update_price` + `standardize_score` | C | T1-21 | 定价脚本独立可跑 | ⬜ |
 | T2-07 | 模拟比赛发生器（固定 seed） | C | T1-21 | 同 seed 结果一致 | ⬜ |
 | T2-08 | AI 原型（给数据出结构化建议） | D | T1-30 | 命令行能输出 JSON | ✅ 2026-10-23（三态实测） |
 | T2-09 | 规则版兜底建议 | D | T2-08 | 无密钥时返回合法结构 | ✅ 2026-10-23（第 1 天提前完成） |
+| T2-10 | 用户故事清单 `docs/requirements/user_stories.md`（≥5 条 INVEST + 验收条件） | D（A 补前端视角） | T1-29 | 每条故事有 AC，后端可验证的 AC 有测试证据 | ✅ 2026-10-24（7 条 INVEST + AC，附验收落地状态表） |
+| T2-11 | 原型展示 `docs/software/prototype/index.html`（AI 生成的交互原型） | D 出稿 → A 确认 | — | 可点击的 5 个界面 + 交易/AI 建议交互，教师可评估可行性 | ✅ 2026-10-24（AI 生成草稿，18 项交互自测通过；A 确认后作为前端实现基线） |
+| T2-12 | 技术方案调研 `docs/software/architecture.md`（选型论证 + 未来 2 周新技术自学计划与 Milestone） | B + D | T1-16 | 选型有备选对比；新技术有负责人/时间窗/验收 Milestone | ✅ 2026-10-24（补 §4.1 选型论证 + §7 自学计划，Milestone 对齐 M4–M6） |
 
 ### 第 3 天：交易闭环（硬卡点）
 
@@ -197,8 +207,8 @@
 
 | 天 | 计划任务数 | 完成 | 未完成及原因 |
 | --- | --- | --- | --- |
-| 第 1 天 | 37（必达 6 项验收） | | |
-| 第 2 天 | 9 | | |
+| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 23 完成 + 2 部分 | A 前端 8 项、C 定价 7 项未开始；T1-16 契约仅 D 签字、T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页） |
+| 第 2 天 | 12 | 8（B 3 + D 5） | A 前端 2 项、C 定价 2 项未开始（第 2 天末实测，交接速查 2026-10-23 20:20） |
 | 第 3 天 | 6 | | |
 | 第 4 天 | 7 | | |
 | 第 5 天 | 6 | | |
