@@ -52,22 +52,32 @@ def _run_main(module, argv: list[str]) -> str:
 
 def test_cli_prints_one_line_per_trading_player(script_module) -> None:
     output = _run_main(script_module, ["--seed", "42"])
+    lines = output.splitlines()
 
     assert "模拟比赛：1 轮 × 8 名选手（seed=42）" in output
     assert "状态 suspended，本轮跳过定价" in output  # sh1ro 停赛跳过
     assert "共 7 条价格更新" in output               # 8 人 − 1 名停赛
-    assert output.count("评分") == 7                 # 每名可交易选手一行
-    assert output.count("｜") == 7                   # 每行都带中文 reason
+
+    # 逐行匹配：说明行里也有"评分"二字，用 count() 会多算一行
+    price_lines = [line for line in lines if "评分" in line and "→" in line]
+    reason_lines = [line for line in lines if "｜" in line]
+    assert len(price_lines) == 7, price_lines
+    assert len(reason_lines) == 7, reason_lines
 
 
-def test_cli_json_export_uses_iso_utc_ts(script_module, tmp_path) -> None:
-    target = tmp_path / "updates.json"
-    _run_main(script_module, ["--seed", "42", "--json", str(target)])
+def test_json_payload_uses_iso_utc_ts(script_module, monkeypatch) -> None:
+    """只校验交给 B 的 payload 结构，不落盘（避免依赖 pytest 的临时目录）。"""
+    captured: dict = {}
 
-    payload = json.loads(target.read_text(encoding="utf-8"))
-    updates = payload["updates"]
+    def _spy(path, updates, args) -> None:  # noqa: ANN001 - 与被替换函数签名一致
+        captured.update(path=path, updates=updates, seed=args.seed, rounds=args.rounds)
 
-    assert payload["seed"] == 42
+    monkeypatch.setattr(script_module, "_export_json", _spy)
+    _run_main(script_module, ["--seed", "42", "--json", "dummy.json"])
+
+    assert captured["path"] == "dummy.json"
+    assert captured["seed"] == 42
+    updates = captured["updates"]
     assert len(updates) == 7
     assert all(item["reason"] for item in updates)
     assert all(item["ts"].endswith("Z") and "T" in item["ts"] for item in updates)
