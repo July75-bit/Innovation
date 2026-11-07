@@ -59,6 +59,7 @@
 | 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
 | 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ✅ 已实现（第 3 天 D 接线） |
 | 11 | POST | `/api/prices/recalc` | **赛后结算（运维接口，不对前端开放）**：写入一轮比赛后的价格 | B + C | ✅ 已实现（第 4 天 C；`tests/integration/test_prices_recalc.py` 5 条） |
+| 12 | GET | `/api/debug/db` | **只读自检（验收探针，不对前端开放）**：返回数据库方言、表清单与行数 | B | ✅ 已实现（第 5 天 B；`tests/unit/test_debug_api.py` 3 条）。只回元信息、不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 可关闭（关后 404） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
 > 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进
