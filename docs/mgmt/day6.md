@@ -158,6 +158,73 @@
 
 ---
 
+## 7. 待补的两份证据（可直接转发给 A / B）
+
+> 背景：第 5 天收尾的**代码与文档都已完成**，只差两份「截图证据」。它们不影响作品能不能跑，但影响答辩时能不能拿出证据链。
+> 两件都不需要本地环境，全部用**线上地址** + 浏览器 DevTools 完成。
+
+### 7.1 给 A 的委派单：P0 三条的视觉证据（约 40 分钟）
+
+**为什么要这个**：`day5.md` §3 的 P0 三条（响应式 / AI 思考中 / 键盘可达）是 D 代写的代码，CI 只能证明「能编译」，证明不了「真的生效」。所以需要 3 张真实浏览器截图，同时这也是 A 第一次亲眼确认这三条。
+
+**准备**：先打开 `https://playerstock-frontend-mdlk.onrender.com` 让它预热（免费实例冷启动约 49 秒，别急着截图）。
+
+| 步骤 | 具体操作 | 截图要点 |
+| --- | --- | --- |
+| **① 响应式** | 按 `F12` 打开 DevTools → 点左上「设备切换」图标（或 `Ctrl+Shift+M`）→ 顶部选 **iPhone SE / 375×667** → 依次打开 `/`、`/players/1`、`/positions` | 三张：市场页（导航折行 + 表格）、详情页（标题/价格上下排）、持仓页（表格可横向滚动）。**页面上不能出现横向滚动条** |
+| **② AI「分析中」** | DevTools → `Network` 面板 → 限速选 **Fast 3G**（别用 Slow 3G，会直接超时）→ 硬刷新 `/players/1` → **立刻**截 AI 卡片位置 | 卡上显示「**AI 分析中…（行情与交易不受影响）**」。接口线上约 200ms，限速后有几秒窗口，够截 |
+| **③ 键盘可达** | 关掉设备模式，在 `/players/1` 只按 `Tab`：焦点会依次走到导航 → 折线图数据点（有描边焦点框）→ 每点停一下会出 tooltip | 两张：① 焦点落在某个数据点上（能看到 `:focus-visible` 描边）；② tooltip 显示「时间 / 价格 / reason」。**全程不碰鼠标** |
+
+**红线**：不允许用原型页 `docs/software/prototype/index.html` 顶替——那会被一眼看穿，而且证明不了线上生效。
+
+**落地**：
+
+1. 三张图存进 `docs/acceptance/evidence/`，命名 `23-responsive-375.png` / `24-ai-loading.png` / `25-keyboard-focus.png`；
+2. `docs/acceptance/evidence/README.md` 末尾「汇报证据」表下补 3 行（文件 / 内容 / 关键断言）；
+3. `docs/mgmt/day5.md` §3.2 表格第 1/2/3 行的「验收方式」列，把「CI 前端 build 绿；演示前 A 走查」改成截图链接；
+4. 做完在群里说一句「P0 三条已亲验」，并在 day6.md A-9 打勾。
+
+**坑**：设备模式下截图会带上手机边框，建议用 DevTools 的「Capture screenshot」而不是系统截图，尺寸干净。
+
+### 7.2 给 B 的委派单：重新部署后数据仍在（约 25 分钟）
+
+**为什么要这个**：这是 `deployment.md` **§9 TODO 的最后一项**，也是「线上用的是 Postgres 而不是临时 SQLite」最直接的一条人证。`/api/debug/db` 已经给了文本证据，缺的是「部署前后数据一致」的对照截图。
+
+**红线：不要在彩排或演示前 30 分钟内做**——重新部署会让线上冷启动几十秒。
+
+| 步骤 | 具体操作 | 记录什么 |
+| --- | --- | --- |
+| 1. 部署前快照 | 浏览器依次打开三个接口（**连地址栏一起截**）：`/api/account`、`/api/trades`、`/api/players/1/prices` | 余额、流水条数（应 3 条）、价格点数（应 11 点） |
+| 2. 触发重新部署 | Render Dashboard → `playerstock-backend` → 右上 `Manual Deploy` → `Deploy latest commit` → 等状态变 **Live** | 截图部署状态（选填，但推荐） |
+| 3. 部署后对账 | 同样三个接口再打开一次 | 三个数字与步骤 1 **逐项相同**；价格点末点仍等于 `current_price` |
+| 4. 存证 | 四张图（前 3 + 后 3 可拼成两张对照） | 命名 `online-persistence-before.png` / `online-persistence-after.png` |
+
+**合格标准**：两张图能看出「同一个地址、同一组数据、部署前后一致」；余额 5000.00、流水 3 条、价格 11 点。
+
+**落地**（四处都要改，缺一不可）：
+
+1. 图存 `docs/acceptance/evidence/online/`；
+2. `docs/software/deployment.md` **§9 TODO 最后一项** `- [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 test_report.md` → 打勾并写成 `- [x] …（B 于 2026-11-07 完成，图见 evidence/online/online-persistence-*.png）`；
+3. 同文档 **§5** 的「重新部署一次后端，然后刷新页面」那行补截图链接；
+4. `docs/acceptance/test_report.md` **§6 线上验收结果**末尾加一行引用；`evidence/README.md` 索引补 2 行。
+
+**坑**：
+
+- **别顺手清库**：`bootstrap_demo_data.py --reset` 会重置数据，那就证明不了「数据还在」；
+- 免费 Postgres 的数据存在数据库里，重新部署**不会**丢——如果真丢了，说明 `DATABASE_URL` 指到了临时盘，要立刻告诉 D；
+- 部署期间线上短暂 50x 属正常，截图时避开那几十秒。
+
+### 7.3 两张委派单的共同验收
+
+| 检查 | 谁 |
+| --- | --- |
+| 6 张图都在 `docs/acceptance/evidence/`（3 张 P0 + 2~3 张持久化） | A / B |
+| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B |
+| `day5.md` §3.2、`deployment.md` §9 与 §5、`test_report.md` §6 四处回填 | A / B |
+| D 复核：图片能打开、断言与文内数字一致、链接不 404 | D |
+
+---
+
 ## 附录 A：第 1–5 天核对结论（2026-11-07）
 
 **结论：五天工作无缺失项**；发现 6 处「文档状态没回填」，已当次修正（commit `8dc7c91`）。
