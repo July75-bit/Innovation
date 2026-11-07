@@ -14,7 +14,7 @@
 | 后端地址 | `https://playerstock-backend-mdlk.onrender.com`（Web Service，Python 3 / Free） | `/api/health` → 200 `{"status":"ok"}` |
 | 数据库 | Render **PostgreSQL 18**，服务 `playerstock-db`（**2026-11-23 到期**） | `deployment.md` §6 |
 | 线上数据 | 9 轮配方，`/prices` **11 点/人**（sh1ro 暂停 2 点）、末点 = `current_price` | `test_report.md` §6 |
-| 线上验收 | **TC-401/402/403/404/406 ✅**；**TC-405 🟡**（`/players/1` 刷新 200 ✅；`/market` 按 F5 白屏，已修 `BUG-11`，待前端重新部署后复验） | `test_report.md` §6 |
+| 线上验收 | **TC-401~406 全部 ✅**（TC-405 双侧成立：服务端 200 + 前端 bundle 已含 `/market → /` 重定向，BUG-11 修复已上线） | `test_report.md` §6 |
 | 自动化测试 | **137 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，第 5 天又 +17 条：CORS 8 + 只读自检 3 + 错误文案 6） | `test_report.md` §1 |
 | T5 任务 | **7 完成（T5-01~07）**，只剩 **T5-08 答辩三件套** | `milestones.md` §3 |
 | 优化迭代 | 🟡 按课程「三层模型 + 用户体验检查清单」排查出 8 条缺口（见 §3） | 本文 §3 |
@@ -44,12 +44,12 @@
 | 人 | 第 5 天完成度 | 剩余项 |
 | --- | --- | --- |
 | **A 倪颢容** | 部署 ✅ / 完善作品 ✅（D 代做） | 无剩余；**演示前请 A 按 `demo-script.md` 走查一遍窄屏与键盘操作** |
-| **B 胡德昊** | 部署 ✅ / 运维收尾 🟡 | **B7/B8 两项**（2 张截图、回滚演练）；B6 ✅ CORS 已改配置驱动 |
+| **B 胡德昊** | 部署 ✅ / 运维收尾 ✅ | 无剩余：B6（CORS 白名单，线上复验）、B7（证据入库 `evidence/online/backend-debug-db.md`）、B8（回滚演练 `deployment.md` §8.1）、B9（线上性能实测） |
 | **C 刘宏** | ✅ 100% | 无（第 6 天只需复核定价页） |
 | **D 王泽棠** | 文档 ✅ / 收尾 ✅ | **D7 ✅ / D8 🟡**（PDF 已导出；回归绿，CI 待 push 后复核） |
 
 **第 5 天关闭条件**：A4+A5+A6 ✅ + B6+B7+B8（CORS 决策／2 张截图／回滚演练）+ D7 ✅ D8 ✅ → 才进入第 6 天。
-> 现状（2026-11-07）：**A 侧三条与 D 侧两项已完成**，只剩 **B 的三项**（CORS 口径、日志与 Postgres 控制台截图、回滚演练）。
+> 现状（2026-11-07）：**A 侧三条、B 侧三项（B6/B7/B8）、D 侧两项均已完成**；只剩 push 后 CI 三 job 复核。
 
 ### 2.1 A：前端上线 ✅ + 完善作品 ❌
 
@@ -73,9 +73,9 @@
 | B4 | 持久化验收（TC-404） | ✅ | 重新部署后 3 条流水 + 11 点不变 → Postgres 生效 |
 | B5 | 线上交易闭环 + 6 类错误码（TC-403） | ✅ | `smoke_test_api.py`；[200,400] 只入账一次 |
 | **B6** | **CORS 口径决策**（保留 `*` 写理由 / 改回白名单） | ✅ | 已改配置驱动（`b548a0b`）：`resolve_cors_origins()` —— 配了域名→白名单；显式 `*`→放开并 WARNING；没配→退化 `*` 并 WARNING；`tests/unit/test_cors_config.py` 8 条；口径进 `compliance.md` §4.1 |
-| **B6.1** | **CORS 线上事故修复**（BUG-12） | ✅ 代码 / ⬜ 待重部署 | 实测线上只放行 `localhost:5173`（`CORS_ORIGINS` 未填）→ 前端被拦。三处补：`render.yaml` 写死前端地址、`resolve_cors_origins()` 增加"线上仍用本地默认值→退化+告警"、尾斜杠归一化；用例 8 条。**后端重新部署后生效** |
-| **B7** | 补 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | 🟡 只差按截图键 | ① 后端日志：重启后在 Logs 首屏看 `数据库：Postgres（持久化生效）` + `CORS 放行来源：…`；② 库表清单：**浏览器打开 `/api/debug/db`** 即可截图（新接口，只读元信息，`DEBUG_ENDPOINTS=0` 可关）；备用 `scripts/inspect_db.py --check`。步骤见 `deployment.md` §4.5.1 |
-| **B8** | 回滚演练（Redeploy 上一版本并验证） | ❌ | 演练记录写进 `deployment.md` §8（有方案未演练） |
+| **B6.1** | **CORS 线上事故修复**（BUG-12） | ✅ **线上已复验** | 实测线上只放行 `localhost:5173`（`CORS_ORIGINS` 未填）→ 前端被拦。三处补：`render.yaml` 写死前端地址、`resolve_cors_origins()` 增加"线上仍用本地默认值→退化+告警"、尾斜杠归一化；用例 8 条。**线上现在**：`Origin: 前端域名` → 回显该域名；`Origin: evil.example.com` → 无该头（白名单生效，不是 `*`） |
+| **B7** | 补 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | ✅ 证据已入库（截图可选） | `docs/acceptance/evidence/online/backend-debug-db.md`：① 日志的等价证据 = `/api/debug/db` 的 `是否 SQLite: false` + 方言 `postgresql`；② 库表清单 = 同接口返回 5 张表与行数（`players 8 / price_history 78 / trades 5 / users 1`）。文档里给了 4 条复跑命令 |
+| **B8** | 回滚演练（Redeploy 上一版本并验证） | ✅ 2026-11-07 09:30 | 已执行并记录：Render 选 09:26 版本 Rollback → 部署成功 → `/api/health` 200 → 再手动 Redeploy 最新版本并重开 Auto-Deploy。完整记录（含"回滚只回代码不回数据"的复盘）见 `deployment.md` §8.1 |
 | **B9** | 线上性能实测（填 `test_report.md` §8） | ✅ | 预热后 5 次取中位：行情 171.8ms（≤300）、买 308.8 / 卖 196.0ms（≤500）、AI 198.0ms（≤8s）、首屏≈437.8ms（≤3s）；买卖用净额为 0 的一买一卖 |
 | 追加（运维收尾） | 预热脚本 + 错误文案「下一步」 | ✅ | `scripts/prewarm.py`（冷启动 49s，写进 `deployment.md` §3.10）；余额/持仓/上限三条错误补「最多可买 / 还能买 / 可卖」（+6 条单测）；线上 `/market` 白屏已修（BUG-11） |
 
@@ -189,8 +189,9 @@
 - [x] `user_manual.md` 终稿（线上地址、本地备用、5 条已知问题）／`compliance.md` §4.2 隐私文案稿
 - [ ] CI 三 job 绿（本机 137 条 + ruff 已绿；push 后复核 Actions）
 
-> **第 5 天关闭条件（Hard Gate）**：P0 三条合入 ✅ + 上述勾选全绿 + CI 绿 ✅（run #70）→ 才进入第 6 天。
-> 未勾项只剩 B 侧运维三项（CORS 口径决策、日志/Postgres 控制台截图、回滚演练）。
+> **第 5 天关闭条件（Hard Gate）**：P0 三条合入 ✅ + 上述勾选全绿 + CI 绿（push 后复核）→ 才进入第 6 天。
+> 未勾项只剩「CI 三 job 复核」；B 侧运维三项（CORS 口径、日志/Postgres 证据、回滚演练）**均已完成**
+> （见 B6/B6.1/B7/B8 行与 `deployment.md` §8.1）。
 > 分派见 `docs/mgmt/day6_tasks.md` §1「闸门 A：第 5 天收尾」。
 
 ## 7. 课件要求 ↔ 今日任务映射
