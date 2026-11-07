@@ -1,6 +1,7 @@
 # 代码评审模板（PlayerStock 版）
 
 > **负责人**：D ｜ **依据**：ACMWDevHubPPT `Methodology/CodeReviewTemplate.md`（改编）｜ **配套**：`.vscode/settings.json`、`pyproject.toml` 的 `[tool.ruff.lint]`、CI 三 job
+> **主文档（提交用）**：[`docs/software/CodeReview.md`](../software/CodeReview.md) —— 质量工具使用 + 评审流程 + 已完成的评审记录汇总
 > **怎么用**：复制本文件为 `docs/reviews/YYYY-MM-DD_<模块>_<作者>.md` 再填写；**只填事实**（是 / 否 / 不适用 / 具体名称），不写"应该、大概、感觉"。
 > **结论三态接 Kanban**：代码质量良好 → 卡片拖 `Done`；存在问题 → 回 `In progress` 并登记 `BUG-xx`；需重新审查 → 复查后在 §6 记录。
 

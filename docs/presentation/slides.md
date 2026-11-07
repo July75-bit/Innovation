@@ -156,7 +156,7 @@ layout: default
 
 ```mermaid
 flowchart TB
-  UI["Vue 3 + TS + Vite<br/>4 视图 5 组件"] -->|"/api/*"| API["FastAPI<br/>7 个路由模块"]
+  UI["Vue 3 + TS + Vite<br/>4 视图 5 组件"] -->|"/api/*"| API["FastAPI<br/>8 个路由模块（7 业务 + 1 只读自检）"]
   API --> CORE["app/core<br/>交易事务 · 价格落库 · 规则"]
   API --> AI["ai/<br/>上下文 + LLM + 规则兜底"]
   CORE --> ENGINE["core_engine<br/>模拟比赛 · 3σ 标准化 · 定价"]
@@ -168,9 +168,9 @@ flowchart TB
 
 | 层 | 技术 | 版本 |
 | --- | --- | --- |
-| 前端 | Vue + TS + Vite | 3.x / 5.x / 7.x |
-| 后端 | FastAPI + Pydantic | 2.x |
-| 数据 | SQLAlchemy + SQLite/Postgres | 2.x / 18 |
+| 前端 | Vue + TypeScript + Vite | **3.5 / 6.0 / 8.2** |
+| 后端 | FastAPI + Pydantic | **0.161 / 2.14** |
+| 数据 | SQLAlchemy + SQLite/Postgres | **2.1 / PG 18** |
 
 </div>
 
@@ -403,9 +403,9 @@ layout: default
 
 **测试**
 
-- **120** 条用例（单元 107 / 集成 13），CI + 本机全绿
+- **137** 条用例（单元 124 / 集成 13），CI + 本机全绿
 - 核心逻辑覆盖率 **91%**（课程要求 ≥60%）
-- 已修 **10** 条真实缺陷（含 2 个 P0：并发超卖、部署驱动）
+- 已修 **13** 条真实缺陷（含 3 个 P0：并发超卖、部署驱动、线上 CORS）
 
 </div>
 
@@ -414,7 +414,7 @@ layout: default
 **质量与 CI**
 
 - ruff 分档门槛（业务/测试 / 脚本 / 复杂度）
-- 10 条缺陷全部带可复跑用例
+- 13 条缺陷全部带可复跑用例
 - 前端 lint + build + 真机 16 张验收图
 
 </div>
@@ -439,7 +439,7 @@ layout: default
 
 <!--
 【8:00–8:30｜30 秒｜D】
-数字只念三个：120 条、91%、10 条缺陷。
+数字只念三个：137 条、91%、13 条缺陷。
 然后一句杀手锏：我们故意重新部署了一次后端，交易流水和 11 个价格点一条没丢——
 这证明线上用的是 Postgres，不是临时盘。
 -->
