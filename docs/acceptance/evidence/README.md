@@ -1,4 +1,4 @@
-# 验收证据截图（M3 / T3-04 + T4 前端项）
+﻿# 验收证据截图（M3 / T3-04 + T4 前端项）
 
 > 采集时间：2026-10-24（第 4 天）｜ 采集方式：真实后端（uvicorn :8000，seed 重置 + 8 轮模拟价格）
 > + 真实浏览器（Chromium headless，1280×900 全页截图）｜ 环境：`VITE_USE_MOCK=false` 真实接口模式
@@ -67,7 +67,7 @@
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
-| `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 38 / C 26 / A 20 / 仓库账号 3，合计 +36072 / −4257；并给出 pulse 近一月按账号的 49 / 41 / 28 / 20 与"账号→真人"对照 |
+| `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
 | `22-pulse-top-committers.png` | Pulse → Top committers 弹窗 | wlkaqw 49 · July75-bit 41 · fusde0 28 · weedflame 20 = 138；`July75-bit` 为 B 的账号（41 = B 的 38 + 账号自身 3） |
 
