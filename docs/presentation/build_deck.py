@@ -111,6 +111,79 @@ SLIDES: list[str] = [
       <p class="foot">需求：problem_definition.md（5W1H）· user_stories.md（7 条 INVEST）</p>
     </section>
     """,
+    """
+    <section class="slide">
+      <h2>01B 使命 · 口号 · 为什么是我们</h2>
+      <div class="two">
+        <div>
+          <h3>使命</h3>
+          <div class="quote">让每一位电竞观众，都能把自己的判断，变成一条<b>看得懂、可验证、零风险</b>的价格曲线。</div>
+          <h3>口号</h3>
+          <p style="font-size:26px;color:#fff;margin:8px 0 4px"><b>看懂比赛，从持有起。</b></p>
+          <p class="small">不含"赚 / 赢 / 翻倍"，与博彩切割；8 个字、动词开头、可传播。</p>
+        </div>
+        <div>
+          <h3>目标用户（三类）</h3>
+          <ul class="tight-list">
+            <li>CS2 电竞爱好者：有判断、没地方验证</li>
+            <li>虚拟交易体验用户：想体验交易，不想担真钱风险</li>
+            <li>计算机 / 数据分析学习者：要一个能跑通的工程范本</li>
+          </ul>
+          <p class="small"><b>明确不做</b>：想靠它赚钱的人 / 未成年人 / 真钱竞猜用户</p>
+        </div>
+      </div>
+      <table class="tight">
+        <tr><th>维度</th><th>赛事竞猜</th><th>电竞养成</th><th>模拟炒股</th><th>PlayerStock</th></tr>
+        <tr><td>标的</td><td>比赛结果</td><td>策划定数值</td><td>公司与财报</td><td><b>单个选手的身价</b></td></tr>
+        <tr><td>价格形成</td><td>盘口赔率</td><td>数值表</td><td>真实行情</td><td><b>表现驱动 · 连续 · 可回测</b></td></tr>
+        <tr><td>涨跌可解释</td><td>—</td><td>—</td><td>部分</td><td><b>每条都带 reason</b></td></tr>
+        <tr><td>资金风险</td><td>真钱</td><td>虚拟</td><td>虚拟</td><td><b>全程虚拟币，无出口</b></td></tr>
+      </table>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01C 产品定义：我们在做什么</h2>
+      <div class="quote">
+        对于 <b>关注 CS2 选手表现、又想体验数据分析与虚拟交易的观众</b>，<br/>
+        他们希望知道<b>选手表现如何变成价格</b>、并亲手验证自己的判断；<br/>
+        <b>PlayerStock</b> 是一个<b>以 CS2 职业选手为标的的虚拟股交易模拟平台</b>，<br/>
+        它能把<b>比赛表现转成可解释的价格变动</b>，提供行情、买卖、持仓、走势与 AI 建议；<br/>
+        不同于<b>只给结果的赛事资讯站</b>和<b>只交易金融标的的模拟盘</b>，
+        我们把"<b>选手表现 → 价格 → 你的判断</b>"这条因果链显式做出来。
+      </div>
+      <div class="two" style="margin-top:14px">
+        <div>
+          <h3>一条用户故事（业务语言）</h3>
+          <p>作为一个<b>关注 CS2 赛事的观众</b>，我想在看完一场比赛后<b>马上买入我认为被低估的选手</b>，以便于<b>验证我的判断是不是比解说更早</b>。</p>
+        </div>
+        <div>
+          <h3>形态与边界</h3>
+          <ul class="tight-list">
+            <li>形态：<b>Web 网页应用</b>（桌面优先，≤960px 响应式）</li>
+            <li>规模：8 名选手 / 5000 虚拟币 / 单选手上限 50 股</li>
+            <li>边界：<b>不充值、不提现、不兑换、不给赔率、不自动交易</b></li>
+          </ul>
+        </div>
+      </div>
+      <p class="foot">不做清单来源：docs/requirements/problem_definition.md（第 3 天范围冻结）· 7 条用户故事均带 Given-When-Then</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01D 产品设计原则：五条自我约束</h2>
+      <p class="small">不是抄教科书 —— <b>每条原则都能指到我们做过的一个真实决定</b>。</p>
+      <table class="tight">
+        <tr><th>原则</th><th>我们怎么用它</th><th>落点（可核查）</th></tr>
+        <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
+        <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
+        <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>137 条测试、91% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
+      </table>
+      <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
+    </section>
+    """,
     f"""
     <section class="slide">
       <h2>02 产品长什么样</h2>
@@ -199,13 +272,13 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
           </table>
         </div>
         <div>
-          <h3>真实一次调价</h3>
-          <p>ZywOo 第 3 轮：本轮得分 <b>76.6</b>，低于近 5 场均分 → S = <b>−1.00</b></p>
-          <p>落库 reason：</p>
-          <div class="quote">本场表现下滑（S=-1.00），价格下跌 15.00%（本轮得分 76.6）</div>
-          <h3>可解释性</h3>
-          <p><code>price_history.reason</code> 强制带 S 与得分 → <b>每条历史价格都能追溯到哪一场、什么得分</b>。</p>
-          <p class="small">为此放弃"加 score 列"方案：不改表、不改契约，把归因写进 reason（4 条测试守着）。</p>
+          <h3>真实一次调价（第 9 轮）</h3>
+          <p>ZywOo：得分 <b>81.3</b>，近 5 场均分约 97 → S = <b>−0.92</b></p>
+          <p>126.27 × (1 + 0.15 × −0.92) ≈ <b>108.75</b>（−13.88%）；满格只有 ±15%，clamp 未触发</p>
+          <div class="quote">本场表现下滑（本轮得分 81.3，S=-0.92），价格下跌 13.88%</div>
+          <h3>同一轮对照（页面可点）</h3>
+          <p>flameZ <b>79.9</b> 分 → S=<b>+1.00</b>，64.74 → <b>74.45（+15.00%）</b>：<b>分数更低反而涨</b></p>
+          <p class="small">价格比的是「和自己近 5 场比」；两个详情页折线最后一点点开即是这两条（4 条测试守着 reason 契约）。</p>
         </div>
       </div>
     </section>

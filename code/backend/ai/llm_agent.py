@@ -175,10 +175,9 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
-            # 显式带一个正常的 User-Agent：urllib 默认发 "Python-urllib/3.x"，
-            # 推理网关前面的 WAF 会直接 403（2026-11-07 配 Zen key 时实测同款 URL 从
-            # 无 UA 客户端返回 403），403 又会被我们静默回落成规则版，看起来就像"配了没生效"。
-            "User-Agent": "PlayerStock/0.1 (course project; +https://github.com/July75-bit/Innovation)",
+            # opencode.ai 的 Cloudflare 会按客户端指纹屏蔽 urllib 默认 UA（实测 403/1010，
+            # 换任意非默认 UA 即 200）；这里显式声明自己是谁。
+            "User-Agent": "playerstock-backend/1.0 (+course project; urllib)",
         },
         method="POST",
     )

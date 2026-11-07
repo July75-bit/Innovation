@@ -26,8 +26,9 @@
 | `INITIAL_BALANCE` | `5000` | 否 |
 | `MAX_POSITION_PER_PLAYER` | `50` | 否 |
 | `PRICING_ALPHA` / `PRICING_BETA` / `PRICING_FLOOR` | `0.15` / `0.0` / `1.0` | 否 |
-| `LLM_PROVIDER` / `LLM_MODEL` | `openai` / `gpt-4o-mini` | 否 |
-| `LLM_API_KEY` | 真实密钥 | ✅ **是** |
+| `LLM_PROVIDER` / `LLM_MODEL` | 默认 `openai` / `gpt-4o-mini`；**若用 OpenCode Zen**：`LLM_MODEL=deepseek-v4.1-flash-free` | 否 |
+| `LLM_API_KEY` | 真实密钥（Zen 的 key 形如 `oc_sk_...`） | ✅ **是** |
+| `LLM_BASE_URL` | **仅非 OpenAI 官方时需要**：OpenCode Zen 填 `https://opencode.ai/inference/openai/v1/chat/completions`（代码要的是完整 URL，不是 base 路径） | 否 |
 | `LLM_TIMEOUT_SECONDS` | `20` | 否 |
 
 ### 前端（Render Static Site → Environment）

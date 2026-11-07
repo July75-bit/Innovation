@@ -77,6 +77,6 @@ git config --get user.email            # 回显确认
 - [x] `21-pulse-overview.png`：pulse 总览，1 month，含 `4 authors / 138 commits to all branches`
 - [x] `22-pulse-top-committers.png`：Top committers 弹窗，每人具体次数
 - [x] `20-commit-stats.png`：本地准数 + 账号对照 + 双口径说明
-- [ ] `pulse-committers.csv`：弹窗里的 `Download CSV`（导出后放同目录）
+- [x] `pulse-committers.csv`：已导出入库（2026-11-07：49 / 41 / 28 / 21 = 139，比截图时多 1 条属窗口滚动，正常）
 - [x] `docs/acceptance/evidence/README.md` 索引补这 4 行
 - [x] 确认 §2 对照表里"账号 → 真人"的映射无误：**July75-bit = B 胡德昊（本人已确认，2026-11-07）**

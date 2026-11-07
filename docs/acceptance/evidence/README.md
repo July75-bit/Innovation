@@ -85,10 +85,13 @@
 | `27-responsive-375-nav-drawer.png` | 375px 导航抽屉（A4） | 侧栏以抽屉展开：市场/持仓/交易记录 + 余额/总资产/总收益 + 连接状态；点「菜单」开关 |
 | `28-keyboard-focus.png` | 键盘可达（A6） | 折线图首点获得焦点（`:focus-visible` 描边）+ tooltip「2026/10/24 18:18:21 · 120.00 币 · 初始价格」 |
 
+| `29-ai-loading.png` | AI「分析中…」占位态（A5） | 375px 详情页：AI 卡片处显示「**AI 分析中…（行情与交易不受影响）**」+ 三点动画，同时下方交易面板已可用（说明行情/交易不被 AI 阻塞） |
+| `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
+
 ## A-9 亲手走查（第 6 天，2026-11-07 14:37–15:06）
 
-> 背景：A-1/A-2/A-3 的代码由 D 代写，`23~28` 归档后 A 还没亲眼确认过。这组是 **A 本人**在
-> 线上 `playerstock-frontend-mdlk.onrender.com` 以 iPhone SE（375×667）逐页走查的实拍（`day6.md` §7.1 委派单落地）。
+> 背景：A-1/A-2/A-3 的代码由 D 代写，`23~29` 归档后 A 逐页做了最终确认。这组是 **A 本人**在
+> 线上 `playerstock-frontend-mdlk.onrender.com` 以 iPhone SE（375×667）走查的实拍（`day6.md` §7.1 委派单落地）。
 
 | 文件 | 内容 | 关键断言 |
 | --- | --- | --- |
@@ -100,11 +103,9 @@
 
 > **数字口径**：余额 4149.20 / 持仓 m0NESY ×10 / 流水 8 条 = 7.2 重新部署复验后的线上真实状态（总资产守恒 5000.00），演示时照这个念。
 >
-> **仍缺两张**（答辩前建议补上）：
-> ① AI「分析中…」占位态——Network 限速 **Fast 3G** 后硬刷 `/players/1` 立刻截 AI 卡片位（§7.1 步骤 ②，仓库里并没有 `29-ai-loading.png`，day6.md 若引用需以此为准）；
-> ② `document.documentElement.scrollWidth + ' / ' + window.innerWidth` 的 console 断言未截进 375px 图里——
-> 页面肉眼无横向溢出，但委派单要求这条"硬断言"随图入证。
-
+> **仍缺一张**（答辩前建议补上）：`document.documentElement.scrollWidth + ' / ' + window.innerWidth` 的
+> console 断言未截进 375px 图里——页面肉眼无横向溢出，但委派单要求这条"硬断言"随图入证。
+> ~~AI「分析中…」占位态~~ **已补齐**（`29-ai-loading.png`，见上表）。
 
 > 3.3 的复现步骤与口径说明见 `docs/presentation/evidence-3.3-guide.md`。
 > 口径提示：pulse 是"近一月 + 全部分支"，本地是"全周期 + develop"，两列数字不必强行对齐；`Insights → Contributors` 只算默认分支 `main`（31 次、3 个账号），**不作为证据使用**。
