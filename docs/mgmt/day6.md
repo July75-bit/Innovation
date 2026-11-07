@@ -36,7 +36,7 @@
 | ID | 任务 | 完成标准 | 状态 |
 | --- | --- | --- | --- |
 | A-1 | 响应式：导航抽屉化、详情页上下排、表格转卡片、买卖按钮整行 | 375px 宽无横向滚动 | ✅ **A 已亲验 2026-11-07**（`evidence/23~27`：市场/详情/持仓/流水/抽屉五张） |
-| A-2 | AI「思考中」：`analysisLoading` + "AI 分析中…"占位卡 | 限速后在详情页抓到该状态 | 🟡 代码已实现（D 代做，含 token 校验的 `finally` 复位）；**截图仍缺**——A 截到的是整页 `加载中`，不是 AI 卡占位 |
+| A-2 | AI「思考中」：`analysisLoading` + "AI 分析中…"占位卡 | 限速后在详情页抓到该状态 | ✅ **已补齐 2026-11-07**（`evidence/29-ai-loading.png`：「AI 分析中…（行情与交易不受影响）」+ 三点动画，同时交易面板可用） |
 | A-3 | 无障碍最小集：数据点 `tabindex="0"` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 纯键盘能读出某个点 | ✅ **A 已亲验 2026-11-07**（`evidence/28-keyboard-focus.png`：焦点描边 + tooltip 带时间/价格/原因） |
 | A-4 | 可选三项：数量快捷按钮 / 买卖二次确认 / Enter 提交 | — | 🟡 **快捷按钮已完成**（`TradePanel.vue:37` 的 `quickQty = [1,5,10,25]`，线上截图可见）；二次确认与 Enter 提交未做，冻结期不做、写进已知限制 |
 | A-5 | 按 `demo-script.md` 练 2 次，核对话术里的成交价与余额 | 2:00 内走完、数字不念错 | ⬜ |
@@ -240,7 +240,32 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 - 免费 Postgres 的数据存在数据库里，重新部署**不会**丢——如果真丢了，说明 `DATABASE_URL` 指到了临时盘，要立刻告诉 D；
 - 部署期间线上短暂 50x 属正常，截图时避开那几十秒。
 
-### 7.3 两张委派单的共同验收
+### 7.3 可选：把 AI 从「规则兜底」切到真模型（D / B，约 10 分钟）
+
+**现状**：`render.yaml` 里 `LLM_API_KEY` 是 `sync: false`（控制台手填），**从没填过** → 线上一直走 `rule_fallback`，页面显示「AI 暂不可用」。这是设计好的降级，不是故障。
+
+若要用 OpenCode Zen 的 key（`oc_sk_` 前缀），**三个变量必须一起配**：
+
+| 变量 | 值 | 说明 |
+| --- | --- | --- |
+| `LLM_API_KEY` | `oc_sk_...` | 只在 Render 控制台填，绝不进仓库（`sync: false` 已保证） |
+| `LLM_BASE_URL` | `https://opencode.ai/inference/openai/v1/chat/completions` | 代码里 `_base_url()` 要的是**完整 URL**，不是 base 路径 |
+| `LLM_MODEL` | `deepseek-v4.1-flash-free`（备选 `glm-5.3-flash-free` / `big-pickle`） | 默认的 `gpt-4o-mini` 在 Zen 上不存在 |
+
+**选模型的三条硬约束**（依据官方 `https://opencode.ai/inference/v1/models`，该接口无需鉴权）：
+
+1. 必须带 `api.chat-completions`——有些模型只开放 `messages` / `responses` 协议，我们的 `urllib` 客户端不兼容；
+2. `temperature` 必须支持——我们固定发 `temperature: 0`，标 `temperature: false` 的模型（如 `kimi-k3`）会返回 400；
+3. 优先 flash / free 档——我们的超时是 20s，重量级推理模型容易踩线（踩了也只是回落规则版）。
+
+**思考强度**：Zen 的模型多数支持 `effort`/`thinking`，但**我们的代码不发送这个字段**，所以不用配、也配不上；用模型默认即可。
+
+**验证顺序**：本地一条 curl 打通 → 在 Render 填三个变量 → 自动重新部署 → `GET /api/analysis/1` 的 `source` 从 `rule_fallback` 变成 `llm`。
+**失败也无害**：任何错误都回落规则版并返回 200，不会 5xx。
+
+> 安全：这条 key 已经出现在聊天记录里，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
+
+### 7.4 两张委派单的共同验收
 
 | 检查 | 谁 |
 | --- | --- |

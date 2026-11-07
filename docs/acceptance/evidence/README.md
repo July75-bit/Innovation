@@ -85,7 +85,9 @@
 | `27-responsive-375-nav-drawer.png` | 375px 导航抽屉（A4） | 侧栏以抽屉展开：市场/持仓/交易记录 + 余额/总资产/总收益 + 连接状态；点「菜单」开关 |
 | `28-keyboard-focus.png` | 键盘可达（A6） | 折线图首点获得焦点（`:focus-visible` 描边）+ tooltip「2026/10/24 18:18:21 · 120.00 币 · 初始价格」 |
 
-> **仍缺一张**：AI「分析中…」占位态（A5）——需要 Network 限速后在详情页抓取，见 `docs/mgmt/day6.md` §7.1 步骤 ②。
+| `29-ai-loading.png` | AI「分析中…」占位态（A5） | 375px 详情页：AI 卡片处显示「**AI 分析中…（行情与交易不受影响）**」+ 三点动画，同时下方交易面板已可用（说明行情/交易不被 AI 阻塞） |
+
+> A5 的占位态截图已补齐（`29-ai-loading.png`）。
 
 > 3.3 的复现步骤与口径说明见 `docs/presentation/evidence-3.3-guide.md`。
 > 口径提示：pulse 是"近一月 + 全部分支"，本地是"全周期 + develop"，两列数字不必强行对齐；`Insights → Contributors` 只算默认分支 `main`（31 次、3 个账号），**不作为证据使用**。
