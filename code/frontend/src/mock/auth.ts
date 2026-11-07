@@ -103,4 +103,27 @@ export const mockAuth = {
     const had = token ? tokens.delete(token) : false
     return { success: true, message: '已退出登录', revoked: had }
   },
+
+  /**
+   * §4.16 删除账号（mock 版）。与后端同规则：没令牌 / 口令不对 / 令牌认不出人，一律不删。
+   * mock 没有持仓与流水（那是 players.ts 的内存账），所以行数只回报令牌一条。
+   */
+  deleteAccount(token: string | null, password: string) {
+    if (!token) throw apiError('公共演示账户不能删除：请先登录自己的账号', 'UNAUTHORIZED', 401)
+    const id = tokens.get(token)
+    const account = id === undefined ? undefined : accounts.find((a) => a.user_id === id)
+    if (!account) throw apiError('登录状态已失效，请重新登录', 'UNAUTHORIZED', 401)
+    if (account.password !== password) {
+      throw apiError('密码不正确，未能删除账号', 'INVALID_CREDENTIALS', 401)
+    }
+    tokens.delete(token)
+    accounts.splice(accounts.indexOf(account), 1)
+    return {
+      success: true,
+      message: '账号已删除',
+      deleted_positions: 0,
+      deleted_trades: 0,
+      deleted_tokens: 1,
+    }
+  },
 }

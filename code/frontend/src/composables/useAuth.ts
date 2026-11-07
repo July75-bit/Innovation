@@ -235,6 +235,33 @@ export async function logout(): Promise<void> {
   forgetSession()
 }
 
+/**
+ * 删除当前私人账号（契约 §4.16，不可恢复）。
+ *
+ * 与 logout 的关键差别：**失败不能清会话**。口令不对时后端什么都没删，
+ * 前端也必须保持原样，否则用户会以为"账号没了"其实还在，下次登录更糊涂。
+ * 只有后端确认删除成功，才 forgetSession() 把身份清掉。
+ */
+export async function deleteAccount(
+  password: string,
+): Promise<AuthResult & { deletedPositions?: number; deletedTrades?: number }> {
+  if (!password) return { ok: false, message: '请输入密码以确认删除' }
+
+  try {
+    const res = await api.deleteAccount(password)
+    const summary = `已删除 ${res.deleted_positions} 条持仓、${res.deleted_trades} 条流水`
+    forgetSession()
+    return {
+      ok: true,
+      message: `账号已删除（${summary}）`,
+      deletedPositions: res.deleted_positions,
+      deletedTrades: res.deleted_trades,
+    }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '删除失败，请稍后重试' }
+  }
+}
+
 export function useAuth() {
   return {
     currentUser,
@@ -252,5 +279,6 @@ export function useAuth() {
     login,
     enterAsGuest,
     logout,
+    deleteAccount,
   }
 }

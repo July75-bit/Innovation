@@ -21,6 +21,7 @@ const apiMock = vi.hoisted(() => ({
   login: vi.fn<MockCall>(),
   me: vi.fn<MockCall>(),
   logout: vi.fn<MockCall>(),
+  deleteAccount: vi.fn<MockCall>(),
 }))
 
 vi.mock('../../api', () => ({ api: apiMock }))
@@ -308,5 +309,79 @@ describe('访客与退出', () => {
     expect(m.isGuest.value).toBe(false)
     expect(m.isAuthenticated.value).toBe(false)
     expect(apiMock.logout).not.toHaveBeenCalled()
+  })
+})
+
+describe('删除账号', () => {
+  /** 先注册登录，再删——删的是"当前令牌所属账号"，没登录就没有可删的东西 */
+  async function loggedIn() {
+    const m = await fresh()
+    apiMock.register.mockResolvedValue({
+      token: 'del-token',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
+    await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: true,
+    })
+    return m
+  }
+
+  it('删除成功：清会话 + 把后端回报的行数说成人话', async () => {
+    const m = await loggedIn()
+    apiMock.deleteAccount.mockResolvedValue({
+      success: true,
+      message: '账号已删除',
+      deleted_positions: 2,
+      deleted_trades: 5,
+      deleted_tokens: 1,
+    })
+
+    const res = await m.deleteAccount('cs2go1234')
+
+    expect(res.ok).toBe(true)
+    expect(res.message).toContain('2 条持仓')
+    expect(res.message).toContain('5 条流水')
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.isAuthenticated.value).toBe(false)
+    expect(m.currentUser.value).toBeNull()
+  })
+
+  it('口令不对：必须保持登录态（后端什么都没删，前端也不能装作删了）', async () => {
+    const m = await loggedIn()
+    apiMock.deleteAccount.mockRejectedValue(new Error('密码不正确，未能删除账号'))
+
+    const res = await m.deleteAccount('wrongpass1')
+
+    expect(res.ok).toBe(false)
+    expect(res.message).toBe('密码不正确，未能删除账号')
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('del-token')
+    expect(m.isLoggedIn.value).toBe(true)
+  })
+
+  it('空密码直接拦住，不发请求', async () => {
+    const m = await loggedIn()
+
+    const res = await m.deleteAccount('')
+
+    expect(res.ok).toBe(false)
+    expect(res.message).toMatch(/请输入密码/)
+    expect(apiMock.deleteAccount).not.toHaveBeenCalled()
+  })
+
+  it('访客没有可删的账号：后端 401 时原样提示', async () => {
+    const m = await fresh()
+    m.enterAsGuest()
+    apiMock.deleteAccount.mockRejectedValue(new Error('公共演示账户不能删除：请先登录自己的账号'))
+
+    const res = await m.deleteAccount('cs2go1234')
+
+    expect(res.ok).toBe(false)
+    expect(res.message).toMatch(/公共演示账户/)
+    // 访客身份没有被清掉——失败就是失败，不该顺手把人踢出当前页面
+    expect(m.isGuest.value).toBe(true)
   })
 })

@@ -23,6 +23,7 @@ import type {
   Account,
   AnalysisResponse,
   AuthResponse,
+  DeleteAccountResponse,
   HealthResponse,
   LogoutResponse,
   MeResponse,
@@ -135,4 +136,19 @@ export const api = {
     USE_MOCK
       ? fromMock(() => mockAuth.logout(getToken()))
       : request<LogoutResponse>('/api/auth/logout', { method: 'POST' }),
+
+  /**
+   * §4.16 删除账号（不可恢复）。必须带口令，后端四道闸见契约。
+   *
+   * 用 DELETE + 请求体而不是 POST：语义上这是"删除资源"，而且后端 allow_methods=["*"]
+   * 已放开，preflight 一次就够。注意 starlette 的 TestClient.delete() 不收 json=，
+   * 后端测试里走的是 client.request('DELETE', …)，浏览器 fetch 没有这个限制。
+   */
+  deleteAccount: (password: string): Promise<DeleteAccountResponse> =>
+    USE_MOCK
+      ? fromMock(() => mockAuth.deleteAccount(getToken(), password))
+      : request<DeleteAccountResponse>('/api/auth/account', {
+          method: 'DELETE',
+          body: JSON.stringify({ password }),
+        }),
 }

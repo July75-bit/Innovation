@@ -70,7 +70,17 @@ const regErrors = reactive<Record<string, string | null>>({
   confirm: null,
 })
 
-const banner = reactive({ kind: 'idle' as 'idle' | 'error' | 'ok', text: '' })
+/**
+ * 删除账号后 App.vue 会带 ?deleted=1 跳回这里。
+ * 初始就把提示摆出来：用户刚做完一个不可逆操作，最不该看到的是"页面什么都没变"。
+ */
+const banner = reactive<{ kind: 'idle' | 'error' | 'ok'; text: string }>({
+  kind: route.query.deleted === '1' ? 'ok' : 'idle',
+  text:
+    route.query.deleted === '1'
+      ? '账号已删除，余额、持仓与流水已一并清除。可以重新注册一个，或用公共演示账户逛逛。'
+      : '',
+})
 const pending = ref(false)
 const showPassword = ref(false)
 

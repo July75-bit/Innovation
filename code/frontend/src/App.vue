@@ -25,6 +25,7 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
+import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
 import { useAuth } from './composables/useAuth'
 
 const { account } = useAccount()
@@ -37,8 +38,20 @@ watch(
   () => (navOpen.value = false),
 )
 
-const { currentUser, accountLabel: accountKind, logout } = useAuth()
+const { currentUser, accountLabel: accountKind, isLoggedIn, logout } = useAuth()
 const router = useRouter()
+
+/** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
+const deleteOpen = ref(false)
+
+/**
+ * 删除成功后：弹窗内部已经清掉会话，这里只负责把人送回登录页，
+ * 并用 ?deleted=1 让登录页显示一句结果说明（不带 message 进 query：
+ * 后端回报的行数已经打在控制台，URL 里塞长文本既难看又会被收藏成怪链接）。
+ */
+async function onAccountDeleted(): Promise<void> {
+  await router.push({ name: 'auth', query: { deleted: '1' } })
+}
 
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
@@ -112,7 +125,7 @@ onMounted(() => {
           </RouterLink>
         </nav>
 
-        <!-- 本地账号态：注册 / 登录页写入，仅存浏览器（见 composables/useAuth.ts） -->
+        <!-- 当前身份：私人账户（令牌）/ 公共演示账户（访客）/ 未登录 -->
         <div class="user-card">
           <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
           <span class="who">
@@ -123,6 +136,11 @@ onMounted(() => {
             {{ currentUser ? '退出' : '登录' }}
           </button>
         </div>
+
+        <!-- 删除账号：只有私人账户能删，且要口令二次确认（契约 §4.16） -->
+        <button v-if="isLoggedIn" type="button" class="danger-link" @click="deleteOpen = true">
+          删除账号
+        </button>
 
         <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
         <div class="account-card" v-if="account">
@@ -184,6 +202,18 @@ onMounted(() => {
 
     <!-- 抽屉遮罩（移动端） -->
     <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+
+    <!-- 删除账号确认弹窗（Teleport 到 body，不受侧栏 / 抽屉布局影响） -->
+    <!--
+      这里故意不写 v-if="currentUser"：删除成功时 useAuth 会清会话，
+      currentUser 立刻变 null，组件会在 emit('deleted') 之前被卸载，父层就再也收不到通知
+      （实测踩过：账号删掉了但页面停在市场页）。组件自己按 open 控制渲染。
+    -->
+    <DeleteAccountDialog
+      v-model="deleteOpen"
+      :nickname="currentUser?.nickname ?? ''"
+      @deleted="onAccountDeleted"
+    />
   </template>
 </template>
 
@@ -519,6 +549,23 @@ nav {
 }
 .acct-action:hover {
   border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 删除账号入口：刻意做成不起眼的文字链——低频高危操作，不该长得像主按钮 */
+.danger-link {
+  align-self: flex-start;
+  margin-top: calc(var(--space-2) * -1);
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-cap);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.danger-link:hover {
   color: var(--accent);
 }
 </style>

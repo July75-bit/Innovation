@@ -166,3 +166,16 @@ export interface LogoutResponse {
   message: string
   revoked: boolean
 }
+
+/**
+ * §4.16：删除账号的结果。
+ * 三个 deleted_* 是后端回报的真实行数——"级联删干净了"这件事要能在响应里看见，
+ * 不能只靠一句 message 承诺（界面用它拼出"已删除 N 条持仓 / M 条流水"）。
+ */
+export interface DeleteAccountResponse {
+  success: boolean
+  message: string
+  deleted_positions: number
+  deleted_trades: number
+  deleted_tokens: number
+}

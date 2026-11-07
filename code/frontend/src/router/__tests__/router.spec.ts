@@ -27,6 +27,7 @@ const apiMock = vi.hoisted(() => ({
   login: vi.fn<MockCall>(),
   me: vi.fn<MockCall>(),
   logout: vi.fn<MockCall>(),
+  deleteAccount: vi.fn<MockCall>(),
 }))
 
 vi.mock('../../api', () => ({ api: apiMock }))
