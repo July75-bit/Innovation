@@ -257,16 +257,21 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [ ] **只剩这 2 张截图**（需要 Render 控制台；做法见下方 4.5.1）
 - [ ] 全员：第 5 天按第 5 节验收清单逐条打勾
 
-#### 4.5.1 补那 2 张检查单截图（B 已把内容准备好，只差按下截图键）
+#### 4.5.1 补那 2 张检查单截图（都只要"打开一个页面 / 跑一条命令"）
 
-| # | 要拍什么 | 在哪拍 | 期望看到 |
+| # | 要拍什么 | 怎么做 | 期望看到 |
 | --- | --- | --- | --- |
-| 1 | **后端日志（证明用 Postgres 且无 SQLite 警告）** | Render → `playerstock-backend-mdlk` → **Logs**，重启一次后在首屏找 | 两行：`数据库：Postgres（持久化生效）` 与 `CORS 放行来源：…`；**搜不到** `当前部署在 Render 上却使用本地 SQLite` |
-| 2 | **库表清单（证明表由 `init_db()` 建出来且在库）** | 本地终端 | `$env:DATABASE_URL="<External Database URL>"; python scripts/inspect_db.py --check`，会打印 5 张表与行数（`players 8 / price_history 78 / trades N`）+ 每人价格点数 |
+| 1 | **库表清单（证明表在 Postgres 里）** | 浏览器直接打开 **`https://playerstock-backend-mdlk.onrender.com/api/debug/db`** | `"数据库方言": "postgresql"`、`"是否 SQLite": false`、`"表清单": ["players","positions","price_history","trades","users"]`、`"表行数"` 与 `"业务核对"`（选手 8 / 价格历史 78 / demo 余额 5000.00） |
+| 2 | **后端日志（证明无 SQLite 警告）** | Render → `playerstock-backend-mdlk` → **Logs**，重启一次看首屏 | 两行：`数据库：Postgres（持久化生效）` 与 `CORS 放行来源：…`；**搜不到** `当前部署在 Render 上却使用本地 SQLite` |
 
-> 第 2 项特意做成脚本（`scripts/inspect_db.py`）：Render 免费 Postgres 没有网页数据浏览器，
-> 装 psql 又麻烦；这个脚本不用装任何东西，输出直接截图就是"Postgres 控制台表清单"的等价证据。
-> 运行完记得 `Remove-Item Env:\DATABASE_URL`，别让本地测试连到线上库。
+> 第 1 项为什么用接口而不是 psql：Render 免费 Postgres **没有网页数据浏览器**，
+> 本地连 5432 又经常被网络掐断（`connection closed unexpectedly`）。而**后端本身就在 Render 内网**，
+> 让它自己把"用什么库、有哪些表、各有多少行"报出来最省事——浏览器打开就能截图。
+> 这个接口是**只读探针**：只回方言/表名/行数/几个业务计数，**不含连接串与个人数据**，
+> `DEBUG_ENDPOINTS=0` 可一键关闭（关后返回 404，见 `app/api/debug.py` 与契约 §3 第 12 项）。
+>
+> 备用方案（想在本机核对同一件事）：`$env:DATABASE_URL="<External URL>"; python scripts/inspect_db.py --check`，
+> 跑完 `Remove-Item Env:\DATABASE_URL`，别让本地测试连到线上库。
 
 **风险与兜底**：
 

@@ -164,7 +164,7 @@ nav a.router-link-active {
   border-top: 1px solid var(--border);
 }
 
-/* ===== A4 响应式样式（≤720px）：导航折叠、徽标换行 ===== */
+/* ===== A4 响应式（≤720px）：汉堡折叠导航 + 内容收边（融合队友窄屏细节） ===== */
 .menu-toggle {
   display: none;
 }
@@ -172,6 +172,12 @@ nav a.router-link-active {
   .nav-inner {
     padding: 10px 14px;
     gap: 8px 12px;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .brand .sub {
+    display: none; /* 窄屏优先保证导航与徽标可见 */
   }
   nav {
     order: 5;
@@ -193,6 +199,17 @@ nav a.router-link-active {
     padding: 6px 10px;
     font-size: 13px;
     cursor: pointer;
+  }
+  .health {
+    margin-left: auto;
+    font-size: 11px;
+  }
+  .content {
+    padding: 14px 14px 22px;
+  }
+  .foot {
+    padding: 12px 14px 22px;
+    font-size: 11px;
   }
 }
 

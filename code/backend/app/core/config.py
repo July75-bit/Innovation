@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     database_url: str = "sqlite:///./playerstock.db"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # 只读运维自检接口 `GET /api/debug/db`（见 app/api/debug.py）。
+    # 默认开着是为了上线验收能直接截图；功能验收完成后设 DEBUG_ENDPOINTS=0 关掉。
+    debug_endpoints: bool = True
 
     # ---------- 交易规则（B） ----------
     initial_balance: int = 5000

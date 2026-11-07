@@ -146,7 +146,7 @@ function tipStyle(d: { x: number; y: number }) {
             :cy="d.y"
             :r="hoverIdx === i ? 4 : 2.5"
           />
-          <!-- 透明大命中区：悬停出 tooltip；原生 title 兜底 -->
+          <!-- 透明大命中区：悬停/键盘聚焦都出 tooltip；原生 title 兜底 -->
           <circle
             v-for="(d, i) in chart.dots"
             :key="'h' + d.ts"
@@ -259,6 +259,12 @@ svg {
 .hit {
   fill: transparent;
   cursor: crosshair;
+}
+/* 键盘聚焦到某个数据点时给出可见焦点框（鼠标点击不显示） */
+.hit:focus-visible {
+  stroke: var(--text);
+  stroke-width: 1.5;
+  outline: none;
 }
 .dot.up {
   fill: var(--up);
