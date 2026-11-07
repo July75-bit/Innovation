@@ -97,6 +97,11 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
+
+**最新一轮（第 5 天收尾后的手工合并）由 CI 验证**：本机 npm registry 不可达（无 `node_modules`），
+`PlayerDetailView.vue` 的手工合并只能靠 CI 判定 → **CI run #70（`4e45433`）前端 job 绿**：
+`npm ci` → `npm run lint` → `npm run build`（含 `vue-tsc` 类型检查）全部通过，耗时 20s。
+证据：<https://github.com/July75-bit/Innovation/actions/runs/42326740664>
 > 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
 
 ### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
