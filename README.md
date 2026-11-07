@@ -197,7 +197,7 @@ python -m pytest
 | --- | --- | --- |
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)） | B + D |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)） | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告 | D |
 | [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |
