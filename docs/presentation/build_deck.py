@@ -1,15 +1,19 @@
 """生成答辩幻灯片 HTML（离线，无 Slidev 依赖），供 Edge headless 打印为 PDF。
 
-用法：
-    python _make_defense_html.py
+用法（在仓库任意位置执行都可以，路径按脚本自身位置推断）：
+    python docs/presentation/build_deck.py
     msedge --headless=new --print-to-pdf=docs/presentation/defense.pdf <html 的 file:// URL>
+
+> 2026-11-07 修：原来把 ROOT 写死成 `D:\\projects\\innovation\\Innovation`（D 本机的目录结构），
+> 换台机器/换个 clone 路径就 `FileNotFoundError`。现在按 `__file__` 反推仓库根，谁都能跑。
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-ROOT = Path(r"D:\projects\innovation\Innovation")
+# <repo>/docs/presentation/build_deck.py → parents[2] = <repo>
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "docs" / "presentation" / "defense.html"
 EVID = ROOT / "docs" / "acceptance" / "evidence"
 
@@ -27,7 +31,7 @@ ARCH_SVG = """
 
     <rect x="290" y="30" width="200" height="70" rx="8" fill="#16181c" stroke="#2a2d33"/>
     <text x="390" y="60" text-anchor="middle">FastAPI</text>
-    <text x="390" y="82" text-anchor="middle" fill="#9a9da6" font-size="13">7 个路由模块</text>
+    <text x="390" y="82" text-anchor="middle" fill="#9a9da6" font-size="13">8 个路由模块</text>
 
     <rect x="540" y="20" width="190" height="90" rx="8" fill="#16181c" stroke="#2a2d33"/>
     <text x="635" y="48" text-anchor="middle">app/core</text>
@@ -273,16 +277,16 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
         <div>
           <h3>测试</h3>
           <ul>
-            <li><b>120</b> 条用例（单元 107 / 集成 13），CI + 本机全绿</li>
+            <li><b>137</b> 条用例（单元 124 / 集成 13），CI + 本机全绿</li>
             <li>核心逻辑覆盖率 <b>91%</b>（要求 ≥60%）</li>
-            <li>已修 <b>10</b> 条真实缺陷（含 2 个 P0）</li>
+            <li>已修 <b>13</b> 条真实缺陷（含 3 个 P0）</li>
           </ul>
         </div>
         <div>
           <h3>质量与 CI</h3>
           <ul>
             <li>ruff 分档门槛（业务/测试 · 脚本 · 复杂度）</li>
-            <li>10 条缺陷全部带可复跑用例</li>
+            <li>13 条缺陷全部带可复跑用例</li>
             <li>前端 lint + build + 真机 16 张验收图</li>
           </ul>
         </div>
