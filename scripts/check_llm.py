@@ -74,6 +74,80 @@ def show_env() -> dict[str, str]:
     return {"key": key, "base": base, "model": model}
 
 
+def _probe(url: str, key: str, model: str, timeout: float = 25.0) -> tuple[int, str]:
+    """POST 一次 chat/completions，返回 (HTTP 码, 摘要)。200 表示该模型可用。"""
+    payload = {
+        "model": model,
+        "temperature": 0,
+        "messages": [{"role": "user", "content": "只回四个字：连接成功"}],
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        content = body.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return 200, str(content or "(空回复)")[:120]
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")
+        try:
+            err = json.loads(detail).get("error", {})
+            msg = f"{err.get('type', '')}: {err.get('message', '')}"
+        except (ValueError, AttributeError):
+            msg = detail[:160]
+        return exc.code, msg[:160]
+    except Exception as exc:  # noqa: BLE001
+        return 0, f"{type(exc).__name__}: {exc}"
+
+
+# 免费档模型（额度可能按账号/模型分别计，逐个试比猜快）。最后一个为付费档，仅账号有余额时可用。
+SCAN_CANDIDATES = (
+    "deepseek-v4.1-flash-free",
+    "glm-5.3-flash-free",
+    "mimo-v2.6-flash-free",
+    "flint-40b-free",
+    "nemotron-3.5-lightning-free",
+    "big-pickle",
+    "deepseek-v4.1-flash",
+)
+
+
+def scan_models() -> int:
+    """逐个试候选模型，打印每个的 HTTP 状态，最后给出建议。"""
+    env = show_env()
+    if not env["key"]:
+        print("\n[llm] ❌ 没设 LLM_API_KEY，无法扫描。")
+        return 1
+
+    print(f"\n[llm] 逐个试模型（URL = {env['base']}）")
+    working: list[str] = []
+    for model in SCAN_CANDIDATES:
+        code, msg = _probe(env["base"], env["key"], model)
+        label = "✅ 200 可用" if code == 200 else f"HTTP {code}"
+        print(f"  {model:<30} {label:<12} {msg[:90]}")
+        if code == 200:
+            working.append(model)
+
+    if working:
+        print(f"\n[llm] ✅ 可用：{working}")
+        print(f"[llm] 把 Render 的 `LLM_MODEL` 改成 `{working[0]}` 即可（其余两个变量别动）。")
+        return 0
+
+    print("\n[llm] ❌ 候选全部不可用（多半是 429 免费额度用尽）。三个选择：")
+    print("  ① 等额度恢复（免费档按周期重置）；② OpenCode Go 订阅后用付费档 deepseek-v4.1-flash；")
+    print("  ③ 保持 rule_fallback —— 这是**设计好的降级**，接口仍 200、演示不受影响。")
+    return 1
+
+
 def check_direct() -> int:
     """绕过 FastAPI 直接打一次 chat/completions，错误信息最具体。"""
     env = show_env()
@@ -166,15 +240,18 @@ def check_endpoint(base: str) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="检查 LLM 配置 / 线上 AI 是否走真模型")
     parser.add_argument("--direct", action="store_true", help="用当前环境变量直接调模型")
+    parser.add_argument("--scan", action="store_true", help="逐个试候选免费模型，挑还能用的那个")
     parser.add_argument("--base", default="", help="后端根地址，查 /api/analysis/1 的 source")
     args = parser.parse_args()
 
-    if not args.direct and not args.base:
-        parser.error("至少给一个：--direct 或 --base")
+    if not args.direct and not args.scan and not args.base:
+        parser.error("至少给一个：--direct / --scan / --base")
 
     code = 0
+    if args.scan:
+        code = scan_models()
     if args.direct:
-        code = check_direct()
+        code = code or check_direct()
     if args.base:
         ep = check_endpoint(args.base)
         code = code or ep
