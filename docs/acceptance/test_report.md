@@ -13,8 +13,8 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **176**（单元 163 + 集成 13） |
-| 通过 / 失败 / 跳过 | **176 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **216**（单元 203 + 集成 13） |
+| 通过 / 失败 / 跳过 | **216 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 
@@ -34,13 +34,13 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-178 passed
+216 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-178 passed, 1 warning in 16.70s
+216 passed, 1 warning in 16.70s
 ```
 
 > 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天补 39 条守卫/兜底用例 + 合并后 **178**
-> （单元 165 / 集成 13，`pytest --collect-only` 复核）。
+> （单元 203 / 集成 13，`pytest --collect-only` 复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
 | --- | --- | --- | --- | --- | --- |
@@ -79,14 +79,14 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
-| **全部（app + core_engine）** | 956 | 81 | **92%** |
+| **全部（app + core_engine）** | 1287 | 43 | **97%** |
 | 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
 | 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
 | 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
 | 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
 | 模型 + 响应 schema | 238 | 0 | 100% |
 
-> 结论：核心逻辑 **92% ≥ 课程要求的 60%**（2026-11-07 复测：956 语句 / 81 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+> 结论：核心逻辑 **97% ≥ 课程要求的 60%**（2026-11-07 复测：1287 语句 / 43 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -350,9 +350,9 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **176** 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P0 缺陷：**0** 个（自动化层 **216** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验）
-- **结论：可交付** —— M3/M4/M5 均已达成；**178** 条自动化（单元 165 / 集成 13；2026-11-07 补 39 条守卫/兜底用例）+ 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**216** 条自动化（单元 203 / 集成 13；2026-11-07 补 39 条守卫/兜底用例）+ 核心逻辑覆盖率 **97%**（1287 语句 / 43 未覆盖） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **14 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
@@ -365,6 +365,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 178 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 216 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）

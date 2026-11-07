@@ -1,8 +1,8 @@
 # PlayerStock —— 数据驱动的虚拟选手股交易与智能体市场模拟系统
 
 [![CI](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml)
-[![后端](https://img.shields.io/badge/pytest-176%20passed-brightgreen)](docs/acceptance/test_report.md)
-[![覆盖率](https://img.shields.io/badge/coverage-98%25-brightgreen)](docs/acceptance/test_report.md)
+[![后端](https://img.shields.io/badge/pytest-216%20passed-brightgreen)](docs/acceptance/test_report.md)
+[![覆盖率](https://img.shields.io/badge/coverage-97%25-brightgreen)](docs/acceptance/test_report.md)
 [![许可](https://img.shields.io/badge/license-see%20LICENSE-blue)](LICENSE)
 
 > 软件创新工程实践（软件新技术创新实践）课程作品 · 4 人团队 · 6 天冲刺
@@ -33,7 +33,7 @@
 | Web 前端框架 | Vue | 3.5.42 | 组合式 API（A） |
 | 前端构建 | Vite | 8.2.2 | — |
 | 前端路由 | vue-router | 5.3.1 | 含 `/auth` 登录注册页与守卫、`/market` 重定向与兜底路由（BUG-11） |
-| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 178 条、前端 34 条 |
+| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 216 条、前端 34 条 |
 | 代码质量 | ruff / ESLint / oxlint / Pylint / complexipy | 0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0 | 配置与结果见 `docs/software/CodeReview.md` |
 | 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | 同 Python 运行时 | 无第三方依赖（C） |
 | 智能体 | Python + LLM API（可降级为规则版） | 标准库 urllib，超时 20s | 无密钥/超时/脏输出一律回落 `rule_fallback`（D） |
@@ -157,7 +157,7 @@ pip install -r code/backend/requirements.txt
 # ③ 跑
 python -m pytest
 python -m pytest -q -p no:warnings                                  # 屏蔽过时告警，答辩演示更干净
-python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率（92%，需 pytest-cov）
+python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率（97%，需 pytest-cov）
 ```
 
 > 不想切环境也可以直接用绝对路径，最稳：`& "D:\miniconda\envs\playerstock\python.exe" -m pytest`
