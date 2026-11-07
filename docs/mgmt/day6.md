@@ -12,10 +12,10 @@
 | 分支 / 工作区 | `develop` = `origin/develop`，干净 |
 | 测试 / CI | **137 passed / 0 skipped**；CI **run #80（`1a821f6`）三 job 绿** |
 | 覆盖率 | 91%（839 语句 / 79 未覆盖，要求 ≥60%） |
-| 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`；后端 `/api/health` 200；8 选手 / 11 价格点 / 5 表 / 3 条流水 |
-| 答辩材料 | `slides.md` 14 页 · `defense.pdf` 13 页 · `demo-script.md` 2:00 逐秒 · `qa.md` 20 问 |
-| 检查单 | `deployment.md` §5 **36/37 勾**（剩「重新部署后数据仍在截图」→ B-7） |
-| **唯一硬缺口** | **彩排 0 次** |
+| 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
+| 答辩材料 | `slides.md` 14 页 · `defense.pdf` 13 页（已按修正后的数字重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
+| 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
+| **唯一硬缺口** | **彩排 0 次**（B-5 的"现场追问"也挂在彩排上） |
 
 ## 1. 今日目标（三句话）
 
@@ -58,11 +58,11 @@
 | B-1 | CORS 口径二选一（保留 `*` 写理由 / 改回白名单） | 代码与文档口径一致 | ✅ 已改配置驱动（`b548a0b`），`test_cors_config.py` 8 条 |
 | B-2 | 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | 证据入库 + `deployment.md` §5 打勾 | ✅ 用 `/api/debug/db` 等价取证：`evidence/online/backend-debug-db.md`（5 表 / 8 选手 / 78 价格点） |
 | B-2.1 | CORS 线上事故修复（BUG-12） | 线上白名单生效 | ✅ 已复验：`Origin: 前端域名` 回显、`evil.example.com` 无该头 |
-| **B-3** | 复核 `slides.md` 04/05 页：Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6、并发时序、BUG-01 的「5000→5504、卖 4 股」 | 逐条与代码/`requirements.lock.txt` 一致，不一致直接改 | ⬜ |
+| **B-3** | 复核 `slides.md` 04/05 页：Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6、并发时序、BUG-01 的「5000→5504、卖 4 股」 | 逐条与代码/`requirements.lock.txt` 一致，不一致直接改 | ✅ 已复核（`44322b8`）：并发时序与 BUG-01 数字**一致未改**；修掉 3 处不一致——路由 7→**8** 个、前端版本 5.x/7.x→**TS 6.0 / Vite 8.2**（Vue 3.5）、用例 120→**137** 条 / 缺陷 10→**13** 条（含 3 个 P0）；`build_deck.py` 写死 ROOT 也一并修好并重导 `defense.pdf` |
 | B-4 | （原 B-3 的重复条目） | — | 🔀 合并进 B-3 |
-| **B-5** | 彩排中扮"提问老师"：从 `qa.md` 抽 5 问追问（并发 / CORS / 驱动 / 回滚 / 性能各 1） | 答不上来的 ≥3 条补进 `qa.md` | ⬜ |
-| **B-6** | 答辩当天值守流程：谁盯 `/api/health`、异常时怎么 Redeploy | 写进 `demo-script.md` §0 的团队 checklist | ⬜ |
-| **B-7** | 补最后一项检查单：重新部署后数据仍在的截图 → `evidence/online/` + `deployment.md` §5 第 37 项打勾 + `test_report.md` §6 引用 | 检查单 **37/37** | ⬜ |
+| **B-5** | 彩排中扮"提问老师"：从 `qa.md` 抽 5 问追问（并发 / CORS / 驱动 / 回滚 / 性能各 1） | 答不上来的 ≥3 条补进 `qa.md` | 🟡 5 问与答案已写进 `qa.md` §八（Q21–Q25，全覆盖并发/CORS/驱动/回滚/性能，均基于真实事件）；**"彩排中现场追问"仍待做**（需人在彩排时抽问） |
+| **B-6** | 答辩当天值守流程：谁盯 `/api/health`、异常时怎么 Redeploy | 写进 `demo-script.md` §0 的团队 checklist | ✅ 已写进 `demo-script.md` **§0.1 值守流程**（T−15/−10/−5 分钟各做什么、演示中盯 Network、故障只 Redeploy 不重建、三条铁律） |
+| **B-7** | 补最后一项检查单：重新部署后数据仍在的截图 → `evidence/online/` + `deployment.md` §5 第 37 项打勾 + `test_report.md` §6 引用 | 检查单 **37/37** | ✅ 完成（`a99f396`）：6 张 before/after 图入 `evidence/online/`、对账记录 `persistence-redeploy.md`（`persistence_check.py --diff` 退出码 0）、`deployment.md` **37/37** 全勾、`test_report.md` §6 已加引用 |
 
 **兜底**：线上 502/超时 → Render 手动 Redeploy（路径已演练，见 `deployment.md` §8.1）。
 
