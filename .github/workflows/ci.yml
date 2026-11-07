@@ -27,8 +27,8 @@ jobs:
           cache-dependency-path: code/backend/requirements.txt
       - name: 安装依赖
         run: pip install -r code/backend/requirements.txt
-      - name: 运行 pytest
-        run: python -m pytest
+      # 顺序刻意是「先 ruff 再 pytest」：F401/F841 这类 lint 问题十几秒就能判，
+      # 排在 200 多条用例后面等于让人白等两分钟才知道红（第 7 轮踩过）。
       # 第 3 天代码质量检查点：静态分析门槛
       # 规则：业务代码/测试卡「真实缺陷 + 圈复杂度(10)」；scripts/ 是 CLI 入口（argparse 装配分支多），
       #      只卡真实缺陷，圈复杂度阈值放宽到 12（当前 scripts/simulate_match.py::main = 11）。
@@ -41,10 +41,12 @@ jobs:
           ruff check --select E4,E7,E9,F,C901 tests
           ruff check --select E4,E7,E9,F scripts
           ruff check --select C901 --config "lint.mccabe.max-complexity = 12" scripts
+      - name: 运行 pytest
+        run: python -m pytest
 
-  # ---------------- 前端：eslint + build ----------------
+  # ---------------- 前端：eslint + vitest + build ----------------
   frontend:
-    name: 前端检查 (eslint + build)
+    name: 前端检查 (eslint + vitest + build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -86,6 +88,13 @@ jobs:
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
         run: npm run lint
+      # 51 条 Vitest 用例（注册 / 登录 / 删号弹窗 / 路由守卫）此前只在本地跑过，CI 完全没覆盖，
+      # 前端只剩 eslint 和 build 两道防线——鉴权这种带状态机的改动尤其需要它。
+      # 必须带 --run：package.json 里 test:unit = "vitest"，不加就进 watch 模式把 job 挂死。
+      - name: 单元测试 (vitest)
+        if: steps.detect.outputs.ready == 'true'
+        working-directory: code/frontend
+        run: npm run test:unit -- --run
       - name: 构建
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
