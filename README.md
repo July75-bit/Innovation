@@ -79,11 +79,12 @@
 
 ### 0.1 编辑器与代码质量（VS Code，建议全员照做）
 
-仓库里已带团队共享配置，**打开项目后照下面三步做一次**即可（不必改全局设置）：
+仓库里已带团队共享配置，**打开项目后照下面四步做一次**即可（不必改全局设置）：
 
 1. 装推荐扩展：VS Code 会弹「是否安装推荐扩展」→ 允许；或手动装 **Python / Pylance / Ruff**（前端再加 **Prettier / Vue - Official / ESLint**）。
-2. 装本地 linter：`pip install ruff`（装进你用的 Python 环境，插件才找得到）。
-3. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
+2. 选对解释器：点右下角 Python 版本 → 选**项目环境**（conda `playerstock`，或下面「启动后端」里建的 `.venv`），别停在 base。停 base 时 Pylance 会误报「无法解析导入 sqlalchemy」——那是环境不对不是代码问题（`ai/context.py` 的 `sqlalchemy` 是刻意的延迟导入，无依赖机器也能 import 本模块）。
+3. 本地 linter：**不需要单独 `pip install ruff`**——Ruff 扩展自带 ruff 0.17.4，装完扩展即生效；想在终端手跑 `ruff check` 再 `pip install ruff`。
+4. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
 
 常用操作：`Ctrl+Shift+M` 看问题面板、光标处 `Ctrl+.` 触发 Quick Fix。
 写了超过 100 行、或改了交易/定价/AI 契约/表结构的改动，提交前按 [`docs/mgmt/code_review_template.md`](docs/mgmt/code_review_template.md) 找一位队友交叉评审。
