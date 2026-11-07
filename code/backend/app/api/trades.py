@@ -130,7 +130,8 @@ def buy(
             if deducted.rowcount != 1:
                 db.rollback()
                 balance_now = Decimal(db.get(User, user_id, populate_existing=True).balance)
-                ensure_sufficient_balance(balance_now, amount)
+                # 带上 price，让"余额不足"能直接告诉用户最多还能买几股
+                ensure_sufficient_balance(balance_now, amount, price=price)
                 raise ApiError("交易失败，请稍后重试", status_code=500, code="INTERNAL_ERROR")
 
             db.refresh(current_user)

@@ -56,7 +56,7 @@
 | ID | 任务 | 状态 |
 | --- | --- | --- |
 | **D-1** | 导出 `docs/presentation/defense.pdf`（Slidev 或浏览器打印） | ⬜ |
-| **D-2** | 文档收口：`user_manual.md` 线上地址 ✅、`compliance.md` §4.1 ✅、`day5.md` 勾选、`prototype_review.md` 索引 | 🟡 进行中 |
+| **D-2** | 文档收口：`user_manual.md` 线上地址 ✅、`compliance.md` §4.1/§4.2 ✅、`day5.md` 勾选、`prototype_review.md` 索引 | 🟡 进行中 |
 | **D-3** | 回归：`python -m pytest`（应 120 passed）+ push 后确认 CI 三 job 绿 + `test_report.md` 结论改"可交付" | ⬜ |
 | **D-4** | 合并 A/B 的改动，跑一次全链路（线上 market→detail→buy→positions→trades） | ⬜ |
 
