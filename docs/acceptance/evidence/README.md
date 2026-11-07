@@ -50,4 +50,13 @@
 | --- | --- | --- |
 | `17-code-quality-scan.png` | 代码质量报告截图（实际命令输出渲染） | `pytest` 120 passed；`ruff check --statistics .` 第 3 次扫描 72 项（D 负责文件 0）；CI 三门槛全绿；含重构前后对比 |
 
+## 线上验收（第 5 天，Render）
+
+| 文件 | 内容 | 说明 |
+| --- | --- | --- |
+| `online/online-account-5000.png` | `GET /api/account` | 线上余额 5000.00 / 总资产 5000.00 |
+| `online/online-positions-empty.png` | `GET /api/positions` | 交易测试后清仓为空 |
+| `online/online-trades-before-tc403.png` | `GET /api/trades` | **TC-403 之前的历史状态（空）**，仅作对照，不作为验收证据；当前线上为 3 条流水（见 test_report TC-404） |
+| `online/online-prices-11points.png` | `GET /api/players/1/prices` | 11 个点、升序、末点 108.75 = current_price、reason 含「本轮得分 + S」 |
+
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
