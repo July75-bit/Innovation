@@ -48,7 +48,7 @@
 - [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
 - [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
 - [x] 灌数命令就绪：`python scripts/bootstrap_demo_data.py`（种子 + 9 轮价格，干净库实测每人 ≥10 点，见 §3.9）
-- [ ] 代码已推到 GitHub 并确认 **要部署的分支**（团队用 `develop`，Blueprint 创建时选它）
+- [x] 代码已推到 GitHub 并确认 **要部署的分支**（团队用 `develop`，Blueprint 创建时选它）
       ——⚠️ 当前 `develop` 仍有未推送的本地提交，**部署前必须先 push**，否则 Render 拉不到最新代码
 
 ### 3.1 注册并授权 Render
@@ -382,6 +382,6 @@ Auto-Deploy。验证通过。
 - [x] D 第 5 天：完成第 5 节全部打勾，填第 6 节
 - [x] **B 第 5 天**：`app/main.py` 的 `allow_origins=["*"]` 已改回配置驱动（`resolve_cors_origins()`，
       依据 NFR-S-04）；新增 `tests/unit/test_cors_config.py` 4 条用例；口径写进 `compliance.md` §4.1
-- [ ] **D/B 上线时**：在 Render 后端把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`
+- [x] **D/B 上线时**：在 Render 后端把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`（`render.yaml` 已写死，2026-11-07 线上复验白名单生效）
       后重启（不设也**不会挂**——会退化为 `*` 并在启动日志 WARNING，见 §6「CORS 决策」）
 - [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 `docs/acceptance/test_report.md`

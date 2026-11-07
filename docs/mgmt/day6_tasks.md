@@ -19,7 +19,7 @@
 
 | 闸门 | 通过条件（缺一不可） |
 | --- | --- |
-| **A（关闭第 5 天）** | ① P0 三条合入并有截图；② CORS 结论写入文档；③ `deployment.md` §5 全勾；④ `defense.pdf` 存在；⑤ 120 条测试 + CI 三 job 绿 |
+| **A（关闭第 5 天）** | ① P0 三条合入并有截图；② CORS 结论写入文档；③ `deployment.md` §5 全勾；④ `defense.pdf` 存在；⑤ 137 条测试 + CI 三 job 绿 |
 | **B（进入答辩）** | ① 彩排 ≥2 次并计时（8+2+5 ≤ 15 分钟）；② 演示前 checklist 全勾；③ 线上预热脚本有人负责 |
 
 ---
@@ -160,7 +160,7 @@ C-3 认领 qa.md Q4–Q8（定价 5 问），脱稿。
 【第 5 天收尾 · 今天】
 D-1 导出 docs/presentation/defense.pdf
 D-2 文档收口：user_manual 线上地址 ✅ / compliance §4.1 ✅ / day5 勾选 / README 索引
-D-3 回归 120 条 + push 后 CI 三 job 绿 + test_report 结论改"可交付"
+D-3 回归 137 条 + push 后 CI 三 job 绿 + test_report 结论改"可交付"
 D-4 合并 A/B 改动后跑一次线上全链路
 
 【第 6 天答辩】
@@ -175,9 +175,9 @@ D-8 认领 qa.md Q1–Q3 / Q9–Q11 / Q15–Q17
 ## 4. 完成定义
 
 **M5 关闭（今天）**
-- [ ] A-1/A-2/A-3 合入并有截图
-- [ ] B-1 CORS 结论写入文档；B-2 两张截图 + `deployment.md` §5 全勾
-- [ ] D-1 `defense.pdf` 存在；D-3 120 条 + CI 三 job 绿
+- [x] A-1/A-2/A-3 合入并有截图（D 代做，CI run #70/#80 前端 build 绿）
+- [x] B-1 CORS 结论写入文档（白名单已线上复验）；B-2 证据入库 `evidence/online/backend-debug-db.md`
+- [x] D-1 `defense.pdf` 存在（13 页）；D-3 137 条 + CI run #80 三 job 绿
 - [ ] 未做项如实标注（外部交叉测试延期、LLM 版回测待密钥）
 
 **M6 可交付（第 6 天）**
