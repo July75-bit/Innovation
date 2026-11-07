@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-07 17:00 复测）**：pytest **176 passed / 0 skipped** · 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖）· CI **run #95 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
+> **当前基线（2026-11-07 17:00 复测）**：pytest **178 passed / 0 skipped** · 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖）· CI **run #95 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
 
 ---
 
@@ -38,7 +38,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**，线上能查到为什么没用上模型；③ 故障**没有升级成 5xx**，交易与行情完全不受影响。复跑方式见 §5 最后一条。
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（176 条中约 50 条是异常/边界路径）。
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（178 条中约 50 条是异常/边界路径）。
 
 ---
 
@@ -73,7 +73,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **176 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 176 条） |
+| pytest | 单元+集成测试 | `pyproject.toml` | **178 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 178 条） |
 | coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（956/17，≥60% 达标） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
@@ -147,7 +147,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 cd D:\projects\innovation\Innovation
 # 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
 conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
-python -m pytest                                     # 176 passed
+python -m pytest                                     # 178 passed
 ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501
 pylint code/core_engine code/backend/app/core        # 9.74/10
