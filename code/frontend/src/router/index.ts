@@ -1,10 +1,28 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MarketView from '../views/MarketView.vue'
+import { useAuth } from '../composables/useAuth'
+
+/** 登录页自带全屏背景，路由 meta 用来告诉外壳"这一页不套侧栏" */
+declare module 'vue-router' {
+  interface RouteMeta {
+    /** true = 不需要登录态就能访问（目前只有 /auth） */
+    public?: boolean
+    /** 浏览器标题 */
+    title?: string
+  }
+}
 
 /** 路由约定见原 code/frontend/README.md：/ 市场、/players/:id 详情、/positions 持仓、/trades 流水 */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    // 注册 / 登录：本地演示页，纯前端账号态，不发后端请求（见 composables/useAuth.ts）
+    {
+      path: '/auth',
+      name: 'auth',
+      component: () => import('../views/AuthView.vue'),
+      meta: { public: true, title: '登录 / 注册' },
+    },
     {
       path: '/',
       name: 'market',
@@ -39,6 +57,29 @@ const router = createRouter({
       redirect: '/',
     },
   ],
+})
+
+/**
+ * 登录态守卫。
+ *
+ * 放行条件写宽一点：登录用户和「访客进入」都算可以逛（`isAuthenticated`），
+ * 否则本地演示时没注册账号的人连界面都看不到，反而像 bug。
+ * 未登录时把原路径放进 ?redirect=，登录成功再送回他本来要去的那一页。
+ */
+router.beforeEach((to) => {
+  const { isAuthenticated } = useAuth()
+
+  if (to.meta.public) {
+    // 已经进来了还去登录页 = 想退出/换号，直接给过；
+    // 但正常访问（比如手输 /auth）时把已登录用户送回市场页，避免来回弹。
+    if (to.name === 'auth' && isAuthenticated.value && !to.query.redirect) return { path: '/' }
+    return true
+  }
+
+  if (!isAuthenticated.value) {
+    return { name: 'auth', query: to.fullPath === '/' ? {} : { redirect: to.fullPath } }
+  }
+  return true
 })
 
 export default router
