@@ -5,12 +5,15 @@
  * - ≤960px = 顶栏 + 抽屉导航（A4 响应式保留），合规声明回页面底部。
  * 余额/总资产始终从后端 GET /api/account 拉取（交易后由页面触发 refreshAccount）。
  * 连接徽标走 GET /api/health（day1 验收项：页面显示"连接成功：<service>"）。
+ * - 登录 / 注册页（/auth）走独立全屏布局，isAuthPage 为真时不渲染侧栏与顶栏；
+ * - 侧栏常驻本地账号卡片（用户名 / 本地账号或访客 / 退出），会话来自 useAuth，只存浏览器。
  */
 import { computed, onMounted, ref, watch } from 'vue'
-import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
+import { useAuth } from './composables/useAuth'
 
 const { account } = useAccount()
 
@@ -21,6 +24,26 @@ watch(
   () => route.path,
   () => (navOpen.value = false),
 )
+
+const { currentUser, logout } = useAuth()
+const router = useRouter()
+
+/** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
+const isAuthPage = computed(() => route.name === 'auth')
+
+/** 本地账号只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
+const displayName = computed(() => currentUser.value?.username ?? '访客')
+const userInitial = computed(() => displayName.value.charAt(0).toUpperCase())
+const accountKind = computed(() => (currentUser.value ? '本地账号' : '未登录浏览'))
+
+/**
+ * 侧栏账号按钮：已登录 = 退出，访客 = 放弃访客态去登录。
+ * 两种情况都先清会话再跳 /auth——不清的话守卫会把已"登录"的用户从 /auth 弹回市场页。
+ */
+function onAccountAction(): void {
+  logout()
+  void router.push({ name: 'auth' })
+}
 
 const { service: backend } = useBackendHealth()
 
@@ -44,91 +67,113 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- CS2 氛围背景（纯装饰）：雷达网格 + 红色氛围光 -->
-  <div class="backdrop" aria-hidden="true"></div>
+  <!-- 登录 / 注册页自带全屏 CS2 背景，不套侧栏外壳 -->
+  <RouterView v-if="isAuthPage" />
 
-  <div class="shell">
-    <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） ===== -->
-    <aside :class="['sidebar', { open: navOpen }]">
-      <RouterLink to="/" class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
-        PlayerStock<span class="sub">虚拟选手股</span>
-      </RouterLink>
+  <template v-else>
+    <!-- CS2 氛围背景（纯装饰）：雷达网格 + 红色氛围光 -->
+    <div class="backdrop" aria-hidden="true"></div>
 
-      <nav :class="{ open: navOpen }" aria-label="主导航">
-        <RouterLink to="/" class="nav-item">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 13h12M4 13V8m4 5V4m4 9v-6" /></svg>
-          市场
+    <div class="shell">
+      <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） ===== -->
+      <aside :class="['sidebar', { open: navOpen }]">
+        <RouterLink to="/" class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          PlayerStock<span class="sub">虚拟选手股</span>
         </RouterLink>
-        <RouterLink to="/positions" class="nav-item">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5.5 8 3l6 2.5L8 8 2 5.5Zm0 3L8 11l6-2.5M2 11 8 13.5 14 11" /></svg>
-          持仓
+
+        <nav :class="{ open: navOpen }" aria-label="主导航">
+          <RouterLink to="/" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2 13h12M4 13V8m4 5V4m4 9v-6" />
+            </svg>
+            市场
+          </RouterLink>
+          <RouterLink to="/positions" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2 5.5 8 3l6 2.5L8 8 2 5.5Zm0 3L8 11l6-2.5M2 11 8 13.5 14 11" />
+            </svg>
+            持仓
+          </RouterLink>
+          <RouterLink to="/trades" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
+            交易记录
+          </RouterLink>
+        </nav>
+
+        <!-- 本地账号态：注册 / 登录页写入，仅存浏览器（见 composables/useAuth.ts） -->
+        <div class="user-card">
+          <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
+          <span class="who">
+            <strong>{{ displayName }}</strong>
+            <small>{{ accountKind }}</small>
+          </span>
+          <button type="button" class="acct-action" @click="onAccountAction">
+            {{ currentUser ? '退出' : '登录' }}
+          </button>
+        </div>
+
+        <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
+        <div class="account-card" v-if="account">
+          <div class="acct-row">
+            <span>余额（虚拟币）</span>
+            <strong>{{ money(account.balance) }}</strong>
+          </div>
+          <div class="acct-row">
+            <span>总资产</span>
+            <strong>{{ money(account.total_asset) }}</strong>
+          </div>
+          <div class="acct-row">
+            <span>总收益</span>
+            <strong :class="(profit ?? 0) > 0 ? 'up' : (profit ?? 0) < 0 ? 'down' : 'flat'">
+              {{ profit === null ? '—' : (profit >= 0 ? '+' : '') + money(profit) }}
+            </strong>
+          </div>
+        </div>
+        <div class="account-card placeholder" v-else aria-busy="true">
+          <span class="sk sk-line"></span><span class="sk sk-line"></span
+          ><span class="sk sk-line"></span>
+        </div>
+
+        <div
+          :class="['health', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
+        >
+          <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
+        </div>
+
+        <p class="side-note">
+          本项目为课程作品：全程虚拟币，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
+          Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
+        </p>
+      </aside>
+
+      <!-- ===== 移动端顶栏 ===== -->
+      <header class="topbar">
+        <RouterLink to="/" class="brand brand-sm">
+          <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
-        <RouterLink to="/trades" class="nav-item">
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
-          交易记录
-        </RouterLink>
-      </nav>
-
-      <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
-      <div class="account-card" v-if="account">
-        <div class="acct-row">
-          <span>余额（虚拟币）</span>
-          <strong>{{ money(account.balance) }}</strong>
+        <div class="balance" v-if="account">
+          余额 <strong>{{ money(account.balance) }}</strong>
         </div>
-        <div class="acct-row">
-          <span>总资产</span>
-          <strong>{{ money(account.total_asset) }}</strong>
-        </div>
-        <div class="acct-row">
-          <span>总收益</span>
-          <strong :class="(profit ?? 0) > 0 ? 'up' : (profit ?? 0) < 0 ? 'down' : 'flat'">
-            {{ profit === null ? '—' : (profit >= 0 ? '+' : '') + money(profit) }}
-          </strong>
-        </div>
-      </div>
-      <div class="account-card placeholder" v-else aria-busy="true">
-        <span class="sk sk-line"></span><span class="sk sk-line"></span><span class="sk sk-line"></span>
-      </div>
+        <button
+          class="menu-toggle"
+          type="button"
+          :aria-expanded="navOpen"
+          aria-label="打开导航菜单"
+          @click="navOpen = !navOpen"
+        >
+          {{ navOpen ? '关闭菜单' : '菜单' }}
+        </button>
+      </header>
 
-      <div :class="['health', backend === null ? 'checking' : backend === false ? 'bad' : 'good']">
-        <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
-      </div>
+      <main class="content">
+        <RouterView />
+      </main>
+    </div>
 
-      <p class="side-note">
-        本项目为课程作品：全程虚拟币，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
-        Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
-      </p>
-    </aside>
-
-    <!-- ===== 移动端顶栏 ===== -->
-    <header class="topbar">
-      <RouterLink to="/" class="brand brand-sm">
-        <span class="brand-mark" aria-hidden="true"></span>PlayerStock
-      </RouterLink>
-      <div class="balance" v-if="account">
-        余额 <strong>{{ money(account.balance) }}</strong>
-      </div>
-      <button
-        class="menu-toggle"
-        type="button"
-        :aria-expanded="navOpen"
-        aria-label="打开导航菜单"
-        @click="navOpen = !navOpen"
-      >
-        {{ navOpen ? '关闭菜单' : '菜单' }}
-      </button>
-    </header>
-
-    <main class="content">
-      <RouterView />
-    </main>
-
-
-  </div>
-
-  <!-- 抽屉遮罩（移动端） -->
-  <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+    <!-- 抽屉遮罩（移动端） -->
+    <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+  </template>
 </template>
 
 <style scoped>
@@ -353,7 +398,6 @@ nav {
   margin-inline: auto;
 }
 
-
 /* 遮罩（仅移动端抽屉用） */
 .scrim {
   display: none;
@@ -396,7 +440,6 @@ nav {
   .content {
     padding: var(--space-4) var(--space-4) var(--space-5);
   }
-
 }
 
 /* ===== CS2 氛围背景层：雷达网格 + 氛围光 ===== */
@@ -410,5 +453,61 @@ nav {
     radial-gradient(55% 42% at 50% 0%, rgba(229, 72, 77, 0.09), transparent 70%),
     repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px),
     repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px);
+}
+
+/* ===== 本地账号卡片（会话来自 useAuth，只存浏览器） ===== */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--up-bg);
+  color: var(--accent);
+  font-size: var(--fs-cap);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.who strong {
+  font-size: var(--fs-aux);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.who small {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acct-action {
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.acct-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 </style>

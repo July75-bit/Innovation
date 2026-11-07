@@ -38,9 +38,14 @@ src/
 │   └── index.ts       # 10 个业务接口函数（api.listPlayers / api.buy / ...）
 ├── mock/
 │   └── players.ts   # VITE_USE_MOCK=true 时的内存模拟数据（含交易校验，仅开发兜底）
+├── assets/
+│   ├── main.css              # 全局设计令牌（色彩 / 字体 / 间距圆角）
+│   ├── auth-bg.jpg           # 登录页背景：源图压暗 + 降饱和 + 轻模糊 + 暗角，1920×1080（约 95 KB）
+│   └── auth-bg-narrow.jpg    # ≤900px 竖版裁切，900×1200（约 53 KB）
 ├── composables/
 │   ├── useAccount.ts        # 余额共享状态（模块级 ref，未用 Pinia）
-│   └── useBackendHealth.ts # 后端连接检测共享（顶栏徽标，各页刷新时同步复检）
+│   ├── useBackendHealth.ts  # 后端连接检测共享（顶栏徽标，各页刷新时同步复检）
+│   └── useAuth.ts           # 注册 / 登录的本地账号态（localStorage，不发请求）
 ├── components/
 │   ├── PriceChart.vue   # 价格历史折线图（零依赖 SVG，升序直接用）
 │   ├── TradePanel.vue   # 数量输入 + 买入/卖出 + 后端 message 展示
@@ -48,12 +53,32 @@ src/
 │   ├── EmptyState.vue   # 空态（可插槽放引导链接）
 │   └── ErrorState.vue   # 错误态（展示后端中文 message + 重试，不自动重放交易）
 ├── views/
+│   ├── AuthView.vue          # /auth        注册 / 登录（全屏 CS2 背景，纯前端）
 │   ├── MarketView.vue        # /            市场列表
 │   ├── PlayerDetailView.vue  # /players/:id 详情 + 折线图 + AI 建议 + 交易
 │   ├── PositionsView.vue     # /positions   持仓 + 账户汇总
 │   └── TradesView.vue        # /trades      交易流水（后端已倒序）
 └── utils/format.ts    # money / pct / trendClass / dateTime
 ```
+
+## 注册 / 登录（本地演示，不连后端）
+
+第 6 轮加的一层界面，**只在浏览器里跑**：账号写在 `localStorage` / `sessionStorage`，
+全程不发任何 HTTP 请求，所以本地打开不需要后端、也不需要配 CORS。
+
+| 入口 | 行为 |
+| --- | --- |
+| `/auth` | 登录 / 注册两个标签页，背景是处理过的 CS2 主视觉（`src/assets/auth-bg*.jpg`） |
+| 注册 | **只要用户名 + 密码**（外加一次确认）。密码存加盐 SHA-256 摘要，不落明文 |
+| 登录 | 演示账号 `demo / demo1234`（页面有"用演示账号填充"）；勾"记住我"落 localStorage，否则只活于当前标签页 |
+| 访客 | "先随便逛逛"= 只读浏览主界面，不算登录态，侧栏显示"访客 / 未登录浏览" |
+| 守卫 | `src/router/index.ts` 的 `beforeEach`：未登录访问任意页 → `/auth?redirect=原路径`，成功后送回原页；已登录访问 `/auth` → 回市场页 |
+| 退出 | 侧栏底部账号卡片（窄屏在抽屉里）的"退出"按钮 |
+
+- 登录页是独立全屏布局：`App.vue` 用 `isAuthPage` 判断，这一页不渲染侧栏 / 顶栏 / 氛围背景。
+- 注册字段按要求收敛到最小，没有昵称与邮箱；`AuthUser` 只有 `username` 与 `created_at`。
+- 想去掉登录门槛：删 `router/index.ts` 里的 `beforeEach` 即可，界面与账号态互不牵连。
+- 接真实鉴权时：把 `useAuth.ts` 的 `register/login/logout` 换成 `api.*`，视图层不用动。
 
 ## 契约铁律（改代码前先读 docs/software/api_contract.md）
 
@@ -70,3 +95,4 @@ src/
 - [x] 后端启动后联调：查行情 → 买入 → 看持仓 → 卖出（2026-10-24 实机两轮通过：5 条错误分支 + AI 卡 + 三态均验证）
 - [ ] 折线图悬停显示 `reason`（第 4 天，答辩归因用）
 - [ ] 每日签到补给入口（若后端第 4 天提供接口）
+- [ ] 注册 / 登录接后端（`POST /api/auth/register`、`/login`、`/logout`）：届时替换 `useAuth.ts`，并删掉本地摘要
