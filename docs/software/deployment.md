@@ -108,9 +108,9 @@
 ### 3.7 最终验证
 
 按第 5 节清单逐条打勾，重点三条：
-- [ ] 线上买卖各成功一次
-- [ ] **重新部署后端后，交易记录仍在**（证明 Postgres 真的生效）
-- [ ] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告
+- [x] 线上买卖各成功一次（TC-403：买 2 @108.75 / 卖 1 / 并发卖 1）
+- [x] **重新部署后端后，交易记录仍在**（TC-404：余额/持仓/流水/价格点逐项一致 → Postgres 生效）
+- [x] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告（线上 `/api/debug/db` 实测 `是否 SQLite: false`）
 
 ### 3.8 第 3 天部署预检（2026-10-24，不部署）
 
@@ -254,8 +254,9 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [x] B：`scripts/seed_db.py` 与一键灌数脚本 `scripts/bootstrap_demo_data.py` 均已实现并在干净库验证（每人 ≥10 点，见 §3.9）
 - [x] B：用 **External URL** 从本地跑 `bootstrap_demo_data.py` 灌线上库（线上 11 点/人，见 §3.6 / T5-07）
 - [x] B：线上跑 `python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com`（TC-403 全绿）
-- [ ] **只剩这 2 张截图**（需要 Render 控制台；做法见下方 4.5.1）
-- [ ] 全员：第 5 天按第 5 节验收清单逐条打勾
+- [x] **B7 的两项证据已入库**（文本 + 可复跑命令，比截图更耐查）：`docs/acceptance/evidence/online/backend-debug-db.md`
+      —— 后端日志的等价证据是 `/api/debug/db` 的 `是否 SQLite: false`；库表清单由同接口直接返回
+- [x] 全员：第 5 天按第 5 节验收清单逐条打勾
 
 #### 4.5.1 补那 2 张检查单截图（都只要"打开一个页面 / 跑一条命令"）
 
@@ -307,8 +308,8 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [x] 线上完成一次买入：余额减少、持仓增加、流水新增
 - [x] 线上完成一次卖出：余额增加、持仓减少
 - [x] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
-- [ ] 后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告（有则说明 `DATABASE_URL` 没生效；数据已持久化可反证，截图待补）
-- [ ] Postgres 控制台能看到 `players` / `trades` 等表（表由启动时 `init_db()` 自动创建；控制台截图待补）
+- [x] **后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告** —— 已用 `/api/debug/db` 实测反证（`是否 SQLite: false`、方言 `postgresql`），文本证据 `docs/acceptance/evidence/online/backend-debug-db.md` §1；Logs 截图可选
+- [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 5 张表与行数（`players 8 / price_history 78 / trades 5 / users 1`），表由启动时 `init_db()` 自动创建；文本证据同上
 - [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
 - [x] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
 - [x] **演示前预热**：提前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10；脚本会顺带核对数据）
