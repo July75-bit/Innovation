@@ -3,13 +3,14 @@
 * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { margin: 0; background: #0b0c0e; color: #ececef;
   font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif; }
-.slide { width: 1280px; height: 720px; padding: 46px 64px 34px; position: relative;
+.slide { width: 1280px; height: 720px; padding: 44px 64px 66px; position: relative;
+  display: flex; flex-direction: column; justify-content: center;
   page-break-after: always; break-after: page; overflow: hidden; background: #0b0c0e; }
 .slide:last-child { page-break-after: auto; }
 h1 { font-size: 62px; margin: 0 0 6px; letter-spacing: 1px; }
-h2 { font-size: 34px; margin: 0 0 22px; color: #fff; border-left: 5px solid #e5484d; padding-left: 14px; }
-h3 { font-size: 19px; margin: 14px 0 8px; color: #e8a33d; }
-p, li { font-size: 17px; line-height: 1.62; }
+h2 { font-size: 33px; margin: 0 0 20px; color: #fff; border-left: 5px solid #e5484d; padding-left: 14px; }
+h3 { font-size: 19px; margin: 12px 0 8px; color: #e8a33d; }
+p, li { font-size: 17px; line-height: 1.6; }
 ul { margin: 6px 0; padding-left: 22px; }
 li { margin-bottom: 6px; }
 code { font-family: Consolas, monospace; font-size: 15px; background: #1b1e23;
@@ -17,26 +18,26 @@ code { font-family: Consolas, monospace; font-size: 15px; background: #1b1e23;
 pre { background: #14171b; border: 1px solid #2a2d33; border-radius: 8px;
   padding: 14px 16px; overflow: hidden; margin: 8px 0 10px; }
 pre code { background: none; padding: 0; color: #d8f3dc; font-size: 14.5px; line-height: 1.55; }
-table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 10px; }
 th, td { border: 1px solid #2a2d33; padding: 8px 12px; font-size: 15.5px; text-align: left; vertical-align: top; }
 th { background: #191c21; color: #fff; font-weight: 600; }
 table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
 .two { display: flex; gap: 40px; }
 .two > div { flex: 1; min-width: 0; }
 .two.wide-left > div:first-child { flex: 1.15; }
-.three { display: flex; gap: 26px; margin-top: 14px; }
+.three { display: flex; gap: 26px; margin-top: 12px; }
 .three > div { flex: 1; background: #14171b; border: 1px solid #2a2d33; border-radius: 8px; padding: 12px 16px; }
 .three h3 { margin-top: 0; }
 .tight-list li { margin-bottom: 4px; font-size: 16px; }
-.cover { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.cover { align-items: center; text-align: center; }
 .cover h1 { font-size: 84px; }
 .sub { font-size: 30px; color: #e5484d; margin: 4px 0 18px; }
-.tag { font-size: 19px; color: #c9ccd4; margin: 0 0 40px; }
+.tag { font-size: 19px; color: #c9ccd4; margin: 0 0 38px; }
 .meta { font-size: 16px; color: #9a9da6; }
-.note { font-size: 14px; color: #7d818a; margin-top: 26px; max-width: 900px; }
-.center { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+.note { font-size: 14px; color: #7d818a; margin-top: 24px; max-width: 900px; }
+.center { align-items: center; text-align: center; }
 .big { font-size: 27px; color: #e5484d; }
-.foot { position: absolute; bottom: 26px; left: 64px; right: 64px; font-size: 14px; color: #8c9099;
+.foot { position: absolute; bottom: 24px; left: 64px; right: 64px; font-size: 14px; color: #8c9099;
   border-top: 1px solid #23262b; padding-top: 10px; }
 .small { font-size: 14.5px; color: #a9adb6; }
 .shot { width: 100%; border-radius: 8px; border: 1px solid #2a2d33; }
@@ -44,7 +45,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
   border-radius: 4px; font-size: 16px; color: #ffd7a8; margin: 8px 0; }
 .alert { background: #2a1416; border: 1px solid #e5484d; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
 .alert p { margin: 4px 0; }
-.arch { width: 100%; height: auto; margin: 6px 0 4px; }
+.arch { width: 100%; height: auto; margin: 4px 0; }
 </style></head><body>
     <section class="slide cover">
       <h1>PlayerStock</h1>
@@ -218,7 +219,7 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
           <div class="quote">本场表现下滑（S=-1.00），价格下跌 15.00%（本轮得分 76.6）</div>
           <h3>可解释性</h3>
           <p><code>price_history.reason</code> 强制带 S 与得分 → <b>每条历史价格都能追溯到哪一场、什么得分</b>。</p>
-          <p class="small">为此放弃"加 score 列"方案：不改表、不改契约，选择把归因写进 reason（有 4 条测试守着）。</p>
+          <p class="small">为此放弃"加 score 列"方案：不改表、不改契约，把归因写进 reason（4 条测试守着）。</p>
         </div>
       </div>
     </section>

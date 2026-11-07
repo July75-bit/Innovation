@@ -46,7 +46,7 @@
 | **A 倪颢容** | 部署 ✅ / 完善作品 ❌ | **A4/A5/A6 三项 P0**（响应式、AI 思考中、键盘可达） |
 | **B 胡德昊** | 部署 ✅ / 运维收尾 🟡 | **B6/B7/B8 三项**（CORS 决策、2 张截图、回滚演练） |
 | **C 刘宏** | ✅ 100% | 无（第 6 天只需复核定价页） |
-| **D 王泽棠** | 文档 ✅ / 收尾 🟡 | **D7/D8 两项**（导出 PDF、回归+CI 复核） |
+| **D 王泽棠** | 文档 ✅ / 收尾 ✅ | **D7 ✅ / D8 🟡**（PDF 已导出；回归绿，CI 待 push 后复核） |
 
 **第 5 天关闭条件**：A4+A5+A6 + B6+B7+B8 + D7+D8 全绿 → 才进入第 6 天。
 
@@ -95,8 +95,8 @@
 | D4 | `prototype_review.md`（三层模型 + 两张清单） | ✅ | 7 节，含视觉规范与 12 条缺口 |
 | D5 | 隐私文案稿 / 交叉测试延期说明 / `user_manual` 线上地址 | ✅ | `compliance.md` §4.1、`cross_test.md` §4、`user_manual` §2 |
 | D6 | 答辩三件套材料（`slides.md`/`demo-script.md`/`qa.md`） | ✅ | 14 页 + 20 问 |
-| **D7** | **导出 `docs/presentation/defense.pdf`** | ❌ | 文件存在、页序与 `slides.md` 一致 |
-| **D8** | **回归 + CI 复核**（120 条 + 三 job 绿 + `test_report` 结论） | ❌ | push 后 Actions 三 job 绿 |
+| **D7** | **导出 `docs/presentation/defense.pdf`** | ✅ | 13 页 / 539 KB，与 `slides.md` 内容一致；源文件 `build_deck.py` + `defense.html` 一并入库，可重生成 |
+| **D8** | **回归 + CI 复核**（120 条 + 三 job 绿 + `test_report` 结论） | 🟡 | 本机 **120 passed / 0 skipped** + ruff 三类门槛全绿；CI 待 push 后复核（本地领先 origin 4 个提交） |
 
 > 详细的任务定义、验收细节与"闸门 A/B"依赖关系见 `docs/mgmt/day6_tasks.md` §1（本节只保留状态总览，避免两处口径漂移）。
 
@@ -173,12 +173,12 @@
 - [x] `deployment.md` 定稿（环境变量、检查单、回滚、已知问题）
 - [x] 线上数据：每名可交易选手 ≥10 个价格点（sh1ro 2 点，属预期）
 - [x] 本机/CI 120 passed / 0 skipped
-- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 14 页含讲稿）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）—— 材料齐，待导出 PDF + 彩排
+- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 14 页 + `defense.pdf` 13 页已导出）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）
 - [ ] **优化迭代 P0 三条**（响应式 / AI 思考中 / 无障碍最小集）← **第 5 天第 2 部分的核心，未完成，阻塞关闭**
 - [x] `prototype_review.md`（三层模型 + 检查清单对照）→ `docs/requirements/prototype_review.md`
 - [x] 外部交叉原型测试：**延期说明 + 补救方案**已写入 `cross_test.md` §4（不伪造记录）
 - [x] `user_manual.md` 终稿（线上地址、本地备用、5 条已知问题）／`compliance.md` §4.1 隐私文案稿
-- [ ] CI 三 job 绿（本地领先 3 个提交，push 后复核）
+- [ ] CI 三 job 绿（本地领先 4 个提交，本机 120 条 + ruff 已绿；push 后复核 Actions）
 
 > **第 5 天关闭条件（Hard Gate）**：P0 三条合入 + 上述勾选全绿 + CI 绿 → 才进入第 6 天。
 > 分派见 `docs/mgmt/day6_tasks.md` §1「闸门 A：第 5 天收尾」。
