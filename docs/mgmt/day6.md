@@ -294,7 +294,23 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 **验证顺序**：本地一条 curl 打通 → 在 Render 填三个变量 → 自动重新部署 → `GET /api/analysis/1` 的 `source` 从 `rule_fallback` 变成 `llm`。
 **失败也无害**：任何错误都回落规则版并返回 200，不会 5xx。
 
-> 安全：这条 key 已经出现在聊天记录里，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
+**2026-11-07 实测结论（B，结论：保持规则版）**
+
+| 环节 | 结果 |
+| --- | --- |
+| 代码侧 UA | 首次 403 / `error code: 1010`（Cloudflare 拦 urllib 默认 UA）→ 已修 `897aa3e`（+ `check_llm.py` 同步修） |
+| 代码侧 URL | 只填 base（`.../openai/v1`）会 404 → 已修 `8a26a19`：自动补 `/chat/completions`，两种写法都吃 |
+| 代码侧引号 | cmd `set X="v"` 会把引号并进值 → 已修 `2684e1b`：`_clean_env()` 统一去引号/空白 |
+| 模型名 | `GET /inference/v1/models`（免鉴权）确认 `deepseek-v4.1-flash-free` 存在、`type=chat`、`temperature: true` ✅ |
+| key | **有效**（已过鉴权，不是 401） |
+| 最终结果 | **`429 FreeUsageLimitError`**："Free usage limit reached … subscribe to OpenCode Go"。无 key 直连探测 `deepseek-v4.1-flash-free` / `glm-5.3-flash-free` / `mimo-v2.6-flash-free` / `big-pickle` **全部 429** → 免费档额度是账号/IP 级限制，换模型无效 |
+| 决定 | **线上保持 `rule_fallback`**（接口仍 200，属设计降级）。⚠️ 若 Render 里留着 `LLM_API_KEY`，单次 AI 请求会多等 **1–1.8s** 等失败再回落；**演示前建议清空该变量**回到 ~200ms |
+
+诊断/复跑：`python scripts/check_llm.py --direct`（直连）、`--scan`（逐个试 7 个候选模型）、`--base <后端地址>`（看线上 `source`）。
+
+> **答辩怎么说**：AI 走"可插拔 + 契约 + 兜底"设计——真模型一配就生效（本次已把 key/URL/模型名/UA 全打通，只剩免费额度限制），额度/密钥不可用时自动降级为规则版，接口永远 200、交易不受影响。
+
+> 安全：key 曾出现在聊天记录与截图中，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
 
 > **逐步操作已写成独立文档**：[`render-llm-guide.md`](render-llm-guide.md)（含控制台路径、三变量、日志对照表、撤回方式、答辩限流提醒），直接转给 B 即可。
 
@@ -302,38 +318,11 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 
 | 检查 | 谁 | 状态 |
 | --- | --- | --- |
-| P0 三条视觉证据在 `docs/acceptance/evidence/`：响应式/抽屉 `23~27` + **A 亲验 `30~34`**、键盘 `28` | A / B | 🟡 仅差「AI 分析中…」占位一张（Fast 3G 抓取，§7.1 步骤 ②） |
+| P0 三条视觉证据在 `docs/acceptance/evidence/`：响应式/抽屉 `23~27` + **A 亲验 `30~34`**、键盘 `28`、AI 占位 `29` | A / B | ✅ 齐（AI 占位态由 `29-ai-loading.png` 补齐） |
 | 持久化证据在 `evidence/online/`：`online-persistence-{before,after}-{1,2,3}` + `persistence-redeploy.md` | B | ✅ 2026-11-07（对账脚本退出码 0） |
-| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B | ✅ 含 A-9 走查 5 行与「仍缺两张」标注 |
+| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B | ✅ 含 A-9 走查 5 行；「仍缺」只剩 scrollWidth console 断言一张 |
 | `day5.md` §3.2、`deployment.md` §9 与 §5、`test_report.md` §6 四处回填 | A / B | ✅ §3.2 已换截图链接；deployment 37/37；test_report §6 已引用 |
 | D 复核：图片能打开、断言与文内数字一致、链接不 404 | D | ⬜ 等 D 过一遍 |
-
-### 7.4 可选：把 AI 从「规则兜底」切到真模型（B，约 10 分钟，冻结期可不做）
-
-> 现状：`render.yaml` 里 `LLM_API_KEY` 是 `sync: false`（控制台手填），**从没填过** → 线上一直 `rule_fallback`。
-> 这是**设计好的降级**，不是故障（`GET /api/analysis/1` 仍 200）。要不要切，看答辩需不需要展示真模型。
-
-三个变量必须**一起**配，缺一个就回落到规则版（不会 5xx）：
-
-| 变量 | 填什么 | 常见坑 |
-| --- | --- | --- |
-| `LLM_API_KEY` | 服务商给的 key（只在 Render 控制台填，`sync: false` 已保证不进仓库） | 别写进 `.env.example` 或文档 |
-| `LLM_BASE_URL` | **完整 URL**，要带 `/chat/completions` | 只填 base 路径会 404 |
-| `LLM_MODEL` | 该服务真实存在的模型名 | 默认 `gpt-4o-mini` 在第三方网关上通常不存在 |
-
-**验证工具（B 已备）**：
-
-```powershell
-# ① 本地直接打模型（最快定位 key/URL/模型名哪个错）
-$env:LLM_API_KEY="..."; python scripts/check_llm.py --direct
-# ② 查线上最终走了哪条路（source = llm 还是 rule_fallback）
-python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
-```
-
-脚本会打印掩码后的环境变量、HTTP 状态与错误详情，并对 400 给出三种常见原因（URL 缺 `/chat/completions`、
-模型名不存在、模型不支持 `temperature`）。**当前线上实测 `source = rule_fallback`**（未配 key），属预期。
-
-> 安全：若 key 曾出现在聊天记录里，答辩结束后请到服务商后台吊销/轮换一次。
 
 ---
 
