@@ -68,6 +68,8 @@
 | `online/persistence-redeploy.md` | 逐项对账记录 + 复跑命令 | `scripts/persistence_check.py --diff` 退出码 0；含"余额变了为何不等于丢数据"的算术闭合 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
+> **现状（2026-11-07 20:12 重置后）**：16 名选手 / 每人 11 价格点（sh1ro 暂停 2 点）/ 余额 5000.00 / 持仓 0 / 流水 0；
+> 上面 `online-*` 截图是重置前后的历史留档，数字以本行为准。
 
 ## 汇报证据（3.6 / 3.7 / 3.3）
 

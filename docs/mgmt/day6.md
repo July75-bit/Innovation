@@ -169,8 +169,8 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 
 ## 5. 演示前 checklist（T−30 分钟）
 
-- [ ] 线上预热过（`/api/health` 连续 200，冷启动约 49s）
-- [ ] 市场页 16 选手（8 队各 2 人）、余额 5000.00、持仓/流水干净（脏了 `bootstrap_demo_data.py --reset`）
+- [x] 线上预热过（`/api/health` 连续 200，冷启动约 49s）
+- [x] **已重置（2026-11-07 20:12 实测）**：16 名选手 / 每人 11 价格点（sh1ro 暂停 2 点）/ demo 余额 **5000.00** / 持仓 0 / 流水 0（`bootstrap_demo_data.py`，默认即重置）
 - [ ] 浏览器缩放 100%、关掉无关标签、投屏分辨率确认
 - [ ] `defense.pdf` 与今天改过的 `slides.md` 是同一版
 - [ ] `demo-script.md` 打印件（A）+ 计时器（D）
