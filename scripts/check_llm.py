@@ -45,6 +45,11 @@ if hasattr(sys.stdout, "reconfigure"):
     except Exception:  # noqa: BLE001
         pass
 
+# 必须与 `code/backend/ai/llm_agent.py` 的请求头保持一致：
+# opencode.ai 前置的 Cloudflare 会按客户端指纹屏蔽 urllib 默认 UA（"Python-urllib/3.x"），
+# 表现为 HTTP 403 + `error code: 1010`；换任意非默认 UA 即放行（实测 models 接口 403 → 200）。
+USER_AGENT = "playerstock-backend/1.0 (+course project; urllib)"
+
 
 def mask(value: str) -> str:
     if not value:
@@ -87,6 +92,11 @@ def check_direct() -> int:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {env['key']}",
+            # 必须带非默认 UA：opencode.ai 前置的 Cloudflare 会按客户端指纹屏蔽
+            # urllib 默认的 "Python-urllib/3.x"（实测 HTTP 403 + error code: 1010）；
+            # 换任意非默认 UA 即放行——与 `ai/llm_agent.py` 的修复保持一致。
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json",
         },
         method="POST",
     )
@@ -108,8 +118,17 @@ def check_direct() -> int:
         detail = exc.read().decode("utf-8", "replace")[:400]
         print(f"[llm] ❌ HTTP {exc.code}")
         print(f"  {detail}")
-        print("  常见原因：① URL 少写 `/chat/completions`；② 模型名不存在（换 flash/free 档）；")
-        print("  ③ 模型不支持 `temperature`（如 kimi-k3 会 400）或未开放 chat-completions 协议。")
+        if exc.code == 403 and "1010" in detail:
+            print("  >>> 这是 Cloudflare 的客户端指纹拦截，**不是 key 错**：请求没带非默认 UA。")
+            print("      本脚本已带 UA（USER_AGENT 常量），若仍 403/1010，请升级到最新脚本或检查代理。")
+        elif exc.code == 429:
+            print("  >>> 免费额度用尽（FreeUsageLimitError）。换另一个免费模型试试：")
+            print("      `mimo-v2.6-flash-free` / `glm-5.3-flash-free`；或付费档 `deepseek-v4.1-flash`。")
+        elif exc.code == 401:
+            print("  >>> key 无效：重抄，两端不留空格、不加引号（`oc_sk_` 开头）。")
+        else:
+            print("  常见原因：① URL 少写 `/chat/completions`；② 模型名不存在（换 flash/free 档）；")
+            print("  ③ 模型不支持 `temperature`（如 kimi-k3 会 400）或未开放 chat-completions 协议。")
         return 1
     except Exception as exc:  # noqa: BLE001
         print(f"[llm] ❌ 调用失败：{type(exc).__name__}: {exc}")
