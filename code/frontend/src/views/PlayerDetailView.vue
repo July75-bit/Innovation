@@ -31,6 +31,8 @@ const invalidId = computed(() => !Number.isInteger(playerId.value) || playerId.v
 const player = ref<PlayerDetail | null>(null)
 const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
+/** A5：AI 请求进行中标志——卡片位显示「AI 分析中…」占位，消除慢网络下的布局跳动 */
+const analysisLoading = ref(false)
 const held = ref<number | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -57,8 +59,10 @@ async function loadCore(silent = false) {
   if (invalidId.value) {
     error.value = '选手编号无效，请从市场页选择选手'
     loading.value = false
+    analysisLoading.value = false
     return
   }
+  analysisLoading.value = true
   checkBackendHealth()
   try {
     const id = playerId.value
@@ -86,6 +90,8 @@ async function loadCore(silent = false) {
     if (token === requestToken) analysis.value = a
   } catch {
     if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+  } finally {
+    if (token === requestToken) analysisLoading.value = false
   }
 }
 
@@ -143,6 +149,9 @@ watch(playerId, () => loadCore())
         <p class="ai-reason">{{ analysis.reason }}</p>
         <p class="disclaimer">{{ analysis.disclaimer }}</p>
       </section>
+      <div v-else-if="analysisLoading" class="ai-card ai-pending" role="status">
+        <LoadingState>AI 分析中…</LoadingState>
+      </div>
       <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
 
       <h3>交易</h3>
@@ -248,6 +257,11 @@ h3 {
   border-radius: 12px;
   padding: 16px;
 }
+.ai-pending {
+  min-height: 96px;
+  display: flex;
+  align-items: center;
+}
 .ai-head {
   display: flex;
   gap: 10px;
@@ -296,5 +310,19 @@ h3 {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* A4 响应式（≤720px）：头部纵向堆叠、价格字号收敛 */
+@media (max-width: 720px) {
+  .head {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .price-box {
+    text-align: left;
+  }
+  .price {
+    font-size: 24px;
+  }
 }
 </style>

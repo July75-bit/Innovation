@@ -41,3 +41,8 @@ body {
 a {
   color: inherit;
 }
+/* A6 无障碍：键盘操作时显示红色焦点环（呼应黑红主题点缀色） */
+:focus-visible {
+  outline: 2px solid var(--up);
+  outline-offset: 2px;
+}

@@ -154,8 +154,12 @@ function tipStyle(d: { x: number; y: number }) {
             :cx="d.x"
             :cy="d.y"
             r="10"
+            tabindex="0"
+            :aria-label="`第 ${i + 1} 个价格点：${dateTime(d.ts)}，${money(d.price)} 币，${d.reason}`"
             @mouseenter="hoverIdx = i"
             @mouseleave="hoverIdx = null"
+            @focus="hoverIdx = i"
+            @blur="hoverIdx = null"
           >
             <title>{{ dateTime(d.ts) }} · {{ money(d.price) }} 币 · {{ d.reason }}</title>
           </circle>
