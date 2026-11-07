@@ -1,5 +1,14 @@
 <script setup lang="ts">
 /**
+ * 白话导读：持仓页（/positions）= 我的股票列表：持有几只、成本多少、现价多少、赚还是亏。
+ *
+ * 数据来自两个接口并发请求：GET /api/positions（明细）和 GET /api/account（顶部四个汇总数字）。
+ * 盈亏(profit)和盈亏率(profit_pct)由后端算好，这里不重算——避免两边数字打架。
+ *
+ * 小细节：余额刷新失败不影响持仓展示（Promise.all 里给 refreshAccount 挂了 catch），
+ * 窄屏时表格靠 CSS 自动变卡片（每列的 data-label 属性就是卡片上显示的字段名）。
+ */
+/**
  * 持仓页（路由 /positions）：GET /api/positions（§4.6）+ GET /api/account（§4.5）
  * profit / profit_pct 直接用后端算好的值。
  * 信息架构：先看总览（余额/市值/总资产/收益），再看明细表；窄屏自动转卡片。

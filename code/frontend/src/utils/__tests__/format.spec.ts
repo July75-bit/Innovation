@@ -1,3 +1,9 @@
+/**
+ * 白话导读：单元测试——验证 src/utils/format.ts 那几个格式化函数没写坏。
+ * describe = 一组用例的名字，it = 一条具体断言，expect(实际).toBe(期望)。
+ * 跑：npm run test:unit。这类文件不会被打包进线上页面，只在开发时执行。
+ */
+
 import { describe, expect, it } from 'vitest'
 import { dateTime, money, pct, trendClass } from '../format'
 

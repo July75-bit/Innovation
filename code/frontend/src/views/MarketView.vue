@@ -1,5 +1,17 @@
 <script setup lang="ts">
 /**
+ * 白话导读：默认首页（URL 是 /），把 8 名选手做成一张可搜索、可排序、可筛选的行情列表。
+ *
+ * 页面套路（本项目四个数据页都一样，看懂一个就全懂）：
+ *   1) 三个响应式变量：players(数据)、loading(转圈中)、error(错误文案)；
+ *   2) onMounted(load)：一进页面就调 load()；
+ *   3) load() 里 api.listPlayers() 拿数据，成功填 players，失败把中文 message 填进 error；
+ *   4) <template> 用 v-if / v-else-if 四选一：骨架屏 / 错误重试 / 空列表 / 正常表格；
+ *   5) 搜索和排序是 computed(filtered)：纯前端展示过滤，不发请求、不改原始数据。
+ *
+ * 涨跌幅、评分都是后端算好的，这里只做展示；点一行跳到详情页 /players/编号。
+ */
+/**
  * 市场页（路由 /）：GET /api/players（契约 §4.2）。
  * change_pct 用后端算好的值；rating 必须标注「模拟」。
  * 界面设计层：搜索 / 排序 / 状态筛选让"找到目标选手"这一步最短；
