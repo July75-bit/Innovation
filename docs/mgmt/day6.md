@@ -9,8 +9,8 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 / 工作区 | `develop` = `origin/develop` = `3026d8a`（17:20 已推齐），工作区干净 |
-| 测试 / CI | **176 passed / 0 skipped**；覆盖率 **98%**；CI 最新 **run #104（`3026d8a`）三 job 绿** |
+| 分支 / 工作区 | `develop` 合并推送后与 `origin/develop` 齐（本机先领先 1 个合并提交，`4c9e177` 前） |
+| 测试 / CI | **178 passed / 0 skipped**（单元 165 / 集成 13；本机复核）；覆盖率 **98%**；CI 最新 **run #104（`3026d8a`）三 job 绿**，该 run 时点 176 条，差值为随后合入的 2 条 URL/引号单测 |
 | 覆盖率 | **98%**（956 语句 / 17 未覆盖，要求 ≥60%；2026-11-07 17:00 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
@@ -88,7 +88,7 @@
 | --- | --- | --- | --- |
 | D-1 | 导出 `docs/presentation/defense.pdf` | 与 `slides.md` 一致 | ✅ 16 页 / 653 KB（2026-11-07 含 01B/01C/01D 重导），`build_deck.py` 可重生成 |
 | D-2 | 文档收口：`user_manual` 线上地址 / `compliance` §4.1/§4.2 / `day5.md` 勾选 / `prototype_review` 索引 | 无空白、索引齐 | ✅ |
-| D-3 | 回归 + CI：176 条 + 三 job 绿 + `test_report` 结论 | run #104 绿 | ✅ 本机 176 passed / 覆盖率 98%；CI run #104（`3026d8a`）success |
+| D-3 | 回归 + CI：178 条 + 三 job 绿 + `test_report` 结论 | run #104 绿 | ✅ 本机 **178 passed** / 覆盖率 98%；CI **run #104（`3026d8a`）success**（该 run 时点 176 条，随后合入 2 条 URL/引号单测） |
 | D-4 | 合并后跑一次线上全链路（market→detail→buy→positions→trades） | 有截图或记录 | 🟡 未单独留证据，今天 A-8/A-7 覆盖一次即可 |
 | **D-5** | 主讲 01 / 03 / 08 / 09 / 10 页 | 8:00 ±30s | ⬜ |
 | **D-6** | 控时：演示 2:00 提示、问答 5:00 收口 | 全程 ≤15:00 | ⬜ |
@@ -134,7 +134,7 @@ conda activate playerstock
 # 若不想依赖激活，改用绝对路径最稳：
 #   & "D:\miniconda\envs\playerstock\python.exe" -m pytest -q -p no:warnings
 
-# ② 全量回归：176 条，约 2 秒
+# ② 全量回归：178 条，约 2 秒
 python -m pytest -q -p no:warnings
 
 # ③ 指着一个 P0 缺陷讲：测试名就是场景
@@ -145,7 +145,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 
 | 步骤 | 说一句 |
 | --- | --- |
-| ② | "176 条，0 跳过——不是没写完的占位。" |
+| ② | "178 条，0 跳过——不是没写完的占位。" |
 | ③ | "并发卖出超卖是 P0，判断写进 SQL 的 WHERE，两条连接同时卖只成一笔。" |
 | ④ | "核心逻辑 92%，课程要求 60%。这是刚才那条命令的输出渲染。" |
 
@@ -161,7 +161,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 | 4 | 演示 2:00 内完成，含错误分支 | 彩排记录 | A |
 | 5 | 线上 `/api/health` 200、8 选手、余额 5000.00 | 截图 | B |
 | 6 | `deployment.md` §5 检查单 **37/37** | 全勾 | B |
-| 7 | `test_report.md` 结论 =「可交付」；176 passed | 文档 + CI run #95 | D |
+| 7 | `test_report.md` 结论 =「可交付」；178 passed | 文档 + CI run #95 | D |
 | 8 | 彩排记录写进 `docs/presentation/README.md` | 两次记录 | D |
 | 9 | `daily_summary.md` 第 6 天段 | 有实质内容 | D |
 

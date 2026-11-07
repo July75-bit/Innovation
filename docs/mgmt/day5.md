@@ -15,7 +15,7 @@
 | 数据库 | Render **PostgreSQL 18**，服务 `playerstock-db`（**2026-11-23 到期**） | `deployment.md` §6 |
 | 线上数据 | 9 轮配方，`/prices` **11 点/人**（sh1ro 暂停 2 点）、末点 = `current_price` | `test_report.md` §6 |
 | 线上验收 | **TC-401~406 全部 ✅**（TC-405 双侧成立：服务端 200 + 前端 bundle 已含 `/market → /` 重定向，BUG-11 修复已上线） | `test_report.md` §6 |
-| 自动化测试 | **137 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，第 5 天又 +17 条：CORS 8 + 只读自检 3 + 错误文案 6） | `test_report.md` §1 |
+| 自动化测试 | **178 passed / 0 skipped**（第 5 天当时 137：含 CORS 8 + 只读自检 3 + 错误文案 6；第 6 天再补 39 条守卫用例并合入，现 178 = 单元 165 + 集成 13） | `test_report.md` §1 |
 | T5 任务 | **7 完成（T5-01~07）**，只剩 **T5-08 答辩三件套** | `milestones.md` §3 |
 | 优化迭代 | 🟡 按课程「三层模型 + 用户体验检查清单」排查出 8 条缺口（见 §3） | 本文 §3 |
 | 外部交叉原型测试 | 🟡 内部互测已做，**外部组未约**（三层模型的"测试反馈"回环未闭合） | `cross_test.md` §4 |
@@ -46,7 +46,7 @@
 | **A 倪颢容** | 部署 ✅ / 完善作品 ✅（D 代做） | 无剩余；**演示前请 A 按 `demo-script.md` 走查一遍窄屏与键盘操作** |
 | **B 胡德昊** | 部署 ✅ / 运维收尾 ✅ | 无剩余：B6（CORS 白名单，线上复验）、B7（证据入库 `evidence/online/backend-debug-db.md`）、B8（回滚演练 `deployment.md` §8.1）、B9（线上性能实测） |
 | **C 刘宏** | ✅ 100% | 无（第 6 天只需复核定价页） |
-| **D 王泽棠** | 文档 ✅ / 收尾 ✅ | **D7 ✅ / D8 ✅**（PDF 已导出；回归 137 条绿，CI run #80 三 job 绿） |
+| **D 王泽棠** | 文档 ✅ / 收尾 ✅ | **D7 ✅ / D8 ✅**（PDF 已导出；回归 137 条绿 → 第 6 天补测后 178，CI run #80/#95 三 job 绿） |
 
 **第 5 天关闭条件**：A4+A5+A6 ✅ + B6+B7+B8（CORS 决策／2 张截图／回滚演练）+ D7 ✅ D8 ✅ → 才进入第 6 天。
 > 现状（2026-11-07）：**A 侧三条、B 侧三项（B6/B7/B8）、D 侧两项均已完成**；只剩 push 后 CI 三 job 复核。
@@ -100,7 +100,7 @@
 | D5 | 隐私文案稿 / 交叉测试延期说明 / `user_manual` 线上地址 | ✅ | `compliance.md` §4.2、`cross_test.md` §4、`user_manual` §2 |
 | D6 | 答辩三件套材料（`slides.md`/`demo-script.md`/`qa.md`） | ✅ | 15 页 + 20 问 |
 | **D7** | **导出 `docs/presentation/defense.pdf`** | ✅ | **16 页 / 653 KB**（2026-11-07 含 01B/01C/01D 重导），与 `slides.md` 内容一致；源文件 `build_deck.py` + `defense.html` 一并入库，可重生成 |
-| **D8** | **回归 + CI 复核**（137 条 + 三 job 绿 + `test_report` 结论） | ✅ | 本机 **137 passed / 0 skipped** + ruff 三类门槛全绿；**CI run #80（`1a821f6`）三 job success** |
+| **D8** | **回归 + CI 复核**（当时 137 条 + 三 job 绿 + `test_report` 结论） | ✅ | 本机 **137 passed / 0 skipped**（第 6 天补测后 **178**）+ ruff 三类门槛全绿；**CI run #80（`1a821f6`）三 job success**，第 6 天 run #95 亦绿 |
 
 > 详细的任务定义与状态见 `docs/mgmt/day6.md` §2（本节只保留状态总览，避免两处口径漂移）。
 
@@ -156,7 +156,7 @@
 | 8 | 子路由刷新不 404 | ✅ | TC-405（`/players/1` → 200） |
 | 9 | 前端产物/源码无写死地址、无密钥 | ✅ | CI 地址检查 + `grep` |
 | 10 | `deployment.md` 定稿 | ✅ | 地址/环境变量/回滚/已知问题齐 |
-| 11 | 本机 137 passed / 0 skipped | ✅ | `test_report.md` §1 |
+| 11 | 本机 137 passed / 0 skipped（现 178） | ✅ | `test_report.md` §1 |
 | 12 | 外部交叉原型测试记录 | 🟡 | 待约组或写延期 |
 | 13 | 答辩三件套 + 彩排 | 🟡 | 材料齐（§6）；**彩排 0 次**，第 6 天关闭条件 |
 
@@ -181,13 +181,13 @@
 - [x] 线上证据归档 → `docs/acceptance/evidence/online/`
 - [x] `deployment.md` 定稿（环境变量、检查单、回滚、已知问题）
 - [x] 线上数据：每名可交易选手 ≥10 个价格点（sh1ro 2 点，属预期）
-- [x] 本机/CI 137 passed / 0 skipped
+- [x] 本机/CI 137 passed / 0 skipped（第 6 天补测后 **178**）
 - [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 15 页 + `defense.pdf` 16 页已导出）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）
 - [x] **优化迭代 P0 三条**（响应式 / AI 思考中 / 无障碍最小集）→ D 代实现，CI run #70 前端 build 绿（`4e45433`）
 - [x] `prototype_review.md`（三层模型 + 检查清单对照）→ `docs/requirements/prototype_review.md`
 - [x] 外部交叉原型测试：**延期说明 + 补救方案**已写入 `cross_test.md` §4（不伪造记录）
 - [x] `user_manual.md` 终稿（线上地址、本地备用、5 条已知问题）／`compliance.md` §4.2 隐私文案稿
-- [x] CI 三 job 绿（run #80 `1a821f6` success；本机 137 条 + ruff 亦绿）
+- [x] CI 三 job 绿（run #80 `1a821f6` success；本机 137 条 → 第 6 天 178 条 + ruff 亦绿）
 
 > **第 5 天关闭条件（Hard Gate）**：P0 三条合入 ✅ + 上述勾选全绿 + CI 绿（push 后复核）→ 才进入第 6 天。
 > 未勾项只剩「CI 三 job 复核」；B 侧运维三项（CORS 口径、日志/Postgres 证据、回滚演练）**均已完成**
