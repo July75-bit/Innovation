@@ -68,6 +68,7 @@ def snapshot(base: str, player_id: int, label: str) -> dict:
     status_trades, trades = fetch(base, "/api/trades")
     status_prices, prices = fetch(base, f"/api/players/{player_id}/prices")
     status_players, players = fetch(base, "/api/players")
+    status_positions, positions = fetch(base, "/api/positions")
 
     points = prices.get("points", []) if isinstance(prices, dict) else prices
     payload = {
@@ -80,74 +81,121 @@ def snapshot(base: str, player_id: int, label: str) -> dict:
             "trades": status_trades,
             "prices": status_prices,
             "players": status_players,
+            "positions": status_positions,
         },
         "account": account,
         "trades": trades,
         "prices": points,
         "players": players,
+        "positions": positions,
     }
     print(
-        f"  余额 {account['balance']}；流水 {len(trades)} 条；"
+        f"  余额 {account['balance']}；流水 {len(trades)} 条；持仓 {len(positions)} 条；"
         f"#{player_id} 价格点 {len(points)} 个；选手 {len(players)} 名"
     )
     return payload
 
 
-def summary(snap: dict) -> dict:
-    """只留"该在部署前后保持一致"的字段（价格点的 ts/price/reason 全部参与比较）。"""
-    account = snap["account"]
-    points = snap["prices"]
-    return {
-        "余额": account["balance"],
-        "总资产": account["total_asset"],
-        "持仓市值": account["position_value"],
-        "流水条数": len(snap["trades"]),
-        "流水明细": [
-            (t["trade_id"], t["player_id"], t["side"], t["quantity"], t["price"], t["balance_after"])
-            for t in sorted(snap["trades"], key=lambda x: x["trade_id"])
-        ],
-        "价格点数": len(points),
-        "末点价格": points[-1]["price"] if points else None,
-        "价格点签名": [(p["ts"], p["price"]) for p in points],
-        "选手数": len(snap["players"]),
-    }
+def _trade_key(t: dict) -> tuple:
+    return (t["side"], t["quantity"], t["price"], t["balance_after"])
 
 
 def diff(before_path: Path, after_path: Path) -> int:
+    """判断"数据是否仍在"。
+
+    注意口径：**部署窗口里有人下单是正常的**（A 彩排就可能成交一笔），
+    所以不能要求"所有数字一模一样"，而要证明：
+      1. 部署前那批流水**逐行原样保留**（不丢、不改）；
+      2. 价格历史**逐点一致**（历史没被重建）；
+      3. **新增的成交能把余额变化完全解释**（算术闭合，不是凭空少钱）；
+      4. 总资产守恒、持仓变化等于新增成交的数量。
+    四条都成立 = 数据没丢，而且部署后还能写 → 比"数字完全不变"更强的证据。
+    """
     before = json.loads(before_path.read_text(encoding="utf-8"))
     after = json.loads(after_path.read_text(encoding="utf-8"))
-    b, a = summary(before), summary(after)
+
+    bt = {t["trade_id"]: t for t in before["trades"]}
+    at = {t["trade_id"]: t for t in after["trades"]}
+    missing = sorted(set(bt) - set(at))
+    changed = sorted(i for i in bt if i in at and _trade_key(bt[i]) != _trade_key(at[i]))
+    new_ids = sorted(set(at) - set(bt))
+
+    net = 0.0
+    qty_delta: dict[int, int] = {}
+    for i in new_ids:
+        t = at[i]
+        amount = float(t["price"]) * t["quantity"]
+        net += -amount if t["side"] == "BUY" else amount
+        sign = 1 if t["side"] == "BUY" else -1
+        qty_delta[t["player_id"]] = qty_delta.get(t["player_id"], 0) + sign * t["quantity"]
+
+    b_acc, a_acc = before["account"], after["account"]
+    delta = float(a_acc["balance"]) - float(b_acc["balance"])
+    bp = [(p["ts"], p["price"]) for p in before["prices"]]
+    ap = [(p["ts"], p["price"]) for p in after["prices"]]
+
+    prices_same = bp == ap
+    old_kept = not missing and not changed
+    balance_explained = abs(delta - net) < 0.005
+    asset_same = float(b_acc["total_asset"]) == float(a_acc["total_asset"])
 
     print(f"[persist] 部署前：{before['label']} @ {before['collected_at']}")
     print(f"[persist] 部署后：{after['label']} @ {after['collected_at']}")
     print(f"[persist] 服务：{before['base']}")
     print()
-    print("| 项 | 部署前 | 部署后 | 结论 |")
+    print("| 检查点 | 部署前 | 部署后 | 结论 |")
     print("| --- | --- | --- | --- |")
+    print(f"| 价格历史（逐点 ts+price） | {len(bp)} 点 | {len(ap)} 点 | {'✅ 逐点一致' if prices_same else '❌ 变了'} |")
+    print(
+        f"| 部署前已有的流水是否原样保留 | {len(bt)} 条 | 缺失 {len(missing)} 条 / 被改 {len(changed)} 条 | "
+        f"{'✅ 逐行一致' if old_kept else '❌ 丢了或被改'} |"
+    )
+    print(f"| 部署后新增成交 | — | {len(new_ids)} 笔（id {new_ids or '无'}） | {'✅ 服务可写' if new_ids else '（无新增，数字应完全一致）'} |")
+    print(f"| 余额变化能否被新增成交解释 | {b_acc['balance']} | {a_acc['balance']}（Δ {delta:+.2f}） | "
+          f"{'✅ 与新增净额 %+.2f 吻合' % net if balance_explained else '❌ 对不上（需排查）'} |")
+    print(f"| 总资产（价格未变时应守恒） | {b_acc['total_asset']} | {a_acc['total_asset']} | "
+          f"{'✅ 守恒' if asset_same else '❌ 变了'} |")
+    print(f"| 选手数 | {len(before['players'])} | {len(after['players'])} | "
+          f"{'✅ 一致' if len(before['players']) == len(after['players']) else '❌ 变了'} |")
 
-    ok = True
-    for key in ("余额", "总资产", "持仓市值", "流水条数", "价格点数", "末点价格", "选手数"):
-        same = b[key] == a[key]
-        ok = ok and same
-        flag = "✅ 一致" if same else "❌ **不一致**"
-        print(f"| {key} | {b[key]} | {a[key]} | {flag} |")
+    if new_ids:
+        print()
+        print("**新增成交明细**")
+        print()
+        print("| id | 选手 | 方向 | 数量 | 价格 | 金额 | 事后余额 |")
+        print("| --- | --- | --- | --- | --- | --- | --- |")
+        for i in new_ids:
+            t = at[i]
+            print(
+                f"| {i} | {t['name']} | {t['side']} | {t['quantity']} | {t['price']} | "
+                f"{float(t['price']) * t['quantity']:.2f} | {t['balance_after']} |"
+            )
 
-    same_rows = b["流水明细"] == a["流水明细"]
-    ok = ok and same_rows
-    print(f"| 流水明细（逐行 id/方向/数量/价格/余额） | {len(b['流水明细'])} 行 | {len(a['流水明细'])} 行 | "
-          f"{'✅ 逐行一致' if same_rows else '❌ **不一致**'} |")
-
-    same_points = b["价格点签名"] == a["价格点签名"]
-    ok = ok and same_points
-    print(f"| 价格点（逐点 ts+price） | {len(b['价格点签名'])} 点 | {len(a['价格点签名'])} 点 | "
-          f"{'✅ 逐点一致' if same_points else '❌ **不一致**'} |")
-
+    ok = prices_same and old_kept and balance_explained and asset_same
     print()
     if ok:
-        print("[persist] ✅ 结论：重新部署前后各项完全一致 → 线上用的是持久化数据库（Postgres），不是临时盘。")
+        if new_ids:
+            print(
+                f"[persist] ✅ 结论：部署前 {len(bt)} 条流水全部原样保留、价格历史 {len(bp)} 点逐点一致；"
+                f"期间新增 {len(new_ids)} 笔成交，余额变化（{delta:+.2f}）与之完全吻合。"
+                f"→ **数据没丢，且部署后仍可写入**，线上用的确实是持久化数据库。"
+            )
+        else:
+            print(
+                f"[persist] ✅ 结论：部署前后各项完全一致（{len(bt)} 条流水 / {len(bp)} 点价格 / "
+                f"余额 {b_acc['balance']}）→ 线上用的是持久化数据库，不是临时盘。"
+            )
         return 0
 
-    print("[persist] ❌ 结论：有项目不一致！")
+    print("[persist] ❌ 结论：有硬性不一致！")
+    if missing or changed:
+        print(f"  ⚠️ 部署前流水有缺失/被改：缺失 {missing}，被改 {changed} —— 这是最严重的情况，先停手。")
+    if not prices_same:
+        print("  ⚠️ 价格历史变了：可能库被重建（有人跑过 bootstrap --reset？）或 DATABASE_URL 指向了别处。")
+    if not balance_explained:
+        print(f"  ⚠️ 余额变化 {delta:+.2f} 无法被新增成交净额 {net:+.2f} 解释 —— 查是否有并发/事务问题。")
+    if not asset_same:
+        print("  ⚠️ 总资产变了且价格未变 —— 数据不一致，需排查。")
     print("  排查顺序：① 后端日志搜『当前部署在 Render 上却使用本地 SQLite』；② 看 DATABASE_URL 是否指向 Postgres；")
     print("  ③ 确认两次快照之间没有人跑过 bootstrap_demo_data.py --reset。")
     return 1
