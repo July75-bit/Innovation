@@ -163,6 +163,15 @@
 > 背景：第 5 天收尾的**代码与文档都已完成**，只差两份「截图证据」。它们不影响作品能不能跑，但影响答辩时能不能拿出证据链。
 > 两件都不需要本地环境，全部用**线上地址** + 浏览器 DevTools 完成。
 
+> **关于 A 提的提交拆分（A5 → A6 → A4）**：这个拆分**已经在 `develop` 上了**，就是 A 自己的两个提交：
+> `5a96a44 feat(frontend): AI 分析中占位态 + 折线图键盘无障碍（A5/A6）`（A5/A6 同文件、一次提交）、
+> `9f10c52 feat(frontend): ≤720px 响应式——导航折叠、表格转卡片、375px 走查证据（A4）`（A4 单独、便于评审）。
+> **不需要 revert 重提**——重做会多出 2 个 revert + 2 个 feat 提交，历史反而更长，且在冻结期动前端代码有回归风险。
+>
+> 残留一处小差异（不影响功能，冻结期不动）：`PlayerDetailView.vue` 用的是 `960px` 断点，
+> `TradePanel / MarketView / PositionsView / TradesView` 用 `720px`，`App.vue` 走的是 `menu-toggle` 类切换。
+> 375px 下三者都命中；被问就答"详情页信息密度不同，单独取了断点"。
+
 ### 7.1 给 A 的委派单：P0 三条的视觉证据（约 40 分钟）
 
 **为什么要这个**：`day5.md` §3 的 P0 三条（响应式 / AI 思考中 / 键盘可达）是 D 代写的代码，CI 只能证明「能编译」，证明不了「真的生效」。所以需要 3 张真实浏览器截图，同时这也是 A 第一次亲眼确认这三条。
@@ -174,15 +183,16 @@
 | **① 响应式** | 按 `F12` 打开 DevTools → 点左上「设备切换」图标（或 `Ctrl+Shift+M`）→ 顶部选 **iPhone SE / 375×667** → 依次打开 `/`、`/players/1`、`/positions` | 三张：市场页（导航折行 + 表格）、详情页（标题/价格上下排）、持仓页（表格可横向滚动）。**页面上不能出现横向滚动条** |
 | **② AI「分析中」** | DevTools → `Network` 面板 → 限速选 **Fast 3G**（别用 Slow 3G，会直接超时）→ 硬刷新 `/players/1` → **立刻**截 AI 卡片位置 | 卡上显示「**AI 分析中…（行情与交易不受影响）**」。接口线上约 200ms，限速后有几秒窗口，够截 |
 | **③ 键盘可达** | 关掉设备模式，在 `/players/1` 只按 `Tab`：焦点会依次走到导航 → 折线图数据点（有描边焦点框）→ 每点停一下会出 tooltip | 两张：① 焦点落在某个数据点上（能看到 `:focus-visible` 描边）；② tooltip 显示「时间 / 价格 / reason」。**全程不碰鼠标** |
+| **④ A2/A3 线上走查 + 四张 F5（与上面一次做完）** | CORS 已于 2026-11-07 上午线上复验生效，**不用再等**。依次按 `F5` 刷新四条路由：`/market`、`/players/1`、`/positions`、`/trades` | 四张：每张的地址栏 + 页面内容都在，证明 SPA rewrite 与深链刷新不 404（TC-405） |
 
 **红线**：不允许用原型页 `docs/software/prototype/index.html` 顶替——那会被一眼看穿，而且证明不了线上生效。
 
 **落地**：
 
-1. 三张图存进 `docs/acceptance/evidence/`，命名 `23-responsive-375.png` / `24-ai-loading.png` / `25-keyboard-focus.png`；
-2. `docs/acceptance/evidence/README.md` 末尾「汇报证据」表下补 3 行（文件 / 内容 / 关键断言）；
-3. `docs/mgmt/day5.md` §3.2 表格第 1/2/3 行的「验收方式」列，把「CI 前端 build 绿；演示前 A 走查」改成截图链接；
-4. 做完在群里说一句「P0 三条已亲验」，并在 day6.md A-9 打勾。
+1. 图存进 `docs/acceptance/evidence/`：`23-responsive-375.png` / `24-ai-loading.png` / `25-keyboard-focus.png`，F5 四张用 `26-f5-market.png` / `27-f5-player.png` / `28-f5-positions.png` / `29-f5-trades.png`；
+2. `docs/acceptance/evidence/README.md` 末尾「汇报证据」表下补 7 行（文件 / 内容 / 关键断言）；
+3. `docs/mgmt/day5.md` §3.2 表格第 1/2/3 行的「验收方式」列换成截图链接；§2.1 的 A2/A3 两行由 🟡 改 ✅（写「2026-11-07 线上走查 + 4 张 F5」）；
+4. 做完在群里说一句「P0 三条已亲验、四条路由刷新正常」，并在 day6.md A-9 打勾。
 
 **坑**：设备模式下截图会带上手机边框，建议用 DevTools 的「Capture screenshot」而不是系统截图，尺寸干净。
 
