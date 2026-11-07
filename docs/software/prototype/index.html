@@ -141,7 +141,7 @@
 <script>
 /* ============================================================
  * PlayerStock 交互原型（静态单页，mock 数据）
- * 数据来源：data/seed_players.json（8 名 CS2 选手，身份真实、价格/评分模拟）
+ * 数据来源：data/seed_players.json（16 名 CS2 选手 / 8 支战队，身份真实、价格/评分模拟；页面内仍为 8 人静态演示稿）
  * 与真实实现的关系：本文件只验证交互与信息架构，不调接口；
  * 字段名严格使用 player_id / current_price / prev_price / change_pct / rating。
  * ==========================================================*/
@@ -313,7 +313,7 @@ function renderMarket() {
   return `
     <section class="card">
       <h2>市场行情</h2>
-      <p class="sub">8 名 CS2 选手 · 价格为项目模拟值 · 点任意一行查看详情与 AI 建议</p>
+      <p class="sub">演示稿（8 人静态样本）· 价格为项目模拟值 · 点任意一行查看详情与 AI 建议</p>
       <div class="table-wrap">
         <table>
           <thead>

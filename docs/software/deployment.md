@@ -101,7 +101,7 @@
    Remove-Item Env:\DATABASE_URL   # 用完清掉，别让本地测试连到线上库
    ```
 
-3. 刷新线上前端 → 能看到 8 名选手、进详情页有 10+ 个价格点即成功
+3. 刷新线上前端 → 能看到 16 名选手、进详情页有 10+ 个价格点即成功
 4. 依赖已就绪：`scripts/seed_db.py`（B，第 1 天）、`scripts/update_prices.py`（B，第 3 天）
    均已实现；`bootstrap_demo_data.py`（B，第 4 天）只是把这两步 + C 的 `simulate_match.py`
    串成一条命令。只想补价格不动库时加 `--keep`
@@ -172,7 +172,7 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 | 接口 | 结果 |
 | --- | --- |
-| `GET /api/players` | 8 名选手 |
+| `GET /api/players` | 16 名选手 |
 | `GET /api/players/1/prices` | **11 个点**，`ts` 升序（`2026-10-24T08:20:21Z` → `2026-11-09T00:00:00Z`），末点 `108.75` = `current_price`，末点 `reason` 含"得分"与 `S=` |
 | 其余 7 人点数 | 11 / 11 / 11 / 10 / 11 / 2 / 11（`ropz` 10、`sh1ro` 2 属预期） |
 | `GET /api/health` | `{"status":"ok"}` |
