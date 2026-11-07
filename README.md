@@ -79,11 +79,12 @@
 
 ### 0.1 编辑器与代码质量（VS Code，建议全员照做）
 
-仓库里已带团队共享配置，**打开项目后照下面三步做一次**即可（不必改全局设置）：
+仓库里已带团队共享配置，**打开项目后照下面四步做一次**即可（不必改全局设置）：
 
 1. 装推荐扩展：VS Code 会弹「是否安装推荐扩展」→ 允许；或手动装 **Python / Pylance / Ruff**（前端再加 **Prettier / Vue - Official / ESLint**）。
-2. 装本地 linter：`pip install ruff`（装进你用的 Python 环境，插件才找得到）。
-3. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
+2. 选对解释器：点右下角 Python 版本 → 选**项目环境**（conda `playerstock`，或下面「启动后端」里建的 `.venv`），别停在 base。停 base 时 Pylance 会误报「无法解析导入 sqlalchemy」——那是环境不对不是代码问题（`ai/context.py` 的 `sqlalchemy` 是刻意的延迟导入，无依赖机器也能 import 本模块）。
+3. 本地 linter：**不需要单独 `pip install ruff`**——Ruff 扩展自带 ruff 0.17.4，装完扩展即生效；想在终端手跑 `ruff check` 再 `pip install ruff`。
+4. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
 
 常用操作：`Ctrl+Shift+M` 看问题面板、光标处 `Ctrl+.` 触发 Quick Fix。
 写了超过 100 行、或改了交易/定价/AI 契约/表结构的改动，提交前按 [`docs/mgmt/code_review_template.md`](docs/mgmt/code_review_template.md) 找一位队友交叉评审。
@@ -212,8 +213,8 @@ python -m pytest
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
 | [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)） | B + D |
-| [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)） | D |
-| [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告 | D |
+| [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单（含第 6 天 [`day6.md`](docs/mgmt/day6.md)）、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)） | D |
+| [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告、**生命周期问题汇总**（[`lifecycle_issues.md`](docs/acceptance/lifecycle_issues.md)，汇报 3.4）、验收证据 [`evidence/`](docs/acceptance/evidence/README.md) | D |
 | [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |
 | [`docs/presentation/`](docs/presentation/) | 答辩幻灯片（`slides.md` / `defense.pdf` / `demo-script.md` / `qa.md`） | 全员 |
 | [`docs/retrospection/`](docs/retrospection/) | 每日站会记录与复盘 | 全员 |

@@ -164,3 +164,23 @@
 - [ ] 全部 TC-0xx（交易规则）通过
 - [ ] 全部 TC-4xx（部署）通过
 - [ ] 线上演示流程完整走通 ≥2 次
+
+## 7. 测试用例设计方法与门禁对照（课件 p.131 / 138 / 161 / 177）
+
+> 本节回答"用例是怎么设计出来的"——方法都已在代码里使用，此处按课件术语点名，答辩被问直接指表。
+
+| 课件方法 | 本项目用在哪 | 代表用例（可回查） |
+| --- | --- | --- |
+| **等价类划分** | 买入数量：有效 1–50 / ≤0、非整数 / 超上限；余额：充足 / 恰好 / 不足；选手：存在 / 不存在 | `test_trades_rule.py`（含 parametrize）、`test_api_ai.py` 999→404 |
+| **边界值分析** | 持仓第 1 / 50 / 51 股；卖光最后一笔（DELETE 分支，对应 BUG-03）；涨跌 clamp ±20% 与 floor 1.0 | `test_trades_rule.py`、`test_pricing.py` 10 条、`test_sell_normal` |
+| **判定表** | 买入校验顺序组合（选手→数量→可交易→余额→上限），锁定 BUG-02 的回归 | `test_buy_checks_balance_before_position_limit` |
+| **场景法（关键业务流）** | 查行情→买 2 股→持仓→卖 1 股→流水，逐步核对金额；TC-205：AI 调用 3 次前后账户完全不变 | `tests/integration/test_e2e_flow.py` 2 条 |
+| **参数化测试** | 3 个文件用 `pytest.mark.parametrize`（连接串变体 / 异常矩阵 / 交易规则） | `test_config_db_url.py`、`test_core_exceptions.py`、`test_trades_rule.py` |
+| **Mock 与 Stub** | `analyze(ctx, chat=假client)` 注入，无网络无密钥覆盖 合法输出 / 脏输出 / 超时 三态 | `test_llm_agent.py` 13 条、`test_api_ai.py` 7 条 |
+| **状态迁移** | 选手 trading↔suspended：暂停拒买卖、recalc 跳过暂停选手 | `test_suspended_players_are_skipped`、`test_core_exceptions.py` |
+
+**金字塔配比**（课件 p.163：单元多、集成适量、E2E 少量）：自动化 137 条中单元 124 / 集成 13（≈90/10），另前端 Vitest 12 条、浏览器 E2E 以 `evidence/01~16` 人工验收。单元层为毫秒级、不依赖外部服务——符合"倒金字塔"反例的规避。
+
+**覆盖率**（课件 p.177 任务 4：核心逻辑 ≥60%）：实测 **91%**（839 语句 / 79 未覆盖），复跑命令见 `CodeReview.md` §5。
+
+**质量门禁对照**（课件 p.138 十条）：构建 ✅ / 单元测试 ✅ / 关键集成 ✅ / 静态分析 ✅（ruff 分档）/ 代码评审 ✅（模板+记录）/ 无敏感信息 ✅（CI 地址检查+仓库卫生）/ 变更说明 ✅（commit 规范）/ 文档更新 ✅（deliverables job）；**依赖漏洞扫描（pip-audit）未接**——如实列入已知限制（6 天课程版，冻结期不加门禁）。

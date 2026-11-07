@@ -175,6 +175,9 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
+            # opencode.ai 的 Cloudflare 会按客户端指纹屏蔽 urllib 默认 UA（实测 403/1010，
+            # 换任意非默认 UA 即 200）；这里显式声明自己是谁。
+            "User-Agent": "playerstock-backend/1.0 (+course project; urllib)",
         },
         method="POST",
     )

@@ -1,14 +1,14 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（`slides.md` 14 页讲稿 / `demo-script.md` / `qa.md` 20 问 / **`defense.pdf` 13 页已导出**）；待**全员彩排**
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（`slides.md` 15 页讲稿 / `demo-script.md` / `qa.md` 20 问 / **`defense.pdf` 16 页已导出**）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
 
 ## 文件清单（已产出）
 
 | 文件 | 内容 | 负责人 | 状态 |
 | --- | --- | --- | --- |
-| [`slides.md`](slides.md) | 8 分钟幻灯片源稿（Slidev markdown，14 页，含逐页讲稿与时间戳） | D 主笔 | ✅ |
-| [`defense.pdf`](defense.pdf) | **可直接投屏的 PDF（13 页，1280×720 横版）** | D | ✅ |
+| [`slides.md`](slides.md) | 8 分钟幻灯片源稿（Slidev markdown，15 页，含逐页讲稿与 8:00 时间轴） | D 主笔 | ✅ |
+| [`defense.pdf`](defense.pdf) | **可直接投屏的 PDF（16 页，1280×720 横版）** | D | ✅ |
 | [`defense.html`](defense.html) | PDF 的源文件（自包含，浏览器打开即可放映） | D | ✅ |
 | [`build_deck.py`](build_deck.py) | 重新生成 `defense.html` 的脚本（离线，无 Slidev 依赖） | D | ✅ |
 | [`demo-script.md`](demo-script.md) | 2 分钟现场演示脚本（逐秒操作 + 话术 + 失败预案） | D / A 执行 | ✅ |
@@ -25,7 +25,7 @@ python docs/presentation/build_deck.py          # → defense.html
   "file:///D:/projects/innovation/Innovation/docs/presentation/defense.html"
 ```
 
-> 当前 PDF 与 `slides.md` 内容一致（13 页 = 封面 + 10 个内容页 + 演示页 + 致谢页）。
+> 当前 PDF 与 `slides.md` 内容一致（16 页 = 封面 + 01 / 01B / 01C / 01D + 02–10 共 9 页 + 演示页 + 致谢页）。
 > 若老师要求 Slidev 原生导出：`npx @slidev/cli slides.md --export defense.pdf`。
 
 ## 工具建议（课程推荐）
@@ -94,7 +94,7 @@ python docs/presentation/build_deck.py          # → defense.html
 ```
 docs/presentation/
 ├── README.md              # 本文件
-├── slides.md              # Slidev 源文件（14 页，已产出）
+├── slides.md              # Slidev 源文件（15 页，已产出）
 ├── demo-script.md         # 2 分钟演示脚本（已产出）
 ├── qa.md                  # 20 问问答（已产出）
 └── defense.pdf            # 导出 PDF（待导出）
@@ -103,7 +103,7 @@ docs/presentation/
 ## TODO
 
 - [x] D 出 `slides.md` / `demo-script.md` / `qa.md` 初稿
-- [x] D 导出 `defense.pdf`（13 页，与 `slides.md` 内容一致）
+- [x] D 导出 `defense.pdf`（16 页，与 `slides.md` 内容一致）
 - [x] B 补第 04/05 页的后端细节（架构版本号、并发时序）
 - [x] C 补第 06/07 页的定价与回测数字（中位数 −7.40% / 均值 −6.46%、α=0.15·0.08·0.05 对比、3σ 满格说明；数据源 `pricing_model.md` §7.2；另有 3 页素材 `pricing_slides.pptx`）
 - [ ] C 把第 06 页的**案例 reason 换成线上实际口径**（`（本轮得分 76.6，S=-1.00）`），并改用页面可复现的第 9 轮那一对（ZywOo 81.3 → −13.88%、flameZ 79.9 → +15.00%）

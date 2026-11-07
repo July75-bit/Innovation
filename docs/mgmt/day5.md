@@ -19,7 +19,7 @@
 | T5 任务 | **7 完成（T5-01~07）**，只剩 **T5-08 答辩三件套** | `milestones.md` §3 |
 | 优化迭代 | 🟡 按课程「三层模型 + 用户体验检查清单」排查出 8 条缺口（见 §3） | 本文 §3 |
 | 外部交叉原型测试 | 🟡 内部互测已做，**外部组未约**（三层模型的"测试反馈"回环未闭合） | `cross_test.md` §4 |
-| 答辩材料 | ✅ 已齐（`slides.md` 14 页 / `defense.pdf` 13 页 / `demo-script.md` / `qa.md` 20 问） | `docs/presentation/`（彩排未做） |
+| 答辩材料 | ✅ 已齐（`slides.md` 15 页 / `defense.pdf` 16 页 / `demo-script.md` / `qa.md` 20 问） | `docs/presentation/`（彩排未做） |
 
 ## 1. 已完成：部署作品（课件第 5 天第 1 部分）
 
@@ -56,8 +56,8 @@
 | ID | 任务 | 状态 | 验收 / 证据 |
 | --- | --- | --- | --- |
 | A1 | 生产构建 + Render Static Site + `VITE_API_BASE_URL` | ✅ | `playerstock-frontend-mdlk.onrender.com` 打开不白屏、拉到 8 名选手 |
-| A2 | 线上走查（文案/间距/空态/错误态） | 🟡 | 第 4 天已闭；无线上的二次走查记录 |
-| A3 | TC-307 刷新截图 + 子路由刷新 | ✅ / 🟡 | 深链 F5 截图已有；4 张 F5 图可选补 |
+| A2 | 线上走查（文案/间距/空态/错误态） | ✅ 2026-11-07 | A 线上走查完成，375px 五张证据 `evidence/23~27`（市场/详情/持仓/流水/导航抽屉）；余额显示 4149.20 属验收操作后的状态 |
+| A3 | TC-307 刷新截图 + 子路由刷新 | ✅ / 🟡 | 深链 F5 截图已有；**4 张 F5 图仍待补**（`/market`、`/players/1`、`/positions`、`/trades`） |
 | **A4** | **响应式**：`@media (max-width:720px)`，导航折行、详情页上下排、持仓/流水表格横向滚动、买卖按钮整行 | ✅ | **D 代为实现**（跨边界，已在合并提交说明中标注）；5 处 `@media` 已入库，CI run #70 前端 build 绿 |
 | **A5** | **AI「思考中」**：`analysisLoading`，卡片位显示"AI 分析中…" | ✅ | **D 代为实现**；`analysisLoading` 4 处引用（含 token 校验的 finally 复位），CI 绿 |
 | **A6** | **无障碍最小集**：折线图 `tabindex`+`@focus` 触发 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | ✅ | **D 代为实现**；`PriceChart` 命中区可 Tab 聚焦并出 tooltip，CI 绿 |
@@ -98,8 +98,8 @@
 | D3 | 证据归档（4 张线上截图改名） | ✅ | `evidence/online/online-account/prices/positions/trades` |
 | D4 | `prototype_review.md`（三层模型 + 两张清单） | ✅ | 7 节，含视觉规范与 12 条缺口 |
 | D5 | 隐私文案稿 / 交叉测试延期说明 / `user_manual` 线上地址 | ✅ | `compliance.md` §4.2、`cross_test.md` §4、`user_manual` §2 |
-| D6 | 答辩三件套材料（`slides.md`/`demo-script.md`/`qa.md`） | ✅ | 14 页 + 20 问 |
-| **D7** | **导出 `docs/presentation/defense.pdf`** | ✅ | 13 页 / 539 KB，与 `slides.md` 内容一致；源文件 `build_deck.py` + `defense.html` 一并入库，可重生成 |
+| D6 | 答辩三件套材料（`slides.md`/`demo-script.md`/`qa.md`） | ✅ | 15 页 + 20 问 |
+| **D7** | **导出 `docs/presentation/defense.pdf`** | ✅ | **16 页 / 653 KB**（2026-11-07 含 01B/01C/01D 重导），与 `slides.md` 内容一致；源文件 `build_deck.py` + `defense.html` 一并入库，可重生成 |
 | **D8** | **回归 + CI 复核**（137 条 + 三 job 绿 + `test_report` 结论） | ✅ | 本机 **137 passed / 0 skipped** + ruff 三类门槛全绿；**CI run #80（`1a821f6`）三 job success** |
 
 > 详细的任务定义与状态见 `docs/mgmt/day6.md` §2（本节只保留状态总览，避免两处口径漂移）。
@@ -127,9 +127,9 @@
 
 | # | 优先级 | 缺口 | 依据（课件） | 负责人 | 验收方式 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **P0** | ✅ 已修：响应式（5 处 `@media (max-width:720px)`） | 智能体专项「响应式」 | D 代做 | CI 前端 build 绿；演示前 A 走查窄屏 |
-| 2 | **P0** | ✅ 已修：AI「分析中」占位卡片（含 token 校验复位） | 「等待可感知」 | D 代做 | CI 前端 build 绿 |
-| 3 | **P0** | ✅ 已修：折线图数据点可 `tabindex` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 「无障碍：键盘可达、对比度、不只靠颜色」 | D 代做 | CI 前端 build 绿；演示前 A 用 Tab 走查 |
+| 1 | **P0** | ✅ 已修：响应式（卡片化 + 导航抽屉，≤960px/≤720px 两档） | 智能体专项「响应式」 | D 代做 · **A 已亲验** | CI 前端 build 绿；375px 归档 `evidence/23~27` + **A 亲手走查 5 张**：[`30`](../acceptance/evidence/30-a9-market-375.png)/[`31`](../acceptance/evidence/31-a9-detail-375.png)/[`32`](../acceptance/evidence/32-a9-nav-drawer-375.png)/[`33`](../acceptance/evidence/33-a9-positions-375.png)/[`34`](../acceptance/evidence/34-a9-trades-375.png)（2026-11-07 14:37–15:06） |
+| 2 | **P0** | ✅ 已修：AI「分析中」占位卡片（含 token 校验复位） | 「等待可感知」 | D 代做 · **A 已亲验** | CI 前端 build 绿；**截图** [`29-ai-loading.png`](../acceptance/evidence/29-ai-loading.png)（Fast 3G 下占位态 + 交易面板同时可用） |
+| 3 | **P0** | ✅ 已修：折线图数据点可 `tabindex` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 「无障碍：键盘可达、对比度、不只靠颜色」 | D 代做 · **A 已亲验** | CI 前端 build 绿；**截图** [`28-keyboard-focus.png`](../acceptance/evidence/28-keyboard-focus.png)（焦点描边 + tooltip「2026-10-24 18:18:21 · 120.00 币 · 初始价格」） |
 | 4 | P1 | 买卖**无二次确认** | 「防错：危险操作二次确认」 | A | 点"买入"先确认再提交 |
 | 5 | P1 | 数量无快捷选项（1/5/10/全部），50 股上限靠记 | 「识别优于回忆」 | A | 快捷按钮可用 |
 | 6 | P1 | **Enter 不能提交** | 「高效：快捷键、默认值」 | A | 输入框回车即提交 |
@@ -182,7 +182,7 @@
 - [x] `deployment.md` 定稿（环境变量、检查单、回滚、已知问题）
 - [x] 线上数据：每名可交易选手 ≥10 个价格点（sh1ro 2 点，属预期）
 - [x] 本机/CI 137 passed / 0 skipped
-- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 14 页 + `defense.pdf` 13 页已导出）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）
+- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 15 页 + `defense.pdf` 16 页已导出）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）
 - [x] **优化迭代 P0 三条**（响应式 / AI 思考中 / 无障碍最小集）→ D 代实现，CI run #70 前端 build 绿（`4e45433`）
 - [x] `prototype_review.md`（三层模型 + 检查清单对照）→ `docs/requirements/prototype_review.md`
 - [x] 外部交叉原型测试：**延期说明 + 补救方案**已写入 `cross_test.md` §4（不伪造记录）
