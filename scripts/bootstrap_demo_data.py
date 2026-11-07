@@ -124,7 +124,7 @@ def run(args: argparse.Namespace) -> int:
     )
 
     seed_args = ["scripts/seed_db.py"] + ([] if args.keep else ["--reset"])
-    _run_step("1/3 写入种子数据（8 名选手 + demo 账户）", seed_args)
+    _run_step("1/3 写入种子数据（16 名选手 + demo 账户）", seed_args)
 
     if args.json_out:
         json_path = Path(args.json_out).expanduser().resolve()
@@ -173,7 +173,7 @@ def run(args: argparse.Namespace) -> int:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="一键把演示数据（8 名选手 + 10+ 个价格点）落到当前 DATABASE_URL"
+        description="一键把演示数据（16 名选手 + 10+ 个价格点）落到当前 DATABASE_URL"
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="随机种子（演示固定 42）")
     parser.add_argument(

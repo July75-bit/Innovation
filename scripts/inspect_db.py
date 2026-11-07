@@ -15,7 +15,7 @@ Render 免费 Postgres 没有网页版数据浏览器，要么装 psql 连、要
     # 本地（不传就落到 code/backend/playerstock.db）
     python scripts/inspect_db.py
 
-    # 顺带做业务自检（8 名选手、每人价格点数、余额）
+    # 顺带做业务自检（16 名选手、每人价格点数、余额）
     python scripts/inspect_db.py --check
 """
 

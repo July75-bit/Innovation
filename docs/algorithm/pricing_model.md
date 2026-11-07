@@ -103,6 +103,8 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 **回测口径**：`simulator.generate_match_series(seed, 30 轮)` × 8 名选手（sh1ro 全程 `suspended` 跳过），
 初始历史回填最近 3 场，逐场 `standardize_score → update_price`；参数取默认值
 （α=0.15 / β=0 / floor=1.0 / N=5 / ±20% clamp）。数据源 `data/seed_players.json`。
+> 注：2026-11-07 演示种子扩至 **16 名 / 8 队**；本节的 30 轮回测仍是当时 8 名口径的历史结论，
+> 扩容后如需覆盖新阵容应重跑（本文引用的曲线与均值不随扩容自动更新）。
 
 ### 7.1 主回测（seed=42，与演示脚本默认种子一致）
 

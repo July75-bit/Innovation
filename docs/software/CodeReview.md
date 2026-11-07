@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-07 17:00 复测）**：pytest **178 passed / 0 skipped** · 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖）· CI **run #95 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
+> **当前基线（2026-11-07 17:00 复测）**：pytest **216 passed / 0 skipped** · 核心逻辑覆盖率 **97%**（1287 语句 / 43 未覆盖）· CI **run #104 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
 
 ---
 
@@ -14,7 +14,7 @@
 
 **日志器：6 个模块级命名空间**（`playerstock`、`playerstock.errors`、`playerstock.trades`、`ai.llm_agent`、`ai.context`、`app.api.ai`），统一走标准库 `logging`，由部署平台（Render）收集 stdout。
 
-**全部 12 处日志调用（下表按场景合并为 11 行，买卖各 1 处）**：
+**全部 15 处日志调用（下表按场景合并）**：
 
 | 级别 | 位置 | 打什么 | 为什么必须打 |
 | --- | --- | --- | --- |
@@ -29,6 +29,9 @@
 | warning | `app/api/ai.py:108` | 上下文组装失败 → 用最小上下文 | 连 seed 都读不到时，仍要能定位 |
 | exception | `app/api/trades.py:211` / `:310` | **买入/卖出失败**（含 user_id、player_id 与堆栈） | 交易是最危险的写路径，失败必须能追到人和标的 |
 | exception | `app/core/errors.py:59` | 未处理异常（method + path + 堆栈） | 500 不把堆栈给前端，但**服务端必须留全套** |
+| info | `app/main.py:87` | 启动打印**日志文件路径**（含 `/api/debug/logs` 提示） | 出问题先知道去哪看 |
+| info | `app/api/auth.py:206` | 账号删除（user_id、昵称、连带持仓/流水/令牌条数） | 删号是破坏性操作，必须可追溯 |
+| info | `app/core/database.py:95` | 启动补齐 `users` 口令列时说明补了哪些列 | 老库升级静默改表最危险 |
 
 **一条真实日志长什么样**（2026-11-07 本机实跑：注入一个超时的假 client，不触网）：
 
@@ -39,7 +42,20 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**；③ 故障**没有升级成 5xx**，交易与行情不受影响。
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（178 条中约 50 条是异常/边界路径）。
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（216 条中约 50 条是异常/边界路径）。
+
+**日志不只刷在控制台：同时落盘，出错能自查**
+
+| 能力 | 实现 | 怎么用 |
+| --- | --- | --- |
+| **写文件** | `app/core/logging_config.py`：`RotatingFileHandler`（单文件 2 MB、保留 3 份、UTF-8） | 默认 `logs/app.log`，可用 `LOG_DIR` 覆盖；目录不可写时自动退到临时目录，**绝不因日志失败拖垮启动** |
+| **控制台照旧** | 同时保留 `StreamHandler` | 开发时 `uvicorn` 窗口里还是能实时看到 |
+| **降噪** | `httpx` / `httpcore` / `urllib3` 压到 WARNING | 否则每发一个请求打一行，真实错误会被淹没（实测压制前 119 KB，压制后 4 KB） |
+| **本地自查** | `Get-Content logs\app.log -Tail 50` | 不用启动服务也能看历史错误 |
+| **线上自查** | `GET /api/debug/logs?lines=100&level=WARNING` | Render 没有终端，浏览器打开网址即可看最近日志；与 `debug.py` 同一开关，`DEBUG_ENDPOINTS=0` 时返回 404 |
+
+> 安全边界：日志里**从不写口令、token、连接串**（代码中无一处这样写）；日志接口只读、路径来自服务端配置，不接受用户输入，因此没有目录穿越面。
+> 覆盖：`logging_config.py` 与 `logs.py` 均有单测（含"目录不可写退临时目录""重复初始化不重复挂 handler""端点关闭时 404"）。
 
 **没有日志的地方，与原因**（如实交代）：
 
@@ -100,7 +116,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | 输出非 JSON / 字段缺失 / 枚举非法 | `ValueError` → 规则版 | 200 + `rule_fallback` |
 | 上下文组装失败 | `_minimal_context` 继续算 | 200 + `rule_fallback` |
 
-> 量化：`try/except` **32 处**、`raise ApiError` **15 处**、`raise ValueError` **9 处**（引擎入参校验）、`logger` 调用 **12 处**；178 条用例里**约 50 条专测异常与边界路径**（暂停交易、超上限、余额不足、脏输出、并发、上下文失败）。
+> 量化：`try/except` **32 处**、`raise ApiError` **15 处**、`raise ValueError` **9 处**（引擎入参校验）、`logger` 调用 **15 处**；216 条用例里**约 50 条专测异常与边界路径**（暂停交易、超上限、余额不足、脏输出、并发、上下文失败）。
 
 ---
 
@@ -135,8 +151,8 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **178 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 178 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（956/17，≥60% 达标） |
+| pytest | 单元+集成测试 | `pyproject.toml` | **216 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 216 条） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1287/43，≥60% 达标） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
@@ -209,12 +225,12 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 cd D:\projects\innovation\Innovation
 # 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
 conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
-python -m pytest                                     # 178 passed
+python -m pytest                                     # 216 passed
 ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501
 pylint code/core_engine code/backend/app/core        # 9.74/10
 complexipy code/core_engine                          # 认知复杂度
-coverage run --source=app,core_engine -m pytest && coverage report -m # 98%
+coverage run --source=app,core_engine -m pytest && coverage report -m # 97%
 cd code/frontend; npm ci; npm run build; npm run lint; npm run test:unit
 
 # 代码统计（§3 那张表就是它跑出来的）
