@@ -24,7 +24,8 @@ async function load() {
   error.value = null
   checkBackendHealth()
   try {
-    const [list] = await Promise.all([api.getPositions(), refreshAccount()])
+    // 余额刷新是 best-effort：失败不应把已能拿到的持仓列表也打成错误态
+    const [list] = await Promise.all([api.getPositions(), refreshAccount().catch(() => {})])
     positions.value = list
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载持仓失败'
