@@ -127,9 +127,9 @@
 
 | # | 优先级 | 缺口 | 依据（课件） | 负责人 | 验收方式 |
 | --- | --- | --- | --- | --- | --- |
-| 1 | **P0** | ✅ 已修：响应式（5 处 `@media (max-width:720px)`） | 智能体专项「响应式」 | D 代做 | CI 前端 build 绿；演示前 A 走查窄屏 |
-| 2 | **P0** | ✅ 已修：AI「分析中」占位卡片（含 token 校验复位） | 「等待可感知」 | D 代做 | CI 前端 build 绿 |
-| 3 | **P0** | ✅ 已修：折线图数据点可 `tabindex` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 「无障碍：键盘可达、对比度、不只靠颜色」 | D 代做 | CI 前端 build 绿；演示前 A 用 Tab 走查 |
+| 1 | **P0** | ✅ 已修：响应式（5 处 `@media (max-width:720px)`） | 智能体专项「响应式」 | D 代做 | **A 已亲手走查（2026-11-07 14:37–15:06）**：[`30-a9-market-375.png`](../acceptance/evidence/30-a9-market-375.png) / [`31-a9-detail-375.png`](../acceptance/evidence/31-a9-detail-375.png) / [`32-a9-nav-drawer-375.png`](../acceptance/evidence/32-a9-nav-drawer-375.png) / [`33-a9-positions-375.png`](../acceptance/evidence/33-a9-positions-375.png) / [`34-a9-trades-375.png`](../acceptance/evidence/34-a9-trades-375.png)（375px 五页；另见 23~27 归档） |
+| 2 | **P0** | ✅ 已修：AI「分析中」占位卡片（含 token 校验复位） | 「等待可感知」 | D 代做 | 🟡 **截图仍缺一张**：Network 限速 Fast 3G 后硬刷 `/players/1` 抓「AI 分析中…」占位（见 `evidence/README.md`「仍缺两张」与 day6 §7.1 步骤 ②）；代码与 build 已过 |
+| 3 | **P0** | ✅ 已修：折线图数据点可 `tabindex` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 「无障碍：键盘可达、对比度、不只靠颜色」 | D 代做 | [`28-keyboard-focus.png`](../acceptance/evidence/28-keyboard-focus.png)：焦点落在数据点（`:focus-visible` 描边）+ tooltip「2026-10-24 18:18:21 · 120.00 币 · 初始价格」 |
 | 4 | P1 | 买卖**无二次确认** | 「防错：危险操作二次确认」 | A | 点"买入"先确认再提交 |
 | 5 | P1 | 数量无快捷选项（1/5/10/全部），50 股上限靠记 | 「识别优于回忆」 | A | 快捷按钮可用 |
 | 6 | P1 | **Enter 不能提交** | 「高效：快捷键、默认值」 | A | 输入框回车即提交 |

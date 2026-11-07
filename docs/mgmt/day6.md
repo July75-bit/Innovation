@@ -43,7 +43,7 @@
 | **A-6** | 改 `slides.md` 第 02 页：用哪张截图、说什么 | 页内 8 选手 / 4 路由 / 三态与实际一致 | ⬜ |
 | **A-7** | 演示主操作：按 `demo-script.md` 走 2:00，**含一次"故意失败"**（数量填 999 触发余额不足） | 两次彩排都 ≤2:10、无卡壳 | ⬜ |
 | **A-8** | 演示前确认：线上 8 名选手在、余额 5000.00、流水干净 | 截图发群 | ⬜ |
-| **A-9** | 亲手走查 A-1/A-2/A-3 三项（都是 D 写的，你还没亲眼看过） | 拖窄窗口 + 只用 Tab 走一遍折线图 | ⬜ |
+| **A-9** | 亲手走查 A-1/A-2/A-3 三项（都是 D 写的，你还没亲眼看过） | 拖窄窗口 + 只用 Tab 走一遍折线图 | ✅ **A 已亲验（2026-11-07 14:37–15:06）**：375px 五页实拍入证 [`30~34-a9-*-375.png`](../acceptance/evidence/README.md)（市场/详情/抽屉/持仓/流水，顶栏折行、卡片化、抽屉导航、reason 直出、更新于图内）；键盘段焦点描边 + tooltip 见 `28-keyboard-focus.png`。**两处待补**：Fast 3G「AI 分析中…」占位截图（→ A-2 保持 🟡）、`scrollWidth/innerWidth` console 断言随图 |
 
 **不做（写进已知限制）**：A-4 的三项与视觉 token 化——冻结期不加功能；被问就答"P0 已清零，P1 在迭代清单里"。
 
@@ -242,12 +242,13 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 
 ### 7.3 两张委派单的共同验收
 
-| 检查 | 谁 |
-| --- | --- |
-| 6 张图都在 `docs/acceptance/evidence/`（3 张 P0 + 2~3 张持久化） | A / B |
-| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B |
-| `day5.md` §3.2、`deployment.md` §9 与 §5、`test_report.md` §6 四处回填 | A / B |
-| D 复核：图片能打开、断言与文内数字一致、链接不 404 | D |
+| 检查 | 谁 | 状态 |
+| --- | --- | --- |
+| P0 三条视觉证据在 `docs/acceptance/evidence/`：响应式/抽屉 `23~27` + **A 亲验 `30~34`**、键盘 `28` | A / B | 🟡 仅差「AI 分析中…」占位一张（Fast 3G 抓取，§7.1 步骤 ②） |
+| 持久化证据在 `evidence/online/`：`online-persistence-{before,after}-{1,2,3}` + `persistence-redeploy.md` | B | ✅ 2026-11-07（对账脚本退出码 0） |
+| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B | ✅ 含 A-9 走查 5 行与「仍缺两张」标注 |
+| `day5.md` §3.2、`deployment.md` §9 与 §5、`test_report.md` §6 四处回填 | A / B | ✅ §3.2 已换截图链接；deployment 37/37；test_report §6 已引用 |
+| D 复核：图片能打开、断言与文内数字一致、链接不 404 | D | ⬜ 等 D 过一遍 |
 
 ### 7.4 可选：把 AI 从「规则兜底」切到真模型（B，约 10 分钟，冻结期可不做）
 
