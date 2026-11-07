@@ -13,17 +13,17 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **130**（单元 117 + 集成 13） |
-| 通过 / 失败 / 跳过 | **130 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **134**（单元 121 + 集成 13） |
+| 通过 / 失败 / 跳过 | **134 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 
-> 复跑说明（2026-10-25，B 核对）：总数由 **130** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对）：总数由 **134** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
 > B 的部署预检 `test_config_db_url.py`（+6）与 `test_bootstrap_demo_data.py`（+2）、
-> 第 5 天 B 的 `test_cors_config.py`（+4，CORS 三档策略）与 `test_trade_rules_unit.py` 增至 11 条（+6，错误文案"下一步"）。
+> 第 5 天 B 的 `test_cors_config.py`（+8，CORS 策略 + 线上误配回归）与 `test_trade_rules_unit.py` 增至 11 条（+6，错误文案"下一步"）。
 > CI（ubuntu-latest）全绿；本机 Windows 亦全绿——原先那 1 failed + 1 error 是测试代码的编码问题
 > （BUG-03），B 已修并复现验证，见 §9。
 
@@ -33,9 +33,9 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-130 passed
+134 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-130 passed, 1 warning in 16.00s
+134 passed, 1 warning in 17.15s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -56,7 +56,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 | `tests/unit/test_config_db_url.py` | 6 | 6 | 0 | 0 | B 部署预检新增：`postgres://`/裸 `postgresql://` 补成 `+psycopg2`、显式驱动不改写、建引擎解析到 psycopg2、SQLite 相对路径归一化 |
-| `tests/unit/test_cors_config.py` | 4 | 4 | 0 | 0 | 第 5 天 B 新增：CORS 三档策略（配了域名→白名单 / 显式 `*`→放开+告警 / 没配→退化+告警），依据 NFR-S-04 |
+| `tests/unit/test_cors_config.py` | 8 | 8 | 0 | 0 | 第 5 天 B 新增：CORS 策略（配了域名→白名单 / 显式 `*`→放开+告警 / 空→退化+告警 / **线上仍用本地默认值→退化+告警**）、尾斜杠归一化，依据 NFR-S-04 |
 
 ### 2.2 集成测试
 
@@ -240,6 +240,8 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 8. 性能实测（对照非功能需求）
 
+### 8.1 本地基线（真实 `uvicorn :8011` + 临时 SQLite）
+
 | 指标 | 目标 | 实测 | 结论 |
 | --- | --- | --- | --- |
 | 行情列表响应 | ≤ 300ms | **24.17ms**（P95，20 次采样） | ✅ |
@@ -250,6 +252,25 @@ SAME balance=True total=True qty=True trades=True points=True
 
 > 环境：本地真实 `uvicorn :8011` + 临时 SQLite（`bootstrap_demo_data.py` 灌数），每个接口 20 次采样取 P95；
 > AI 路径为无密钥兜底（`rule_fallback`）；前端两项待浏览器/线上补测。
+
+### 8.2 线上实测（2026-10-25，B，Render 公网）
+
+> 方法：先打一次 `/api/health` 预热（免费实例冷启动不算进接口耗时），再连打 5 次取中位数；
+> 买卖是一次**净额为 0** 的一买一卖（买 1 股再卖 1 股，余额回到 5000.00、持仓清空，只多 2 条流水）。
+
+| 指标 | 目标 | 线上实测（中位） | 结论 |
+| --- | --- | --- | --- |
+| 行情列表响应 | ≤ 300ms | **171.8ms**（min 129.4 / max 204.6） | ✅ |
+| 价格历史响应 | — | 133.7ms | — |
+| 账户响应 | — | 127.4ms | — |
+| 买入接口响应 | ≤ 500ms | **308.8ms**（成交价 108.75） | ✅ |
+| 卖出接口响应 | ≤ 500ms | 196.0ms | ✅ |
+| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（LLM 版未压测，如实说明） |
+| 前端首屏 | ≤ 3s | **≈437.8ms**（HTML 263ms + JS/CSS 174.8ms，gzip 合计 100.5KB） | ✅（以资源下载近似，浏览器渲染未测） |
+| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（需浏览器；当前每人 10–11 点） | 🟡 |
+
+> 线上比本地慢一个数量级（168ms vs 24ms），主要是 Render 免费实例的跨区网络与冷容器开销，
+> 仍远低于目标值。**结论：四项非功能指标线上全部达标**；折线图渲染一条留待浏览器验证。
 
 ## 9. 缺陷清单
 
@@ -268,6 +289,8 @@ SAME balance=True total=True qty=True trades=True points=True
 | BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中 |
 | BUG-10 | Windows 中文控制台（GBK）下 `test_bootstrap_demo_data.py` 让 pytest 抛 `UnicodeDecodeError 0xd2`，本机 1 failed + 1 error；CI 的 ubuntu 不暴露 | P1 | 测试代码 / `seed_db.py` | B | 已修 | 根因：`seed_db.py` 没把 stdout 切成 UTF-8，子进程按 GBK 输出、pytest 的 fd 捕获按 UTF-8 解码。修法：① `seed_db.py` 统一 `reconfigure(encoding="utf-8")`；② 测试给子进程显式 `PYTHONIOENCODING=utf-8` + `PYTHONUTF8=1`。已用旧版脚本复现出 `0xd2` 并验证修复后 `PYTHONIOENCODING=gbk` 下也全过 |
 | BUG-11 | **线上 `/market` 直接访问/刷新白屏**：路由表里市场页在 `/`，`/market` 没有任何路由匹配，又没有兜底路由；静态站 rewrite 仍返回 `index.html`，于是"没有 404、也没有页面"，只剩头部——比 404 更像站点挂了 | P2 | 前端路由 `router/index.ts` | B（A 的文件，经 A 授权代改） | 已修 | 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` → `/` 兜底；新增 `src/router/__tests__/router.spec.ts` 4 条用例（`/market` 与未知路径都要落到市场页、正常子路由不受影响）。`vitest` 12 passed、`npm run build` exit 0、oxlint 0/0、eslint exit 0。**需重新部署前端后线上复验** |
+| BUG-12 | **线上前端被跨域拦掉**：后端的 CORS 已改成"按 `CORS_ORIGINS` 白名单"，但 Render 上没填这个变量 → 按 `config.py` 默认值只放行 `localhost:5173`，浏览器请求 `*-backend.onrender.com` 拿不到 `access-control-allow-origin`，页面显示"连接失败" | P0（线上可用性） | 配置 `core/config.py` + `app/main.py` + `render.yaml` | B | 已修 | 三处一起补：① `render.yaml` 把 `CORS_ORIGINS` 写成前端公网地址（部署配置进仓库，不再依赖"记得去控制台填"）；② `resolve_cors_origins()` 增加"线上却还是本地默认值 → 退化 `*` 并 WARNING"；③ `cors_origin_list` 去掉尾部斜杠（手填 `https://x/` 也能匹配）。用例：`test_cors_config.py` 8 条（含线上误配回归）。**需重新部署后端后线上复验** |
+| BUG-13 | **测试里的"日期炸弹"**：`test_prices_recalc.py` 把 `PLAYED_AT` 写死成 `2026-11-07`，而 `conftest` 用 `now-2h` / `now-1h` 造种子历史——当机器时间正好是 2026-11-07 时，那两条历史落进本轮去重窗口 `[played_at, played_at+1d)`，接口把两名选手都判成"该轮已计价"，2 条用例整片红；换一天跑又全绿 | P2 | 测试代码 `test_prices_recalc.py` | C（B 代改） | 已修 | 改为"**未来 30 天**"的相对日期（`datetime.now(UTC).date() + 30d`），并同步断言里的日期。教训：**测试里不要写死"今天附近的日期"**，它会和时间耦合 |
 
 ## 10. 未覆盖与已知限制
 
@@ -292,6 +315,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 130 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 134 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）

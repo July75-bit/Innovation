@@ -38,7 +38,10 @@ services:
       - key: LLM_API_KEY
         sync: false # 在 Render 控制台手工填写，绝不提交明文
       - key: CORS_ORIGINS
-        sync: false # 填前端公网地址，如 https://playerstock-frontend.onrender.com
+        # 直接写死前端公网地址：这是`render.yaml` 管的部署配置，写在文件里比"记得去控制台填"
+        # 可靠（2026-10-25 就是因为没填，线上前端被跨域拦掉）。
+        # 前端服务改名后记得同步改这里；只想临时放开全部来源时填 "*"。
+        value: https://playerstock-frontend-mdlk.onrender.com
 
     # ⚠️ Persistent Disk 仅付费套餐可用；启用后把 DATABASE_URL 改成 sqlite:////var/data/playerstock.db
     # disk:

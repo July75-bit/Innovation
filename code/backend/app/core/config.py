@@ -90,7 +90,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """`CORS_ORIGINS` 解析成列表。
+
+        统一去掉首尾空白与**结尾斜杠**：浏览器发的 `Origin` 永远不带尾部 `/`，
+        而人在控制台里手填时常写成 `https://xxx.onrender.com/`，Starlette 是精确字符串
+        比较，差一个斜杠就整站跨域失败（第 5 天线上就踩过一次类似的坑，这里先堵上）。
+        """
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def llm_enabled(self) -> bool:

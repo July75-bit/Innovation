@@ -25,6 +25,9 @@ from app.core.errors import register_exception_handlers
 
 logger = logging.getLogger("playerstock")
 
+#: 本地开发默认放行的来源（与 `config.cors_origins` 的默认值一致）
+DEV_ORIGINS = frozenset({"http://localhost:5173", "http://127.0.0.1:5173"})
+
 
 def resolve_cors_origins() -> list[str]:
     """决定 CORS 放行哪些来源（第 5 天 B 的决策，落文档见 `deployment.md` §6 / `compliance.md` §4）。
@@ -35,11 +38,16 @@ def resolve_cors_origins() -> list[str]:
     规则（按优先级）：
     1. `CORS_ORIGINS` 配了具体域名 → **按白名单放行**（默认路径，合规要求）；
     2. `CORS_ORIGINS` 显式写 `*` → 放行全部，但启动日志会写明"当前放开全部来源"；
-    3. `CORS_ORIGINS` 为空 → 为了不让演示环境静默跨域失败，退化为 `*`，
-       同时打 **WARNING**（这是运维兜底，不是设计默认值）。
+    3. `CORS_ORIGINS` 为空 → 退化为 `*` 并 **WARNING**；
+    4. **线上（Render）但配置仍是本地默认值** → 视为"忘配了"，同样退化并 WARNING。
+
+    第 4 条是 2026-10-25 线上事故补的：当时后端已换成配置驱动、但 Render 上的
+    `CORS_ORIGINS` 没填，于是按 `config.py` 的默认值只放行 `localhost:5173`，
+    结果**线上前端被跨域拦掉**（`access-control-allow-origin` 直接没有）。
+    只判断"空列表"覆盖不到这种真实误配，所以把"线上却还是本地默认值"也算未配置。
 
     为什么不直接硬编码 `*`：`*` 会让"配置漏填"变成无声事故——前端能连、也连得上
-    任何来源，日志里看不出问题；反过来硬编码白名单又会让"忘了填环境变量"直接白屏。
+    任何来源，日志里看不出问题；反过来只认白名单又会让"忘了填环境变量"直接白屏。
     所以做成"**默认白名单、缺配置时退化并告警**"，两种事故都能在日志里被看见。
     """
     origins = settings.cors_origin_list
@@ -51,6 +59,13 @@ def resolve_cors_origins() -> list[str]:
         return ["*"]
     if "*" in origins:
         logger.warning("CORS_ORIGINS 显式包含 *：放行全部来源（已记录，便于答辩时说明）。")
+        return ["*"]
+    if os.getenv("RENDER") and set(origins) <= DEV_ORIGINS:
+        logger.warning(
+            "线上检测到 CORS_ORIGINS 仍是本地默认值（%s）：退化为放开全部来源。"
+            "请把 CORS_ORIGINS 设为前端公网地址（如 https://playerstock-frontend-mdlk.onrender.com）。",
+            ", ".join(origins),
+        )
         return ["*"]
     return origins
 

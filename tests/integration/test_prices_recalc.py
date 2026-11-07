@@ -13,7 +13,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import datetime, timedelta, timezone
 
 from core_engine import update_price
 from sqlalchemy import select
@@ -21,7 +21,13 @@ from sqlalchemy import select
 from app.models import Player, PriceHistory
 
 ROUND = 7
-PLAYED_AT = "2026-11-07"
+# ⚠️ 不能写死日期：conftest 用 `now-2h` / `now-1h` 造种子历史，
+# 如果 `PLAYED_AT` 恰好等于"今天"，那两条历史就会落进本轮的去重窗口
+# `[played_at, played_at+1d)`，接口会把两名选手都判成"该轮已计价"直接 skipped。
+# 2026-11-07 当天就踩过（BUG-13，整条用例红）。
+# 所以固定用"未来 30 天"，既不与种子历史重叠，也不受跑测试的时钟影响。
+PLAYED_AT = (datetime.now(timezone.utc).date() + timedelta(days=30)).isoformat()
+ROUND_DATE = datetime.fromisoformat(PLAYED_AT).date()
 SEED_ZYWOO = 1
 SEED_SH1RO = 7  # suspended
 SEED_FLAMEZ = 8
@@ -78,7 +84,7 @@ def test_recalc_applies_prices_and_reason(client, session_factory) -> None:
     rows = _history_rows(session_factory, SEED_ZYWOO)
     assert len(rows) == 3  # 种子 2 条 + 本轮 1 条
     assert round(float(rows[-1].price), 2) == round(float(expected.new_price), 2)
-    assert rows[-1].ts.date() == date(2026, 11, 7)
+    assert rows[-1].ts.date() == ROUND_DATE
     assert "本轮得分 90.0" in rows[-1].reason
 
 
