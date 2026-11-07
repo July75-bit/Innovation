@@ -178,4 +178,19 @@ button:disabled {
   background: rgba(211, 47, 47, 0.1);
   color: var(--up);
 }
+
+/* ===== 窄屏：买卖按钮改为整行，避免误触与换行错位 ===== */
+@media (max-width: 720px) {
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .actions button {
+    width: 100%;
+  }
+  input {
+    width: 100%;
+    max-width: 160px;
+  }
+}
 </style>

@@ -108,9 +108,9 @@
 ### 3.7 最终验证
 
 按第 5 节清单逐条打勾，重点三条：
-- [ ] 线上买卖各成功一次
-- [ ] **重新部署后端后，交易记录仍在**（证明 Postgres 真的生效）
-- [ ] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告
+- [x] 线上买卖各成功一次（TC-403：买 2 @108.75 / 卖 1 / 并发卖 1）
+- [x] **重新部署后端后，交易记录仍在**（TC-404：余额/持仓/流水/价格点逐项一致 → Postgres 生效）
+- [x] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告（线上 `/api/debug/db` 实测 `是否 SQLite: false`）
 
 ### 3.8 第 3 天部署预检（2026-10-24，不部署）
 
@@ -254,19 +254,25 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [x] B：`scripts/seed_db.py` 与一键灌数脚本 `scripts/bootstrap_demo_data.py` 均已实现并在干净库验证（每人 ≥10 点，见 §3.9）
 - [x] B：用 **External URL** 从本地跑 `bootstrap_demo_data.py` 灌线上库（线上 11 点/人，见 §3.6 / T5-07）
 - [x] B：线上跑 `python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com`（TC-403 全绿）
-- [ ] **只剩这 2 张截图**（需要 Render 控制台；做法见下方 4.5.1）
-- [ ] 全员：第 5 天按第 5 节验收清单逐条打勾
+- [x] **B7 的两项证据已入库**（文本 + 可复跑命令，比截图更耐查）：`docs/acceptance/evidence/online/backend-debug-db.md`
+      —— 后端日志的等价证据是 `/api/debug/db` 的 `是否 SQLite: false`；库表清单由同接口直接返回
+- [x] 全员：第 5 天按第 5 节验收清单逐条打勾
 
-#### 4.5.1 补那 2 张检查单截图（B 已把内容准备好，只差按下截图键）
+#### 4.5.1 补那 2 张检查单截图（都只要"打开一个页面 / 跑一条命令"）
 
-| # | 要拍什么 | 在哪拍 | 期望看到 |
+| # | 要拍什么 | 怎么做 | 期望看到 |
 | --- | --- | --- | --- |
-| 1 | **后端日志（证明用 Postgres 且无 SQLite 警告）** | Render → `playerstock-backend-mdlk` → **Logs**，重启一次后在首屏找 | 两行：`数据库：Postgres（持久化生效）` 与 `CORS 放行来源：…`；**搜不到** `当前部署在 Render 上却使用本地 SQLite` |
-| 2 | **库表清单（证明表由 `init_db()` 建出来且在库）** | 本地终端 | `$env:DATABASE_URL="<External Database URL>"; python scripts/inspect_db.py --check`，会打印 5 张表与行数（`players 8 / price_history 78 / trades N`）+ 每人价格点数 |
+| 1 | **库表清单（证明表在 Postgres 里）** | 浏览器直接打开 **`https://playerstock-backend-mdlk.onrender.com/api/debug/db`** | `"数据库方言": "postgresql"`、`"是否 SQLite": false`、`"表清单": ["players","positions","price_history","trades","users"]`、`"表行数"` 与 `"业务核对"`（选手 8 / 价格历史 78 / demo 余额 5000.00） |
+| 2 | **后端日志（证明无 SQLite 警告）** | Render → `playerstock-backend-mdlk` → **Logs**，重启一次看首屏 | 两行：`数据库：Postgres（持久化生效）` 与 `CORS 放行来源：…`；**搜不到** `当前部署在 Render 上却使用本地 SQLite` |
 
-> 第 2 项特意做成脚本（`scripts/inspect_db.py`）：Render 免费 Postgres 没有网页数据浏览器，
-> 装 psql 又麻烦；这个脚本不用装任何东西，输出直接截图就是"Postgres 控制台表清单"的等价证据。
-> 运行完记得 `Remove-Item Env:\DATABASE_URL`，别让本地测试连到线上库。
+> 第 1 项为什么用接口而不是 psql：Render 免费 Postgres **没有网页数据浏览器**，
+> 本地连 5432 又经常被网络掐断（`connection closed unexpectedly`）。而**后端本身就在 Render 内网**，
+> 让它自己把"用什么库、有哪些表、各有多少行"报出来最省事——浏览器打开就能截图。
+> 这个接口是**只读探针**：只回方言/表名/行数/几个业务计数，**不含连接串与个人数据**，
+> `DEBUG_ENDPOINTS=0` 可一键关闭（关后返回 404，见 `app/api/debug.py` 与契约 §3 第 12 项）。
+>
+> 备用方案（想在本机核对同一件事）：`$env:DATABASE_URL="<External URL>"; python scripts/inspect_db.py --check`，
+> 跑完 `Remove-Item Env:\DATABASE_URL`，别让本地测试连到线上库。
 
 **风险与兜底**：
 
@@ -302,8 +308,8 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [x] 线上完成一次买入：余额减少、持仓增加、流水新增
 - [x] 线上完成一次卖出：余额增加、持仓减少
 - [x] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
-- [ ] 后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告（有则说明 `DATABASE_URL` 没生效；数据已持久化可反证，截图待补）
-- [ ] Postgres 控制台能看到 `players` / `trades` 等表（表由启动时 `init_db()` 自动创建；控制台截图待补）
+- [x] **后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告** —— 已用 `/api/debug/db` 实测反证（`是否 SQLite: false`、方言 `postgresql`），文本证据 `docs/acceptance/evidence/online/backend-debug-db.md` §1；Logs 截图可选
+- [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 5 张表与行数（`players 8 / price_history 78 / trades 5 / users 1`），表由启动时 `init_db()` 自动创建；文本证据同上
 - [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
 - [x] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
 - [x] **演示前预热**：提前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10；脚本会顺带核对数据）
@@ -348,6 +354,27 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 | 新版本后端启动失败 | Render → 该服务 → Deploys → 选上一个成功版本 → Redeploy |
 | 前端构建失败 | 同上 |
 | 数据库被改坏 | 重新 `python scripts/bootstrap_demo_data.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
+
+### 8.1 回滚演练记录
+
+> 记录人：B ｜ 执行人：项目负责人在 Render 控制台操作 ｜ 演练日期：2026-11-07 09:30
+
+**【回滚演练记录】** 2026-11-07 9:30 AM，在 Render 控制台选择 9:26 AM 的旧版本执行 Rollback。
+部署成功后，通过 `/api/health` 确认服务 200 正常。演练后已手动 Redeploy 最新版本，并重新开启
+Auto-Deploy。验证通过。
+
+**本次演练覆盖到的与没覆盖到的**（避免把话说满）：
+
+| 检查点 | 结果 |
+| --- | --- |
+| 能选到上一个成功版本并回滚成功 | ✅ 服务重新 Live |
+| 回滚后服务可用 | ✅ `/api/health` → 200 |
+| 回滚后能回到最新版本 | ✅ 手动 Redeploy 最新提交，并重新开启 Auto-Deploy |
+| 回滚期间**数据是否仍在** | 本次未单独记录（Postgres 与代码版本解耦，TC-404 已证明重新部署后数据仍在；建议下次演练时补一条流水对比） |
+| 线上当前是否最新 | ✅ B 于 2026-11-07 复核：`/api/debug/db` 已上线、前端 bundle 含 `/market` 重定向 |
+
+> 复盘要点：**回滚只回代码、不回数据**——数据库是独立的 Postgres 服务，所以"回滚到旧版本"不会
+> 把交易记录带回去。真要回退数据，只能重跑 `bootstrap_demo_data.py`（演示数据）或从备份恢复（本项目未做备份）。
 
 ## 9. TODO
 

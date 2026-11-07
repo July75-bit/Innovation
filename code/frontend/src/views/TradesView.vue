@@ -57,19 +57,19 @@ onMounted(load)
       </thead>
       <tbody>
         <tr v-for="t in trades" :key="t.trade_id">
-          <td>{{ dateTime(t.created_at) }}</td>
-          <td>
+          <td data-label="时间">{{ dateTime(t.created_at) }}</td>
+          <td data-label="方向">
             <span :class="['side', t.side.toLowerCase()]">{{
               t.side === 'BUY' ? '买入' : '卖出'
             }}</span>
           </td>
-          <td>
+          <td data-label="选手">
             <RouterLink :to="`/players/${t.player_id}`">{{ t.name }}</RouterLink>
           </td>
-          <td class="num">{{ t.quantity }}</td>
-          <td class="num">{{ money(t.price) }}</td>
-          <td class="num">{{ money(t.amount) }}</td>
-          <td class="num">{{ money(t.balance_after) }}</td>
+          <td data-label="数量" class="num">{{ t.quantity }}</td>
+          <td data-label="成交价" class="num">{{ money(t.price) }}</td>
+          <td data-label="金额" class="num">{{ money(t.amount) }}</td>
+          <td data-label="交易后余额" class="num">{{ money(t.balance_after) }}</td>
         </tr>
       </tbody>
     </table>
@@ -133,5 +133,56 @@ th {
 }
 .side.sell {
   background: var(--down);
+}
+
+/* A4 响应式（≤720px）：表格转卡片，杜绝横向滚动 */
+@media (max-width: 720px) {
+  table {
+    display: block;
+    background: transparent;
+    border-radius: 0;
+    margin-top: 12px;
+  }
+  thead {
+    display: none;
+  }
+  tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  td {
+    border: none;
+    padding: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13px;
+  }
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  td:first-child {
+    grid-column: 1 / -1;
+    font-weight: 700;
+    font-size: 15px;
+    padding-bottom: 6px;
+  }
+  .num {
+    text-align: right;
+  }
 }
 </style>

@@ -35,6 +35,17 @@ describe('PriceChart（T4-02 每点 reason 展示）', () => {
     expect(w.find('.tip').exists()).toBe(false)
   })
 
+  it('键盘 Tab 聚焦数据点同样弹出 tooltip，失焦隐藏（A6 无障碍）', async () => {
+    const w = mount(PriceChart, { props: { points } })
+    const hits = w.findAll('.hit')
+    expect(hits[1]!.attributes('tabindex')).toBe('0')
+    expect(hits[1]!.attributes('aria-label')).toContain('表现提升，价格上涨 10.00%')
+    await hits[1]!.trigger('focus')
+    expect(w.get('.tip').text()).toContain('表现提升，价格上涨 10.00%')
+    await hits[1]!.trigger('blur')
+    expect(w.find('.tip').exists()).toBe(false)
+  })
+
   it('明细列表默认收起，展开后逐点展示时间/价格/reason', async () => {
     const w = mount(PriceChart, { props: { points } })
     expect(w.find('.detail-list').exists()).toBe(false)
