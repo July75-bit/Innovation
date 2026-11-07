@@ -145,12 +145,15 @@
 - [x] `deployment.md` 定稿（环境变量、检查单、回滚、已知问题）
 - [x] 线上数据：每名可交易选手 ≥10 个价格点（sh1ro 2 点，属预期）
 - [x] 本机/CI 120 passed / 0 skipped
-- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 14 页含讲稿）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）—— 待导出 PDF + 彩排
-- [ ] **优化迭代 P0 三条**（响应式 / AI 思考中 / 无障碍最小集）
-- [ ] `prototype_review.md`（三层模型 + 检查清单对照）
-- [ ] 外部交叉原型测试记录（或延期说明）
-- [ ] `user_manual.md` / `compliance.md` 终稿（线上地址、CORS 口径）
-- [ ] CI 三 job 绿
+- [x] **答辩三件套**：8 分钟幻灯片（`slides.md` 14 页含讲稿）/ 2 分钟演示脚本（`demo-script.md`）/ 5 分钟 QA（`qa.md` 20 问）—— 材料齐，待导出 PDF + 彩排
+- [ ] **优化迭代 P0 三条**（响应式 / AI 思考中 / 无障碍最小集）← **第 5 天第 2 部分的核心，未完成，阻塞关闭**
+- [x] `prototype_review.md`（三层模型 + 检查清单对照）→ `docs/requirements/prototype_review.md`
+- [x] 外部交叉原型测试：**延期说明 + 补救方案**已写入 `cross_test.md` §4（不伪造记录）
+- [x] `user_manual.md` 终稿（线上地址、本地备用、5 条已知问题）／`compliance.md` §4.1 隐私文案稿
+- [ ] CI 三 job 绿（本地领先 3 个提交，push 后复核）
+
+> **第 5 天关闭条件（Hard Gate）**：P0 三条合入 + 上述勾选全绿 + CI 绿 → 才进入第 6 天。
+> 分派见 `docs/mgmt/day6_tasks.md` §1「闸门 A：第 5 天收尾」。
 
 ## 7. 课件要求 ↔ 今日任务映射
 
