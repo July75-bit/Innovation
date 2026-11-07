@@ -40,7 +40,10 @@ pnpm-debug.log*
 yarn-error.log
 
 # ---------- Editor / OS ----------
-.vscode/
+# 编辑器目录：只放行“团队共享”的两个配置文件，其余（工作区缓存等）继续忽略
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db
