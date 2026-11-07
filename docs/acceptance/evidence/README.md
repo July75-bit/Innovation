@@ -60,3 +60,14 @@
 | `online/online-prices-11points.png` | `GET /api/players/1/prices` | 11 个点、升序、末点 108.75 = current_price、reason 含「本轮得分 + S」 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
+
+## 汇报证据（3.6 / 3.7 / 3.3）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
+| `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
+| `20-commit-stats.png` | 3.3 提交统计（准数，本地 git 生成） | develop 分支非合并提交 137 次：D 50 / B 38 / C 26 / A 20 / 仓库账号 3；合计 +36072 / −4257 |
+
+> 3.3 的网页截图（`21-pulse.png`、`22-commits-*.png`）待补，操作步骤见 `docs/presentation/evidence-3.3-guide.md`。
+> 说明：GitHub pulse 只统计默认分支 `main`（31 次）且按账号邮箱归因，因此与本地准数存在差异，两者需配合使用。
