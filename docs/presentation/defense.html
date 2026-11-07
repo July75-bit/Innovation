@@ -165,7 +165,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
           </ul>
           <p class="small">截图全部来自真实浏览器验收（1280×900），共 16 张。</p>
         </div>
-        <div><img class="shot" src="file:///D:/projects/innovation/Innovation/docs/acceptance/evidence/01-market.png" alt="01-market.png"/></div>
+        <div><img class="shot" src="file:///C:/Users/LIUHONG/Desktop/Git%20project/Innovation/docs/acceptance/evidence/01-market.png" alt="01-market.png"/></div>
       </div>
     </section>
     
@@ -283,13 +283,13 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
           </table>
         </div>
         <div>
-          <h3>真实一次调价</h3>
-          <p>ZywOo 第 3 轮：本轮得分 <b>76.6</b>，低于近 5 场均分 → S = <b>−1.00</b></p>
-          <p>落库 reason：</p>
-          <div class="quote">本场表现下滑（S=-1.00），价格下跌 15.00%（本轮得分 76.6）</div>
-          <h3>可解释性</h3>
-          <p><code>price_history.reason</code> 强制带 S 与得分 → <b>每条历史价格都能追溯到哪一场、什么得分</b>。</p>
-          <p class="small">为此放弃"加 score 列"方案：不改表、不改契约，把归因写进 reason（4 条测试守着）。</p>
+          <h3>真实一次调价（第 9 轮）</h3>
+          <p>ZywOo：得分 <b>81.3</b>，近 5 场均分约 97 → S = <b>−0.92</b></p>
+          <p>126.27 × (1 + 0.15 × −0.92) ≈ <b>108.75</b>（−13.88%）；满格只有 ±15%，clamp 未触发</p>
+          <div class="quote">本场表现下滑（本轮得分 81.3，S=-0.92），价格下跌 13.88%</div>
+          <h3>同一轮对照（页面可点）</h3>
+          <p>flameZ <b>79.9</b> 分 → S=<b>+1.00</b>，64.74 → <b>74.45（+15.00%）</b>：<b>分数更低反而涨</b></p>
+          <p class="small">价格比的是「和自己近 5 场比」；两个详情页折线最后一点点开即是这两条（4 条测试守着 reason 契约）。</p>
         </div>
       </div>
     </section>

@@ -1,0 +1,161 @@
+"""检查 LLM 配置能否真的打通（第 6 天 7.3 可选任务，B）。
+
+负责人：B
+
+**什么时候用**：想验证"线上 AI 从 rule_fallback 切到真模型"是否配对了。
+代码里三个变量必须**一起**配（见 `docs/mgmt/day6.md` §7.3）：
+
+| 变量 | 说明 |
+| --- | --- |
+| `LLM_API_KEY` | 只在部署平台填（`sync: false`），不进仓库 |
+| `LLM_BASE_URL` | 要**完整 URL**（`.../chat/completions`），不是 base 路径 |
+| `LLM_MODEL` | 必须是该服务真实存在的模型名 |
+
+用法：
+
+    # 1) 本地直接问模型（不经过 FastAPI，最快定位 key/URL/模型名的问题）
+    set LLM_API_KEY=...   ; 不要写进任何文件
+    python scripts/check_llm.py --direct
+
+    # 2) 查线上接口最终走了哪条路（看 source 是 llm 还是 rule_fallback）
+    python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
+
+    # 3) 两个都查
+    python scripts/check_llm.py --direct --base https://playerstock-backend-mdlk.onrender.com
+
+退出码：0 = 直接调用成功；1 = 直接调用失败（看下面提示）。`--base` 那条只报告事实，不改判定。
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "code" / "backend"))
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def mask(value: str) -> str:
+    if not value:
+        return "（空）"
+    return f"{value[:6]}…{value[-4:]}" if len(value) > 12 else "已设置"
+
+
+def show_env() -> dict[str, str]:
+    key = os.getenv("LLM_API_KEY", "")
+    base = os.getenv("LLM_BASE_URL", "")
+    model = os.getenv("LLM_MODEL", "")
+    print("[llm] 当前环境：")
+    print(f"  LLM_API_KEY  = {mask(key)}")
+    print(f"  LLM_BASE_URL = {base or '（未设置，代码会用默认值）'}")
+    print(f"  LLM_MODEL    = {model or '（未设置，代码会用默认值）'}")
+    return {"key": key, "base": base, "model": model}
+
+
+def check_direct() -> int:
+    """绕过 FastAPI 直接打一次 chat/completions，错误信息最具体。"""
+    env = show_env()
+    if not env["key"]:
+        print("\n[llm] ❌ 没设 LLM_API_KEY，跳过直接调用。")
+        print("  提示：线上不配 key 是**设计好的降级**（rule_fallback），不是故障；")
+        print("  要切真模型，按 day6.md §7.3 在 Render 控制台填三个变量。")
+        return 1
+
+    from ai.llm_agent import DEFAULT_BASE_URL, DEFAULT_MODEL
+
+    url = env["base"] or DEFAULT_BASE_URL
+    model = env["model"] or DEFAULT_MODEL
+    payload = {
+        "model": model,
+        "temperature": 0,
+        "messages": [{"role": "user", "content": "只回四个字：连接成功"}],
+    }
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {env['key']}",
+        },
+        method="POST",
+    )
+
+    print(f"\n[llm] POST {url}")
+    print(f"[llm] model = {model}")
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+        content = (
+            body.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if isinstance(body, dict)
+            else ""
+        )
+        print(f"[llm] ✅ 200，模型回复：{content!r}")
+        print("[llm] 说明 key / URL / 模型名三者都通，可以回 Render 填环境变量了。")
+        return 0
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:400]
+        print(f"[llm] ❌ HTTP {exc.code}")
+        print(f"  {detail}")
+        print("  常见原因：① URL 少写 `/chat/completions`；② 模型名不存在（换 flash/free 档）；")
+        print("  ③ 模型不支持 `temperature`（如 kimi-k3 会 400）或未开放 chat-completions 协议。")
+        return 1
+    except Exception as exc:  # noqa: BLE001
+        print(f"[llm] ❌ 调用失败：{type(exc).__name__}: {exc}")
+        print("  常见原因：网络不通 / URL 写错主机名 / 超时（本脚本 20s）。")
+        return 1
+
+
+def check_endpoint(base: str) -> int:
+    """问线上接口：最终给的是 llm 还是 rule_fallback。"""
+    url = base.rstrip("/") + "/api/analysis/1"
+    print(f"\n[llm] 查询线上接口 {url}")
+    try:
+        with urllib.request.urlopen(url, timeout=60) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        print(f"[llm] ❌ 请求失败：{type(exc).__name__}: {exc}")
+        return 1
+
+    source = body.get("source")
+    print(f"  source = {source}")
+    print(f"  action = {body.get('action')} ｜ risk = {body.get('risk_level')}")
+    print(f"  reason = {(body.get('reason') or '')[:80]}")
+    if source == "llm":
+        print("[llm] ✅ 线上已走真模型（说明三个变量都配对了）。")
+        return 0
+    print("[llm] ℹ️ 线上仍是 rule_fallback：要么没配 key（设计降级），要么配了但调用失败（会自动回落，不报错）。")
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="检查 LLM 配置 / 线上 AI 是否走真模型")
+    parser.add_argument("--direct", action="store_true", help="用当前环境变量直接调模型")
+    parser.add_argument("--base", default="", help="后端根地址，查 /api/analysis/1 的 source")
+    args = parser.parse_args()
+
+    if not args.direct and not args.base:
+        parser.error("至少给一个：--direct 或 --base")
+
+    code = 0
+    if args.direct:
+        code = check_direct()
+    if args.base:
+        ep = check_endpoint(args.base)
+        code = code or ep
+    return code
+
+
+if __name__ == "__main__":
+    sys.exit(main())
