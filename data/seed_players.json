@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "scenario": "Counter-Strike 2 (CS2)",
   "description": "PlayerStock 固定演示数据。选手身份（姓名/战队/位置）为公开可查的真实 CS2 职业选手信息；价格与综合表现评分为本项目自行设定的模拟数据，不代表任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部均无关联，非官方产品。",
   "non_affiliation_notice": "本项目为课程作品，非官方、未获授权背书；不展示任何官方图片、Logo 或统计口径；选手姓名仅用于技术演示中的标识。",
@@ -10,7 +10,7 @@
       "https://news.zhibo8.com/game/2026-01-11/6962c85b0ee8enative.htm"
     ],
     "抓取日期": "2026-10-17",
-    "说明": "战队归属以榜单公布时为准；若赛季间发生转会，由 D 同学在第 4 天核对更新，改动只涉及 team 字段。"
+    "说明": "战队归属以榜单公布时为准；若赛季间发生转会，由 D 同学在第 4 天核对更新，改动只涉及 team 字段。2026-11-07：扩至 16 名选手 / 8 队（每队 2 人），m0NESY 由 G2 转会 Falcons（第 6 天核对）。"
   },
   "field_notes": {
     "initial_price": "上市初始价，由本项目设定。它不是 players 表的字段，落库时写成 price_history 的第一条记录（reason = 初始价格）",
@@ -56,14 +56,14 @@
       "player_id": 3,
       "name": "m0NESY",
       "display_name": "m0NESY",
-      "team": "G2",
+      "team": "Falcons",
       "role": "AWPer",
       "initial_price": 96.0,
       "prev_price": 96.0,
       "current_price": 91.2,
       "rating": 86,
       "status": "trading",
-      "note": "演示价格回落与 SELL 建议"
+      "note": "演示价格回落与 SELL 建议；2026-11-07 转会标注：G2 → Falcons"
     },
     {
       "player_id": 4,
@@ -129,6 +129,110 @@
       "rating": 66,
       "status": "trading",
       "note": "跌幅最大，用于演示抄底买入"
+    },
+    {
+      "player_id": 9,
+      "name": "broky",
+      "display_name": "broky",
+      "team": "FaZe Clan",
+      "role": "AWPer",
+      "initial_price": 98.0,
+      "prev_price": 98.0,
+      "current_price": 96.4,
+      "rating": 79,
+      "status": "trading",
+      "note": "新增：与 ropz 组成 FaZe 双核；小幅回落用于演示持仓浮亏"
+    },
+    {
+      "player_id": 10,
+      "name": "w0nderful",
+      "display_name": "w0nderful",
+      "team": "NAVI",
+      "role": "AWPer",
+      "initial_price": 92.0,
+      "prev_price": 92.0,
+      "current_price": 88.3,
+      "rating": 72,
+      "status": "trading",
+      "note": "新增：NAVI 双核；上市即回调"
+    },
+    {
+      "player_id": 11,
+      "name": "huNter-",
+      "display_name": "huNter-",
+      "team": "G2",
+      "role": "Rifler",
+      "initial_price": 84.0,
+      "prev_price": 84.0,
+      "current_price": 87.4,
+      "rating": 71,
+      "status": "trading",
+      "note": "新增：G2 双核之一；小幅上涨"
+    },
+    {
+      "player_id": 12,
+      "name": "Snax",
+      "display_name": "Snax",
+      "team": "G2",
+      "role": "Support",
+      "initial_price": 65.0,
+      "prev_price": 65.0,
+      "current_price": 61.8,
+      "rating": 62,
+      "status": "trading",
+      "note": "新增：G2 低分标的，演示低价股买入"
+    },
+    {
+      "player_id": 13,
+      "name": "device",
+      "display_name": "device",
+      "team": "Astralis",
+      "role": "AWPer",
+      "initial_price": 110.0,
+      "prev_price": 110.0,
+      "current_price": 106.7,
+      "rating": 82,
+      "status": "trading",
+      "note": "新增：老牌明星，温和回落"
+    },
+    {
+      "player_id": 14,
+      "name": "stavn",
+      "display_name": "stavn",
+      "team": "Astralis",
+      "role": "Rifler",
+      "initial_price": 82.0,
+      "prev_price": 82.0,
+      "current_price": 79.6,
+      "rating": 69,
+      "status": "trading",
+      "note": "新增：Astralis 双核第二名"
+    },
+    {
+      "player_id": 15,
+      "name": "910",
+      "display_name": "910",
+      "team": "The MongolZ",
+      "role": "AWPer",
+      "initial_price": 78.0,
+      "prev_price": 78.0,
+      "current_price": 82.9,
+      "rating": 77,
+      "status": "trading",
+      "note": "新增：亚洲战队首次上市，小幅上涨"
+    },
+    {
+      "player_id": 16,
+      "name": "bLitz",
+      "display_name": "bLitz",
+      "team": "The MongolZ",
+      "role": "IGL",
+      "initial_price": 60.0,
+      "prev_price": 60.0,
+      "current_price": 57.6,
+      "rating": 64,
+      "status": "trading",
+      "note": "新增：IGL 折价标的"
     }
   ]
 }

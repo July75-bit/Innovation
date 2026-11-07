@@ -50,7 +50,7 @@ def _to_summary(player: Player) -> PlayerSummary:
 
 @router.get("", response_model=list[PlayerSummary], summary="市场选手列表")
 def list_players(db: Session = Depends(get_db)) -> list[PlayerSummary]:
-    """8 名选手无分页，按 player_id 升序。"""
+    """16 名选手无分页，按 player_id 升序。"""
     players = db.scalars(select(Player).order_by(Player.player_id)).all()
     return [_to_summary(player) for player in players]
 

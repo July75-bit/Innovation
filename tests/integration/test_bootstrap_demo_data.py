@@ -72,7 +72,7 @@ def test_bootstrap_fills_points_for_every_trading_player(tmp_path: Path) -> None
         players = conn.execute(
             "select player_id, name, status from players order by player_id"
         ).fetchall()
-        assert len(players) == 8, "应当写入 8 名选手"
+        assert len(players) == 16, "应当写入 16 名选手"
 
         for player_id, name, status in players:
             points = conn.execute(

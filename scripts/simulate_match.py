@@ -49,7 +49,7 @@ SEED_FILE = ROOT / "data" / "seed_players.json"
 
 # ---------------------------------------------------------------- 数据装载
 def load_players(path: Path = SEED_FILE) -> list[dict]:
-    """读取固定演示数据（8 名真实 CS2 选手，价格与评分为模拟值）。"""
+    """读取固定演示数据（16 名真实 CS2 选手，价格与评分为模拟值）。"""
     if not path.exists():
         raise SystemExit(f"找不到种子数据：{path}")
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -86,7 +86,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--rounds",
         type=int,
         default=1,
-        help="生成几轮比赛（默认 1：8 名选手各一条更新，正好覆盖 Day2 验收）",
+        help="生成几轮比赛（默认 1：16 名选手各一条更新）",
     )
     parser.add_argument("--seed", type=int, default=42, help="随机种子（演示必须固定）")
     parser.add_argument("--window", type=int, default=5, help="标准化窗口（默认 5 场）")
