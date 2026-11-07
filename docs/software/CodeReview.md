@@ -8,37 +8,97 @@
 
 ## 1. 3.6.1 质量控制和保证方法
 
-课程要求两条：**代码要加必要的日志**、**代码要加异常和错误处理**。逐条给证据：
+课程要求两条：**代码要加必要的日志**、**代码要加异常和错误处理**。下面不是原则，是逐处清单（数字均可用 §5 的命令复核）。
 
 ### 1.1 日志（logging）
 
-| 位置 | 日志 | 目的 |
-| --- | --- | --- |
-| `code/backend/ai/llm_agent.py:293` | `logger.warning("LLM 输出不可用，回落规则版：%s: %s", …)` | AI 降级**必须留痕**，答辩可查降级原因 |
-| `code/backend/app/main.py`（启动期） | `logger.warning` ×3：Render 上误用 SQLite、`DATABASE_URL` 未配置回落本地、`CORS_ORIGINS` 显式含 `*` | 把"线上数据会丢/来源全放开"这类**运维风险在日志里喊出来**，而不是静默 |
-| `code/backend/app/main.py` | `logger.info("CORS 放行来源：%s", …)` | 启动即可核对白名单是否生效 |
-| `scripts/update_prices.py` / `bootstrap_demo_data.py` | 分步 `print` 进度（灌数 1/3、2/3、3/3） | 长流程可观测 |
+**日志器：6 个模块级命名空间**（`playerstock`、`playerstock.errors`、`playerstock.trades`、`ai.llm_agent`、`ai.context`、`app.api.ai`），统一走标准库 `logging`，由部署平台（Render）收集 stdout。
 
-### 1.2 异常与错误处理
+**全部 12 处日志调用（下表按场景合并为 11 行，买卖各 1 处）**：
 
-| 机制 | 位置 | 说明 |
-| --- | --- | --- |
-| 统一错误体 | `app/core/errors.py` | 所有 4xx/5xx 返回 `{success:false, message(中文), code(机器码)}`；前端**不写映射表**直接展示 |
-| 异常分级捕获 | `ai/llm_agent.py` | 只捕 `ImportError/ValueError`（配置）与 `OSError/ValueError`（网络/JSON），**禁止裸 except**；失败一律回落 `rule_fallback`，AI 故障不用 4xx/5xx |
-| 事务回滚 | `app/core/price_update.py`、`app/api/trades.py` | 任一步失败整批 rollback；并发守卫用条件更新 + `rowcount` |
-| 输入校验 | Pydantic schema + `TradePanel` 前端预校验 | 非法数量 422、余额不足 400、暂停交易 400，均有测试 |
-| 降级链路 | `ai/fallback.py` | 无密钥/超时/脏输出 → 同结构 6 字段兜底 |
+| 级别 | 位置 | 打什么 | 为什么必须打 |
+| --- | --- | --- | --- |
+| info | `app/main.py:78` | 启动即输出**当前用哪个库**（SQLite / Postgres） | "线上数据为什么总丢"的第一现场 |
+| info | `app/main.py:82` | 启动输出**CORS 实际放行来源** | 一眼核对白名单是否生效，不用猜 |
+| warning | `app/main.py:55` | `CORS_ORIGINS` 未配置 → 退化为放开并告警 | 把"配置漏填"从**无声事故**变成日志第一屏可见 |
+| warning | `app/main.py:61` | `CORS_ORIGINS` 显式含 `*` | 合规口径要求"放开要留痕" |
+| warning | `app/main.py:64` | 线上仍用本地默认来源 → 退化并告警 | BUG-12 事故的复盘产物：误配必须喊出来 |
+| warning | `app/main.py:86` | **Render 上却用 SQLite** | 免费实例文件系统是临时的，数据会全丢 |
+| warning | `ai/llm_agent.py:322` | LLM 输出不可用 → 回落规则版，附异常类型与原因 | AI 降级必须留痕，答辩可查"为什么没用模型" |
+| warning | `ai/context.py:219` | 查库失败 → 回落 seed 数据，附原因 | 区分"AI 挂了"与"库挂了" |
+| warning | `app/api/ai.py:108` | 上下文组装失败 → 用最小上下文 | 连 seed 都读不到时，仍要能定位 |
+| exception | `app/api/trades.py:211` / `:310` | **买入/卖出失败**（含 user_id、player_id 与堆栈） | 交易是最危险的写路径，失败必须能追到人和标的 |
+| exception | `app/core/errors.py:59` | 未处理异常（method + path + 堆栈） | 500 不把堆栈给前端，但**服务端必须留全套** |
 
-**一条真实降级日志长什么样**（2026-11-07 本机实跑：注入一个超时的假 client，不触网）：
+**一条真实日志长什么样**（2026-11-07 本机实跑：注入一个超时的假 client，不触网）：
 
 ```
 WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model did not respond in 20s
 → 接口返回 200，source=rule_fallback，action=HOLD
 ```
 
-这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**，线上能查到为什么没用上模型；③ 故障**没有升级成 5xx**，交易与行情完全不受影响。复跑方式见 §5 最后一条。
+这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**；③ 故障**没有升级成 5xx**，交易与行情不受影响。
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（176 条中约 50 条是异常/边界路径）。
+**没有日志的地方，与原因**（如实交代）：
+
+| 模块 | 情况 | 为什么合理 |
+| --- | --- | --- |
+| `code/core_engine/` | **0 处日志** | 纯函数：不碰库、不碰网络、无副作用；参数非法一律 `raise ValueError`（9 处），由调用方决定怎么记录 |
+| `scripts/` | 用 `print` 而非 logger | 命令行工具，输出即用户界面（灌数 1/3、2/3、3/3 进度），进日志反而难读 |
+
+### 1.2 异常与错误处理
+
+**第一层：所有失败都是同一个 JSON**（契约 `api_contract.md` §2）
+
+```json
+{"success": false, "message": "可直接展示的中文", "code": "机器码"}
+```
+
+由 `app/core/errors.py` 统一挂三个 handler：
+
+| 异常类型 | HTTP | `code` | 行为 |
+| --- | --- | --- | --- |
+| `ApiError`（业务） | 400 / 404 / 500 | 见下表 | `message` 前端**直接展示**，不写映射表 |
+| `RequestValidationError`（Pydantic） | 422 | `VALIDATION_ERROR` | 转成"请求参数不合法：quantity"这类人话，不暴露 Pydantic 原文 |
+| 其它所有异常 | 500 | `INTERNAL_ERROR` | `logger.exception` 留全套堆栈；**返回给前端的只有一句中文** |
+
+**第二层：7 个业务错误码，每个都有对应用例**
+
+| `code` | 触发条件 | 测试 |
+| --- | --- | --- |
+| `PLAYER_NOT_FOUND` | 选手不存在 | `test_api_ai.py`、`test_api_players.py` |
+| `INSUFFICIENT_BALANCE` | 余额不足（提示带"最多可买 N 股"） | `test_trades_rule.py` |
+| `INSUFFICIENT_POSITION` | 持仓不足（提示带"可卖 N 股"） | `test_trades_rule.py` |
+| `POSITION_LIMIT_EXCEEDED` | 超过 50 股上限 | `test_trades_rule.py` |
+| `PLAYER_TRADING_SUSPENDED` | 比赛中暂停交易 | `test_core_exceptions.py` |
+| `ENDPOINT_DISABLED` | 只读自检接口未开启 | `test_debug_api.py` |
+| `INTERNAL_ERROR` | 未预期异常兜底 | `test_core_exceptions.py`（回滚路径） |
+
+**第三层：捕获方式有纪律**（实测 32 处 `try/except`）
+
+| 纪律 | 做法 | 反例（我们没这么写） |
+| --- | --- | --- |
+| **不裸 except** | 只捕具体类型：配置用 `ImportError/ValueError`，网络与 JSON 用 `OSError/ValueError` | `except:` 一把抓，连 Ctrl+C 都吞掉 |
+| **兜底必须留痕** | 确实需要 `except Exception` 的地方，一律 `logger.exception(...)` + 注释说明为什么宽 | 静默 `pass` |
+| **兜底不暴露堆栈** | 转成 `ApiError("交易失败，请稍后重试", 500, "INTERNAL_ERROR")` | 把 traceback 直接返回前端 |
+| **不可测的兜底标出来** | `# pragma: no cover` 标注（交易兜底 2 处、5 个 `__repr__`），覆盖率报告里能看出它们是"刻意不测"而非"漏测" | 为了刷覆盖率硬造用例 |
+
+**第四层：事务边界**（写路径的安全网）
+
+- `db.commit()` 4 处、`db.rollback()` 8 处，**成对出现**：`except ApiError → rollback → raise`（保留原始错误码），`except Exception → rollback → logger.exception → 转 500`；
+- 并发安全不靠"先查后写"，而是**把判断写进 SQL 的 WHERE + 看 `rowcount`**（BUG-01 的修复），失败即回滚；
+- 三张表（余额/持仓/流水）在同一事务内，任一步失败整批回滚。
+
+**第五层：AI 侧的四类故障一律降级，不影响主流程**
+
+| 故障 | 处理 | 结果 |
+| --- | --- | --- |
+| 无密钥 | 直接走规则版 | 200 + `rule_fallback` |
+| 超时（20s） | 捕获 `OSError` → 规则版 | 200 + `rule_fallback` |
+| 输出非 JSON / 字段缺失 / 枚举非法 | `ValueError` → 规则版 | 200 + `rule_fallback` |
+| 上下文组装失败 | `_minimal_context` 继续算 | 200 + `rule_fallback` |
+
+> 量化：`try/except` **32 处**、`raise ApiError` **15 处**、`raise ValueError` **9 处**（引擎入参校验）、`logger` 调用 **12 处**；176 条用例里**约 50 条专测异常与边界路径**（暂停交易、超上限、余额不足、脏输出、并发、上下文失败）。
 
 ---
 
@@ -157,6 +217,11 @@ cd code/frontend; npm ci; npm run build; npm run lint; npm run test:unit
 
 # 代码统计（§3 那张表就是它跑出来的）
 git ls-files | Select-String -Pattern '\.py$|\.vue$|\.ts$|\.md$|\.css$|\.html$|\.json$|\.ya?ml$'
+
+# §1 的日志/异常清单（数字都可复核）
+git grep -n "logger\." -- code/backend code/core_engine      # 12 处调用
+git grep -c "raise ApiError" -- code/backend                  # 15 处业务异常
+git grep -n "pragma: no cover" -- code/backend                # 刻意不测的兜底
 
 # 真实降级日志（§1.1 那条 WARNING，注入超时假 client，不触网）
 python -c "import logging; logging.basicConfig(level=logging.INFO); from ai.llm_agent import analyze; analyze({'player_id':1,'name':'ZywOo','current_price':126.0,'change_pct':5.0,'rating':88,'recent_prices':[{'price':120.0},{'price':126.0}],'position':{'quantity':10,'avg_cost':120.0}}, chat=lambda p: (_ for _ in ()).throw(TimeoutError('model did not respond in 20s')))"
