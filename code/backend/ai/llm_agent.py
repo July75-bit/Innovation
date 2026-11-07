@@ -79,16 +79,30 @@ def _load_settings() -> Any:
         return None
 
 
+def _clean_env(value: str) -> str:
+    """清掉环境变量里常见的粘贴污染：首尾空白 + 成对引号。
+
+    Windows `set LLM_BASE_URL="https://…"` 会把**引号也当成值的一部分**（cmd 与 PowerShell 的
+    `$env:X="v"` 行为不同），Render 控制台同样可能被粘贴进引号；带引号的 URL 会直接
+    `unknown url type: "https`，带引号的 key 会 401。这里统一去掉，不靠使用者自己记得。
+    """
+    text = (value or "").strip()
+    for quote in ('"', "'"):
+        if len(text) >= 2 and text.startswith(quote) and text.endswith(quote):
+            text = text[1:-1].strip()
+    return text
+
+
 def _api_key(settings: Any) -> str:
     if settings is not None and getattr(settings, "llm_api_key", ""):
-        return str(settings.llm_api_key)
-    return os.getenv("LLM_API_KEY", "")
+        return _clean_env(str(settings.llm_api_key))
+    return _clean_env(os.getenv("LLM_API_KEY", ""))
 
 
 def _model(settings: Any) -> str:
     if settings is not None and getattr(settings, "llm_model", ""):
-        return str(settings.llm_model)
-    return os.getenv("LLM_MODEL", DEFAULT_MODEL)
+        return _clean_env(str(settings.llm_model)) or DEFAULT_MODEL
+    return _clean_env(os.getenv("LLM_MODEL", "")) or DEFAULT_MODEL
 
 
 def _timeout(settings: Any) -> float:
@@ -105,9 +119,9 @@ def _base_url() -> str:
 
     2026-11-07 实测踩坑：变量名叫 `LLM_BASE_URL`，很自然会只填 base（`.../openai/v1`），
     而旧实现把它当完整 URL 直接 POST → 404 → 被静默回落成规则版，看起来像"配了没生效"。
-    这里统一补齐，去掉一个只能靠记性避免的坑。
+    这里统一补齐，去掉一个只能靠记性避免的坑。顺带清掉粘贴带的引号/空格（见 `_clean_env`）。
     """
-    raw = (os.getenv("LLM_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
+    raw = (_clean_env(os.getenv("LLM_BASE_URL", "")) or DEFAULT_BASE_URL).rstrip("/")
     if not raw.endswith("/chat/completions"):
         raw = f"{raw}/chat/completions"
     return raw

@@ -339,6 +339,7 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 | 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
 | 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
 | 已知问题 6 | `/market` 直接访问曾白屏（市场页在 `/`、无兜底路由）。已修：`/market → /` 重定向 + `/:pathMatch(.*)* → /` 兜底（BUG-11）。**前端需重新部署后生效** |
+| 已知问题 7（LLM 实配，B 2026-11-07） | 按 §7.3 在 Render 配了 `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL=deepseek-v4.1-flash-free`，**key 有效（已过鉴权）但网关返回 `429 FreeUsageLimitError`**（"Free usage limit reached…subscribe to OpenCode Go"）。无 key 直连探测 `deepseek-v4.1-flash-free`/`glm-5.3-flash-free`/`mimo-v2.6-flash-free`/`big-pickle` **全部 429** → 免费档额度是账号/IP 级限制，换模型无效。**结论：线上保持“规则版兜底”**（接口仍 200，`source=rule_fallback`），答辩话术即"未配/额度受限时自动降级，AI 永不阻塞交易"。配了 key 时单次 AI 请求会多等约 1–1.8s（等失败再回落），**演示前建议清空 `LLM_API_KEY` 回到 ~200ms**。诊断工具：`python scripts/check_llm.py --scan` |
 
 ## 7. 常见故障排查
 
