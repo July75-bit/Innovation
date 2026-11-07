@@ -15,11 +15,12 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Header, Response
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,15 +30,19 @@ from app.core.database import get_db
 from app.core.errors import ApiError
 from app.core.security import hash_password, validate_password, validate_username, verify_password
 from app.core.time import utcnow
-from app.models import AuthToken, User
+from app.models import AuthToken, Position, Trade, User
 from app.schemas.auth import (
     AuthResponse,
     AuthUser,
+    DeleteAccountRequest,
+    DeleteAccountResponse,
     LoginRequest,
     LogoutResponse,
     MeResponse,
     RegisterRequest,
 )
+
+logger = logging.getLogger("playerstock.auth")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -139,6 +144,78 @@ def logout(
     revoked = revoke_token(db, authorization)
     db.commit()
     return LogoutResponse(message="已退出登录", revoked=revoked)
+
+
+@router.delete(
+    "/account",
+    response_model=DeleteAccountResponse,
+    summary="删除账号（含持仓与流水，不可恢复）",
+)
+def delete_account(
+    body: DeleteAccountRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    authorization: str | None = Header(default=None, alias="Authorization"),
+) -> DeleteAccountResponse:
+    """删除**当前令牌所属的私人账号**，级联清掉它的持仓 / 流水 / 令牌。
+
+    四道闸，少一道都可能删错东西：
+    1. 必须带令牌：没带 Authorization 时 get_current_user 会给出公共演示账户，
+       而公共账户不属于任何个人，删它等于删大家的演示数据 → 401；
+    2. 必须是私人账户（有口令）：`demo` 一律 403 `PUBLIC_ACCOUNT`；
+    3. 必须再输一次口令：只靠令牌就能删号，在共用电脑上是不可接受的失败模式；
+    4. 统计并返回删掉的行数：让"级联删干净了"这件事在响应里可见，而不是靠承诺。
+
+    删除顺序按外键来（positions / trades / auth_tokens → users），
+    这样即使某个环境的 SQLite 没开 `PRAGMA foreign_keys`，也不会留下孤儿行。
+    """
+    if bearer_token(authorization) is None:
+        raise ApiError(
+            "公共演示账户不能删除：请先登录自己的账号",
+            status_code=401,
+            code="UNAUTHORIZED",
+        )
+    if user.password_hash is None:
+        raise ApiError(
+            f"账户 {user.nickname} 是公共演示账户，不支持删除",
+            status_code=403,
+            code="PUBLIC_ACCOUNT",
+        )
+    if not verify_password(body.password, user.salt, user.password_hash):
+        raise ApiError("密码不正确，未能删除账号", status_code=401, code="INVALID_CREDENTIALS")
+
+    deleted_positions = db.scalar(
+        select(func.count()).select_from(Position).where(Position.user_id == user.user_id)
+    )
+    deleted_trades = db.scalar(
+        select(func.count()).select_from(Trade).where(Trade.user_id == user.user_id)
+    )
+    tokens = db.scalars(select(AuthToken).where(AuthToken.user_id == user.user_id)).all()
+    deleted_tokens = len(tokens)
+
+    # 先删子表再删 users：bulk DELETE 一条语句清干净，不依赖 ORM 级联，
+    # 也就不怕某个环境的 SQLite 忘了开 PRAGMA foreign_keys（开没开结果都一样）
+    for row in tokens:
+        db.delete(row)
+    db.execute(delete(Position).where(Position.user_id == user.user_id))
+    db.execute(delete(Trade).where(Trade.user_id == user.user_id))
+    db.delete(user)
+    db.commit()
+
+    logger.info(
+        "账号已删除：user_id=%s nickname=%s 持仓 %s 条 / 流水 %s 条 / 令牌 %s 条",
+        user.user_id,
+        user.nickname,
+        deleted_positions,
+        deleted_trades,
+        deleted_tokens,
+    )
+    return DeleteAccountResponse(
+        message="账号已删除",
+        deleted_positions=int(deleted_positions or 0),
+        deleted_trades=int(deleted_trades or 0),
+        deleted_tokens=deleted_tokens,
+    )
 
 
 def _purge_expired(db: Session, user_id: int) -> int:

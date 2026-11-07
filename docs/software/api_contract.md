@@ -63,6 +63,7 @@
 | 14 | POST | `/api/auth/login` | **登录**：口令校验通过签发新令牌 | A + B | ✅ 已实现 |
 | 15 | GET | `/api/auth/me` | **当前身份**：首屏用本地令牌确认还管不管用 | A + B | ✅ 已实现 |
 | 16 | POST | `/api/auth/logout` | **退出**：撤销当前令牌（幂等） | A + B | ✅ 已实现 |
+| 17 | DELETE | `/api/auth/account` | **删除账号**：口令二次确认，级联删持仓/流水/令牌 | A + B | ✅ 已实现（`tests/unit/test_api_auth.py` + `tests/integration/test_auth_multiuser.py`） |
 | 12 | GET | `/api/debug/db` | **只读自检（验收探针，不对前端开放）**：返回数据库方言、表清单与行数 | B | ✅ 已实现（第 5 天 B；`tests/unit/test_debug_api.py` 3 条）。只回元信息、不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 可关闭（关后 404） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
@@ -387,6 +388,45 @@
 ```json
 { "success": true, "message": "已退出登录", "revoked": true }
 ```
+
+### 4.16 `DELETE /api/auth/account`（删除账号）
+
+请求（**必须再输一次口令**）：
+
+```json
+{ "password": "cs2go1234" }
+```
+
+成功 `200`：
+
+```json
+{
+  "success": true,
+  "message": "账号已删除",
+  "deleted_positions": 1,
+  "deleted_trades": 1,
+  "deleted_tokens": 1
+}
+```
+
+四道闸，少一道都可能删错东西：
+
+| HTTP | `code` | 条件 |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | 没带 `Authorization`——那会落到公共演示账户，它不属于任何个人，不能删 |
+| 403 | `PUBLIC_ACCOUNT` | 带了令牌但账户无口令（理论上不该出现，兜底用） |
+| 401 | `INVALID_CREDENTIALS` | 口令不对，**且必须什么都没删**（测试专门守这条） |
+| 200 | — | 删除成功，响应里报告删掉的持仓 / 流水 / 令牌行数 |
+
+**为什么删号要输口令**：删的是余额、持仓、流水，不可恢复。只靠令牌就能删号，
+在"共用电脑忘了退出"这种场景下是不可接受的失败模式。
+
+**删除范围**：`positions`、`trades`、`auth_tokens` 里属于该 `user_id` 的行，然后 `users` 行本身。
+`players` / `price_history` 与公共演示账户 `demo` 的数据**一律不动**（有集成用例守着）。
+删除顺序是先子表后 `users`，不依赖 ORM 级联，也就不怕某个环境的 SQLite 没开 `PRAGMA foreign_keys`。
+
+**DELETE 带请求体**：`TestClient` 的 `.delete()` 不收 `json=`，测试里走 `client.request("DELETE", …)`；
+浏览器 `fetch` 没有这个限制，前端就是这么发的。
 
 ### 4.15 身份与数据归属（本轮新增的全局约定）
 

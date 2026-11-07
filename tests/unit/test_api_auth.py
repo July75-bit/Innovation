@@ -209,3 +209,76 @@ def test_库里不存明文口令(client, session_factory):
         assert GOOD_PASSWORD not in (user.password_hash or "")
         assert user.password_hash.startswith("pbkdf2_sha256$")
         assert user.salt and len(user.salt) == 32
+
+
+# ------------------------- 删除账号（契约 §4.16） -------------------------
+
+DELETE_KEYS = {"success", "message", "deleted_positions", "deleted_trades", "deleted_tokens"}
+
+def delete_account(client, password=GOOD_PASSWORD, headers=None):
+    """DELETE 带请求体只能走 client.request()：starlette TestClient 的 .delete() 不收 json=。
+
+    真实浏览器 fetch 没这个限制（前端就是这么发的），所以这是测试客户端的怪癖，不是接口设计问题。
+    """
+    return client.request(
+        "DELETE",
+        "/api/auth/account",
+        json={"password": password},
+        headers=headers or {},
+    )
+
+
+def test_删除账号成功并报告删掉了多少数据(client):
+    token = register(client).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    client.post("/api/trades/buy", json={"player_id": 1, "quantity": 2}, headers=headers)
+
+    resp = delete_account(client, headers=headers)
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert set(body) == DELETE_KEYS
+    assert body["success"] is True
+    assert body["deleted_positions"] == 1
+    assert body["deleted_trades"] == 1
+    assert body["deleted_tokens"] == 1
+
+
+def test_删除后旧令牌立刻失效(client):
+    token = register(client).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    delete_account(client, headers=headers)
+
+    assert client.get("/api/auth/me", headers=headers).status_code == 401
+
+
+def test_口令不对删不掉且账号还在(client):
+    token = register(client).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    resp = delete_account(client, "wrongpass1", headers)
+
+    assert resp.status_code == 401
+    assert resp.json()["code"] == "INVALID_CREDENTIALS"
+    # 关键：失败必须是"什么都没删"，不能是删了一半再报错
+    assert client.get("/api/auth/me", headers=headers).status_code == 200
+
+
+def test_不带令牌不能删除账号(client):
+    resp = delete_account(client)
+
+    assert resp.status_code == 401
+    assert "公共演示账户" in resp.json()["message"]
+
+
+def test_删除过的用户名可以重新注册(client):
+    token = register(client, username="lan_player").json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    delete_account(client, headers=headers)
+
+    again = register(client, username="lan_player")
+
+    assert again.status_code == 201
+    # 新账号是全新的一行：余额回到初始 5000，与刚被删掉的那个无关
+    assert again.json()["user"]["balance"] == 5000.0

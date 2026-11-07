@@ -57,3 +57,22 @@ class LogoutResponse(BaseModel):
     success: bool = True
     message: str
     revoked: bool = False
+
+
+class DeleteAccountRequest(BaseModel):
+    """删除账号必须再输一次口令。
+
+    为什么不做成"点一下就走"：删的是余额 / 持仓 / 流水，**不可恢复**。
+    令牌泄露（共用电脑忘了退出）时，只靠令牌就能删号是不可接受的失败模式。
+    """
+
+    password: str = Field(max_length=128)
+
+
+class DeleteAccountResponse(BaseModel):
+    success: bool = True
+    message: str
+    # 顺手告诉前端删掉了多少条数据，答辩时"级联删干净了"有地方可指
+    deleted_positions: int
+    deleted_trades: int
+    deleted_tokens: int

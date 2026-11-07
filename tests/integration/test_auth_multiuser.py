@@ -12,6 +12,8 @@
 
 from __future__ import annotations
 
+from sqlalchemy import func
+
 from app.core.config import settings
 
 SEED_ZYWOO = 1
@@ -24,6 +26,19 @@ def make_account(client, username: str) -> dict:
     resp = client.post("/api/auth/register", json={"username": username, "password": GOOD_PASSWORD})
     assert resp.status_code == 201, resp.text
     return {"Authorization": f"Bearer {resp.json()['token']}"}
+
+
+def delete_account(client, password=GOOD_PASSWORD, headers=None):
+    """DELETE 带请求体只能走 client.request()：starlette TestClient 的 .delete() 不收 json=。
+
+    真实浏览器 fetch 没这个限制（前端就是这么发的），所以这是测试客户端的怪癖，不是接口设计问题。
+    """
+    return client.request(
+        "DELETE",
+        "/api/auth/account",
+        json={"password": password},
+        headers=headers or {},
+    )
 
 
 def test_两个账号的余额与持仓互不可见(client):
@@ -117,3 +132,59 @@ def test_退出后公共账户仍然能正常买卖(client):
     assert again.status_code == 200
     fresh = {"Authorization": f"Bearer {again.json()['token']}"}
     assert client.get("/api/positions", headers=fresh).json()[0]["quantity"] == 1
+
+
+def test_删账号只删自己的数据(client):
+    a = make_account(client, "alice")
+    b = make_account(client, "bob")
+    client.post("/api/trades/buy", json={"player_id": SEED_ZYWOO, "quantity": 5}, headers=a)
+    client.post("/api/trades/buy", json={"player_id": SEED_FLAMEZ, "quantity": 10}, headers=b)
+
+    del_a = delete_account(client, headers=a)
+    assert del_a.status_code == 200, del_a.text
+
+    # B 完全不受影响：持仓、余额、流水都是自己的那一份
+    positions_b = client.get("/api/positions", headers=b).json()
+    assert [(row["name"], row["quantity"]) for row in positions_b] == [("flameZ", 10)]
+    assert client.get("/api/account", headers=b).json()["balance"] == 5000.0 - 63.0 * 10
+    assert len(client.get("/api/trades", headers=b).json()) == 1
+
+    # 公共演示账户不属于任何个人，删私人账号不该碰到它
+    # （/api/account 按契约 §4.5 没有 nickname 字段，身份要从 §4.13 的 /me 取）
+    me = client.get("/api/auth/me").json()
+    assert me["authenticated"] is False
+    assert me["user"]["nickname"] == "demo"
+    assert me["user"]["account_type"] == "public_demo"
+
+
+def test_删账号后公共路径照常且名字不再占用(client, session_factory):
+    from sqlalchemy import select
+
+    from app.models import AuthToken, Position, Trade, User
+
+    a = make_account(client, "alice")
+    token = a["Authorization"]
+    client.post("/api/trades/buy", json={"player_id": SEED_ZYWOO, "quantity": 1}, headers=a)
+
+    assert (
+        delete_account(client, headers=a).status_code
+        == 200
+    )
+
+    # 访客（demo）路径照常可用
+    assert client.post("/api/trades/buy", json={"player_id": SEED_ZYWOO, "quantity": 1}).status_code == 200
+
+    # 库里必须清干净：账号行、持仓行、流水行、令牌行都不再有 alice 的痕迹
+    with session_factory() as db:
+        assert db.scalar(select(User).where(User.nickname == "alice")) is None
+        assert db.scalar(select(func.count()).select_from(Position)) == 1  # 只剩 demo 那一行
+        assert db.scalar(select(func.count()).select_from(Trade)) == 1
+        # 访客那笔买调用的是公共账户，公共账户不签发令牌（只有注册/登录才发），所以应为 0
+        assert db.scalar(select(func.count()).select_from(AuthToken)) == 0
+        names = sorted(row.nickname for row in db.scalars(select(User)).all())
+    assert names == ["demo"]
+
+    # 名字释放了，可以重新注册成全新账号
+    again = client.post("/api/auth/register", json={"username": "alice", "password": GOOD_PASSWORD})
+    assert again.status_code == 201
+    assert again.json()["user"]["balance"] == 5000.0
