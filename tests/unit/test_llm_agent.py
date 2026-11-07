@@ -19,7 +19,9 @@ from ai.llm_agent import (
     DEFAULT_BASE_URL,
     LLMOutputError,
     OUTPUT_KEYS,
+    _api_key,
     _base_url,
+    _model,
     _parse_and_validate,
     analyze,
 )
@@ -218,3 +220,16 @@ def test_base_url_keeps_full_endpoint_untouched(monkeypatch):
 def test_base_url_strips_trailing_slash_and_spaces(monkeypatch):
     monkeypatch.setenv("LLM_BASE_URL", "  https://api.openai.com/v1/  ")
     assert _base_url() == "https://api.openai.com/v1/chat/completions"
+
+
+def test_base_url_strips_pasted_quotes(monkeypatch):
+    """Windows `set LLM_BASE_URL="https://…"` 会把引号并进值里 → 旧实现 unknown url type。"""
+    monkeypatch.setenv("LLM_BASE_URL", '"https://opencode.ai/inference/openai/v1"')
+    assert _base_url() == "https://opencode.ai/inference/openai/v1/chat/completions"
+
+
+def test_api_key_and_model_strip_pasted_quotes(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", '"oc_sk_demo"')
+    monkeypatch.setenv("LLM_MODEL", "'deepseek-v4.1-flash-free'")
+    assert _api_key(None) == "oc_sk_demo"
+    assert _model(None) == "deepseek-v4.1-flash-free"

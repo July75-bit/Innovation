@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import urllib.error
 import urllib.request
@@ -58,13 +57,20 @@ def mask(value: str) -> str:
 
 
 def show_env() -> dict[str, str]:
-    key = os.getenv("LLM_API_KEY", "")
-    base = os.getenv("LLM_BASE_URL", "")
-    model = os.getenv("LLM_MODEL", "")
+    """读环境变量并**清理**（去首尾空白/成对引号），打印清理后的值。
+
+    Windows `set X="v"` 会把引号并进值里，带引号的 URL 直接 `unknown url type`，
+    带引号的 key 则 401——这里提前清掉，避免"看起来配对了其实没配对"。
+    """
+    from ai.llm_agent import _api_key, _base_url, _model
+
+    key = _api_key(None)
+    base = _base_url()
+    model = _model(None)
     print("[llm] 当前环境：")
     print(f"  LLM_API_KEY  = {mask(key)}")
-    print(f"  LLM_BASE_URL = {base or '（未设置，代码会用默认值）'}")
-    print(f"  LLM_MODEL    = {model or '（未设置，代码会用默认值）'}")
+    print(f"  LLM_BASE_URL = {base}（已归一化：补齐 /chat/completions、去引号与空格）")
+    print(f"  LLM_MODEL    = {model}")
     return {"key": key, "base": base, "model": model}
 
 
@@ -77,12 +83,9 @@ def check_direct() -> int:
         print("  要切真模型，按 day6.md §7.3 在 Render 控制台填三个变量。")
         return 1
 
-    from ai.llm_agent import DEFAULT_MODEL, _base_url
-
-    # 直接复用后端的归一化：`LLM_BASE_URL` 填 base（`.../openai/v1`）或完整 URL 都行，
-    # 2026-11-07 就是因为只填 base 走了 404，这里不再让两处各写一套。
-    url = _base_url()
-    model = env["model"] or DEFAULT_MODEL
+    # 三个值都取自 show_env() 的清理结果（key/model/url 均已去引号、去空格、URL 已补齐）
+    url = env["base"]
+    model = env["model"]
     payload = {
         "model": model,
         "temperature": 0,
