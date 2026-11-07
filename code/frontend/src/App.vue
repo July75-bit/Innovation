@@ -1,5 +1,17 @@
 <script setup lang="ts">
 /**
+ * 白话导读：全站唯一的"外壳"页面——侧栏、导航、账户卡片、后端连接徽标都在这里，
+ * 中间的 <RouterView> 才是当前 URL 对应页面的出口（市场/详情/持仓/流水都渲染在那一块）。
+ *
+ * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped> 写样式（CSS）。
+ * scoped 的意思是"这里的样式只管本组件"，不会污染别的页面。
+ *
+ * 本文件里的关键逻辑：
+ *   - 挂载时(onMounted)拉一次余额 + 检测后端；
+ *   - ≤960px 时侧栏变成抽屉（CSS 媒体查询 + navOpen 控制）；
+ *   - 登录页 /auth 不套外壳，直接全屏渲染（isAuthPage）。
+ */
+/**
  * 应用外壳（界面设计层）：
  * - 桌面端 = 左侧栏（品牌 + 导航 + 账户概览 + 连接状态 + 合规）+ 右主区（内容）；
  * - ≤960px = 顶栏 + 抽屉导航（A4 响应式保留），合规声明回页面底部。
@@ -25,24 +37,23 @@ watch(
   () => (navOpen.value = false),
 )
 
-const { currentUser, logout } = useAuth()
+const { currentUser, accountLabel: accountKind, logout } = useAuth()
 const router = useRouter()
 
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
 
-/** 本地账号只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
-const displayName = computed(() => currentUser.value?.username ?? '访客')
+/** 私人账户只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
+const displayName = computed(() => currentUser.value?.nickname ?? '访客')
 const userInitial = computed(() => displayName.value.charAt(0).toUpperCase())
-const accountKind = computed(() => (currentUser.value ? '本地账号' : '未登录浏览'))
 
 /**
- * 侧栏账号按钮：已登录 = 退出，访客 = 放弃访客态去登录。
- * 两种情况都先清会话再跳 /auth——不清的话守卫会把已"登录"的用户从 /auth 弹回市场页。
+ * 侧栏账号按钮：私人账户 = 退出（撤销服务端令牌），访客 = 放弃访客态去登录页。
+ * 两种情况都先清会话再跳 /auth——不清的话守卫会把"已登录"的用户从 /auth 弹回市场页。
  */
-function onAccountAction(): void {
-  logout()
-  void router.push({ name: 'auth' })
+async function onAccountAction(): Promise<void> {
+  await logout()
+  await router.push({ name: 'auth' })
 }
 
 const { service: backend } = useBackendHealth()

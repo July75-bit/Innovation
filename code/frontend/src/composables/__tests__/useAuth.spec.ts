@@ -1,62 +1,80 @@
 /**
- * 本地账号态的回归测试。
+ * 注册 / 登录的前端逻辑测试（第 7 轮：真鉴权）。
  *
- * 注册 / 登录的界面（AuthView）只是这层的壳，逻辑全部放在 useAuth 里测最省劲：
- * 校验规则、重复用户名、密码摘要不落明文、"记住我"落在哪个 Storage、访客态能不能放行。
+ * 这一层现在只做三件事：表单校验、把后端响应翻译成界面要的 { ok, message }、
+ * 以及"身份存在哪里"（令牌 + 访客选择）。所以测试也按这三条写：
+ * - 校验类：纯函数，直接断言；
+ * - 动作类：mock 掉 ../api（不让测试打网络），断言令牌落到哪个 Storage、状态怎么变；
+ * - 恢复类：bootstrap 的三种结局（有效 / 401 / 网络错误）——这是最容易做错的一段。
  *
- * 注册字段按要求收敛成"用户名 + 密码"，所以这里也没有昵称/邮箱的用例了。
- *
- * 注意：账号表是模块级状态，同一个测试文件里用例之间会互相看得见，
- * 所以每条用例都用自己独占的用户名，别指望 beforeEach 能把内存里的表清空。
+ * 为什么要 vi.resetModules() + 动态 import：useAuth 的 user / bootstrapped 是模块级状态，
+ * 不重置的话前一条用例的身份会漏进后一条，测出来的绿是假的。
  */
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  DEMO_PASSWORD,
-  DEMO_USERNAME,
-  enterAsGuest,
-  ensureDemoUser,
-  login,
-  logout,
-  passwordStrength,
-  register,
-  useAuth,
-  validatePassword,
-  validateUsername,
-} from '../useAuth'
+// oxlint 的 require-mock-type-parameters 要求写清 mock 的签名；
+// 具体返回值由各用例的 mockResolvedValue / mockRejectedValue 决定，这里只声明形状
+type MockCall = (...args: unknown[]) => Promise<unknown>
 
-/** 与 useAuth 内部同名：测试里直接写死，是为了验证"记住我"到底写进哪个 Storage */
-const USERS_KEY = 'playerstock.auth.users.v1'
-const SESSION_KEY = 'playerstock.auth.session.v1'
-const SESSION_ONCE_KEY = 'playerstock.auth.session.v1.once'
+const apiMock = vi.hoisted(() => ({
+  register: vi.fn<MockCall>(),
+  login: vi.fn<MockCall>(),
+  me: vi.fn<MockCall>(),
+  logout: vi.fn<MockCall>(),
+}))
 
-const { session, currentUser, isAuthenticated, isLoggedIn, isGuest, registeredCount } = useAuth()
+vi.mock('../../api', () => ({ api: apiMock }))
 
-/** 注册只填用户名 + 密码，其余参数在测试里保持默认 */
-const reg = (username: string, password = 'abcd1234', remember = true) =>
-  register({ username, password, confirm: password, remember })
+const TOKEN_KEY = 'playerstock.auth.token.v1'
+const GUEST_KEY = 'playerstock.auth.guest.v1'
+
+const USER = {
+  user_id: 7,
+  nickname: 'lan_player',
+  balance: 5000,
+  initial_balance: 5000,
+  created_at: '2026-11-07T08:00:00Z',
+  account_type: 'private' as const,
+}
+
+const auth = () => import('../useAuth')
+
+/** 每条用例都要一个干净的模块实例 + 干净的浏览器存储 */
+async function fresh() {
+  vi.resetModules()
+  localStorage.clear()
+  sessionStorage.clear()
+  vi.clearAllMocks()
+  return auth()
+}
 
 beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
-  logout()
+  vi.clearAllMocks()
 })
 
 describe('表单校验', () => {
-  it('用户名：空 / 太短 / 非法字符都要拦，正常值放行', () => {
+  it('用户名：空 / 太短 / 非法字符都要拦，正常值放行', async () => {
+    const { validateUsername } = await fresh()
+
     expect(validateUsername('')).toMatch(/请填写/)
     expect(validateUsername('ab')).toMatch(/至少 3/)
     expect(validateUsername('s1 mple')).toMatch(/字母、数字和下划线/)
     expect(validateUsername('s1mple')).toBeNull()
   })
 
-  it('密码：长度与字母+数字两条规则', () => {
+  it('密码：长度与字母+数字两条规则', async () => {
+    const { validatePassword } = await fresh()
+
     expect(validatePassword('a1')).toMatch(/至少 8/)
     expect(validatePassword('allletters')).toMatch(/字母和数字/)
     expect(validatePassword('demo1234')).toBeNull()
   })
 
-  it('强度条只提示不拦截：纯字母数字=中，带符号或更长=较强', () => {
+  it('强度条只提示不拦截', async () => {
+    const { passwordStrength } = await fresh()
+
     expect(passwordStrength('demo1234').score).toBe(2)
     expect(passwordStrength('demo1234!').score).toBe(3)
     expect(passwordStrength('').score).toBe(0)
@@ -64,121 +82,231 @@ describe('表单校验', () => {
 })
 
 describe('注册', () => {
-  it('用户名 + 密码就能写号，成功后即登录，且密码不落明文', async () => {
-    const res = await reg('zhangsan')
+  it('成功后令牌落 localStorage（勾了记住我），身份变成私人账户', async () => {
+    const m = await fresh()
+    apiMock.register.mockResolvedValue({
+      token: 'srv-token-1',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
+
+    const res = await m.register({
+      username: ' lan_player ',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: true,
+    })
 
     expect(res.ok).toBe(true)
-    expect(currentUser.value?.username).toBe('zhangsan')
-    expect(isLoggedIn.value).toBe(true)
-    expect(localStorage.getItem(USERS_KEY)).not.toContain('abcd1234')
+    expect(apiMock.register).toHaveBeenCalledWith('lan_player', 'cs2go1234')
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('srv-token-1')
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.currentUser.value?.nickname).toBe('lan_player')
+    expect(m.isLoggedIn.value).toBe(true)
+    expect(m.isAuthenticated.value).toBe(true)
+    expect(m.accountLabel.value).toBe('私人账户')
   })
 
-  it('两次密码不一致时不写号', async () => {
-    const before = registeredCount.value
+  it('不勾记住我 → 令牌只进 sessionStorage', async () => {
+    const m = await fresh()
+    apiMock.register.mockResolvedValue({
+      token: 'srv-token-2',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
 
-    const res = await register({
-      username: 'lisi',
-      password: 'abcd1234',
-      confirm: 'abcd1235',
+    await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: false,
+    })
+
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBe('srv-token-2')
+  })
+
+  it('两次密码不一致时根本不发请求', async () => {
+    const m = await fresh()
+
+    const res = await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1235',
       remember: true,
     })
 
     expect(res.ok).toBe(false)
     expect(res.message).toMatch(/不一致/)
-    expect(registeredCount.value).toBe(before)
-    expect(session.value).toBeNull()
+    expect(apiMock.register).not.toHaveBeenCalled()
   })
 
-  it('重名（忽略大小写）直接拒绝，避免两个账号互相顶掉', async () => {
-    await reg('wangwu')
+  it('后端拒绝时把中文 message 原样透传（契约 §2：前端不写映射表）', async () => {
+    const m = await fresh()
+    apiMock.register.mockRejectedValue(new Error('用户名 lan_player 已被注册'))
 
-    const dup = await reg('WangWu')
-
-    expect(dup.ok).toBe(false)
-    expect(dup.message).toMatch(/已存在/)
-  })
-
-  it('太弱的密码进不去', async () => {
-    const before = registeredCount.value
-
-    const res = await reg('weak_user', 'short1')
+    const res = await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: true,
+    })
 
     expect(res.ok).toBe(false)
-    expect(res.message).toMatch(/至少 8/)
-    expect(registeredCount.value).toBe(before)
+    expect(res.message).toBe('用户名 lan_player 已被注册')
+    expect(m.isLoggedIn.value).toBe(false)
   })
 })
 
 describe('登录', () => {
-  it('密码不对不进；对了才建会话', async () => {
-    await reg('zhaoliu')
-    logout()
+  it('成功即建立身份', async () => {
+    const m = await fresh()
+    apiMock.login.mockResolvedValue({
+      token: 'srv-token-3',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
 
-    const bad = await login({ username: 'zhaoliu', password: 'wrong123', remember: true })
-    expect(bad.ok).toBe(false)
-    expect(bad.message).toMatch(/密码不正确/)
-    expect(isAuthenticated.value).toBe(false)
+    const res = await m.login({ username: 'lan_player', password: 'cs2go1234', remember: true })
 
-    const good = await login({ username: 'zhaoliu', password: 'abcd1234', remember: true })
-    expect(good.ok).toBe(true)
-    expect(currentUser.value?.username).toBe('zhaoliu')
+    expect(res.ok).toBe(true)
+    expect(m.currentUser.value?.user_id).toBe(7)
   })
 
-  it('账号不存在时提示去注册，而不是含糊报"密码错误"', async () => {
-    const res = await login({ username: 'nobody_here', password: 'abcd1234', remember: true })
+  it('口令错：后端给什么提示就显示什么', async () => {
+    const m = await fresh()
+    apiMock.login.mockRejectedValue(new Error('用户名或密码不正确'))
+
+    const res = await m.login({ username: 'lan_player', password: 'wrongpass1', remember: true })
 
     expect(res.ok).toBe(false)
-    expect(res.message).toMatch(/注册/)
+    expect(res.message).toBe('用户名或密码不正确')
   })
 
-  it('记住我=true 落 localStorage，=false 只活于当前标签页', async () => {
-    await reg('qianqi', 'abcd1234', false)
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull()
-    expect(sessionStorage.getItem(SESSION_ONCE_KEY)).not.toBeNull()
+  it('空密码不请求', async () => {
+    const m = await fresh()
 
-    await login({ username: 'qianqi', password: 'abcd1234', remember: true })
-    expect(localStorage.getItem(SESSION_KEY)).not.toBeNull()
-    // 换回"不记住"时要清掉上次的长期会话，否则关掉浏览器还能混进去
-    await login({ username: 'qianqi', password: 'abcd1234', remember: false })
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull()
+    const res = await m.login({ username: 'lan_player', password: '', remember: true })
+
+    expect(res.message).toMatch(/请填写密码/)
+    expect(apiMock.login).not.toHaveBeenCalled()
+  })
+})
+
+describe('首屏恢复（bootstrap）', () => {
+  it('令牌有效 → 身份恢复出来，守卫就不会把人弹回登录页', async () => {
+    const m = await fresh()
+    localStorage.setItem(TOKEN_KEY, 'srv-token-4')
+    apiMock.me.mockResolvedValue({ authenticated: true, user: USER })
+
+    await m.bootstrap()
+
+    expect(apiMock.me).toHaveBeenCalledTimes(1)
+    expect(m.isLoggedIn.value).toBe(true)
+  })
+
+  it('令牌 401 → 清掉令牌，身份回到未登录', async () => {
+    const m = await fresh()
+    const { ApiError } = await import('../../api/client')
+    localStorage.setItem(TOKEN_KEY, 'dead-token')
+    apiMock.me.mockRejectedValue(new ApiError('登录状态已失效，请重新登录', 'UNAUTHORIZED', 401))
+
+    await m.bootstrap()
+
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.isAuthenticated.value).toBe(false)
+  })
+
+  it('后端没起（网络错误）→ 保留令牌，不要一重启后端就全员掉线', async () => {
+    const m = await fresh()
+    const { ApiError } = await import('../../api/client')
+    localStorage.setItem(TOKEN_KEY, 'srv-token-5')
+    apiMock.me.mockRejectedValue(
+      new ApiError('无法连接后端服务，请确认后端已启动后重试', 'NETWORK_ERROR', 0),
+    )
+
+    await m.bootstrap()
+
+    expect(localStorage.getItem(TOKEN_KEY)).toBe('srv-token-5')
+  })
+
+  it('本地没有令牌时不打 /api/auth/me（省一次必然 401 的请求）', async () => {
+    const m = await fresh()
+
+    await m.bootstrap()
+
+    expect(apiMock.me).not.toHaveBeenCalled()
   })
 })
 
 describe('访客与退出', () => {
-  it('访客态算"可以逛"，但不算登录', () => {
-    enterAsGuest()
+  it('访客 = 不带令牌、不算登录，但守卫放行', async () => {
+    const m = await fresh()
 
-    expect(isGuest.value).toBe(true)
-    expect(isAuthenticated.value).toBe(true)
-    expect(isLoggedIn.value).toBe(false)
-    expect(currentUser.value).toBeNull()
-    // 访客不该在下次打开时还占着登录位
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull()
+    m.enterAsGuest()
+
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.isGuest.value).toBe(true)
+    expect(m.isLoggedIn.value).toBe(false)
+    expect(m.isAuthenticated.value).toBe(true)
+    expect(m.accountLabel.value).toBe('公共演示账户')
+    expect(sessionStorage.getItem(GUEST_KEY)).toBe('1')
   })
 
-  it('退出把两个 Storage 的会话都清干净', async () => {
-    await reg('sunba')
-    expect(localStorage.getItem(SESSION_KEY)).not.toBeNull()
+  it('退出会撤销服务端令牌并清干净本地', async () => {
+    const m = await fresh()
+    apiMock.register.mockResolvedValue({
+      token: 'srv-token-6',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
+    apiMock.logout.mockResolvedValue({ success: true, message: '已退出登录', revoked: true })
+    await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: true,
+    })
 
-    logout()
+    await m.logout()
 
-    expect(session.value).toBeNull()
-    expect(isAuthenticated.value).toBe(false)
-    expect(localStorage.getItem(SESSION_KEY)).toBeNull()
-    expect(sessionStorage.getItem(SESSION_ONCE_KEY)).toBeNull()
+    expect(apiMock.logout).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(sessionStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.isAuthenticated.value).toBe(false)
+    expect(m.currentUser.value).toBeNull()
   })
-})
 
-describe('演示账号', () => {
-  it('ensureDemoUser 幂等：重复调用后 demo 仍能正常登录', async () => {
-    await ensureDemoUser()
-    await ensureDemoUser()
+  it('后端撤销失败也照样清本地（退出不能把人留在登录态里）', async () => {
+    const m = await fresh()
+    apiMock.register.mockResolvedValue({
+      token: 'srv-token-7',
+      expires_at: '2026-12-07T08:00:00Z',
+      user: USER,
+    })
+    apiMock.logout.mockRejectedValue(new Error('无法连接后端服务'))
+    await m.register({
+      username: 'lan_player',
+      password: 'cs2go1234',
+      confirm: 'cs2go1234',
+      remember: true,
+    })
 
-    const res = await login({ username: DEMO_USERNAME, password: DEMO_PASSWORD, remember: true })
-    expect(res.ok).toBe(true)
-    expect(currentUser.value?.username).toBe(DEMO_USERNAME)
+    await m.logout()
 
-    const wrong = await login({ username: DEMO_USERNAME, password: 'nope1234', remember: true })
-    expect(wrong.ok).toBe(false)
+    expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
+    expect(m.isAuthenticated.value).toBe(false)
+  })
+
+  it('访客态下退出 = 放弃访客身份，回到未登录', async () => {
+    const m = await fresh()
+    m.enterAsGuest()
+
+    await m.logout()
+
+    expect(m.isGuest.value).toBe(false)
+    expect(m.isAuthenticated.value).toBe(false)
+    expect(apiMock.logout).not.toHaveBeenCalled()
   })
 })

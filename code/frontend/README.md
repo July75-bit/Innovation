@@ -3,6 +3,10 @@
 Vue 3 + TypeScript + Vite，由官方脚手架 `npm create vue@latest` 生成
 （选项：TypeScript=Yes / JSX=No / Vue Router=Yes / Pinia=No / Vitest=Yes / E2E=No / ESLint+Prettier=Yes）。
 
+> **第一次读这个目录？** 先看 [docs/前端代码导读.md](docs/前端代码导读.md)：
+> 每个文件在做什么、一次点击的数据怎么流到后端、注释里的项目黑话（契约 §4.2 / day3 / A4 / TC-405）怎么翻译。
+> 各源文件开头也有一段「白话导读」注释，可直接在编辑器里看。
+
 ## 运行
 
 ```powershell
@@ -34,10 +38,12 @@ npm run dev                  # http://localhost:5173（后端 CORS 默认放行�
 src/
 ├── api/
 │   ├── types.ts       # 契约 §4 全部响应类型（snake_case，不做驼峰转换）
-│   ├── client.ts      # fetch 封装：环境变量、统一错误体 {success,message,code}
-│   └── index.ts       # 10 个业务接口函数（api.listPlayers / api.buy / ...）
+│   ├── client.ts      # fetch 封装：环境变量、统一错误体、有令牌时自动带 Authorization
+│   ├── token.ts       # 访问令牌存放处（localStorage / sessionStorage，client.ts 读它）
+│   └── index.ts       # 14 个业务接口函数（api.listPlayers / api.buy / api.register / ...）
 ├── mock/
-│   └── players.ts   # VITE_USE_MOCK=true 时的内存模拟数据（含交易校验，仅开发兜底）
+│   ├── players.ts   # VITE_USE_MOCK=true 时的内存模拟数据（含交易校验，仅开发兜底）
+│   └── auth.ts      # VITE_USE_MOCK=true 时的假登录（与后端同规则，避免"行情假、登录真"）
 ├── assets/
 │   ├── main.css              # 全局设计令牌（色彩 / 字体 / 间距圆角）
 │   ├── auth-bg.jpg           # 登录页背景：源图压暗 + 降饱和 + 轻模糊 + 暗角，1920×1080（约 95 KB）
@@ -45,7 +51,7 @@ src/
 ├── composables/
 │   ├── useAccount.ts        # 余额共享状态（模块级 ref，未用 Pinia）
 │   ├── useBackendHealth.ts  # 后端连接检测共享（顶栏徽标，各页刷新时同步复检）
-│   └── useAuth.ts           # 注册 / 登录的本地账号态（localStorage，不发请求）
+│   └── useAuth.ts           # 注册 / 登录：真鉴权（令牌 + /api/auth/*），身份见契约 §4.15
 ├── components/
 │   ├── PriceChart.vue   # 价格历史折线图（零依赖 SVG，升序直接用）
 │   ├── TradePanel.vue   # 数量输入 + 买入/卖出 + 后端 message 展示
@@ -53,7 +59,7 @@ src/
 │   ├── EmptyState.vue   # 空态（可插槽放引导链接）
 │   └── ErrorState.vue   # 错误态（展示后端中文 message + 重试，不自动重放交易）
 ├── views/
-│   ├── AuthView.vue          # /auth        注册 / 登录（全屏 CS2 背景，纯前端）
+│   ├── AuthView.vue          # /auth        注册 / 登录（全屏 CS2 背景）
 │   ├── MarketView.vue        # /            市场列表
 │   ├── PlayerDetailView.vue  # /players/:id 详情 + 折线图 + AI 建议 + 交易
 │   ├── PositionsView.vue     # /positions   持仓 + 账户汇总
@@ -61,24 +67,27 @@ src/
 └── utils/format.ts    # money / pct / trendClass / dateTime
 ```
 
-## 注册 / 登录（本地演示，不连后端）
+## 注册 / 登录（第 7 轮起：真鉴权）
 
-第 6 轮加的一层界面，**只在浏览器里跑**：账号写在 `localStorage` / `sessionStorage`，
-全程不发任何 HTTP 请求，所以本地打开不需要后端、也不需要配 CORS。
+第 6 轮这层是"只写浏览器 localStorage 的假账号"；**第 7 轮换成后端真鉴权**（契约 §4.11~§4.15）：
+口令由后端 PBKDF2-HMAC-SHA256 散列，令牌由后端签发、可在服务端撤销，余额 / 持仓 / 流水**按账号隔离**。
 
 | 入口 | 行为 |
 | --- | --- |
 | `/auth` | 登录 / 注册两个标签页，背景是处理过的 CS2 主视觉（`src/assets/auth-bg*.jpg`） |
-| 注册 | **只要用户名 + 密码**（外加一次确认）。密码存加盐 SHA-256 摘要，不落明文 |
-| 登录 | 演示账号 `demo / demo1234`（页面有"用演示账号填充"）；勾"记住我"落 localStorage，否则只活于当前标签页 |
-| 访客 | "先随便逛逛"= 只读浏览主界面，不算登录态，侧栏显示"访客 / 未登录浏览" |
-| 守卫 | `src/router/index.ts` 的 `beforeEach`：未登录访问任意页 → `/auth?redirect=原路径`，成功后送回原页；已登录访问 `/auth` → 回市场页 |
-| 退出 | 侧栏底部账号卡片（窄屏在抽屉里）的"退出"按钮 |
+| 注册 | **只要用户名 + 密码**（外加一次确认）。成功即登录——201 直接返回令牌，不用再发一次登录 |
+| 登录 | 每次登录签发**新**令牌；勾"记住我"令牌落 localStorage，否则只活于当前标签页 |
+| 访客 | "先随便逛逛"= **故意不带令牌**，用的是后端公共演示账户 `demo`（第 1~6 轮的历史数据都在它身上，不迁移） |
+| 守卫 | `router/index.ts` 的 `beforeEach` 先 `await bootstrap()`（拿本地令牌问一次 `/api/auth/me`）再判断：未登录 → `/auth?redirect=原路径`；已登录访问 `/auth` → 回市场页 |
+| 退出 | 侧栏账号卡片（窄屏在抽屉里）的"退出"：先撤销服务端令牌，再清本地；网络失败也照样清 |
 
 - 登录页是独立全屏布局：`App.vue` 用 `isAuthPage` 判断，这一页不渲染侧栏 / 顶栏 / 氛围背景。
-- 注册字段按要求收敛到最小，没有昵称与邮箱；`AuthUser` 只有 `username` 与 `created_at`。
+- 侧栏账号卡片显示 `nickname` + 身份标签（私人账户 / 公共演示账户 / 未登录），一眼能看出现在动的是谁的钱。
+- **令牌只在 `api/token.ts` 里管**：`client.ts` 有令牌就自动加 `Authorization: Bearer …`，页面代码不碰令牌。
+- `bootstrap()` 只在 401（过期 / 被撤销）时清会话；后端没起、网络错误都**保留令牌**，避免"重启后端 = 全员掉线"。
+- 校验规则前后端各一份且必须一致（`useAuth.ts` ↔ `code/backend/app/core/security.py`），改规则要两边一起改。
+- `VITE_USE_MOCK=true` 时 auth 也走本地假实现（`src/mock/auth.ts`），不会出现"行情是假的、登录是真的"。
 - 想去掉登录门槛：删 `router/index.ts` 里的 `beforeEach` 即可，界面与账号态互不牵连。
-- 接真实鉴权时：把 `useAuth.ts` 的 `register/login/logout` 换成 `api.*`，视图层不用动。
 
 ## 契约铁律（改代码前先读 docs/software/api_contract.md）
 

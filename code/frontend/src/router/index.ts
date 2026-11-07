@@ -1,3 +1,13 @@
+/**
+ * 白话导读：浏览器地址栏 URL ↔ 页面组件 的对应表，外加"没登录就赶去登录页"的守门逻辑。
+ *
+ * routes 数组怎么读：path 是地址，component 是页面文件，() => import(...) 是懒加载
+ * （第一次访问该页才下载它的代码，首屏更快）。目前 5 个页面：/auth、/、/players/:id、/positions、/trades。
+ *
+ * beforeEach = 全局前置守卫：每次换页前跑一遍，看 useAuth 里的登录态决定放行还是跳登录页。
+ * 想加新页面：在 routes 里加一条，再去 App.vue 的侧栏导航加个链接。
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import MarketView from '../views/MarketView.vue'
 import { useAuth } from '../composables/useAuth'
@@ -60,14 +70,18 @@ const router = createRouter({
 })
 
 /**
- * 登录态守卫。
+ * 登录态守卫（第 7 轮起：身份由后端令牌决定）。
  *
- * 放行条件写宽一点：登录用户和「访客进入」都算可以逛（`isAuthenticated`），
- * 否则本地演示时没注册账号的人连界面都看不到，反而像 bug。
- * 未登录时把原路径放进 ?redirect=，登录成功再送回他本来要去的那一页。
+ * 三件事按顺序做：
+ * 1. `await bootstrap()` —— 首屏拿本地令牌问一次 /api/auth/me，把身份恢复出来。
+ *    这一步必须在放行判断**之前**，否则刷新后第一屏会被误判成未登录、闪一下弹回登录页。
+ * 2. 放行条件写宽一点：私人账号和「访客进入」都算可以逛（`isAuthenticated`），
+ *    否则没注册过的人连界面都看不到，反而像 bug。
+ * 3. 未登录时把原路径放进 ?redirect=，登录成功再送回他本来要去的那一页。
  */
-router.beforeEach((to) => {
-  const { isAuthenticated } = useAuth()
+router.beforeEach(async (to) => {
+  const { isAuthenticated, bootstrap } = useAuth()
+  await bootstrap()
 
   if (to.meta.public) {
     // 已经进来了还去登录页 = 想退出/换号，直接给过；

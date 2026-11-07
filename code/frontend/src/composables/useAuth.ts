@@ -1,54 +1,26 @@
 /**
- * 注册 / 登录的本地账号态（模块级 ref，沿用团队"不装 Pinia"的约定）。
+ * 白话导读：注册 / 登录的全部前端逻辑——**现在是真鉴权**（第 7 轮私人账号）。
  *
- * 为什么是纯前端：本轮需求只要"本地查看"的注册与登录界面，后端没有 /api/auth 契约，
- * 真去发请求只会撞 CORS + 404，答辩现场反而更难看。所以账号只落在浏览器
- * localStorage 里，密码只存"加盐 SHA-256 摘要"（绝不存明文）。
+ * 和上一版的区别：上一版账号只写浏览器 localStorage（后端没有 /api/auth，只能本地演）；
+ * 这一版调后端四个接口（契约 §4.11~§4.14），口令散列、令牌签发、退出撤销都在服务端，
+ * 余额 / 持仓 / 流水因此按账号隔离。界面代码没动：导出的还是那六个名字
+ * （currentUser、isAuthenticated、register、login、logout、enterAsGuest）。
  *
- * 注册字段刻意保持最小：**只要用户名 + 密码**（确认密码算密码的一部分）。
- * 邮箱/昵称这类字段后端没有对应接口，收上来也只是本地留着好看，不如不收。
- *
- * 铁律：这是**演示级**实现，不是真实鉴权——没有过期、没有签名、没有服务端校验，
- * 清掉浏览器数据就没了。将来接后端时，把这里的 register/login 换成 api.* 即可，
- * 视图层只依赖导出的这几个函数，不用改界面。
+ * 三种身份，别搞混：
+ *   private      = 注册/登录出来的私人账户，数据独立；
+ *   public_demo  = 未登录时后端共用的演示账户 demo（历史数据都在它身上）；
+ *   anonymous    = 还没决定身份（首屏守卫会先把这一屏送去 /auth）。
+ * "先随便逛逛（访客）"就是**故意不带令牌**用 public_demo，不是伪造的登录态。
  */
 import { computed, readonly, ref } from 'vue'
 
-/** 本地存储键：带版本号，将来字段结构变了可以整体作废，不至于读到半截数据 */
-const USERS_KEY = 'playerstock.auth.users.v1'
-/** 勾选"记住我"的会话：localStorage，关掉浏览器再开还是登录态 */
-const SESSION_KEY = 'playerstock.auth.session.v1'
-/** 没勾"记住我" / 访客态：sessionStorage，关掉标签页就退出，符合"记住我"的直觉 */
-const SESSION_ONCE_KEY = 'playerstock.auth.session.v1.once'
+import { api } from '../api'
+import { ApiError } from '../api/client'
+import { clearToken, getToken, restoreToken, setToken } from '../api/token'
+import type { AccountType, AuthUser } from '../api/types'
 
-/** 落库的用户（含摘要与盐，绝不返回给界面层） */
-interface StoredUser {
-  username: string
-  salt: string
-  hash: string
-  created_at: string
-}
-
-/** 界面层拿到的用户（去掉了盐与摘要） */
-export interface AuthUser {
-  username: string
-  created_at: string
-}
-
-/**
- * 会话：
- * - user  = 注册/登录成功，侧栏显示用户名与退出入口；
- * - guest = 「先随便逛逛」，能看行情但不算登录（答辩时后端没起也能走完整流程）。
- */
-export type Session =
-  | { mode: 'user'; user: AuthUser; remember: boolean; login_at: string }
-  | { mode: 'guest'; login_at: string }
-  | null
-
-export interface AuthResult {
-  ok: boolean
-  message: string
-}
+/** 访客选择的存储键：只活于当前标签页，关标签页就回到"未登录"状态 */
+const GUEST_CHOICE_KEY = 'playerstock.auth.guest.v1'
 
 export interface RegisterInput {
   username: string
@@ -63,72 +35,70 @@ export interface LoginInput {
   remember: boolean
 }
 
-/** 演示账号：登录页"用演示账号进入"会用到，省得现场手输 */
-export const DEMO_USERNAME = 'demo'
-export const DEMO_PASSWORD = 'demo1234'
-
-/* ------------------------------ 存储读写 ------------------------------ */
-
-function readJSON<T>(store: Storage, key: string, fallback: T): T {
-  try {
-    const raw = store.getItem(key)
-    return raw ? (JSON.parse(raw) as T) : fallback
-  } catch {
-    // 隐私模式 / 脏数据：当作没登录，不要让界面直接崩在白屏上
-    return fallback
-  }
-}
-
-function writeJSON(store: Storage, key: string, value: unknown): void {
-  try {
-    store.setItem(key, JSON.stringify(value))
-  } catch {
-    /* 存不下就算了：本地演示不该因为配额把页面卡死 */
-  }
-}
-
-/* ------------------------------ 摘要与盐 ------------------------------ */
-
-function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
-}
-
-function randomSalt(): string {
-  const bytes = new Uint8Array(8)
-  if (globalThis.crypto?.getRandomValues) {
-    globalThis.crypto.getRandomValues(bytes)
-  } else {
-    for (let i = 0; i < bytes.length; i += 1) bytes[i] = Math.floor(Math.random() * 256)
-  }
-  return toHex(bytes)
+export interface AuthResult {
+  ok: boolean
+  message: string
 }
 
 /**
- * jsdom（单测环境）与部分老浏览器没有 crypto.subtle，退化成 FNV-1a。
- * 摘要算法可换不影响界面，但生产环境一定换成后端的 bcrypt/argon2。
+ * 界面关心的两份状态。
+ * `token` 是"有没有登录"的唯一凭据（由后端签发）；`user` 是"登录的是谁"的快照，
+ * 由 /api/auth/me 或注册/登录响应填。两者分开是因为后端可能暂时问不通：
+ * 那时令牌还在，身份细节只是暂时不知道，不该把人踢回登录页。
  */
-async function digest(salt: string, password: string): Promise<string> {
-  const data = new TextEncoder().encode(`${salt}:${password}`)
-  const subtle = globalThis.crypto?.subtle
-  if (subtle) {
-    const buf = await subtle.digest('SHA-256', data)
-    return `sha256$${toHex(new Uint8Array(buf))}`
+const token = ref<string | null>(restoreToken())
+const user = ref<AuthUser | null>(null)
+const accountType = ref<AccountType | 'anonymous'>('anonymous')
+const guestChosen = ref(readGuestChoice())
+
+/** 已经为哪一枚令牌确认过身份；令牌换了（登录、另一个标签页换号）就重新确认 */
+let validatedToken: string | null = null
+
+function readGuestChoice(): boolean {
+  try {
+    return sessionStorage.getItem(GUEST_CHOICE_KEY) === '1'
+  } catch {
+    return false
   }
-  let h = 0x811c9dc5
-  for (const byte of data) {
-    h ^= byte
-    h = Math.imul(h, 0x01000193) >>> 0
-  }
-  return `fnv1a$${h.toString(16)}`
 }
 
-function publicUser(u: StoredUser): AuthUser {
-  return { username: u.username, created_at: u.created_at }
+function writeGuestChoice(chosen: boolean): void {
+  try {
+    if (chosen) sessionStorage.setItem(GUEST_CHOICE_KEY, '1')
+    else sessionStorage.removeItem(GUEST_CHOICE_KEY)
+  } catch {
+    /* 隐私模式存不下：访客态只在当前这一屏有效，不影响正确性 */
+  }
+}
+
+/** 清掉一切身份痕迹：令牌 + 内存用户 + 访客选择 */
+function forgetSession(): void {
+  clearToken()
+  token.value = null
+  user.value = null
+  accountType.value = 'anonymous'
+  guestChosen.value = false
+  writeGuestChoice(false)
+  validatedToken = null
+}
+
+function adopt(res: { user: AuthUser; token: string }, remember: boolean): void {
+  setToken(res.token, remember ? 'remember' : 'session')
+  token.value = res.token
+  user.value = res.user
+  accountType.value = res.user.account_type
+  guestChosen.value = false
+  writeGuestChoice(false)
+  // 注册/登录响应本身就带回了身份，不必再打一次 /me
+  validatedToken = res.token
 }
 
 /* ------------------------------ 表单校验 ------------------------------ */
 
-/** 用户名限制成"能安全出现在 URL/日志/侧栏"的字符集，避免花哨符号把布局撑坏 */
+/**
+ * 前端先挡一道是为了少发一次请求、少闪一次错误；
+ * 但**后端 app/core/security.py 有同一套规则**，谁也不能绕过谁（改规则要两边一起改）。
+ */
 export const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,20}$/
 
 export function validateUsername(value: string): string | null {
@@ -159,157 +129,128 @@ export function passwordStrength(value: string): PasswordStrength {
   if (value.length >= 8) hits += 1
   if (/[A-Za-z]/.test(value) && /[0-9]/.test(value)) hits += 1
   if (/[^A-Za-z0-9]/.test(value) || value.length >= 12) hits += 1
-  // 不用数组下标取档位：noUncheckedIndexedAccess 下那样写要么加断言要么留 ??，都不如直白分支好读
   if (hits <= 1) return { score: 1, label: '弱' }
   if (hits === 2) return { score: 2, label: '中' }
   return { score: 3, label: '较强' }
 }
 
-function firstError(...messages: (string | null)[]): string | null {
-  return messages.find((m) => m !== null) ?? null
-}
+/* ------------------------------ 状态（具名导出，界面与守卫共用） ------------------------------ */
 
-/* ------------------------------ 状态 ------------------------------ */
+export const currentUser = computed<AuthUser | null>(() => user.value)
 
-const users = ref<StoredUser[]>(readJSON<StoredUser[]>(localStorage, USERS_KEY, []))
+/** 有令牌 = 已登录私人账户（身份细节可能还没拿到，但"登录着"这件事是确定的） */
+export const isLoggedIn = computed(() => token.value !== null)
 
-/** 先读"记住我"的 localStorage，再退回只活于当前标签页的 sessionStorage */
-function readSession(): Session {
-  const remembered = readJSON<Session>(localStorage, SESSION_KEY, null)
-  return remembered ?? readJSON<Session>(sessionStorage, SESSION_ONCE_KEY, null)
-}
+/** 明确选了"先随便逛逛"= 用公共演示账户，不算登录 */
+export const isGuest = computed(() => guestChosen.value && token.value === null)
 
-/**
- * 写会话：remember=true 落 localStorage，否则落 sessionStorage（关标签页即退出）。
- * 访客态一律 sessionStorage——"随便逛逛"不该在下次打开时还占着登录位。
- */
-function setSession(next: Session, remember = false): void {
-  session.value = next
-  try {
-    localStorage.removeItem(SESSION_KEY)
-    sessionStorage.removeItem(SESSION_ONCE_KEY)
-    if (next === null) return
-    if (remember && next.mode === 'user') {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(next))
-    } else {
-      sessionStorage.setItem(SESSION_ONCE_KEY, JSON.stringify(next))
-    }
-  } catch {
-    /* 隐私模式存不下：会话只在内存里，刷新掉线而已，不影响当前这一屏 */
-  }
-}
+/** 路由守卫的放行条件：私人账号或访客都算"可以进主界面" */
+export const isAuthenticated = computed(() => isLoggedIn.value || isGuest.value)
 
-const session = ref<Session>(readSession())
-
-const currentUser = computed<AuthUser | null>(() =>
-  session.value?.mode === 'user' ? session.value.user : null,
-)
-
-/** 是否已登录（真正的账号） */
-const isLoggedIn = computed(() => session.value?.mode === 'user')
-
-/** 是否以访客身份浏览 */
-const isGuest = computed(() => session.value?.mode === 'guest')
-
-/** 路由守卫用的放行条件：登录或访客都算"可以进主界面" */
-const isAuthenticated = computed(() => session.value !== null)
-
-/** 本地已注册账号数：登录页用来提示"这台机器上有几个号" */
-const registeredCount = computed(() => users.value.length)
+/** 侧栏那行小字：私人账户 / 公共演示账户 / 未登录 */
+export const accountLabel = computed(() => {
+  if (isLoggedIn.value) return '私人账户'
+  if (guestChosen.value) return '公共演示账户'
+  return '未登录'
+})
 
 /* ------------------------------ 动作 ------------------------------ */
 
-export async function register(input: RegisterInput): Promise<AuthResult> {
-  const username = input.username.trim()
-  const invalid = firstError(
-    validateUsername(username),
-    validatePassword(input.password),
-    input.confirm === input.password ? null : '两次输入的密码不一致',
-  )
-  if (invalid) return { ok: false, message: invalid }
+/**
+ * 首屏 / 每次导航前确认身份：本地有令牌就问一次 /api/auth/me。
+ *
+ * 三条容易做错的地方，都在这里堵住了：
+ * 1. 必须**先于**守卫判断完成，否则刷新后第一屏会被误判成未登录、闪一下弹回登录页；
+ * 2. 只有 401（过期 / 被撤销）才清会话；后端没起、网络错误都保留令牌——
+ *    不然本地重启一次后端就要全员重新登录；
+ * 3. 同一枚令牌只确认一次（validatedToken），避免每次导航都多打一个请求。
+ */
+export async function bootstrap(): Promise<void> {
+  const current = restoreToken()
+  token.value = current
+  if (current === validatedToken) return
 
-  const taken = users.value.some((u) => u.username.toLowerCase() === username.toLowerCase())
-  if (taken) return { ok: false, message: `用户名 ${username} 已存在，换一个或直接登录` }
-
-  const salt = randomSalt()
-  const stored: StoredUser = {
-    username,
-    salt,
-    hash: await digest(salt, input.password),
-    created_at: new Date().toISOString(),
+  if (!current) {
+    user.value = null
+    accountType.value = 'anonymous'
+    return
   }
-  users.value = [...users.value, stored]
-  writeJSON(localStorage, USERS_KEY, users.value)
-  setSession(
-    {
-      mode: 'user',
-      user: publicUser(stored),
-      remember: input.remember,
-      login_at: stored.created_at,
-    },
-    input.remember,
-  )
-  return { ok: true, message: `注册成功，欢迎 ${stored.username}` }
+
+  try {
+    const res = await api.me()
+    user.value = res.user
+    accountType.value = res.user.account_type
+    validatedToken = current
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) forgetSession()
+  }
+}
+
+export async function register(input: RegisterInput): Promise<AuthResult> {
+  const invalid = validateUsername(input.username) ?? validatePassword(input.password)
+  if (invalid) return { ok: false, message: invalid }
+  if (input.confirm !== input.password) return { ok: false, message: '两次输入的密码不一致' }
+
+  try {
+    const res = await api.register(input.username.trim(), input.password)
+    adopt(res, input.remember)
+    return { ok: true, message: `注册成功，欢迎 ${res.user.nickname}` }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '注册失败，请稍后重试' }
+  }
 }
 
 export async function login(input: LoginInput): Promise<AuthResult> {
-  const username = input.username.trim()
-  const invalid = firstError(validateUsername(username), input.password ? null : '请填写密码')
+  const invalid = validateUsername(input.username)
   if (invalid) return { ok: false, message: invalid }
+  if (!input.password) return { ok: false, message: '请填写密码' }
 
-  const found = users.value.find((u) => u.username.toLowerCase() === username.toLowerCase())
-  if (!found) return { ok: false, message: `没有 ${username} 这个账号，先注册一个？` }
-
-  if ((await digest(found.salt, input.password)) !== found.hash) {
-    // 真实系统会把"用户不存在"和"密码错"并成一句模糊提示；
-    // 本地演示更希望现场看得懂，所以这里分开说清楚。
-    return { ok: false, message: '密码不正确' }
+  try {
+    const res = await api.login(input.username.trim(), input.password)
+    adopt(res, input.remember)
+    return { ok: true, message: `欢迎回来，${res.user.nickname}` }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '登录失败，请稍后重试' }
   }
-
-  const now = new Date().toISOString()
-  setSession(
-    { mode: 'user', user: publicUser(found), remember: input.remember, login_at: now },
-    input.remember,
-  )
-  return { ok: true, message: `欢迎回来，${found.username}` }
 }
 
-/** 访客模式：给"后端还没起、但想看一眼界面"的场合留的出口 */
+/** 访客进入：故意不带令牌，后端把这一路记在公共演示账户 demo 上 */
 export function enterAsGuest(): void {
-  setSession({ mode: 'guest', login_at: new Date().toISOString() })
+  forgetSession()
+  guestChosen.value = true
+  writeGuestChoice(true)
+  accountType.value = 'public_demo'
 }
 
-export function logout(): void {
-  setSession(null)
-}
-
-/** 保证演示账号存在（幂等）：登录页挂载时调用一次 */
-export async function ensureDemoUser(): Promise<void> {
-  if (users.value.some((u) => u.username.toLowerCase() === DEMO_USERNAME)) return
-  const salt = randomSalt()
-  const stored: StoredUser = {
-    username: DEMO_USERNAME,
-    salt,
-    hash: await digest(salt, DEMO_PASSWORD),
-    created_at: new Date().toISOString(),
+/**
+ * 退出：先撤销服务端令牌，再清本地。
+ * 后端没起 / 请求失败也照样清本地——"退出"不能因为网络失败就把人留在登录态里。
+ */
+export async function logout(): Promise<void> {
+  try {
+    if (getToken()) await api.logout()
+  } catch {
+    /* 撤销失败：本地仍然清干净，令牌最多在服务端等到自然过期 */
   }
-  users.value = [...users.value, stored]
-  writeJSON(localStorage, USERS_KEY, users.value)
+  forgetSession()
 }
 
 export function useAuth() {
   return {
     currentUser,
-    /** 只读导出，界面不许直接改会话 */
-    session: readonly(session),
+    accountType,
+    accountLabel,
     isLoggedIn,
     isGuest,
     isAuthenticated,
-    registeredCount,
+    /** 只读导出：界面不许直接改身份，只能走 register / login / logout / enterAsGuest */
+    session: readonly(
+      computed(() => (token.value ? 'private' : guestChosen.value ? 'guest' : 'none')),
+    ),
+    bootstrap,
     register,
     login,
     enterAsGuest,
     logout,
-    ensureDemoUser,
   }
 }

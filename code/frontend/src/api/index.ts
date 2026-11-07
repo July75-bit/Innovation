@@ -1,4 +1,14 @@
 /**
+ * 白话导读：后端接口的"总机"——页面上所有请求都从这里发，一共 10 个函数。
+ *
+ * 页面里的典型写法： import { api } from '../api'  →  await api.listPlayers()
+ * 每个函数都只做两件事：拼好 URL 交给 client.ts 的 request()，并声明返回值的类型。
+ *
+ * 如果后端接口改名/加字段，只改这个文件和 types.ts，页面基本不用动（分层的好处）。
+ * VITE_USE_MOCK=true 时这里会整体切到 src/mock/players.ts 的假数据，页面代码完全不用改。
+ */
+
+/**
  * 10 个业务接口（契约 §3）。路径与字段以 docs/software/api_contract.md 为准，
  * 契约已冻结，改字段必须走 §6 变更流程。
  *
@@ -6,11 +16,16 @@
  * 默认（false / 未设置）走真实后端接口。上线前必须确认为 false。
  */
 import { request } from './client'
+import { getToken } from './token'
 import { mockApi } from '../mock/players'
+import { mockAuth } from '../mock/auth'
 import type {
   Account,
   AnalysisResponse,
+  AuthResponse,
   HealthResponse,
+  LogoutResponse,
+  MeResponse,
   PlayerDetail,
   PlayerSummary,
   PositionItem,
@@ -84,4 +99,40 @@ export const api = {
     USE_MOCK
       ? fromMock(() => mockApi.getAnalysis(playerId))
       : request<AnalysisResponse>(`/api/analysis/${playerId}`),
+
+  /* ---------------- 第 7 轮：私人账号 ---------------- */
+
+  /**
+   * §4.11 注册（成功即登录，201）。
+   * 失败码：INVALID_INPUT(422) / USERNAME_TAKEN(409) / USERNAME_RESERVED(409)。
+   */
+  register: (username: string, password: string): Promise<AuthResponse> =>
+    USE_MOCK
+      ? fromMock(() => mockAuth.register(username, password))
+      : request<AuthResponse>('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ username, password }),
+        }),
+
+  /** §4.12 登录。账号不存在与口令错都是 INVALID_CREDENTIALS(401)，同一句话 */
+  login: (username: string, password: string): Promise<AuthResponse> =>
+    USE_MOCK
+      ? fromMock(() => mockAuth.login(username, password))
+      : request<AuthResponse>('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password }),
+        }),
+
+  /**
+   * §4.13 当前身份。只在本地已有令牌时调用（启动时校验令牌还管不管用）。
+   * 401 = 令牌过期/被撤销 → useAuth 清会话把用户送回登录页。
+   */
+  me: (): Promise<MeResponse> =>
+    USE_MOCK ? fromMock(() => mockAuth.me(getToken())) : request<MeResponse>('/api/auth/me'),
+
+  /** §4.14 退出（撤销令牌）。网络失败不阻塞前端清本地状态，见 useAuth.logout */
+  logout: (): Promise<LogoutResponse> =>
+    USE_MOCK
+      ? fromMock(() => mockAuth.logout(getToken()))
+      : request<LogoutResponse>('/api/auth/logout', { method: 'POST' }),
 }
