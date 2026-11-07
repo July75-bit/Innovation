@@ -285,12 +285,32 @@ SAME balance=True total=True qty=True trades=True points=True
 | 账户响应 | — | 127.4ms | — |
 | 买入接口响应 | ≤ 500ms | **308.8ms**（成交价 108.75） | ✅ |
 | 卖出接口响应 | ≤ 500ms | 196.0ms | ✅ |
-| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（LLM 版未压测，如实说明） |
+| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（配真模型后见 §8.3） |
 | 前端首屏 | ≤ 3s | **≈437.8ms**（HTML 263ms + JS/CSS 174.8ms，gzip 合计 100.5KB） | ✅（以资源下载近似，浏览器渲染未测） |
 | 价格历史图渲染（≥100 点） | 不卡顿 | 未测（需浏览器；当前每人 10–11 点） | 🟡 |
 
 > 线上比本地慢一个数量级（168ms vs 24ms），主要是 Render 免费实例的跨区网络与冷容器开销，
 > 仍远低于目标值。**结论：四项非功能指标线上全部达标**；折线图渲染一条留待浏览器验证。
+
+### 8.3 线上 LLM 版实测（2026-11-07，B，DeepSeek 官方 API）
+
+> 背景：AI 从"规则兜底"切到真模型后补测。先试 OpenCode Zen 免费档失败（`429 FreeUsageLimitError`，
+> 换 4 个免费模型均 429），改用 **DeepSeek 官方 API**：
+> `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`。
+> 方法：`/api/health` 预热后，对 **5 名不同选手**各调一次 `/api/analysis/{id}`。
+
+| 指标 | 目标 | 实测 | 结论 |
+| --- | --- | --- | --- |
+| AI 分析响应（真模型） | ≤ 8s（上限 20s） | **中位 2461ms**（最快 1839 / 最慢 3930，n=5） | ✅ |
+| `source` 字段 | `llm` | **5/5 全部 `llm`** | ✅ |
+| 契约 6 字段 | 不变 | `action/disclaimer/player_id/reason/risk_level/source` 齐全 | ✅ |
+| 模型判断多样性 | 非固定文案 | HOLD×4 + **BUY×1**；risk HIGH×3 / MEDIUM×2；reason 各不相同 | ✅ |
+| 其它接口未受影响 | 行情 ≤300 / 买卖 ≤500ms | players 813ms（冷启动）、trades 430ms、prices 291ms、account 1310ms（冷） | ✅ 预热后达标 |
+
+> **与规则版的差异（答辩要点）**：同一选手规则版给 `risk=LOW`，模型版给 `risk=HIGH` 并写出更长理由——
+> 说明 AI 是独立建议者；两者共用同一 6 字段契约，前端只按 `source` 区分展示。
+> **失败仍自动回落规则版**（超时上限 20s），演示不会卡死。
+> 成本参考：单次约 684 输入 + 200 输出 tokens，`deepseek-flash` 高峰价约 **¥0.003/次**，答辩当天十次以内忽略不计。
 
 ## 9. 缺陷清单
 

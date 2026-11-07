@@ -302,15 +302,18 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 | 代码侧 URL | 只填 base（`.../openai/v1`）会 404 → 已修 `8a26a19`：自动补 `/chat/completions`，两种写法都吃 |
 | 代码侧引号 | cmd `set X="v"` 会把引号并进值 → 已修 `2684e1b`：`_clean_env()` 统一去引号/空白 |
 | 模型名 | `GET /inference/v1/models`（免鉴权）确认 `deepseek-v4.1-flash-free` 存在、`type=chat`、`temperature: true` ✅ |
-| key | **有效**（已过鉴权，不是 401） |
-| 最终结果 | **`429 FreeUsageLimitError`**："Free usage limit reached … subscribe to OpenCode Go"。无 key 直连探测 `deepseek-v4.1-flash-free` / `glm-5.3-flash-free` / `mimo-v2.6-flash-free` / `big-pickle` **全部 429** → 免费档额度是账号/IP 级限制，换模型无效 |
-| 决定 | **线上保持 `rule_fallback`**（接口仍 200，属设计降级）。⚠️ 若 Render 里留着 `LLM_API_KEY`，单次 AI 请求会多等 **1–1.8s** 等失败再回落；**演示前建议清空该变量**回到 ~200ms |
+| key（Zen） | **有效**（已过鉴权，不是 401） |
+| Zen 结果 | **`429 FreeUsageLimitError`**："Free usage limit reached … subscribe to OpenCode Go"。无 key 直连探测 `deepseek-v4.1-flash-free` / `glm-5.3-flash-free` / `mimo-v2.6-flash-free` / `big-pickle` **全部 429** → 免费档额度是账号/IP 级限制，换模型无效 |
+| **改用 DeepSeek 官方 API** | `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，=`DeepSeek-V4.1-Flash-1017`；旧名 `deepseek-v4-flash` 仍接受，`deepseek-chat` 已过时） |
+| **最终结果** | ✅ **`source=llm`**：5 名选手 5/5 全部走真模型，**中位 2461ms**（1.8–3.9s，目标 ≤8s），6 字段契约不变；模型给出 HOLD×4 + BUY×1、risk HIGH×3/MEDIUM×2，reason 各自不同。数据见 `test_report.md` §8.3 |
 
 诊断/复跑：`python scripts/check_llm.py --direct`（直连）、`--scan`（逐个试 7 个候选模型）、`--base <后端地址>`（看线上 `source`）。
 
-> **答辩怎么说**：AI 走"可插拔 + 契约 + 兜底"设计——真模型一配就生效（本次已把 key/URL/模型名/UA 全打通，只剩免费额度限制），额度/密钥不可用时自动降级为规则版，接口永远 200、交易不受影响。
+> **答辩怎么说**：AI 走"可插拔 + 契约 + 兜底"——换 provider 只改三个环境变量、代码不动；
+> Zen 免费档额度受限 429 时我们换到 DeepSeek 官方 API，一次就通（`source=llm`，中位 2.5s）；
+> 任何失败仍自动回落规则版，接口永远 200、交易不受影响。
 
-> 安全：key 曾出现在聊天记录与截图中，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
+> 安全：key 曾出现在聊天记录与截图中，答辩结束后请到对应平台后台**吊销/轮换**一次。
 
 > **逐步操作已写成独立文档**：[`render-llm-guide.md`](render-llm-guide.md)（含控制台路径、三变量、日志对照表、撤回方式、答辩限流提醒），直接转给 B 即可。
 
