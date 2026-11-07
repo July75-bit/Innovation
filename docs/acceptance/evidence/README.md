@@ -67,7 +67,9 @@
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
-| `20-commit-stats.png` | 3.3 提交统计（准数，本地 git 生成） | develop 分支非合并提交 137 次：D 50 / B 38 / C 26 / A 20 / 仓库账号 3；合计 +36072 / −4257 |
+| `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 38 / C 26 / A 20 / 仓库账号 3，合计 +36072 / −4257；并给出 pulse 近一月按账号的 49 / 41 / 28 / 20 与"账号→真人"对照 |
+| `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
+| `22-pulse-top-committers.png` | Pulse → Top committers 弹窗 | wlkaqw 49 · July75-bit 41 · fusde0 28 · weedflame 20 = 138；`July75-bit` 为 B 的账号（41 = B 的 38 + 账号自身 3） |
 
-> 3.3 的网页截图（`21-pulse.png`、`22-commits-*.png`）待补，操作步骤见 `docs/presentation/evidence-3.3-guide.md`。
-> 说明：GitHub pulse 只统计默认分支 `main`（31 次）且按账号邮箱归因，因此与本地准数存在差异，两者需配合使用。
+> 3.3 的复现步骤与口径说明见 `docs/presentation/evidence-3.3-guide.md`。
+> 口径提示：pulse 是"近一月 + 全部分支"，本地是"全周期 + develop"，两列数字不必强行对齐；`Insights → Contributors` 只算默认分支 `main`（31 次、3 个账号），**不作为证据使用**。

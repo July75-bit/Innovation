@@ -1,107 +1,82 @@
-# 3.3 提交次数截图：怎么做（照这份点）
+# 3.3 提交次数截图：怎么做（已跑通，照这份点）
 
 > **要求原文**：3.3「代码仓库链接及代码提交历史截图，**包括每个人提交的次数截图**，参考 `https://github.com/[accountname]/[reponame]/pulse`」
-> **负责**：D（截图与说明）· A/B/C（各自确认自己的 GitHub 账号邮箱，见 §4）
-> **已有产物**：`docs/acceptance/evidence/20-commit-stats.png`（真实提交统计，本地 git 可复跑）
+> **状态**：2026-11-07 已实际截图并入库（`21-pulse-overview.png`、`22-pulse-top-committers.png`），本文是复现步骤与口径说明。
 
-## 0. 先说一个必须知道的坑
+## 0. 结论先行（并更正一处误判）
 
-我们仓库的**默认分支是 `main`，只有 31 次提交**；真正的开发全在 `develop`（**137 次**）。而 GitHub 的 pulse / contributors 只统计**默认分支**，并且只按**已绑定到 GitHub 账号的邮箱**归因。
+实际截图后确认：**pulse 的 `Top committers` 是「全部分支」统计，4 个人都在**，不存在"某人消失"的问题。
 
-实测结果（2026-11-07）：
+| 来源 | 看到的东西 |
+| --- | --- |
+| `Pulse → Top committers`（全部分支，近 1 月） | wlkaqw 49 · July75-bit 41 · fusde0 28 · weedflame 20 = **138** |
+| `Insights → Contributors`（图表，只算默认分支 main） | 只有 3 个账号、合计 31 —— **这张不要用** |
+| 本地 git（develop，全周期，排除合并） | D 50 · B 38 · C 26 · A 20 + 仓库账号 3 = **137** |
 
-```
-GitHub contributors API（只看 main）：wlkaqw 18 · weedflame 8 · July75-bit 5   = 31
-本地 git（develop，非合并提交）：   D 50 · B 38 · C 26 · A 20 · 仓库账号 3      = 137
-```
+> 早期判断"B 的 38 次提交在 pulse 上会消失"来自 `Contributors` 接口（默认分支口径），**与 pulse 实际表现不符，已更正**。答辩只用 `Pulse`。
 
-也就是说：**只截 pulse 会漏掉 B 和 C，而且数字是全仓的 1/4**。答辩时被问「B 怎么只有 0 次提交」会很尴尬。
+## 1. 截图步骤（两张就够）
 
-所以证据要**三层**：pulse 原始记录 + 每人 commits 页 + 一张准数统计图。
+### 1.1 总览图
 
-## 1. 截图一：pulse（平台原始脉搏图）
+1. 打开 `https://github.com/July75-bit/Innovation/pulse`
+2. 右上角 `Period` 选 **`1 month`**（默认 1 week 太短）
+3. 确认 `Summary` 出现「**4 authors** have pushed … **138 commits to all branches**」
+4. 连地址栏一起截 → 存 `docs/acceptance/evidence/21-pulse-overview.png`
 
-1. 浏览器打开 `https://github.com/July75-bit/Innovation/pulse`
-2. 页面右上角有期间选择，选 **`1 month`**（默认可能是 1 week，会太短）
-3. 往下滚到 **`Authors`** 区块——这里就是"每个人提交次数"的原始图
-4. 截图要求：
-   - **连地址栏一起截**（证明是本仓库），窗口宽度 ≥ 1280
-   - 让 `Authors` 那一整块完整入镜，不要截半个
-   - 存为 `docs/acceptance/evidence/21-pulse.png`
+### 1.2 每人提交次数（关键的一张）
 
-> 如果页面上有 **Branch 下拉**，切到 `develop` 再截；切不了就按原样截，并在 PPT 里注明"pulse 统计默认分支 main"。
+1. 在同一个页面，看 `Top committers` 卡片（右上角有三个点 / 展开按钮）
+2. 点开后是一个弹窗，**每人一行、带具体数字**，还带 `Download CSV`
+3. 把弹窗整块截进去 → 存 `docs/acceptance/evidence/22-pulse-top-committers.png`
+4. 顺手点 **`Download CSV`**，把 CSV 也存到 `docs/acceptance/evidence/pulse-committers.csv`（比截图更硬的证据）
 
-## 2. 截图二：每个人的提交列表（补上 pulse 漏掉的人）
+> 截图规范：窗口 ≥1280 宽、**不要裁掉地址栏**、日期区间（October 6 – November 6）要入镜。
 
-按账号过滤 `develop` 的提交，URL 模板：
+## 2. 必须补一张对照表：pulse 显示的是账号名，不是真名
 
-```
-https://github.com/July75-bit/Innovation/commits/develop?author=<GitHub 登录名>
-```
+pulse 的 `July75-bit` 会让评委以为是"仓库所有者单独提交了 41 次"，其实是 **B 的提交**（该账号绑定的是 B 的邮箱 1975473007@qq.com，41 = B 的 38 条 + 该账号自身 3 条）。
 
-已知能用的两个：
+| git 提交里的名字 | GitHub 账号（pulse 显示） | 真人 | 全周期提交 |
+| --- | --- | --- | ---: |
+| `wlkaqw` | wlkaqw | D 王泽棠 | 50 |
+| `Hu De Hao` | **July75-bit**（含该账号自身 3 条） | B 胡德昊 | 38（+3） |
+| `fusde0` | fusde0 | C 刘宏 | 26 |
+| `weedflame` | weedflame | A 倪颢容 | 20 |
 
-| 人 | URL | 预期看到 |
+> 这张表已经画进 `20-commit-stats.png`，回答"账号 → 真人"的问题时直接放这张图。
+
+## 3. 口径差异怎么说（评委一定会问）
+
+| 对比项 | pulse 近 1 月 | 本地全周期 |
 | --- | --- | --- |
-| A 倪颢容 | `.../commits/develop?author=weedflame` | 20 条 |
-| D 王泽棠 | `.../commits/develop?author=wlkaqw` | 50 条 |
+| 时间窗 | 2026-10-06 → 11-06（当月） | 2026-10-17 → 11-07（项目全周期） |
+| 分支 | 全部分支 | develop |
+| 合并提交 | 排除 | 排除 |
+| 数字 | 138 | 137 |
 
-B（Hu De Hao）和 C（fusde0）**现在没有绑定账号**，过滤不出来。他们的提交在
-`https://github.com/July75-bit/Innovation/commits/develop` 里作者显示为**灰色默认头像 + 名字**
-——这一张反而要截下来，它是"归因缺失"的客观证据。
+**一句话答法**：「pulse 是 GitHub 按月给的口径，我们是 6 天冲刺、全周期在 develop 上；两张图口径不同所以数字不完全一样，差 1 条是 11-07 当天的提交还没进 pulse 的窗口。」
 
-截图命名：`22-commits-A.png` / `22-commits-D.png` / `22-commits-unlinked.png`，同样连地址栏。
+另外 pulse 里写着 `On main, 0 files have changed / 0 additions / 0 deletions` —— 别慌，这是**对的**：
+我们 `main` 是发布分支，只接受从 `develop` 合并（PR #3），没有直接提交；所有开发都在 `develop`。
 
-## 3. 截图三：准数统计图（已生成）
-
-`docs/acceptance/evidence/20-commit-stats.png` —— 直接从 `develop` 算的准数：
-
-| 成员 | git 身份 | 提交 | + 行 | − 行 | 占比 |
-| --- | --- | ---: | ---: | ---: | ---: |
-| D 王泽棠 | `wlkaqw` | 50 | +17,357 | −1,824 | 36.5% |
-| B 胡德昊 | `Hu De Hao` | 38 | +5,989 | −892 | 27.7% |
-| C 刘宏 | `fusde0` | 26 | +1,927 | −333 | 19.0% |
-| A 倪颢容 | `weedflame` | 20 | +10,797 | −1,207 | 14.6% |
-| 仓库账号 | `July75-bit` | 3 | +2 | −1 | 2.2% |
-| **合计** | — | **137** | **+36,072** | **−4,257** | 100% |
-
-复跑命令（任何人可验）：
-
-```powershell
-cd D:\projects\innovation\Innovation
-git shortlog -sn --no-merges develop
-git log --numstat --no-merges --author="Hu De Hao" develop
-```
-
-> 这张图的价值：pulse 是"平台怎么看我们的仓库"，这张是"仓库真实发生了什么"。两者一起交，才既满足要求又不失实。
-
-## 4. 让以后的提交被正确归因（每人 2 分钟，只影响新提交）
-
-**为什么要改**：提交里记的是 `user.email`，GitHub 用它把提交算到某个账号头上。没绑定的邮箱 → 这个人在 pulse / contributors 上直接消失（我们已经有 2 个人属于这种情况）。
-
-每人在**自己电脑的仓库目录**执行（把邮箱换成自己 GitHub 账号的主邮箱）：
+## 4. 让归因以后更清楚（可选，2 分钟/人）
 
 ```powershell
 cd D:\projects\innovation\Innovation
 git config user.name  "你的名字"
-git config user.email "你的GitHub邮箱"
-git config --get user.email        # 回显确认
+git config user.email "你的GitHub邮箱"   # 用 https://github.com/settings/emails 里已验证的那个
+git config --get user.email            # 回显确认
 ```
 
-不知道用哪个邮箱：打开 `https://github.com/settings/emails`，用里面**已验证（Verified）**的那个。
-不想暴露真实邮箱，用 GitHub 提供的 noreply 地址也行（在同一个页面能看到，形如 `12345678+login@users.noreply.github.com`）。
+- 只影响**以后**的提交；历史提交的作者邮箱写死在 commit 里，改不了（也不该为它重写历史）。
+- 我们现在的实际情况并不难看：4 个人在 pulse 上都有数字，只是账号名需要一次对照。
 
-**注意**：
+## 5. 交付清单
 
-- 这个改动**不会**追溯修改历史提交（历史提交的作者邮箱是写死在 commit 里的，改不了，除非重写历史——我们不做）；
-- 所以"旧提交归因缺失"是既定事实，答辩时按 §3 的方式说明即可，不要试图掩盖；
-- 改完之后每个人的**新**提交才会被 pulse 正确统计。
-
-## 5. 交付清单（做完打勾）
-
-- [ ] `21-pulse.png`：pulse 页，期间 1 month，含 Authors 区块与地址栏
-- [ ] `22-commits-A.png` / `22-commits-D.png`：按账号过滤的 develop 提交列表
-- [ ] `22-commits-unlinked.png`：develop 提交列表里 B/C 的灰色头像（归因缺失证据）
-- [ ] `20-commit-stats.png`：已生成，无需再截
+- [x] `21-pulse-overview.png`：pulse 总览，1 month，含 `4 authors / 138 commits to all branches`
+- [x] `22-pulse-top-committers.png`：Top committers 弹窗，每人具体次数
+- [x] `20-commit-stats.png`：本地准数 + 账号对照 + 双口径说明
+- [ ] `pulse-committers.csv`：弹窗里的 `Download CSV`（导出后放同目录）
 - [ ] `docs/acceptance/evidence/README.md` 索引补这 4 行
-- [ ] 每人执行完 §4 并把 `git config --get user.email` 的回显发群里
+- [ ] 确认 §2 对照表里"账号 → 真人"的映射无误（B = July75-bit 需 B 本人确认）
