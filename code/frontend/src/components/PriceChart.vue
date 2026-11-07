@@ -155,7 +155,7 @@ function tipStyle(d: { x: number; y: number }) {
             :cy="d.y"
             r="10"
             tabindex="0"
-            :aria-label="`${dateTime(d.ts)}，价格 ${money(d.price)} 币，${d.reason}`"
+            :aria-label="`第 ${i + 1} 个价格点：${dateTime(d.ts)}，${money(d.price)} 币，${d.reason}`"
             @mouseenter="hoverIdx = i"
             @mouseleave="hoverIdx = null"
             @focus="hoverIdx = i"
