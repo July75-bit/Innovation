@@ -11,7 +11,7 @@
 | --- | --- |
 | 分支 / 工作区 | `develop` 合并推送后与 `origin/develop` 齐（本机先领先 1 个合并提交，`4c9e177` 前） |
 | 测试 / CI | **216 passed / 0 skipped**（单元 203 / 集成 13；本机复核）；覆盖率 **97%**；CI 最新 **run #104（`3026d8a`）三 job 绿**（合并后待新一轮复核） |
-| 覆盖率 | **97%**（1287 语句 / 43 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测） |
+| 覆盖率 | **97%**（1289 语句 / 43 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）。**2026-11-07 晚重灌后：16 选手 / 8 队 / 每人 11 价格点 / 5 表 / 0 流水（干净演示态），m0NESY 已在 Falcons** |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
@@ -41,7 +41,7 @@
 | A-3 | 无障碍最小集：数据点 `tabindex="0"` + `@focus` 出 tooltip、全局 `:focus-visible` 描边、`prefers-reduced-motion` 降级 | 纯键盘能读出某个点 | ✅ **A 已亲验 2026-11-07**（`evidence/28-keyboard-focus.png`：焦点描边 + tooltip 带时间/价格/原因） |
 | A-4 | 可选三项：数量快捷按钮 / 买卖二次确认 / Enter 提交 | — | 🟡 **快捷按钮已完成**（`TradePanel.vue:37` 的 `quickQty = [1,5,10,25]`，线上截图可见）；二次确认与 Enter 提交未做，冻结期不做、写进已知限制 |
 | A-5 | 按 `demo-script.md` 练 2 次，核对话术里的成交价与余额 | 2:00 内走完、数字不念错 | ⬜ |
-| **A-6** | 改 `slides.md` 第 02 页：用哪张截图、说什么 | 页内 8 选手 / 4 路由 / 三态与实际一致 | ⬜ |
+| **A-6** | 改 `slides.md` 第 02 页：用哪张截图、说什么 | 页内 16 选手 / 4 路由 / 三态与实际一致 | ⬜ |
 | **A-7** | 演示主操作：按 `demo-script.md` 走 2:00，**含一次"故意失败"**（数量填 999 触发余额不足） | 两次彩排都 ≤2:10、无卡壳 | ⬜ |
 | **A-8** | 演示前确认：线上 **16 名选手**在、余额 5000.00、流水干净 | 截图发群 | ⬜ |
 | **A-9** | 亲手走查 A-1/A-2/A-3 三项（都是 D 写的，你还没亲眼看过） | 拖窄窗口 + 只用 Tab 走一遍折线图 | ✅ **A 已亲验（2026-11-07 14:37–17:09）**：375px 五页实拍 [`30~34-a9-*-375.png`](../acceptance/evidence/README.md)（顶栏折行、卡片化、抽屉导航、reason 直出）+ **横向溢出硬断言 [`35-a9-scrollwidth-375.png`](../acceptance/evidence/35-a9-scrollwidth-375.png)（`375 / 375`）** + 键盘焦点 `28` + AI 占位态 `29`。**A-9 证据已闭合，无待补项** |
@@ -57,7 +57,7 @@
 | ID | 任务 | 完成标准 | 状态 |
 | --- | --- | --- | --- |
 | B-1 | CORS 口径二选一（保留 `*` 写理由 / 改回白名单） | 代码与文档口径一致 | ✅ 已改配置驱动（`b548a0b`），`test_cors_config.py` 8 条 |
-| B-2 | 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | 证据入库 + `deployment.md` §5 打勾 | ✅ 用 `/api/debug/db` 等价取证：`evidence/online/backend-debug-db.md`（5 表 / 8 选手 / 78 价格点） |
+| B-2 | 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | 证据入库 + `deployment.md` §5 打勾 | ✅ 用 `/api/debug/db` 等价取证：`evidence/online/backend-debug-db.md`（5 表 / 16 选手 / 每人 11 价格点） |
 | B-2.1 | CORS 线上事故修复（BUG-12） | 线上白名单生效 | ✅ 已复验：`Origin: 前端域名` 回显、`evil.example.com` 无该头 |
 | **B-3** | 复核 `slides.md` 04/05 页：Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6、并发时序、BUG-01 的「5000→5504、卖 4 股」 | 逐条与代码/`requirements.lock.txt` 一致，不一致直接改 | ✅ 已复核（`44322b8`）：并发时序与 BUG-01 数字**一致未改**；修掉 3 处不一致——路由 7→**8** 个、前端版本 5.x/7.x→**TS 6.0 / Vite 8.2**（Vue 3.5）、用例 120→**137** 条 / 缺陷 10→**13** 条（含 3 个 P0）；`build_deck.py` 写死 ROOT 也一并修好并重导 `defense.pdf` |
 | B-4 | （原 B-3 的重复条目） | — | 🔀 合并进 B-3 |
@@ -159,7 +159,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 | 2 | 彩排 ≥2 次、每次 ≤15:00 | §3 两张计时表填满 | D |
 | 3 | 幻灯片四件套齐：`slides.md` / `defense.pdf` / `demo-script.md` / `qa.md`（问答 ≥23 问） | 文件齐、PDF 与 md 同版 | D |
 | 4 | 演示 2:00 内完成，含错误分支 | 彩排记录 | A |
-| 5 | 线上 `/api/health` 200、8 选手、余额 5000.00 | 截图 | B |
+| 5 | 线上 `/api/health` 200、16 选手、余额 5000.00 | 截图 | B |
 | 6 | `deployment.md` §5 检查单 **37/37** | 全勾 | B |
 | 7 | `test_report.md` 结论 =「可交付」；216 passed | 文档 + CI run #95 | D |
 | 8 | 彩排记录写进 `docs/presentation/README.md` | 两次记录 | D |
@@ -170,7 +170,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 ## 5. 演示前 checklist（T−30 分钟）
 
 - [ ] 线上预热过（`/api/health` 连续 200，冷启动约 49s）
-- [ ] 市场页 8 选手、余额 5000.00、持仓/流水干净（脏了 `bootstrap_demo_data.py --reset`）
+- [ ] 市场页 16 选手（8 队各 2 人）、余额 5000.00、持仓/流水干净（脏了 `bootstrap_demo_data.py --reset`）
 - [ ] 浏览器缩放 100%、关掉无关标签、投屏分辨率确认
 - [ ] `defense.pdf` 与今天改过的 `slides.md` 是同一版
 - [ ] `demo-script.md` 打印件（A）+ 计时器（D）
