@@ -86,6 +86,7 @@
 | `28-keyboard-focus.png` | 键盘可达（A6） | 折线图首点获得焦点（`:focus-visible` 描边）+ tooltip「2026/10/24 18:18:21 · 120.00 币 · 初始价格」 |
 
 | `29-ai-loading.png` | AI「分析中…」占位态（A5） | 375px 详情页：AI 卡片处显示「**AI 分析中…（行情与交易不受影响）**」+ 三点动画，同时下方交易面板已可用（说明行情/交易不被 AI 阻塞） |
+| `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
 > A5 的占位态截图已补齐（`29-ai-loading.png`）。
 

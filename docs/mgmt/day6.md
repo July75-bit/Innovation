@@ -93,7 +93,7 @@
 | **D-6** | 控时：演示 2:00 提示、问答 5:00 收口 | 全程 ≤15:00 | ⬜ |
 | **D-7** | 组织两次彩排，问题记进 `docs/presentation/README.md` | 有两次记录与计时 | ⬜ |
 | **D-8** | 认领 `qa.md` Q1–Q3（合规）、Q9–Q11（AI）、Q15–Q17（测试/局限）并脱稿 | 9 问脱口而出 | ⬜ |
-| **D-9** | 3.3 的 `pulse-committers.csv` 入库（`Top committers` 弹窗 → Download CSV） | 文件在 `evidence/`，索引补一行 | ⬜ |
+| **D-9** | 3.3 的 `pulse-committers.csv` 入库（`Top committers` 弹窗 → Download CSV） | 文件在 `evidence/`，索引补一行 | ✅ 2026-11-07（`evidence/pulse-committers.csv`：49/41/28/21=139） |
 | **D-10** | 收尾：`test_report` 结论改「可交付」、`milestones.md` M6 与 T6-01~06 回填、`daily_summary.md` 第 6 天段 | 三处都改完 | ⬜ |
 
 **已完成（2026-11-07）**：01B 使命·口号·差异化 / 01C 产品定义 / 01D 设计原则三页**已合入** `slides.md`（字母后缀，02–10 页号不变），并同步进 `build_deck.py`；`defense.pdf` 已重新导出为 **16 页**。全部演讲备注的时间轴已按 8:00 重排。
