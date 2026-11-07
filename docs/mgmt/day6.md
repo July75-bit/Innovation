@@ -119,6 +119,35 @@
 
 > 超时处置：幻灯片超 30s → 砍 09 页的 CI 细节；演示超时 → 跳过"故意失败"；问答超时 → D 用"文档里有，会后发您"收口。
 
+## 3.5 演示时怎么跑测试（现场脚本，一条命令不踩坑）
+
+> 场景：评委问"怎么证明质量"或进入问答段，D 在终端演示。
+
+```powershell
+cd D:\projects\innovation\Innovation
+
+# ① 切到项目环境（关键：base 里没有 pytest，会报 No module named pytest）
+conda activate playerstock
+# 若不想依赖激活，改用绝对路径最稳：
+#   & "D:\miniconda\envs\playerstock\python.exe" -m pytest -q -p no:warnings
+
+# ② 全量回归：137 条，约 2 秒
+python -m pytest -q -p no:warnings
+
+# ③ 指着一个 P0 缺陷讲：测试名就是场景
+python -m pytest tests/unit/test_trades_concurrency.py -v
+
+# ④ 覆盖率不现场跑（16 秒 + 一屏表格），改为展示 evidence/37-pytest-coverage.png
+```
+
+| 步骤 | 说一句 |
+| --- | --- |
+| ② | "137 条，0 跳过——不是没写完的占位。" |
+| ③ | "并发卖出超卖是 P0，判断写进 SQL 的 WHERE，两条连接同时卖只成一笔。" |
+| ④ | "核心逻辑 92%，课程要求 60%。这是刚才那条命令的输出渲染。" |
+
+**兜底**：终端出任何意外 → 直接打开 GitHub Actions 的 run #95，指着「后端测试」job 里的 `python -m pytest` 步骤，话术"这是同一条命令在 CI 上的记录"。
+
 ## 4. 晚验收（M6 关闭条件，逐条打勾）
 
 | # | 验收项 | 判定证据 | 责任人 |

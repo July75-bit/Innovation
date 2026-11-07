@@ -127,6 +127,8 @@
 
 ```powershell
 cd D:\projects\innovation\Innovation
+# 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
+conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
 python -m pytest                                     # 137 passed
 ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501

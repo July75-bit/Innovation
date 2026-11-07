@@ -146,9 +146,21 @@ python scripts/simulate_match.py # 生成一轮模拟比赛并触发价格更新
 
 ```powershell
 # 在仓库根目录（pyproject.toml 已配置 pythonpath = ["code/backend", "code/core_engine", "code"]）
+
+# ① 先确保用的是「项目环境」，不是 conda base：
+#    conda activate playerstock        # 或 cd code/backend; .\.venv\Scripts\Activate.ps1
+#    窗口提示里若还是 (base)，python 里没有 pytest，会报 No module named pytest
+
+# ② 装依赖（装进当前激活的环境）
 pip install -r code/backend/requirements.txt
+
+# ③ 跑
 python -m pytest
+python -m pytest -q -p no:warnings                                  # 屏蔽过时告警，答辩演示更干净
+python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率（92%，需 pytest-cov）
 ```
+
+> 不想切环境也可以直接用绝对路径，最稳：`& "D:\miniconda\envs\playerstock\python.exe" -m pytest`
 
 ## 四人分工
 
