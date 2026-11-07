@@ -355,6 +355,27 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 | 前端构建失败 | 同上 |
 | 数据库被改坏 | 重新 `python scripts/bootstrap_demo_data.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
 
+### 8.1 回滚演练记录
+
+> 记录人：B ｜ 执行人：项目负责人在 Render 控制台操作 ｜ 演练日期：2026-11-07 09:30
+
+**【回滚演练记录】** 2026-11-07 9:30 AM，在 Render 控制台选择 9:26 AM 的旧版本执行 Rollback。
+部署成功后，通过 `/api/health` 确认服务 200 正常。演练后已手动 Redeploy 最新版本，并重新开启
+Auto-Deploy。验证通过。
+
+**本次演练覆盖到的与没覆盖到的**（避免把话说满）：
+
+| 检查点 | 结果 |
+| --- | --- |
+| 能选到上一个成功版本并回滚成功 | ✅ 服务重新 Live |
+| 回滚后服务可用 | ✅ `/api/health` → 200 |
+| 回滚后能回到最新版本 | ✅ 手动 Redeploy 最新提交，并重新开启 Auto-Deploy |
+| 回滚期间**数据是否仍在** | 本次未单独记录（Postgres 与代码版本解耦，TC-404 已证明重新部署后数据仍在；建议下次演练时补一条流水对比） |
+| 线上当前是否最新 | ✅ B 于 2026-11-07 复核：`/api/debug/db` 已上线、前端 bundle 含 `/market` 重定向 |
+
+> 复盘要点：**回滚只回代码、不回数据**——数据库是独立的 Postgres 服务，所以"回滚到旧版本"不会
+> 把交易记录带回去。真要回退数据，只能重跑 `bootstrap_demo_data.py`（演示数据）或从备份恢复（本项目未做备份）。
+
 ## 9. TODO
 
 - [x] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
