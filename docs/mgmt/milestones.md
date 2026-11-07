@@ -1,4 +1,4 @@
-# 6 天冲刺里程碑与 WBS（任务分解）
+﻿# 6 天冲刺里程碑与 WBS（任务分解）
 
 > **负责人**：D ｜ **截止**：第 1 天定稿，每天更新进度 ｜ **状态**：✅ 已填写（每日更新进度看板）
 > **对应课程指标**：#15 里程碑、任务分解 WBS、进度排期、资源分配
@@ -84,13 +84,13 @@
 
 | ID | 时段 | 任务与命令 | 依赖 | 完成标准 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| T1-21 | 09:30–10:45 | 审 `data/seed_players.json`（已按 CS2 场景给出 8 名真实 CS2 选手，身份公开、价格与评分为模拟，字段 `player_id` / `name` / `display_name` / `team` / `role` / `initial_price` / `current_price` / `rating` / `status`），确认价格与评级合理 | T1-03 | `json.load` 通过，8 名选手，无重复 id | ⬜ |
-| T1-22 | 10:45–11:30 | 定稿 `pricing_model.md`：公式 `P' = max(floor, P×(1+αS+βD))`、α=0.15 / β=0 / floor=1.0 / 窗口 N=5、**单次涨幅 clamp 上限**（建议 ±20%，今天必须定一个数并写进文档） | T1-21 | 参数表无空白；clamp 有具体值 | ⬜ |
-| T1-23 | 13:00–14:00 | 与 B 对齐三件事：① 价格存 `players.current_price`；② 历史存 `price_history(player_id, price, reason, ts)`；③ 谁触发价格更新（定时任务 or 手动脚本） | T1-22 | 结论写进 `mechanism_design.md` 并勾掉“待定项” | ⬜ |
-| T1-24 | 14:00–15:00 | 参加契约评审，重点确认 `GET /api/players/{id}/prices`：时间升序、每点带 `reason`、空历史返回 `[]` 而非 404 | T1-16 | 契约签字 | ⬜ |
-| T1-25 | 15:00–16:30 | 在 `code/core_engine/pricing.py` 实现 `update_price` + `standardize_score`，去掉 `tests/unit/test_pricing.py` 的 skip | T1-22 | 5 条定价测试全绿 | ⬜ |
-| T1-26 | 16:30–17:30 | `python scripts/simulate_match.py --seed 42`：能打印比赛结果；若 `update_price` 已完成，能打印“旧价 → 新价 + reason” | T1-25 | 命令行看到一条价格变化及原因 | ⬜ |
-| T1-27 | 17:30–18:00 | 在 `pricing_model.md` 第 8 节填“至少一个涨、一个跌”案例占位；提定价 PR | T1-26 | 两个案例各一行 | ⬜ |
+| T1-21 | 09:30–10:45 | 审 `data/seed_players.json`（已按 CS2 场景给出 8 名真实 CS2 选手，身份公开、价格与评分为模拟，字段 `player_id` / `name` / `display_name` / `team` / `role` / `initial_price` / `current_price` / `rating` / `status`），确认价格与评级合理 | T1-03 | `json.load` 通过，8 名选手，无重复 id | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-22 | 10:45–11:30 | 定稿 `pricing_model.md`：公式 `P' = max(floor, P×(1+αS+βD))`、α=0.15 / β=0 / floor=1.0 / 窗口 N=5、**单次涨幅 clamp 上限**（建议 ±20%，今天必须定一个数并写进文档） | T1-21 | 参数表无空白；clamp 有具体值 | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-23 | 13:00–14:00 | 与 B 对齐三件事：① 价格存 `players.current_price`；② 历史存 `price_history(player_id, price, reason, ts)`；③ 谁触发价格更新（定时任务 or 手动脚本） | T1-22 | 结论写进 `mechanism_design.md` 并勾掉“待定项” | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-24 | 14:00–15:00 | 参加契约评审，重点确认 `GET /api/players/{id}/prices`：时间升序、每点带 `reason`、空历史返回 `[]` 而非 404 | T1-16 | 契约签字 | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-25 | 15:00–16:30 | 在 `code/core_engine/pricing.py` 实现 `update_price` + `standardize_score`，去掉 `tests/unit/test_pricing.py` 的 skip | T1-22 | 5 条定价测试全绿 | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-26 | 16:30–17:30 | `python scripts/simulate_match.py --seed 42`：能打印比赛结果；若 `update_price` 已完成，能打印“旧价 → 新价 + reason” | T1-25 | 命令行看到一条价格变化及原因 | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
+| T1-27 | 17:30–18:00 | 在 `pricing_model.md` 第 8 节填“至少一个涨、一个跌”案例占位；提定价 PR | T1-26 | 两个案例各一行 | ✅（第 2 天随 T2-06/T2-07 完成，2026-10-24） |
 
 > 今天的交付是 **公式 + 数据 + 数据结构共识**，不要求“价格必须动起来”——价格真跑起来是第 2 天。
 
@@ -110,7 +110,7 @@
 | T1-35 | 16:00–17:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ✅（README 已含分工/启动/已知偏差） |
 | T1-36 | 17:00–17:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ✅（风险 Top3 预案 + 第 1 天记录已落盘） |
 | T1-37 | 17:30–18:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ✅（CI 已改为监听 main+develop，三 job 绿） |
-| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | 🟡 仓库 + README + PR 流程 + 2 条 Issue 已有；Kanban / Team Planning / Milestones 尚未建（需 GitHub 网页操作，用户/B 执行） |
+| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | 🟡 **Milestones 已建**（M1–M6 六个，12 条 Issue 已归入，见 GitHub `/milestones`）；仓库/README/PR/Issue 流程齐；**Kanban / Team Planning 看板**需登录网页确认（API 匿名不可查） |
 | T1-39 | —（2026-10-24 补记） | **需求规范书**（课件第 1 天 p.52）：`docs/requirements/functional_spec.md` + `nonfunctional_spec.md` + **领域类图 UML**（3 分钟汇报用） | T1-29 | 两份需求文档齐全；UML 领域类图可讲解 | ✅ 2026-10-24（两份文档已有；`functional_spec.md` §3 补 UML 领域类图 + 类到实现映射） |
 | T1-40 | —（2026-10-24 补记） | **沟通 / 风险管理计划**（课件第 1 天 p.53）：沟通管理计划 + 风险管理计划（本项目合并进根目录 `project_management_plan.md`，`docs/mgmt/communication_plan.md` / `risk_plan.md` 为指针文件） | — | 两份计划有实质内容且为唯一事实来源 | ✅ 2026-10-24（沟通 §1–8 / 风险 §9–11 已合并定稿；与课件命名不同，映射关系已注明） |
 
@@ -193,7 +193,7 @@
 | T5-05 | 修复线上与本地不一致问题 | 全员 | T5-04 | 无阻断性 bug | ✅ 未发现不一致：线上 8 人价格与本地配方逐条相同，`/prices` 11 点、reason 措辞与代码一致 |
 | T5-06 | 部署说明定稿 | D | T5-04 | `deployment.md` 填完 | ✅ 2026-10-25（地址/环境变量/已知问题/回滚/§5 验收清单已填；剩日志与控制台截图、演示前预热 3 项运维动作） |
 | T5-07 | 线上数据灌入（bootstrap/9 轮，≥10 点/人） | B | T5-01 | `/prices` 点数达标、带 reason | ✅ 2026-10-25（线上 `/api/players/1/prices` = **11 点**、升序、末点 108.75 = 现价、reason 为「本轮得分 xx，S=±x.xx」；价格与本地 `--rounds 9` 配方逐条一致） |
-| T5-08 | 答辩三件套（8min 幻灯片 / 2min 演示 / 5min QA）+ 彩排 | D + 全员 | T5-04 | 材料齐 + 至少 1 次完整彩排 | 🟡 材料已齐（`slides.md` 14 页含讲稿 / `demo-script.md` 逐秒脚本 / `qa.md` 20 问）；待导出 PDF + 全员彩排 |
+| T5-08 | 答辩三件套（8min 幻灯片 / 2min 演示 / 5min QA）+ 彩排 | D + 全员 | T5-04 | 材料齐 + 至少 1 次完整彩排 | 🟡 材料已齐（`slides.md` 14 页 / `defense.pdf` 13 页已导出 / `demo-script.md` 逐秒脚本 / `qa.md` 20 问）；**只剩全员彩排 ≥2 次** |
 
 ### 第 6 天：冻结与答辩
 
@@ -210,11 +210,11 @@
 
 | 天 | 计划任务数 | 完成 | 未完成及原因 |
 | --- | --- | --- | --- |
-| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 29 完成 + 4 部分 | C 定价 7 项未开始；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页）；T1-16 契约已于 `94ea9aa` 四人签齐 |
+| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 33 完成 + 3 部分 | C 第 1 天 7 项已由第 2 天 T2-06/07 吸收完成；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-38 Kanban/Team Planning 看板待确认（Milestones 已建）；T1-16 契约已于 `94ea9aa` 四人签齐 |
 | 第 2 天 | 12 | 12 完成 | —（A 前端、C 定价补齐后复核；A 两项浏览器运行证据待补，见 T3-04） |
 | 第 3 天 | 7 | **7 完成** | T3-01/02/03/04/05/06/07 全绿；M3 已于第 4 天上午由 A 的浏览器证据闭环（`docs/acceptance/evidence/`）；自动化 137 passed / 0 skipped（CI） |
-| 第 4 天 | 7 | **7 完成（T4-01/02/03/04/05/06/07）** | M4 达成（折线图 10 点 + 原因 + AI 卡 + 三态，证据 `docs/acceptance/evidence/`）；外部交叉原型测试组待约；BUG-03（本机 Windows 测试编码）待 B 修 |
-| 第 5 天 | 8（T5-01~08） | **7 完成（T5-01~07）** | M5 ✅ 上线可用；T5-08 答辩三件套未开始（幻灯片/演示/QA + 彩排）；CORS 仍为 `*`（待答辩前决定是否收紧） |
+| 第 4 天 | 7 | **7 完成（T4-01/02/03/04/05/06/07）** | M4 达成（折线图 10 点 + 原因 + AI 卡 + 三态，证据 `docs/acceptance/evidence/`）；外部交叉原型测试组待约；BUG-10（本机 Windows 测试编码）已修 |
+| 第 5 天 | 8（T5-01~08） | **7 完成（T5-01~07）** | M5 ✅ 上线可用；T5-08 材料已齐（slides 14 页 / defense.pdf 13 页 / demo-script / qa 20 问），**仅彩排未做**；CORS 已改白名单并线上复验（B6/B6.1） |
 | 第 6 天 | 6 | | |
 
 ## 4. 如果只有 5 天（压缩方案）

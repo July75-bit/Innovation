@@ -13,13 +13,27 @@
 
 ## 技术栈
 
-| 层 | 选型 | 负责人 |
-| --- | --- | --- |
-| 前端 | Vue 3 + TypeScript + Vite | A |
-| 后端 | FastAPI + SQLAlchemy + SQLite | B |
-| 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | C |
-| 智能体 | Python + LLM API（可降级为规则版） | D |
-| 部署 | Render（前端 Static Site / 后端 Web Service） | D |
+> 汇报要求 3.2：编程语言、IDE、平台、框架**要写明版本号并写在 README**。后端版本取自 `code/backend/requirements.lock.txt`（封闭锁定），前端取自 `code/frontend/package.json`。
+
+| 条目名称 | 条目内容 | 版本号 | 备注 |
+| --- | --- | --- | --- |
+| 程序设计语言 | Python | 3.13.5（本机与锁文件基线；Render 运行时 3.12.6） | B / C / D |
+| 程序设计语言 | TypeScript | 6.0 | A |
+| IDE | VS Code | — | 推荐扩展见 `.vscode/extensions.json`（Python、Pylance、Ruff、Prettier、Vue Volar、ESLint） |
+| Web 后端框架 | FastAPI | 0.161.1 | 自动生成 Swagger，兼做联调文档（B） |
+| ASGI 服务器 | Uvicorn | 0.54.0 | — |
+| 数据校验 | Pydantic / pydantic-settings | 2.14.1 | 配置与请求体校验 |
+| ORM | SQLAlchemy | 2.1.6 | 本地与 CI 用 SQLite，线上用 Render Postgres（B） |
+| 数据库驱动 | psycopg2-binary | 见 `requirements.lock.txt` | 连接串显式钉死 `postgresql+psycopg2`（BUG-08） |
+| Web 前端框架 | Vue | 3.5.42 | 组合式 API（A） |
+| 前端构建 | Vite | 8.2.2 | — |
+| 前端路由 | vue-router | 5.3.1 | 含 `/market` 重定向与兜底路由（BUG-11） |
+| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 137 条、前端 12 条 |
+| 代码质量 | ruff / ESLint / oxlint / Pylint / complexipy | 0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0 | 配置与结果见 `docs/software/CodeReview.md` |
+| 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | 同 Python 运行时 | 无第三方依赖（C） |
+| 智能体 | Python + LLM API（可降级为规则版） | 标准库 urllib，超时 20s | 无密钥/超时/脏输出一律回落 `rule_fallback`（D） |
+| 持续集成 | GitHub Actions | — | 3 个 job：后端测试、前端检查、交付物完整性 |
+| 部署平台 | Render | — | 前端 Static Site / 后端 Web Service / 免费 Postgres（D） |
 
 ## 目录结构
 
@@ -197,7 +211,7 @@ python -m pytest
 | --- | --- | --- |
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)） | B + D |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)） | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告 | D |
 | [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |

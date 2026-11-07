@@ -95,16 +95,20 @@ sequenceDiagram
 
 | 组件 | 选型 | 版本 | 选它的理由 | 备选 |
 | --- | --- | --- | --- | --- |
-| 前端框架 | Vue 3 + TypeScript | 见 `code/frontend/package.json` | 官方脚手架自带 Router/Vitest/ESLint，上手快 | React |
-| 构建 | Vite | 同上 | 启动快、配置少 | — |
-| 后端 | FastAPI | 见 `requirements.lock.txt` | 自动生成 Swagger，四人联调成本最低 | Express |
-| ORM | SQLAlchemy 2.x | 同上 | 事务控制明确 | — |
-| 数据库 | SQLite | 同上 | 零运维，6 天够用 | PostgreSQL（线上持久化可选） |
-| 测试 | pytest + httpx | 同上 | 与 FastAPI TestClient 配套 | — |
+| 前端框架 | Vue 3 + TypeScript | **Vue 3.5.42 · TypeScript 6.0** | 官方脚手架自带 Router/Vitest/ESLint，上手快 | React |
+| 构建 | Vite | **8.2.2** | 启动快、配置少 | — |
+| 路由 | vue-router | **5.3.1** | 官方路由，配合 SPA rewrite | — |
+| 后端 | FastAPI | **0.161.1**（Uvicorn 0.54.0） | 自动生成 Swagger，四人联调成本最低 | Express |
+| ORM | SQLAlchemy 2.x | **2.1.6**（驱动 psycopg2-binary） | 事务控制明确 | — |
+| 数据校验 | Pydantic / pydantic-settings | **2.14.1** | 声明式校验，省手写 | — |
+| 数据库 | SQLite（本地/CI）/ Postgres（线上） | SQLite 3（Python 内置）· Render Postgres | 零运维，6 天够用；线上无持久盘故换 Postgres | PostgreSQL（线上持久化可选） |
+| 测试 | pytest + httpx + Vitest | **9.1.1 / 0.28.1 / 4.1.11** | 与 FastAPI TestClient 配套 | — |
+| 代码质量 | ruff + ESLint + oxlint + Pylint + complexipy | **0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0** | CI 门禁可复现 | — |
+| 运行时 | Python | **3.13.5** 本机基线 · Render 3.12.6 | 锁文件在 3.13 下生成，CI 用 3.12 验证兼容 | — |
 | CI | GitHub Actions | — | 免费、与仓库绑定 | — |
 | 部署 | Render | — | 支持前后端分离 + 蓝图配置 | 阿里云/腾讯云 |
 
-> ⚠️ 答辩要求"技术实现含框架及**版本号**"，第 6 天必须把本表的"见…"替换成真实版本号。
+> ✅ 答辩要求"技术实现含框架及**版本号**"已落实：上表版本与 `code/frontend/package.json`、`code/backend/requirements.lock.txt`、`render.yaml` 一致，并同步进 `README.md`「技术栈」（汇报要求 3.2）。
 
 ### 4.1 选型论证（决策标准与备选对比）
 
