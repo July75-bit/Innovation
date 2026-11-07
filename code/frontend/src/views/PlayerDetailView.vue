@@ -122,7 +122,6 @@ watch(playerId, () => loadCore())
           </p>
           <p class="rating-line">
             模拟表现分 <strong>{{ player.rating }}</strong> / 100
-            <span class="sim-tag">模拟数据，非官方统计</span>
           </p>
         </div>
         <div class="price-box num">
@@ -249,13 +248,6 @@ watch(playerId, () => loadCore())
   margin: var(--space-2) 0 0;
   font-size: var(--fs-aux);
   color: var(--muted);
-}
-.sim-tag {
-  font-size: var(--fs-cap);
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
-  margin-left: 6px;
 }
 .reason {
   font-size: var(--fs-aux);
