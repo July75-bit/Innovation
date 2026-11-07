@@ -9,7 +9,9 @@ venv/
 !.env.example
 *.egg-info/
 .pytest_cache/
-# pytest 不带 --basetemp 时会在仓库根目录生成 pytest-of-<user>/（第 5 天误生成过一次）
+# pytest 的临时目录已由 tests/conftest.py 钉进仓库内的 .pytest-tmp/run（原因见该文件的 pytest_configure）
+.pytest-tmp/
+# 兜底：从别的 rootdir 直接跑 pytest 时，仍可能在仓库根目录甩出 pytest-of-<user>/（第 5 天误生成过一次）
 pytest-of-*/
 .mypy_cache/
 .ruff_cache/
