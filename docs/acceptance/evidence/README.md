@@ -1,4 +1,4 @@
-﻿# 验收证据截图（M3 / T3-04 + T4 前端项）
+# 验收证据截图（M3 / T3-04 + T4 前端项）
 
 > 采集时间：2026-10-24（第 4 天）｜ 采集方式：真实后端（uvicorn :8000，seed 重置 + 8 轮模拟价格）
 > + 真实浏览器（Chromium headless，1280×900 全页截图）｜ 环境：`VITE_USE_MOCK=false` 真实接口模式
@@ -70,6 +70,14 @@
 | `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
 | `22-pulse-top-committers.png` | Pulse → Top committers 弹窗 | wlkaqw 49 · July75-bit 41 · fusde0 28 · weedflame 20 = 138；`July75-bit` 为 B 的账号（41 = B 的 38 + 账号自身 3） |
+| `23-responsive-375-market.png` | 375px 市场页（A4） | 表格转**卡片**；搜索/筛选/排序全部收起；无横向溢出。余额 4149.20 是验收操作后的状态 |
+| `24-responsive-375-detail.png` | 375px 选手详情（A4） | 标题与价格上下排、折线图整宽、AI 卡单列 |
+| `25-responsive-375-positions.png` | 375px 持仓（A4） | 四个指标卡两列排布；持仓行转卡片（持仓/均价/现价/市值/盈亏/操作） |
+| `26-responsive-375-trades.png` | 375px 交易记录（A4） | 表格转卡片：时间/方向/选手/数量/成交价/金额/交易后余额 |
+| `27-responsive-375-nav-drawer.png` | 375px 导航抽屉（A4） | 侧栏以抽屉展开：市场/持仓/交易记录 + 余额/总资产/总收益 + 连接状态；点「菜单」开关 |
+| `28-keyboard-focus.png` | 键盘可达（A6） | 折线图首点获得焦点（`:focus-visible` 描边）+ tooltip「2026/10/24 18:18:21 · 120.00 币 · 初始价格」 |
+
+> **仍缺一张**：AI「分析中…」占位态（A5）——需要 Network 限速后在详情页抓取，见 `docs/mgmt/day6.md` §7.1 步骤 ②。
 
 > 3.3 的复现步骤与口径说明见 `docs/presentation/evidence-3.3-guide.md`。
 > 口径提示：pulse 是"近一月 + 全部分支"，本地是"全周期 + develop"，两列数字不必强行对齐；`Insights → Contributors` 只算默认分支 `main`（31 次、3 个账号），**不作为证据使用**。
