@@ -2,6 +2,7 @@
 /**
  * 持仓页（路由 /positions）：GET /api/positions（§4.6）+ GET /api/account（§4.5）
  * profit / profit_pct 直接用后端算好的值。
+ * 信息架构：先看总览（余额/市值/总资产/收益），再看明细表；窄屏自动转卡片。
  */
 import { onMounted, ref } from 'vue'
 import { api } from '../api'
@@ -17,6 +18,7 @@ import LoadingState from '../components/LoadingState.vue'
 const positions = ref<PositionItem[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+const updatedAt = ref('')
 const { account, refreshAccount } = useAccount()
 
 async function load() {
@@ -27,6 +29,7 @@ async function load() {
     // 余额刷新是 best-effort：失败不应把已能拿到的持仓列表也打成错误态
     const [list] = await Promise.all([api.getPositions(), refreshAccount().catch(() => {})])
     positions.value = list
+    updatedAt.value = new Date().toLocaleTimeString()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载持仓失败'
   } finally {
@@ -40,24 +43,28 @@ onMounted(load)
 <template>
   <div>
     <div class="page-head">
-      <h2>我的持仓</h2>
+      <div>
+        <h2>我的持仓</h2>
+        <p class="updated" v-if="updatedAt && !loading && !error">更新于 {{ updatedAt }}</p>
+      </div>
       <button class="refresh" :disabled="loading" @click="load">刷新</button>
     </div>
 
-    <div v-if="account" class="summary">
-      <div>
-        <span>余额</span><strong>{{ money(account.balance) }}</strong>
+    <!-- 总览：四个关键指标一屏可见 -->
+    <div v-if="account" class="summary num">
+      <div class="stat">
+        <span>余额（虚拟币）</span><strong>{{ money(account.balance) }}</strong>
       </div>
-      <div>
+      <div class="stat">
         <span>持仓市值</span><strong>{{ money(account.position_value) }}</strong>
       </div>
-      <div>
+      <div class="stat">
         <span>总资产</span><strong>{{ money(account.total_asset) }}</strong>
       </div>
-      <div>
+      <div class="stat">
         <span>总收益</span>
         <strong :class="trendClass(account.total_asset - account.initial_balance)">
-          {{ money(account.total_asset - account.initial_balance) }}
+          {{ (account.total_asset - account.initial_balance >= 0 ? '+' : '') + money(account.total_asset - account.initial_balance) }}
         </strong>
       </div>
     </div>
@@ -90,7 +97,7 @@ onMounted(load)
           <td data-label="市值" class="num">{{ money(p.market_value) }}</td>
           <td data-label="盈亏" :class="['num', trendClass(p.profit)]">{{ money(p.profit) }}</td>
           <td data-label="盈亏率" :class="['num', trendClass(p.profit_pct)]">{{ pct(p.profit_pct) }}</td>
-          <td data-label="操作"><RouterLink :to="`/players/${p.player_id}`">交易</RouterLink></td>
+          <td data-label="操作"><RouterLink class="go" :to="`/players/${p.player_id}`">交易 →</RouterLink></td>
         </tr>
       </tbody>
     </table>
@@ -101,63 +108,97 @@ onMounted(load)
 .page-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 .page-head h2 {
   margin: 0;
+  font-size: var(--fs-h2);
+}
+.updated {
+  margin: 4px 0 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
 }
 .refresh {
-  padding: 6px 14px;
+  padding: var(--space-2) var(--space-4);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
+  font-size: var(--fs-body);
   cursor: pointer;
+}
+.refresh:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .refresh:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* 总览卡片：统一间距/圆角/层级 */
 .summary {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.stat {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-top: 14px;
-}
-.summary div {
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
-.summary span {
-  font-size: 12px;
+.stat span {
+  font-size: var(--fs-cap);
   color: var(--muted);
 }
-.summary strong {
-  font-size: 18px;
+.stat strong {
+  font-size: var(--fs-h2);
+  font-variant-numeric: tabular-nums;
 }
+.stat strong.up {
+  color: var(--up);
+}
+.stat strong.down {
+  color: var(--down);
+}
+.stat strong.flat {
+  color: var(--muted);
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 16px;
+  margin-top: var(--space-4);
   background: var(--surface);
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 th,
 td {
-  padding: 10px 14px;
+  padding: 11px var(--space-4);
   border-bottom: 1px solid var(--border);
   text-align: left;
-  font-size: 14px;
+  font-size: var(--fs-body);
+}
+tbody tr:last-child td {
+  border-bottom: none;
+}
+tbody tr:hover {
+  background: var(--surface-2);
 }
 th {
   color: var(--muted);
   font-weight: 600;
-  font-size: 13px;
+  font-size: var(--fs-aux);
+  background: var(--surface-2);
 }
 .num {
   text-align: right;
@@ -172,14 +213,25 @@ th {
 .flat {
   color: var(--muted);
 }
+.go {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.go:hover {
+  text-decoration: underline;
+}
 
-/* A4 响应式（≤720px）：表格转卡片，杜绝横向滚动 */
+/* 响应式（≤720px）：表格转卡片，杜绝横向滚动 */
 @media (max-width: 720px) {
   table {
     display: block;
     background: transparent;
+    border: none;
     border-radius: 0;
-    margin-top: 12px;
+    margin-top: var(--space-3);
   }
   thead {
     display: none;
@@ -192,11 +244,11 @@ th {
   tr {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2px 14px;
+    gap: 2px var(--space-4);
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
   }
   td {
     border: none;
@@ -205,18 +257,18 @@ th {
     justify-content: space-between;
     align-items: baseline;
     gap: 10px;
-    font-size: 13px;
+    font-size: var(--fs-aux);
   }
   td::before {
     content: attr(data-label);
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--fs-cap);
     flex-shrink: 0;
   }
   td:first-child {
     grid-column: 1 / -1;
     font-weight: 700;
-    font-size: 15px;
+    font-size: var(--fs-h3);
     padding-bottom: 6px;
   }
   .num {
