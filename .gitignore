@@ -9,6 +9,8 @@ venv/
 !.env.example
 *.egg-info/
 .pytest_cache/
+# pytest 不带 --basetemp 时会在仓库根目录生成 pytest-of-<user>/（第 5 天误生成过一次）
+pytest-of-*/
 .mypy_cache/
 .ruff_cache/
 .coverage

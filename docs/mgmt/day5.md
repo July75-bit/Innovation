@@ -9,7 +9,7 @@
 | 项 | 状态 | 证据 |
 | --- | --- | --- |
 | M3 / M4 | ✅ 均已达成 | A 的 16 张浏览器证据：`docs/acceptance/evidence/` |
-| 测试 | **120 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，见下） | `test_report.md` §1/§9 |
+| 测试 | **134 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，第 5 天又 +14 条：CORS 8 + 错误文案 6） | `test_report.md` §1/§9 |
 | 部署准备 | ✅ 已完成 | `bootstrap_demo_data.py`、PG 连接串归一化（+psycopg2）、`pool_pre_ping`、`deployment.md` §3.9 四步全绿 |
 | Render / Postgres | ✅ 三个服务已上线：前端 `playerstock-frontend-mdlk`、后端 `playerstock-backend-mdlk`、Postgres 18 `playerstock-db`（**2026-11-23 到期**）；线上已灌 9 轮数据（11 点/人） | `deployment.md` §6、`test_report.md` §6 |
 | 线上只读验收 | ✅ TC-401 / TC-402 / TC-406 已实测通过（B 用 HTTP 直连核对） | `test_report.md` §6 |
@@ -22,14 +22,14 @@
 | 答辩材料 | ❌ 未开始（幻灯片/演示脚本/QA） | — |
 
 > **今天两条主线**：① **M5 上线**：Render 前后端 + 免费 Postgres，数据持久化，线上全流程验收；② **完善作品 + 答辩准备**：优化迭代清单、8 分钟幻灯片、2 分钟演示脚本、5 分钟 QA。
-> **硬前提**：部署分支固定选 **`develop`**（否则 Render 不会随 push 自动部署）；BUG-10 已修，本机/CI 均 120 绿；上线前需处理 **CORS 临时放开**（见 §4 风险表）。
+> **硬前提**：部署分支固定选 **`develop`**（否则 Render 不会随 push 自动部署）；BUG-10 已修，本机/CI 均 134 绿；**CORS 已改配置驱动且写进 `render.yaml`**（见 §2.2 追加行与 `compliance.md` §4.1）。
 
 ## 1. 全员共同段（09:00–09:40）
 
 | 时间 | 事项 | 动作 | 产出 |
 | --- | --- | --- | --- |
 | 09:00–09:15 | 站会三问 | 昨天 M3/M4 收口 / 今天上线 / 卡在哪；确认 Render 账号可用、BUG-03 归属 | 口头对齐 |
-| 09:15–09:30 | 基线复跑 | 仓库根 `python -m pytest`，修复 BUG-03 后应 **120 passed / 0 skipped** | 终端输出 |
+| 09:15–09:30 | 基线复跑 | 仓库根 `python -m pytest`，修复 BUG-03 后应 **134 passed / 0 skipped** | 终端输出 |
 | 09:30–09:40 | 上线分工确认 | D 主操作 Render，B 管后端/数据库，A 管前端构建，C 管价格数据核对；所有操作截图留档 | 部署操作流水 |
 
 ## 2. 分工与任务
@@ -50,13 +50,14 @@
 
 **边界**：`code/backend/`、`scripts/`、`tests/`；契约变更需同步文档。
 
-| 时段 | 任务 | 完成标准 |
-| --- | --- | --- |
-| 09:40–10:20 | **修 BUG-03**：bootstrap 测试的 `subprocess` 输出按 UTF-8 容错（`encoding="utf-8", errors="replace"` 或 locale 处理）；本机全仓复跑 | **120 passed / 0 skipped** 本机绿 |
-| 10:20–12:00 | **后端部署**：Render Web Service（`render.yaml` Blueprint，分支 `develop`）；建免费 Postgres；填 `DATABASE_URL`（**Internal**）、`CORS_ORIGINS`、`LLM_API_KEY`（可选）；**HTTPS/健康检查** | `/api/health` 公网 200；日志无“误用 SQLite”警告 |
-| 13:00–14:30 | **线上灌数据**：用 **External Database URL** 跑 `python scripts/bootstrap_demo_data.py`（或 `seed_db.py` + `simulate_match --rounds 9` + `update_prices --from-json`）；核对点数 | 每名可交易选手 ≥10 个价格点（sh1ro 暂停=2 点）；`/prices` 升序、带 reason |
-| 14:30–16:00 | **持久化验收**：线上买一笔 → 重启/重新部署后端 → 再查账户/持仓/流水/价格历史；按 `deployment.md` §4 打勾 | 重启前后完全一致；Postgres 生效（非临时盘） |
-| 16:00–17:30 | 线上全链路联调；修线上/本地不一致；**回滚演练**（Redeploy 上一个可用版本） | 全链路通过；回滚步骤有记录 |
+| 时段 | 任务 | 完成标准 | 状态 |
+| --- | --- | --- | --- |
+| 09:40–10:20 | **修 BUG-03**：bootstrap 测试的 `subprocess` 输出按 UTF-8 容错（改用文件捕获 + `decode(errors="replace")`，并让 `seed_db.py` 统一输出 UTF-8） | **134 passed / 0 skipped** 本机绿 | ✅ 已修（`eb0d7e7`；GBK 控制台与强制 `PYTHONIOENCODING=gbk` 下均通过） |
+| 10:20–12:00 | **后端部署**：Render Web Service（`render.yaml` Blueprint，分支 `develop`）；建免费 Postgres；填 `DATABASE_URL`（**Internal**）、`CORS_ORIGINS`、`LLM_API_KEY`（可选）；**HTTPS/健康检查** | `/api/health` 公网 200；日志无"误用 SQLite"警告 | ✅ 已上线（三服务 Live，TC-401 ✅）；启动日志新增"数据库/CORS 来源"两行可直接截图 |
+| 13:00–14:30 | **线上灌数据**：用 **External Database URL** 跑 `python scripts/bootstrap_demo_data.py`（或 `seed_db.py` + `simulate_match --rounds 9` + `update_prices --from-json`）；核对点数 | 每名可交易选手 ≥10 个价格点（sh1ro 暂停=2 点）；`/prices` 升序、带 reason | ✅ 已灌（线上 11 点/人，与本地配方逐条一致，T5-07） |
+| 14:30–16:00 | **持久化验收**：线上买一笔 → 重启/重新部署后端 → 再查账户/持仓/流水/价格历史；按 `deployment.md` §4 打勾 | 重启前后完全一致；Postgres 生效（非临时盘） | ✅ 已验（TC-403 + TC-404，重新部署前后完全一致） |
+| 16:00–17:30 | 线上全链路联调；修线上/本地不一致；**回滚演练**（Redeploy 上一个可用版本） | 全链路通过；回滚步骤有记录 | 🟡 全链路已通（TC-401~404/406）；回滚路径已写进 `deployment.md` §8，**未做实演练** |
+| 追加（运维收尾） | **CORS 决策 + 预热流程 + 错误文案"下一步"** | 见右列 | ✅ CORS 改配置驱动（`resolve_cors_origins` + 4 条用例，口径进 `compliance.md` §4.1）；新增 `scripts/prewarm.py`（实测冷启动 49s，写进 `deployment.md` §3.10）；余额/持仓/上限三条错误信息补"最多可买/还能买/可卖"（+6 条单测）；线上 `/market` 白屏已修（BUG-11） |
 
 ### 2.3 C 同学：价格数据/接口上线核对 + 完善 + 答辩（约 5h）
 
@@ -95,7 +96,7 @@
 | 8 | 子路由刷新（`/players/1`、`/positions`、`/trades`）不 404 | 浏览器刷新截图 | A |
 | 9 | 前端产物/源码无写死本地地址、无密钥泄漏 | `grep` + 截图 | D |
 | 10 | `deployment.md` 定稿（URL、环境变量、回滚、已知问题） | 文档 | D |
-| 11 | BUG-03 修复，本机 120 passed / 0 skipped | pytest 输出 | B |
+| 11 | BUG-03 修复，本机 134 passed / 0 skipped | pytest 输出 | B |
 | 12 | 交叉原型测试记录（外部组或延期说明） | `cross_test.md` | D |
 | 13 | 答辩三件套（幻灯片 8min / 演示 2min / QA 5min）+ 彩排 | 文件 + 录像/纪要 | 全员 |
 
@@ -105,7 +106,7 @@
 
 | 风险 | 症状 | 缓解 / 回滚 |
 | --- | --- | --- |
-| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | 部署前改回 `settings.cors_origin_list`，并在 Render 配 `CORS_ORIGINS`=前端公网地址（B/D 执行） |
+| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | ✅ **已解决**（B，`b548a0b`）：代码改为 `resolve_cors_origins()` 配置驱动（配了域名→白名单；显式 `*`→放开并 WARNING；没配→退化 `*` 并 WARNING），口径进 `compliance.md` §4.1。**只剩**：Render 后端填 `CORS_ORIGINS`=前端公网地址后重启（不填也不会挂，会退化为 `*` 且日志告警） |
 | 免费 Postgres 30 天到期 | 答辩后数据消失 | 文档写明；如需要可换 Neon（同样只改 `DATABASE_URL`） |
 | 免费实例 15 分钟休眠 | 冷启动约 1 分钟，演示卡顿 | 演示前 5 分钟预热 `/api/health`；录屏兜底 |
 | `DATABASE_URL` 填 Internal/External 混用 | 本地连不上/线上报错 | 后端用 **Internal**，本地灌数用 **External**；填错立即改并重启 |
@@ -122,7 +123,7 @@
 - [ ] 线上验收截图：`docs/acceptance/evidence/online/`（健康检查/买卖/持仓/流水/图表/AI/三态/刷新）
 - [ ] `test_report.md` §6 TC-401~406 全部 ✅
 - [ ] `deployment.md` 定稿（环境变量、检查单、回滚、已知问题）
-- [ ] BUG-03 修复 + 本机 120 passed
+- [x] BUG-03 修复 + 本机 134 passed
 - [ ] 线上数据：每名可交易选手 ≥10 个价格点（sh1ro 2 点）
 - [ ] 答辩三件套：8 分钟幻灯片 / 2 分钟演示脚本 / 5 分钟 QA 清单 + 彩排记录
 - [ ] `user_manual.md` / `compliance.md` 终稿

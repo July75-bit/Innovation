@@ -168,7 +168,7 @@
 | T3-04 | **全链路联调**：查行情→买入→看持仓→卖出 | A+B+C | T3-01, T3-02 | 浏览器里真实跑通 | ✅ 2026-10-24（A：`docs/acceptance/evidence/` 14 张截图 + README；M3 达成） |
 | T3-05 | 数据持久化验证（重启后端数据仍在） | B | T3-04 | 重启后持仓仍正确 | ✅ 2026-10-24（D 用真实 uvicorn 进程复现：重启前后余额/持仓/流水/价格历史一致，命令与输出见 `test_report.md` §7） |
 | T3-06 | 集成测试用例（e2e） | D | T3-04 | `tests/integration/` 有可用用例 | ✅ 2026-10-24（接口级 2 条 + recalc 5 条 + 浏览器证据；T3-04 已闭环） |
-| T3-07 | 代码质量闭环（课件第 3 天 p.144–158）：ruff 静态扫描 + Top5 重构（先补测试）+ 质量报告 + CI 加 lint 门槛 | D | T1-37 | 扫描报告 + 重构前后对比（检查点要求） | ✅ 2026-10-24（`docs/acceptance/code_quality_report.md`：51→44，D 负责文件 0 残留；重构时为 65/5，当前 120 passed / 0 skipped（CI）） |
+| T3-07 | 代码质量闭环（课件第 3 天 p.144–158）：ruff 静态扫描 + Top5 重构（先补测试）+ 质量报告 + CI 加 lint 门槛 | D | T1-37 | 扫描报告 + 重构前后对比（检查点要求） | ✅ 2026-10-24（`docs/acceptance/code_quality_report.md`：51→44，D 负责文件 0 残留；重构时为 65/5，当前 134 passed / 0 skipped（CI）） |
 
 ### 第 4 天：图表与 AI
 
@@ -179,7 +179,7 @@
 | T4-03 | AI 分析接口 `/api/analysis/{id}` | B + D | T2-08 | 返回合法结构 | ✅ 2026-10-24（第 3 天提前接入，`test_api_ai.py` 7 条 + e2e：6 字段 / 200+rule_fallback / TC-205） |
 | T4-04 | AI 建议卡（action/理由/风险） | A | T4-03 | 页面能看到徽标 | ✅ 2026-10-24（证据 `evidence/02-detail-chart-ai.png`：action/风险/理由/来源/免责声明 6 字段） |
 | T4-05 | 加载中/无数据/失败三态 | A | T4-01 | 拔网线能看到失败态 | ✅ 2026-10-24（证据 `evidence/12-state-loading.png` / `13-state-empty.png` / `14-state-offline-error.png`） |
-| T4-06 | 核心异常测试用例 | D | T3-04 | 边界用例通过 | ✅ 2026-10-24（`test_core_exceptions.py` 7 条：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚；全仓 120 passed / 0 skipped，CI 与本机一致） |
+| T4-06 | 核心异常测试用例 | D | T3-04 | 边界用例通过 | ✅ 2026-10-24（`test_core_exceptions.py` 7 条：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚；全仓 134 passed / 0 skipped，CI 与本机一致） |
 | T4-07 | 智能体回测初版 | D | T2-09 | `backtest_report.md` 有数字 | ✅ 2026-10-24（`scripts/backtest.py` 可重跑；seed 42/20 轮结果 + 3 seed 稳定性 + `backtest_result.json`；LLM 版待第 5 天线上补） |
 
 ### 第 5 天：部署上线
@@ -212,7 +212,7 @@
 | --- | --- | --- | --- |
 | 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 29 完成 + 4 部分 | C 定价 7 项未开始；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-38 Kanban/Team planning/Milestones 待建（需 GitHub 网页）；T1-16 契约已于 `94ea9aa` 四人签齐 |
 | 第 2 天 | 12 | 12 完成 | —（A 前端、C 定价补齐后复核；A 两项浏览器运行证据待补，见 T3-04） |
-| 第 3 天 | 7 | **7 完成** | T3-01/02/03/04/05/06/07 全绿；M3 已于第 4 天上午由 A 的浏览器证据闭环（`docs/acceptance/evidence/`）；自动化 120 passed / 0 skipped（CI） |
+| 第 3 天 | 7 | **7 完成** | T3-01/02/03/04/05/06/07 全绿；M3 已于第 4 天上午由 A 的浏览器证据闭环（`docs/acceptance/evidence/`）；自动化 134 passed / 0 skipped（CI） |
 | 第 4 天 | 7 | **7 完成（T4-01/02/03/04/05/06/07）** | M4 达成（折线图 10 点 + 原因 + AI 卡 + 三态，证据 `docs/acceptance/evidence/`）；外部交叉原型测试组待约；BUG-03（本机 Windows 测试编码）待 B 修 |
 | 第 5 天 | 8（T5-01~08） | **7 完成（T5-01~07）** | M5 ✅ 上线可用；T5-08 答辩三件套未开始（幻灯片/演示/QA + 彩排）；CORS 仍为 `*`（待答辩前决定是否收紧） |
 | 第 6 天 | 6 | | |
