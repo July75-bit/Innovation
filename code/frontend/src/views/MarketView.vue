@@ -156,7 +156,7 @@ onMounted(load)
             <span :class="['change', trendClass(p.change_pct)]">{{ pct(p.change_pct) }}</span>
           </div>
           <div class="rating-row">
-            <span class="rating-label">模拟表现分 <span class="sim-tag">模拟数据</span></span>
+            <span class="rating-label">模拟表现分</span>
             <span class="rating">{{ p.rating }}</span>
           </div>
         </RouterLink>
@@ -370,12 +370,6 @@ onMounted(load)
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
-}
-.sim-tag {
-  font-size: var(--fs-cap);
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
 }
 
 /* ---- 骨架屏 ---- */
