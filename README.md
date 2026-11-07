@@ -233,7 +233,7 @@ python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率�
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单（含第 6 天 [`day6.md`](docs/mgmt/day6.md)）、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)） | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告、**生命周期问题汇总**（[`lifecycle_issues.md`](docs/acceptance/lifecycle_issues.md)，汇报 3.4）、验收证据 [`evidence/`](docs/acceptance/evidence/README.md) | D |
 | [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |
-| [`docs/presentation/`](docs/presentation/) | 答辩幻灯片（`slides.md` / `defense.pdf` / `demo-script.md` / `qa.md`） | 全员 |
+| [`docs/presentation/`](docs/presentation/) | 答辩幻灯片（`slides.md` / `defense.pdf` / `demo-script.md` / `qa.md` / **彩排执行手册** [`rehearsal-plan.md`](docs/presentation/rehearsal-plan.md)） | 全员 |
 | [`docs/retrospection/`](docs/retrospection/) | 每日站会记录与复盘 | 全员 |
 
 > 额外参考：[`docs/software/agent_workflow_design.md`](docs/software/agent_workflow_design.md)（AI Agent 工作流模式选型与完善路线，非课程交付物，供答辩加分参考；由 A 于第 4 天提交，待团队评审）。
