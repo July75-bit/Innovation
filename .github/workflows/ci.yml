@@ -76,7 +76,10 @@ jobs:
         if: steps.detect.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # node 版本必须与 code/frontend/package.json 的 engines 对齐：jsdom@30 要求
+          # ^22.22.2 || ^24.15.0 || >=26。第 7 轮踩过——Node 20 下 eslint 和 build 都过，
+          # 只有「单元测试 (vitest)」红，因为 jsdom 环境根本起不来。
+          node-version: "24"
           cache: npm
           cache-dependency-path: code/frontend/package-lock.json
       # 注意：npm ci 需要提交 package-lock.json（vue 脚手架会生成，别加进 .gitignore）
