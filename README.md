@@ -88,10 +88,21 @@
 
 1. 装推荐扩展：VS Code 会弹「是否安装推荐扩展」→ 允许；或手动装 **Python / Pylance / Ruff**（前端再加 **Prettier / Vue - Official / ESLint**）。
 2. 选对解释器：点右下角 Python 版本 → 选**项目环境**（conda `playerstock`，或下面「启动后端」里建的 `.venv`），别停在 base。停 base 时 Pylance 会误报「无法解析导入 sqlalchemy」——那是环境不对不是代码问题（`ai/context.py` 的 `sqlalchemy` 是刻意的延迟导入，无依赖机器也能 import 本模块）。
-3. 本地 linter：**不需要单独 `pip install ruff`**——Ruff 扩展自带 ruff 0.17.4，装完扩展即生效；想在终端手跑 `ruff check` 再 `pip install ruff`。
+3. 本地 linter：Ruff 扩展自带 ruff 0.17.4，装完扩展即生效。但**扩展只检查你在编辑器里打开过的文件**——没打开过的文件、以及队友合进来的代码不会报警（第 7 轮的 F401 就是这么漏过去、CI 连红三次的）。终端里的全量检查才是准的，把 ruff 装进项目环境：`pip install -r code/backend/requirements-dev.txt`（版本与 CI 钉死一致）。
 4. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
 
 常用操作：`Ctrl+Shift+M` 看问题面板、光标处 `Ctrl+.` 触发 Quick Fix。
+
+**提交前自查**（与 CI 后端 job 逐条同口径，全绿再 push，别把红留给 Actions）：
+
+```powershell
+python -m pytest                                              # ① 后端用例
+ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine   # ② 业务代码
+ruff check --select E4,E7,E9,F,C901 tests                     # ③ 测试代码
+ruff check --select E4,E7,E9,F scripts                        # ④ CLI 入口
+cd code/frontend; npm run lint; npm run test:unit -- --run   # ⑤ 前端（--run 否则进 watch 模式）
+```
+
 写了超过 100 行、或改了交易/定价/AI 契约/表结构的改动，提交前按 [`docs/mgmt/code_review_template.md`](docs/mgmt/code_review_template.md) 找一位队友交叉评审。
 
 ### 1. 启动后端

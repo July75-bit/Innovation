@@ -171,6 +171,9 @@ def test_删账号后公共路径照常且名字不再占用(client, session_fac
         == 200
     )
 
+    # 令牌随账号一起作废：拿旧令牌再请求必须 401，而不是悄悄退回公共账户
+    assert client.get("/api/account", headers={"Authorization": token}).status_code == 401
+
     # 访客（demo）路径照常可用
     assert client.post("/api/trades/buy", json={"player_id": SEED_ZYWOO, "quantity": 1}).status_code == 200
 
