@@ -63,6 +63,17 @@
 - Node.js **LTS**（建议 20+）
 - Git
 
+### 0.1 编辑器与代码质量（VS Code，建议全员照做）
+
+仓库里已带团队共享配置，**打开项目后照下面三步做一次**即可（不必改全局设置）：
+
+1. 装推荐扩展：VS Code 会弹「是否安装推荐扩展」→ 允许；或手动装 **Python / Pylance / Ruff**（前端再加 **Prettier / Vue - Official / ESLint**）。
+2. 装本地 linter：`pip install ruff`（装进你用的 Python 环境，插件才找得到）。
+3. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
+
+常用操作：`Ctrl+Shift+M` 看问题面板、光标处 `Ctrl+.` 触发 Quick Fix。
+写了超过 100 行、或改了交易/定价/AI 契约/表结构的改动，提交前按 [`docs/mgmt/code_review_template.md`](docs/mgmt/code_review_template.md) 找一位队友交叉评审。
+
 ### 1. 启动后端
 
 ```powershell
@@ -184,7 +195,7 @@ python -m pytest
 
 | 目录 | 内容 | 负责人 |
 | --- | --- | --- |
-| [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图 | D 牵头 |
+| [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
 | [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS | D |

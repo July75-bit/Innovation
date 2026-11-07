@@ -2,7 +2,8 @@
 
 负责人：B
 
-覆盖 core/rules.py 的边界：金额取整、余额边界、持仓上限边界、持仓不足、暂停交易。
+覆盖 core/rules.py 的边界：金额取整、余额边界、持仓上限边界、持仓不足、暂停交易，
+以及第 5 天补的"错误信息要给出下一步"（Nielsen「错误可恢复：原因 + 下一步」）。
 """
 
 from __future__ import annotations
@@ -64,3 +65,56 @@ def test_only_trading_player_is_tradable():
         ensure_tradable("suspended")
     assert excinfo.value.code == "PLAYER_TRADING_SUSPENDED"
     assert "暂停交易" in excinfo.value.message
+
+
+# ---------- 第 5 天：错误信息必须给"下一步" ----------
+
+
+def test_insufficient_balance_tells_max_affordable_quantity():
+    """余额不足时要说"按当前价最多还能买几股"，而不是只甩两个数字。"""
+    with pytest.raises(ApiError) as excinfo:
+        ensure_sufficient_balance(Decimal("300.00"), Decimal("1260.00"), price=Decimal("126.00"))
+
+    message = excinfo.value.message
+    assert "余额不足" in message
+    assert "最多可买 2 股" in message  # 300 // 126 = 2
+
+
+def test_insufficient_balance_when_cannot_afford_one_share():
+    with pytest.raises(ApiError) as excinfo:
+        ensure_sufficient_balance(Decimal("50.00"), Decimal("126.00"), price=Decimal("126.00"))
+
+    assert "买不起 1 股" in excinfo.value.message
+
+
+def test_insufficient_balance_without_price_keeps_old_wording():
+    """不传 price 时退化成原来的提示（兼容旧调用）。"""
+    with pytest.raises(ApiError) as excinfo:
+        ensure_sufficient_balance(Decimal("251.99"), Decimal("252.00"))
+
+    assert "需要 252.00" in excinfo.value.message
+    assert "最多可买" not in excinfo.value.message
+
+
+def test_position_limit_tells_remaining_quantity():
+    with pytest.raises(ApiError) as excinfo:
+        ensure_position_limit(46, 5, limit=50)
+
+    assert "最多还能买 4 股" in excinfo.value.message
+
+
+def test_position_limit_when_already_full():
+    with pytest.raises(ApiError) as excinfo:
+        ensure_position_limit(50, 1, limit=50)
+
+    assert "已持满 50 股" in excinfo.value.message
+
+
+def test_available_position_tells_max_sellable_and_guides_empty_holder():
+    with pytest.raises(ApiError) as excinfo:
+        ensure_available_position(2, 5)
+    assert "最多可卖 2 股" in excinfo.value.message
+
+    with pytest.raises(ApiError) as excinfo:
+        ensure_available_position(0, 1)
+    assert "请先买入" in excinfo.value.message

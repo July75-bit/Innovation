@@ -36,10 +36,11 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   let response: Response
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json' },
-      ...init,
-    })
+    // 仅带 body 的请求（POST 交易）才声明 Content-Type：
+    // GET 不带该头 = CORS 简单请求，不触发 OPTIONS 预检，缩小跨域故障面（day5 线上走查 P2 改进）。
+    const headers: Record<string, string> = { ...(init?.headers as Record<string, string> | undefined) }
+    if (init?.body != null) headers['Content-Type'] = 'application/json'
+    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
   } catch {
     throw new ApiError('无法连接后端服务，请确认后端已启动后重试', 'NETWORK_ERROR', 0)
   }

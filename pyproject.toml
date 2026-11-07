@@ -21,3 +21,19 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+# 与 CI（.github/workflows/ci.yml）同口径的规则集：
+#   E4/E7/E9 = pycodestyle 的导入/空白/语法级问题（真实缺陷）
+#   F        = Pyflakes（未定义名、未使用导入等，真实缺陷）
+#   C901     = 圈复杂度（业务/测试阈值 10）
+# 编辑器装了 Ruff 插件后会实时按这套规则报问题，不用等 CI 红。
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "C901"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+# scripts/ 是 CLI 入口（argparse 装配天然分支多），CI 单独用 max-complexity=12 卡；
+# 编辑器这边直接豁免 C901，避免 Persistent 黄波浪线干扰。
+[tool.ruff.lint.per-file-ignores]
+"scripts/*" = ["C901"]

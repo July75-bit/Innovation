@@ -1,7 +1,31 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：⬜ 未开始（本文件是写作指南，答辩 PPT 待产出）
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（`slides.md` 14 页讲稿 / `demo-script.md` / `qa.md` 20 问 / **`defense.pdf` 13 页已导出**）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
+
+## 文件清单（已产出）
+
+| 文件 | 内容 | 负责人 | 状态 |
+| --- | --- | --- | --- |
+| [`slides.md`](slides.md) | 8 分钟幻灯片源稿（Slidev markdown，14 页，含逐页讲稿与时间戳） | D 主笔 | ✅ |
+| [`defense.pdf`](defense.pdf) | **可直接投屏的 PDF（13 页，1280×720 横版）** | D | ✅ |
+| [`defense.html`](defense.html) | PDF 的源文件（自包含，浏览器打开即可放映） | D | ✅ |
+| [`build_deck.py`](build_deck.py) | 重新生成 `defense.html` 的脚本（离线，无 Slidev 依赖） | D | ✅ |
+| [`demo-script.md`](demo-script.md) | 2 分钟现场演示脚本（逐秒操作 + 话术 + 失败预案） | D / A 执行 | ✅ |
+| [`qa.md`](qa.md) | 5 分钟问答（20 问，七类，含"救命句式"） | D 汇总 / 全员认领 | ✅ |
+
+**重新生成 PDF**（改了 `slides.md` 之后）：
+
+```powershell
+python docs/presentation/build_deck.py          # → defense.html
+& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" `
+  --headless=new --disable-gpu --no-pdf-header-footer --allow-file-access-from-files `
+  --print-to-pdf="docs\presentation\defense.pdf" `
+  "file:///D:/projects/innovation/Innovation/docs/presentation/defense.html"
+```
+
+> 当前 PDF 与 `slides.md` 内容一致（13 页 = 封面 + 10 个内容页 + 演示页 + 致谢页）。
+> 若老师要求 Slidev 原生导出：`npx @slidev/cli slides.md --export defense.pdf`。
 
 ## 工具建议（课程推荐）
 
@@ -64,18 +88,21 @@
 | 数据被清空 | 现场重新 seed（固定数据 10 秒重建） |
 | 时间不够 | 砍掉持仓页和彩蛋，保交易闭环 + AI |
 
-## 文件清单
+## 文件清单（旧版说明，已被顶部表格替代）
 
 ```
 docs/presentation/
 ├── README.md              # 本文件
-├── slides.md              # Slidev 源文件（或 defense.pptx）
-├── defense.pdf            # 导出 PDF，老师可直接看
-└── demo-script.md         # 演示脚本与话术
+├── slides.md              # Slidev 源文件（14 页，已产出）
+├── demo-script.md         # 2 分钟演示脚本（已产出）
+├── qa.md                  # 20 问问答（已产出）
+└── defense.pdf            # 导出 PDF（待导出）
 ```
 
 ## TODO
 
-- [ ] 第 6 天上午：每人把自己模块 1–2 页内容写进 `slides.md`
-- [ ] 第 6 天下午：导出 PDF、排练 2 次、计时
-- [ ] 第 6 天晚上：确认线上服务醒着，准备本地兜底视频
+- [x] D 出 `slides.md` / `demo-script.md` / `qa.md` 初稿
+- [x] D 导出 `defense.pdf`（13 页，与 `slides.md` 内容一致）
+- [ ] B 补第 04/05 页的后端细节（架构版本号、并发时序），C 补第 06/07 页的定价与回测数字，A 补第 02 页与演示话术
+- [ ] **排练 2 次**并计时（8+2+5 必须压进 15 分钟），记录写进本文件
+- [ ] 答辩当天：确认线上服务醒着（预热 `/api/health`）、准备录屏兜底
