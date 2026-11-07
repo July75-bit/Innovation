@@ -18,10 +18,14 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import account, ai, auth, debug, health, players, positions, prices, trades
+from app.api import account, ai, auth, debug, health, logs, players, positions, prices, trades
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.errors import register_exception_handlers
+from app.core.logging_config import setup_logging
+
+# 日志同时写控制台与 logs/app.log（出错时可直接打开文件自查，见 logging_config.py）
+LOG_FILE = setup_logging()
 
 logger = logging.getLogger("playerstock")
 
@@ -80,6 +84,7 @@ async def lifespan(_: FastAPI):
         "SQLite（本地/演示，重启不保证持久）" if settings.is_sqlite else "Postgres（持久化生效）",
     )
     logger.info("CORS 放行来源：%s", ", ".join(resolve_cors_origins()))
+    logger.info("运行日志文件：%s（也可 GET /api/debug/logs 直接看）", LOG_FILE)
     # 线上必须用托管 Postgres；这里在 Render 上检测到 SQLite 就大声警告，
     # 避免"数据总是丢"却查不出原因（免费实例的文件系统是临时的）。
     if settings.is_sqlite and os.getenv("RENDER"):
@@ -123,5 +128,5 @@ def root() -> dict[str, str]:
 
 
 # 统一挂到 /api 前缀下，对应 docs/software/api_contract.md 里的路径
-for _module in (health, players, account, trades, positions, prices, ai, auth, debug):
+for _module in (health, players, account, trades, positions, prices, ai, auth, debug, logs):
     app.include_router(_module.router, prefix=settings.api_prefix)

@@ -10,13 +10,13 @@
 
 | 界面 | 交互 | 对应真实接口（后续接入） |
 | --- | --- | --- |
-| 市场行情 | 8 名选手列表、涨跌幅、模拟评分、可交易状态 | `GET /api/players` |
+| 市场行情 | 16 名选手列表（8 队各 2 人）、涨跌幅、模拟评分、可交易状态 | `GET /api/players` |
 | 选手详情 | 价格大字、涨跌幅、走势折线图（内联 SVG）、最近变化原因 | `GET /api/players/{player_id}`、`GET /api/players/{player_id}/prices` |
 | AI 建议卡 | action 徽标 + 风险等级 + 理由 + 免责声明 + `source` | `GET /api/analysis/{player_id}`（固定 6 字段） |
 | 交易区 | 数量校验（正整数/余额/持仓/50 股上限/暂停交易）+ 买入/卖出 | `POST /api/trades/buy`、`sell` |
 | 持仓 / 流水 | 市值与浮盈、空状态；流水倒序 | `GET /api/positions`、`GET /api/trades` |
 
-数据取自 `data/seed_players.json`（8 名 CS2 选手，身份公开、**价格与评分为项目模拟值**，UI 已标注"模拟"）。
+数据取自 `data/seed_players.json`（16 名 CS2 选手 / 8 支战队，身份公开、**价格与评分为项目模拟值**，UI 已标注"模拟"）。
 AI 建议复用 `code/backend/ai/fallback.py` 的阈值规则（+5% / -5% / 评分 60、75），所以展示结果与真实接口的规则版一致。
 
 ## 2. 怎么打开

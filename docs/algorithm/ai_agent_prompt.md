@@ -130,7 +130,7 @@ flowchart TD
 
 ## 6. 成本与限流（加分项）
 
-- 单次分析 token 上限：______
+- 单次分析 token 上限：**输入约 600–900 tokens（上下文 JSON）、输出约 120–200 tokens**；实测一次分析 `source=llm` 中位 **2461ms**，未触发 20s 超时（`test_report.md` §8.3）
 - 是否缓存：同一选手 5 分钟内复用上次结果（建议做，演示时省钱且更快）
 - 失败重试：最多 1 次，超时即兜底
 
@@ -139,6 +139,18 @@ flowchart TD
 - 为什么 AI 只做建议、不做执行？→ 确定性骨架 + 智能体肌肉，交易正确性由代码保证
 - 模型不可用时怎么办？→ 现场拔掉密钥演示一次降级（效果很好）
 - 为什么 action 要用枚举？→ 前端渲染和测试都需要稳定契约
+
+## 7.5 参考的开源模型与文献（汇报 3.5.3 要求）
+
+| 来源 | 用途 | 链接 |
+| --- | --- | --- |
+| DeepSeek 官方 API 文档（OpenAI 兼容） | 线上真模型的接入方式与参数 | <https://api-docs.deepseek.com/> |
+| OpenAI Chat Completions 规范 | 请求/响应结构基准（只依赖 `choices[0].message.content`） | <https://platform.openai.com/docs/api-reference/chat> |
+| Python `urllib.request` 标准库文档 | 不引第三方 HTTP 库的取舍（零依赖、易审计） | <https://docs.python.org/3/library/urllib.request.html> |
+| 本仓 `qa.md` Q9–Q11 | 「模型只给建议、不执行」的取舍与降级话术 | `docs/presentation/qa.md` |
+
+> 本项目**没有训练或微调任何模型**，只调用推理接口，因此不列算法论文，只列接口规范与工程参考；
+> 定价的可解释公式来源见 `pricing_model.md` §1（z-score / 3σ 标准化的通用统计做法）。
 
 ## 8. TODO
 

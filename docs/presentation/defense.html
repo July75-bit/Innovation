@@ -74,7 +74,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
           </ul>
           <h3>我们给的答案</h3>
           <ul>
-            <li>8 名真实 CS2 选手（身份公开，<b>价格与评分为模拟数据</b>）</li>
+            <li>16 名真实 CS2 选手、8 支战队各 2 人（身份公开，<b>价格与评分为模拟数据</b>）</li>
             <li>每一分钱变化都能回答"<b>为什么</b>"</li>
           </ul>
         </div>
@@ -100,8 +100,15 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
             <li>计算机 / 数据分析学习者：要一个能跑通的工程范本</li>
           </ul>
           <p class="small"><b>明确不做</b>：想靠它赚钱的人 / 未成年人 / 真钱竞猜用户</p>
+          <h3>如何获得用户</h3>
+          <ul class="tight-list">
+            <li>赛事节点：Major/IEM 开赛前 3 天预告、赛后 10 分钟涨跌日报</li>
+            <li>内容与社群：B 站 / 贴吧 / 校园电竞社群；答辩现场即首批种子</li>
+            <li>产品自带传播：持仓卡（标注虚拟）与 AI 复盘卡可分享</li>
+          </ul>
         </div>
       </div>
+      <p class="foot"><b>团队优势</b>：A 前端交互 / B 交易事务与部署 / C 定价与回测 / D AI·测试·质量·文档——四人覆盖一条完整链路，无职责重叠</p>
       <table class="tight">
         <tr><th>维度</th><th>赛事竞猜</th><th>电竞养成</th><th>模拟炒股</th><th>PlayerStock</th></tr>
         <tr><td>标的</td><td>比赛结果</td><td>策划定数值</td><td>公司与财报</td><td><b>单个选手的身价</b></td></tr>
@@ -130,7 +137,8 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
           <h3>形态与边界</h3>
           <ul class="tight-list">
             <li>形态：<b>Web 网页应用</b>（桌面优先，≤960px 响应式）</li>
-            <li>规模：8 名选手 / 5000 虚拟币 / 单选手上限 50 股</li>
+            <li>规模：16 名选手 / 5000 虚拟币 / 单选手上限 50 股</li>
+            <li>账号：<code>demo</code> 免登录；可注册私人账号（口令加盐散列、令牌可撤销）</li>
             <li>边界：<b>不充值、不提现、不兑换、不给赔率、不自动交易</b></li>
           </ul>
         </div>
@@ -146,7 +154,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
         <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
         <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
         <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
-        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>208 条测试、98% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>219 条测试、97% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
         <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
       </table>
       <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
@@ -158,7 +166,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
         <div>
           <h3>四条路由 = 一条完整链路</h3>
           <ul>
-            <li><code>/</code> 市场：8 名选手，现价 / 涨跌 / 模拟评分 / 状态</li>
+            <li><code>/</code> 市场：16 名选手，现价 / 涨跌 / 模拟评分 / 状态</li>
             <li><code>/players/:id</code> 详情：折线图 + 涨跌原因 + AI 建议 + 交易面板</li>
             <li><code>/positions</code> 持仓：数量 / 均价 / 市值 / 浮盈</li>
             <li><code>/trades</code> 流水：倒序、每笔带交易后余额</li>
@@ -173,12 +181,12 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
       <h2>03 需求与取舍</h2>
       <table>
         <tr><th>做了</th><th>刻意不做（及原因）</th></tr>
-        <tr><td>单演示账户 + 5000 虚拟币</td><td>注册 / 登录 / JWT：非课程考察重点，且稀释工期</td></tr>
-        <tr><td>8 名选手，价格由比赛表现驱动</td><td>接真实赛事 API：可用性未知，模拟数据保证演示稳定</td></tr>
+        <tr><td><b>账号体系</b>：演示账户免登录，可注册私人账号（PBKDF2 加盐 10 万次、令牌 30 天、可退出/删号）</td><td>第三方登录 / 找回密码 / 邮箱验证：与课程无关，本期不做</td></tr>
+        <tr><td>16 名选手，价格由比赛表现驱动</td><td>接真实赛事 API：可用性未知，模拟数据保证演示稳定</td></tr>
         <tr><td>交易闭环：买入 / 卖出 / 持仓 / 流水</td><td>充值 / 提现 / 兑换：<b>合规红线</b>，一律不做</td></tr>
         <tr><td>AI 只给建议，不自动交易</td><td>多用户 / 撮合盘口：6 天做不完，且不影响核心机制</td></tr>
       </table>
-      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>98%</b>）</p>
+      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>97%</b>）</p>
     </section>
     
     <section class="slide">
@@ -358,8 +366,8 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
         <div>
           <h3>测试</h3>
           <ul>
-            <li><b>208</b> 条用例（单元 188 / 集成 20），CI + 本机全绿</li>
-            <li>核心逻辑覆盖率 <b>98%</b>（956 语句 / 17 未覆盖，要求 ≥60%）</li>
+            <li><b>216</b> 条用例（单元 203 / 集成 13），CI + 本机全绿</li>
+            <li>核心逻辑覆盖率 <b>97%</b>（1289 语句 / 43 未覆盖，要求 ≥60%）</li>
             <li>已修 <b>14</b> 条真实缺陷（含 3 个 P0）</li>
           </ul>
         </div>
