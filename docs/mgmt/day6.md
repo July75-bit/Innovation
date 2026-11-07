@@ -9,12 +9,13 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 / 工作区 | `develop` 领先 `origin/develop` **3 个提交**（待推：合并 + 幻灯片 + 证据），工作区干净 |
-| 测试 / CI | **137 passed / 0 skipped**；CI **run #88（`013e182`）三 job 绿**（本次合并后待 run #89 复核） |
-| 覆盖率 | 91%（839 语句 / 79 未覆盖，要求 ≥60%） |
+| 分支 / 工作区 | `develop` 合并推送后与 `origin/develop` 齐（本机先领先 1 个合并提交，`4c9e177` 前） |
+| 测试 / CI | **178 passed / 0 skipped**（单元 165 / 集成 13；本机复核）；覆盖率 **98%**；CI 最新 **run #104（`3026d8a`）三 job 绿**，该 run 时点 176 条，差值为随后合入的 2 条 URL/引号单测 |
+| 覆盖率 | **98%**（956 语句 / 17 未覆盖，要求 ≥60%；2026-11-07 17:00 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
+| **AI 线上** | ✅ **真模型**：`source=llm`，中位 **2461ms**（1.8–3.9s）；DeepSeek 官方 API（Zen 免费档 429 后切换，`6aad25c`） |
 | **唯一硬缺口** | **彩排 0 次**（B-5 的"现场追问"也挂在彩排上） |
 
 ## 1. 今日目标（三句话）
@@ -43,7 +44,7 @@
 | **A-6** | 改 `slides.md` 第 02 页：用哪张截图、说什么 | 页内 8 选手 / 4 路由 / 三态与实际一致 | ⬜ |
 | **A-7** | 演示主操作：按 `demo-script.md` 走 2:00，**含一次"故意失败"**（数量填 999 触发余额不足） | 两次彩排都 ≤2:10、无卡壳 | ⬜ |
 | **A-8** | 演示前确认：线上 8 名选手在、余额 5000.00、流水干净 | 截图发群 | ⬜ |
-| **A-9** | 亲手走查 A-1/A-2/A-3 三项（都是 D 写的，你还没亲眼看过） | 拖窄窗口 + 只用 Tab 走一遍折线图 | ✅ **A 已亲验（2026-11-07 14:37–15:06）**：375px 五页实拍入证 [`30~34-a9-*-375.png`](../acceptance/evidence/README.md)（市场/详情/抽屉/持仓/流水，顶栏折行、卡片化、抽屉导航、reason 直出、更新于图内）；键盘段焦点描边 + tooltip 见 `28-keyboard-focus.png`。**两处待补**：Fast 3G「AI 分析中…」占位截图（→ A-2 保持 🟡）、`scrollWidth/innerWidth` console 断言随图 |
+| **A-9** | 亲手走查 A-1/A-2/A-3 三项（都是 D 写的，你还没亲眼看过） | 拖窄窗口 + 只用 Tab 走一遍折线图 | ✅ **A 已亲验（2026-11-07 14:37–17:09）**：375px 五页实拍 [`30~34-a9-*-375.png`](../acceptance/evidence/README.md)（顶栏折行、卡片化、抽屉导航、reason 直出）+ **横向溢出硬断言 [`35-a9-scrollwidth-375.png`](../acceptance/evidence/35-a9-scrollwidth-375.png)（`375 / 375`）** + 键盘焦点 `28` + AI 占位态 `29`。**A-9 证据已闭合，无待补项** |
 
 **不做（写进已知限制）**：A-4 的三项与视觉 token 化——冻结期不加功能；被问就答"P0 已清零，P1 在迭代清单里"。
 
@@ -72,9 +73,9 @@
 
 | ID | 任务 | 完成标准 | 状态 |
 | --- | --- | --- | --- |
-| **C-1** | 复核 06/07 页：α=0.15 / β=0 / floor=1.0 / clamp ±20% / `Z_FULL_SCALE=3`、100 seed 中位 −7.40%、回测三行（规则版 −3.52%/5.90%、随机 −0.59%/2.59%、买入持有 −10.78%/14.88%） | 与 `pricing_model.md` §7/§9 逐字一致 | ⬜ |
-| **C-2** | "一涨一跌"两个现场可点案例：选手 + 轮次 + 两句口播，写进 `pricing_model.md` §8 | 现场 3 秒内定位到那条价格点 | ⬜ |
-| **C-3** | 认领 `qa.md` Q4–Q8（定价 5 问）并脱稿 | 不看稿能答完 | ⬜ |
+| **C-1** | 复核 06/07 页：α=0.15 / β=0 / floor=1.0 / clamp ±20% / `Z_FULL_SCALE=3`、100 seed 中位 −7.40%、回测三行（规则版 −3.52%/5.90%、随机 −0.59%/2.59%、买入持有 −10.78%/14.88%） | 与 `pricing_model.md` §7/§9 逐字一致 | ✅ 2026-11-07（`ea0b79e`/`013e182`：06 页换线上第 9 轮真实案例、修 clamp 表述；`98590c2` 补 §7.3 回测三行） |
+| **C-2** | "一涨一跌"两个现场可点案例：选手 + 轮次 + 两句口播，写进 `pricing_model.md` §8 | 现场 3 秒内定位到那条价格点 | ✅ 2026-11-07（`98590c2`：§8 轮次 + 两句口播已写入） |
+| **C-3** | 认领 `qa.md` Q4–Q8（定价 5 问）并脱稿 | 不看稿能答完 | 🟡 认领已标注（`018221e`：Q7 换线上真实 reason + 标注 C 认领 Q4–Q8）；脱稿在彩排里验 |
 | C-4 | 线上价格抽查：`scripts/check_price_history.py` 再核一次 11 点 | 输出贴群 | ⬜ 可选 |
 
 **兜底**：100 seed 讲不清 → 只说"中位 −7.40%、方向一致率 99.99%，完整表在 `pricing_model.md` §7.2"。
@@ -87,7 +88,7 @@
 | --- | --- | --- | --- |
 | D-1 | 导出 `docs/presentation/defense.pdf` | 与 `slides.md` 一致 | ✅ 16 页 / 653 KB（2026-11-07 含 01B/01C/01D 重导），`build_deck.py` 可重生成 |
 | D-2 | 文档收口：`user_manual` 线上地址 / `compliance` §4.1/§4.2 / `day5.md` 勾选 / `prototype_review` 索引 | 无空白、索引齐 | ✅ |
-| D-3 | 回归 + CI：137 条 + 三 job 绿 + `test_report` 结论 | run #80 绿 | ✅ 本机 137 passed；CI run #80 success |
+| D-3 | 回归 + CI：178 条 + 三 job 绿 + `test_report` 结论 | run #104 绿 | ✅ 本机 **178 passed** / 覆盖率 98%；CI **run #104（`3026d8a`）success**（该 run 时点 176 条，随后合入 2 条 URL/引号单测） |
 | D-4 | 合并后跑一次线上全链路（market→detail→buy→positions→trades） | 有截图或记录 | 🟡 未单独留证据，今天 A-8/A-7 覆盖一次即可 |
 | **D-5** | 主讲 01 / 03 / 08 / 09 / 10 页 | 8:00 ±30s | ⬜ |
 | **D-6** | 控时：演示 2:00 提示、问答 5:00 收口 | 全程 ≤15:00 | ⬜ |
@@ -99,6 +100,8 @@
 **已完成（2026-11-07）**：01B 使命·口号·差异化 / 01C 产品定义 / 01D 设计原则三页**已合入** `slides.md`（字母后缀，02–10 页号不变），并同步进 `build_deck.py`；`defense.pdf` 已重新导出为 **16 页**。全部演讲备注的时间轴已按 8:00 重排。
 
 ---
+
+> **彩排当天用 [`docs/presentation/rehearsal-plan.md`](../presentation/rehearsal-plan.md)**：准备清单（T−60）、两遍彩排的逐段计时、改稿与事故演练、定稿清单。下表是它的精简版。
 
 ## 3. 彩排计时表（打印，现场填）
 
@@ -119,6 +122,35 @@
 
 > 超时处置：幻灯片超 30s → 砍 09 页的 CI 细节；演示超时 → 跳过"故意失败"；问答超时 → D 用"文档里有，会后发您"收口。
 
+## 3.5 演示时怎么跑测试（现场脚本，一条命令不踩坑）
+
+> 场景：评委问"怎么证明质量"或进入问答段，D 在终端演示。
+
+```powershell
+cd D:\projects\innovation\Innovation
+
+# ① 切到项目环境（关键：base 里没有 pytest，会报 No module named pytest）
+conda activate playerstock
+# 若不想依赖激活，改用绝对路径最稳：
+#   & "D:\miniconda\envs\playerstock\python.exe" -m pytest -q -p no:warnings
+
+# ② 全量回归：178 条，约 2 秒
+python -m pytest -q -p no:warnings
+
+# ③ 指着一个 P0 缺陷讲：测试名就是场景
+python -m pytest tests/unit/test_trades_concurrency.py -v
+
+# ④ 覆盖率不现场跑（16 秒 + 一屏表格），改为展示 evidence/37-pytest-coverage.png
+```
+
+| 步骤 | 说一句 |
+| --- | --- |
+| ② | "178 条，0 跳过——不是没写完的占位。" |
+| ③ | "并发卖出超卖是 P0，判断写进 SQL 的 WHERE，两条连接同时卖只成一笔。" |
+| ④ | "核心逻辑 92%，课程要求 60%。这是刚才那条命令的输出渲染。" |
+
+**兜底**：终端出任何意外 → 直接打开 GitHub Actions 的 run #95，指着「后端测试」job 里的 `python -m pytest` 步骤，话术"这是同一条命令在 CI 上的记录"。
+
 ## 4. 晚验收（M6 关闭条件，逐条打勾）
 
 | # | 验收项 | 判定证据 | 责任人 |
@@ -129,7 +161,7 @@
 | 4 | 演示 2:00 内完成，含错误分支 | 彩排记录 | A |
 | 5 | 线上 `/api/health` 200、8 选手、余额 5000.00 | 截图 | B |
 | 6 | `deployment.md` §5 检查单 **37/37** | 全勾 | B |
-| 7 | `test_report.md` 结论 =「可交付」；137 passed | 文档 + CI run #80 | D |
+| 7 | `test_report.md` 结论 =「可交付」；178 passed | 文档 + CI run #95 | D |
 | 8 | 彩排记录写进 `docs/presentation/README.md` | 两次记录 | D |
 | 9 | `daily_summary.md` 第 6 天段 | 有实质内容 | D |
 
@@ -265,7 +297,26 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 **验证顺序**：本地一条 curl 打通 → 在 Render 填三个变量 → 自动重新部署 → `GET /api/analysis/1` 的 `source` 从 `rule_fallback` 变成 `llm`。
 **失败也无害**：任何错误都回落规则版并返回 200，不会 5xx。
 
-> 安全：这条 key 已经出现在聊天记录里，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
+**2026-11-07 实测结论（B，结论：保持规则版）**
+
+| 环节 | 结果 |
+| --- | --- |
+| 代码侧 UA | 首次 403 / `error code: 1010`（Cloudflare 拦 urllib 默认 UA）→ 已修 `897aa3e`（+ `check_llm.py` 同步修） |
+| 代码侧 URL | 只填 base（`.../openai/v1`）会 404 → 已修 `8a26a19`：自动补 `/chat/completions`，两种写法都吃 |
+| 代码侧引号 | cmd `set X="v"` 会把引号并进值 → 已修 `2684e1b`：`_clean_env()` 统一去引号/空白 |
+| 模型名 | `GET /inference/v1/models`（免鉴权）确认 `deepseek-v4.1-flash-free` 存在、`type=chat`、`temperature: true` ✅ |
+| key（Zen） | **有效**（已过鉴权，不是 401） |
+| Zen 结果 | **`429 FreeUsageLimitError`**："Free usage limit reached … subscribe to OpenCode Go"。无 key 直连探测 `deepseek-v4.1-flash-free` / `glm-5.3-flash-free` / `mimo-v2.6-flash-free` / `big-pickle` **全部 429** → 免费档额度是账号/IP 级限制，换模型无效 |
+| **改用 DeepSeek 官方 API** | `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，=`DeepSeek-V4.1-Flash-1017`；旧名 `deepseek-v4-flash` 仍接受，`deepseek-chat` 已过时） |
+| **最终结果** | ✅ **`source=llm`**：5 名选手 5/5 全部走真模型，**中位 2461ms**（1.8–3.9s，目标 ≤8s），6 字段契约不变；模型给出 HOLD×4 + BUY×1、risk HIGH×3/MEDIUM×2，reason 各自不同。数据见 `test_report.md` §8.3 |
+
+诊断/复跑：`python scripts/check_llm.py --direct`（直连）、`--scan`（逐个试 7 个候选模型）、`--base <后端地址>`（看线上 `source`）。
+
+> **答辩怎么说**：AI 走"可插拔 + 契约 + 兜底"——换 provider 只改三个环境变量、代码不动；
+> Zen 免费档额度受限 429 时我们换到 DeepSeek 官方 API，一次就通（`source=llm`，中位 2.5s）；
+> 任何失败仍自动回落规则版，接口永远 200、交易不受影响。
+
+> 安全：key 曾出现在聊天记录与截图中，答辩结束后请到对应平台后台**吊销/轮换**一次。
 
 > **逐步操作已写成独立文档**：[`render-llm-guide.md`](render-llm-guide.md)（含控制台路径、三变量、日志对照表、撤回方式、答辩限流提醒），直接转给 B 即可。
 
@@ -273,38 +324,11 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 
 | 检查 | 谁 | 状态 |
 | --- | --- | --- |
-| P0 三条视觉证据在 `docs/acceptance/evidence/`：响应式/抽屉 `23~27` + **A 亲验 `30~34`**、键盘 `28` | A / B | 🟡 仅差「AI 分析中…」占位一张（Fast 3G 抓取，§7.1 步骤 ②） |
+| P0 三条视觉证据在 `docs/acceptance/evidence/`：响应式/抽屉 `23~27` + **A 亲验 `30~34`**、键盘 `28`、AI 占位 `29` | A / B | ✅ 齐（AI 占位态由 `29-ai-loading.png` 补齐） |
 | 持久化证据在 `evidence/online/`：`online-persistence-{before,after}-{1,2,3}` + `persistence-redeploy.md` | B | ✅ 2026-11-07（对账脚本退出码 0） |
-| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B | ✅ 含 A-9 走查 5 行与「仍缺两张」标注 |
+| `evidence/README.md` 索引补齐（每条有「内容 + 关键断言」） | A / B | ✅ 含 A-9 走查 5 行 + scrollWidth 断言行；**无「仍缺」项** |
 | `day5.md` §3.2、`deployment.md` §9 与 §5、`test_report.md` §6 四处回填 | A / B | ✅ §3.2 已换截图链接；deployment 37/37；test_report §6 已引用 |
 | D 复核：图片能打开、断言与文内数字一致、链接不 404 | D | ⬜ 等 D 过一遍 |
-
-### 7.4 可选：把 AI 从「规则兜底」切到真模型（B，约 10 分钟，冻结期可不做）
-
-> 现状：`render.yaml` 里 `LLM_API_KEY` 是 `sync: false`（控制台手填），**从没填过** → 线上一直 `rule_fallback`。
-> 这是**设计好的降级**，不是故障（`GET /api/analysis/1` 仍 200）。要不要切，看答辩需不需要展示真模型。
-
-三个变量必须**一起**配，缺一个就回落到规则版（不会 5xx）：
-
-| 变量 | 填什么 | 常见坑 |
-| --- | --- | --- |
-| `LLM_API_KEY` | 服务商给的 key（只在 Render 控制台填，`sync: false` 已保证不进仓库） | 别写进 `.env.example` 或文档 |
-| `LLM_BASE_URL` | **完整 URL**，要带 `/chat/completions` | 只填 base 路径会 404 |
-| `LLM_MODEL` | 该服务真实存在的模型名 | 默认 `gpt-4o-mini` 在第三方网关上通常不存在 |
-
-**验证工具（B 已备）**：
-
-```powershell
-# ① 本地直接打模型（最快定位 key/URL/模型名哪个错）
-$env:LLM_API_KEY="..."; python scripts/check_llm.py --direct
-# ② 查线上最终走了哪条路（source = llm 还是 rule_fallback）
-python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
-```
-
-脚本会打印掩码后的环境变量、HTTP 状态与错误详情，并对 400 给出三种常见原因（URL 缺 `/chat/completions`、
-模型名不存在、模型不支持 `temperature`）。**当前线上实测 `source = rule_fallback`**（未配 key），属预期。
-
-> 安全：若 key 曾出现在聊天记录里，答辩结束后请到服务商后台吊销/轮换一次。
 
 ---
 
@@ -322,4 +346,4 @@ python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
 
 **修正的 6 处**：① C 第 1 天 7 项 `⬜`→✅（第 2 天吸收）；② T1-38「Milestones 未建」→ 已建；③ 第 4 天「BUG-03 待修」→ BUG-10 已修；④ 第 5 天「三件套未开始 / CORS 仍为 `*`」→ 材料齐、已白名单复验；⑤ `day5.md` 四处 ❌/🟡；⑥ 原 `day6_tasks.md`「120 条」→137 条、`deployment.md` 两项检查单。
 
-**仍需人工确认的 2 项**：Kanban / Team Planning 看板（Projects v2 需登录，Milestones 已确认）；外部交叉原型测试（已记延期 + 补救方案，不追）。
+**核对补记（2026-11-07 16:10）**：Kanban / Team planning / Bug tracker 三项目已确认建好（证据 `evidence/35~36`），但均为 **Private**——若要评委线上查看，需在每个项目 `…→ Settings → Visibility` 改 Public，否则以截图交付。外部交叉原型测试仍为延期说明（已如实记录，不追）。

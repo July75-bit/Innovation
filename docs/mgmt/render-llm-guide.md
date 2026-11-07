@@ -1,7 +1,11 @@
 # Render 启用真模型配置指南（给 B · 约 10 分钟）
 
-> **目标**：把线上 `/api/analysis/{id}` 从 `rule_fallback` 切到真 LLM（OpenCode Zen）。
-> **前提**：`develop` 已包含 UA 修复提交 `897aa3e`（`llm_agent.py` 的请求头带 `User-Agent`，**没有它必 403**——Cloudflare 屏蔽 urllib 默认指纹，实测过）。
+> **状态（2026-11-07 晚）**：✅ **已上线并验证通过**。Zen 免费档因额度 429 走不通，
+> 最终改用 **DeepSeek 官方 API**：`source=llm`、5/5 选手、中位 **2461ms**（见 `test_report.md` §8.3）。
+> 本文保留两条路线，新环境照 §1B（官方 API）配即可。
+>
+> **目标**：把线上 `/api/analysis/{id}` 从 `rule_fallback` 切到真 LLM。
+> **前提**：`develop` 已包含 UA 修复 `897aa3e`、URL 归一化 `8a26a19`、引号清理 `2684e1b`。
 > **负责人**：B（Render 控制台操作）｜ 验证：D 复核线上接口｜ 时间：今天彩排前。
 
 ## 0. 你要拿到的三样东西
@@ -11,6 +15,20 @@
 | Key | `oc_sk_` 开头完整串 | D 私发（**不要发到群里/截图**） |
 | URL | `https://opencode.ai/inference/openai/v1/chat/completions` | 固定值，**必须带 `/chat/completions` 全路径**，我们代码要的是完整 URL 而不是 base |
 | 模型名 | `deepseek-v4.1-flash-free` | Zen 公开清单实测存在（备选 `glm-5.3-flash-free` / `big-pickle`） |
+
+### 0.1 路线 B（推荐，2026-11-07 实测可用）：DeepSeek 官方 API
+
+Zen 免费档会返回 `429 FreeUsageLimitError`（免费额度是账号级限制，换模型无效），官方 API 直接可用：
+
+| 项 | 值 |
+| --- | --- |
+| `LLM_API_KEY` | `sk-` 开头的 DeepSeek 平台 key（预充值，10 元够用很久） |
+| `LLM_BASE_URL` | `https://api.deepseek.com/v1`（只填 base 即可，代码自动补 `/chat/completions`） |
+| `LLM_MODEL` | **`deepseek-flash`** |
+
+> **模型名别搞混**：官方现名 `deepseek-flash`（= `DeepSeek-V4.1-Flash-1017`）；旧名 `deepseek-v4-flash` 仍接受；
+> `deepseek-chat` 是 V3 时代老名，文档已不再列；Zen 网关那边叫 `deepseek-v4.1-flash-free`/`-flash`。
+> 成本：单次约 684 输入 + 200 输出 tokens ≈ **¥0.003/次**（高峰价），演示十次以内可忽略。
 
 ## 1. 配置步骤（Render 控制台）
 

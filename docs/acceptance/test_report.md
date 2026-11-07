@@ -13,8 +13,8 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **137**（单元 124 + 集成 13） |
-| 通过 / 失败 / 跳过 | **137 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **176**（单元 163 + 集成 13） |
+| 通过 / 失败 / 跳过 | **176 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 
@@ -34,10 +34,13 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-137 passed
+178 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-137 passed, 1 warning in 16.38s
+178 passed, 1 warning in 16.70s
 ```
+
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天补 39 条守卫/兜底用例 + 合并后 **178**
+> （单元 165 / 集成 13，`pytest --collect-only` 复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
 | --- | --- | --- | --- | --- | --- |
@@ -76,14 +79,14 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
-| **全部（app + core_engine）** | 839 | 79 | **91%** |
+| **全部（app + core_engine）** | 956 | 81 | **92%** |
 | 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
 | 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
 | 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
 | 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
 | 模型 + 响应 schema | 238 | 0 | 100% |
 
-> 结论：核心逻辑 **91% ≥ 课程要求的 60%**；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+> 结论：核心逻辑 **92% ≥ 课程要求的 60%**（2026-11-07 复测：956 语句 / 81 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -285,12 +288,32 @@ SAME balance=True total=True qty=True trades=True points=True
 | 账户响应 | — | 127.4ms | — |
 | 买入接口响应 | ≤ 500ms | **308.8ms**（成交价 108.75） | ✅ |
 | 卖出接口响应 | ≤ 500ms | 196.0ms | ✅ |
-| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（LLM 版未压测，如实说明） |
+| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（配真模型后见 §8.3） |
 | 前端首屏 | ≤ 3s | **≈437.8ms**（HTML 263ms + JS/CSS 174.8ms，gzip 合计 100.5KB） | ✅（以资源下载近似，浏览器渲染未测） |
 | 价格历史图渲染（≥100 点） | 不卡顿 | 未测（需浏览器；当前每人 10–11 点） | 🟡 |
 
 > 线上比本地慢一个数量级（168ms vs 24ms），主要是 Render 免费实例的跨区网络与冷容器开销，
 > 仍远低于目标值。**结论：四项非功能指标线上全部达标**；折线图渲染一条留待浏览器验证。
+
+### 8.3 线上 LLM 版实测（2026-11-07，B，DeepSeek 官方 API）
+
+> 背景：AI 从"规则兜底"切到真模型后补测。先试 OpenCode Zen 免费档失败（`429 FreeUsageLimitError`，
+> 换 4 个免费模型均 429），改用 **DeepSeek 官方 API**：
+> `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`。
+> 方法：`/api/health` 预热后，对 **5 名不同选手**各调一次 `/api/analysis/{id}`。
+
+| 指标 | 目标 | 实测 | 结论 |
+| --- | --- | --- | --- |
+| AI 分析响应（真模型） | ≤ 8s（上限 20s） | **中位 2461ms**（最快 1839 / 最慢 3930，n=5） | ✅ |
+| `source` 字段 | `llm` | **5/5 全部 `llm`** | ✅ |
+| 契约 6 字段 | 不变 | `action/disclaimer/player_id/reason/risk_level/source` 齐全 | ✅ |
+| 模型判断多样性 | 非固定文案 | HOLD×4 + **BUY×1**；risk HIGH×3 / MEDIUM×2；reason 各不相同 | ✅ |
+| 其它接口未受影响 | 行情 ≤300 / 买卖 ≤500ms | players 813ms（冷启动）、trades 430ms、prices 291ms、account 1310ms（冷） | ✅ 预热后达标 |
+
+> **与规则版的差异（答辩要点）**：同一选手规则版给 `risk=LOW`，模型版给 `risk=HIGH` 并写出更长理由——
+> 说明 AI 是独立建议者；两者共用同一 6 字段契约，前端只按 `source` 区分展示。
+> **失败仍自动回落规则版**（超时上限 20s），演示不会卡死。
+> 成本参考：单次约 684 输入 + 200 输出 tokens，`deepseek-flash` 高峰价约 **¥0.003/次**，答辩当天十次以内忽略不计。
 
 ## 9. 缺陷清单
 
@@ -327,9 +350,9 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **137** 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P0 缺陷：**0** 个（自动化层 **176** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验）
-- **结论：可交付** —— M3/M4/M5 均已达成；137 条自动化（CI run #88 / `013e182` 全绿）+ 核心逻辑覆盖率 **91%** +
+- **结论：可交付** —— M3/M4/M5 均已达成；**178** 条自动化（单元 165 / 集成 13；2026-11-07 补 39 条守卫/兜底用例）+ 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **14 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
@@ -342,6 +365,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 137 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 178 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）

@@ -15,7 +15,16 @@ from types import SimpleNamespace
 
 import pytest
 from ai.fallback import rule_based_advice
-from ai.llm_agent import OUTPUT_KEYS, LLMOutputError, _parse_and_validate, analyze
+from ai.llm_agent import (
+    DEFAULT_BASE_URL,
+    LLMOutputError,
+    OUTPUT_KEYS,
+    _api_key,
+    _base_url,
+    _model,
+    _parse_and_validate,
+    analyze,
+)
 
 EXPECTED_KEYS = set(OUTPUT_KEYS)
 
@@ -187,3 +196,40 @@ def test_fallback_output_is_renderable():
     assert advice["risk_level"] in {"LOW", "MEDIUM", "HIGH"}
     assert advice["source"] == "rule_fallback"
     assert advice["disclaimer"]
+
+
+# ---------- 10. 端点 URL 归一化（LLM_BASE_URL 两种写法都吃）----------
+
+def test_base_url_defaults_to_openai_endpoint(monkeypatch):
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    assert _base_url() == DEFAULT_BASE_URL
+
+
+def test_base_url_appends_chat_completions_when_only_base_given(monkeypatch):
+    """只填 base（最常见、也最符合变量名的写法）要自动补全，否则线上 404 回落成规则版。"""
+    monkeypatch.setenv("LLM_BASE_URL", "https://opencode.ai/inference/openai/v1")
+    assert _base_url() == "https://opencode.ai/inference/openai/v1/chat/completions"
+
+
+def test_base_url_keeps_full_endpoint_untouched(monkeypatch):
+    full = "https://opencode.ai/inference/openai/v1/chat/completions"
+    monkeypatch.setenv("LLM_BASE_URL", full)
+    assert _base_url() == full
+
+
+def test_base_url_strips_trailing_slash_and_spaces(monkeypatch):
+    monkeypatch.setenv("LLM_BASE_URL", "  https://api.openai.com/v1/  ")
+    assert _base_url() == "https://api.openai.com/v1/chat/completions"
+
+
+def test_base_url_strips_pasted_quotes(monkeypatch):
+    """Windows `set LLM_BASE_URL="https://…"` 会把引号并进值里 → 旧实现 unknown url type。"""
+    monkeypatch.setenv("LLM_BASE_URL", '"https://opencode.ai/inference/openai/v1"')
+    assert _base_url() == "https://opencode.ai/inference/openai/v1/chat/completions"
+
+
+def test_api_key_and_model_strip_pasted_quotes(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", '"oc_sk_demo"')
+    monkeypatch.setenv("LLM_MODEL", "'deepseek-v4.1-flash-free'")
+    assert _api_key(None) == "oc_sk_demo"
+    assert _model(None) == "deepseek-v4.1-flash-free"

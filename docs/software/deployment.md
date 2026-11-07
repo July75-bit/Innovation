@@ -339,6 +339,7 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 | 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
 | 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
 | 已知问题 6 | `/market` 直接访问曾白屏（市场页在 `/`、无兜底路由）。已修：`/market → /` 重定向 + `/:pathMatch(.*)* → /` 兜底（BUG-11）。**前端需重新部署后生效** |
+| 已知问题 7（LLM 实配，B 2026-11-07） | **已切换到真模型并线上验证通过**。过程：① 先试 OpenCode Zen 免费档（`deepseek-v4.1-flash-free`），key 能过鉴权但返回 `429 FreeUsageLimitError`，换 4 个免费模型均 429 → 免费档是账号级限制；② 改用 **DeepSeek 官方 API**：`LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，等价 V4.1-Flash；旧名 `deepseek-v4-flash` 仍接受，`deepseek-chat` 已过时）→ `GET /api/analysis/1` **`source=llm`**，5 名选手实测 **中位 2461ms**（1.8–3.9s，目标 ≤8s），结果见 `test_report.md` §8.3。**注意**：真实模型比规则版慢约 2.3s，演示前预热即可；超时/失败仍自动回落规则版（上限 20s），不会卡死。成本约 ¥0.003/次。诊断工具：`python scripts/check_llm.py --direct/--scan/--base` |
 
 ## 7. 常见故障排查
 
