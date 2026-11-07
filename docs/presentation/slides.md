@@ -502,6 +502,9 @@ layout: default
 **降级是设计的一部分**：无密钥 / 超时（20s）/ 非 JSON / 枚举非法
 → **一律 HTTP 200 + `source=rule_fallback`**，绝不 4xx/5xx 阻塞交易
 
+> 线上现已接真模型（DeepSeek `deepseek-flash`）：`source=llm`、中位 **2461ms**；
+> 上图是降级路径的示意（真实响应里 `source` 为 `llm`、`reason` 为模型生成的整段理由）
+
 </div>
 
 <div>
