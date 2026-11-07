@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Response
 from sqlalchemy import delete, func, select
@@ -126,7 +127,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> AuthResponse:
 def me(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
-    authorization: str | None = Header(default=None, alias="Authorization"),
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> MeResponse:
     """前端启动时用它校验本地存的令牌还管不管用（无效会被 get_current_user 打成 401）。"""
     return MeResponse(
@@ -138,7 +139,7 @@ def me(
 @router.post("/logout", response_model=LogoutResponse, summary="退出登录")
 def logout(
     db: Session = Depends(get_db),
-    authorization: str | None = Header(default=None, alias="Authorization"),
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> LogoutResponse:
     """撤销当前令牌。没带令牌也返回成功（幂等：前端清本地存储后重复调用不该报错）。"""
     revoked = revoke_token(db, authorization)
@@ -155,7 +156,7 @@ def delete_account(
     body: DeleteAccountRequest,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
-    authorization: str | None = Header(default=None, alias="Authorization"),
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> DeleteAccountResponse:
     """删除**当前令牌所属的私人账号**，级联清掉它的持仓 / 流水 / 令牌。
 

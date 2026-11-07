@@ -19,6 +19,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from typing import Annotated
+
 from fastapi import Depends, Header
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -45,7 +47,14 @@ def bearer_token(authorization: str | None) -> str | None:
     """从 `Authorization: Bearer xxx` 取令牌原文；没带头返回 None。
 
     带了头但格式不对 → 401：这种情况多半是前端拼错了头，静默当访客更难排查。
+
+    开头那个 isinstance 判断不是防御性摆设：`tests/unit/test_infra_guards.py` 会**直接调用**
+    `get_current_user(db)` 而不走 FastAPI 的依赖注入，此时参数默认值是 `Header(...)` 这个
+    FieldInfo 对象而不是 None——不挡住就会在 `.strip()` 上炸成
+    `AttributeError: 'Header' object has no attribute 'strip'`（第 7 轮合并时实测踩过）。
     """
+    if not isinstance(authorization, str):
+        return None
     if not authorization:
         return None
     parts = authorization.strip().split(" ", 1)
@@ -72,9 +81,13 @@ def get_public_demo_user(db: Session) -> User:
 
 def get_current_user(
     db: Session = Depends(get_db),
-    authorization: str | None = Header(default=None, alias="Authorization"),
+    authorization: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> User:
-    """当前用户：有令牌认私人账户，没令牌用公共演示账户。"""
+    """当前用户：有令牌认私人账户，没令牌用公共演示账户。
+
+    参数必须写成 `Annotated[str | None, Header(...)] = None`，不能写成 `= Header(default=None)`：
+    后者在函数被**直接调用**（守卫测试就是这么调的）时，默认值是一个 FieldInfo 对象而不是 None。
+    """
     raw = bearer_token(authorization)
     if raw is None:
         return get_public_demo_user(db)
