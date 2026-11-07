@@ -308,6 +308,11 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 - [x] 线上完成一次买入：余额减少、持仓增加、流水新增
 - [x] 线上完成一次卖出：余额增加、持仓减少
 - [x] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
+      —— 2026-11-07 实测（Manual Deploy → Live）：[部署前 account](../acceptance/evidence/online/online-persistence-before-1-account.png)／
+      [部署前 trades 7 条](../acceptance/evidence/online/online-persistence-before-2-trades.png)／
+      [部署后 account](../acceptance/evidence/online/online-persistence-after-1-account.png)／
+      [部署后 trades 8 条](../acceptance/evidence/online/online-persistence-after-2-trades.png)，
+      逐项对账见 `evidence/online/persistence-redeploy.md`
 - [x] **后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告** —— 已用 `/api/debug/db` 实测反证（`是否 SQLite: false`、方言 `postgresql`），文本证据 `docs/acceptance/evidence/online/backend-debug-db.md` §1；Logs 截图可选
 - [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 5 张表与行数（`players 8 / price_history 78 / trades 5 / users 1`），表由启动时 `init_db()` 自动创建；文本证据同上
 - [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
@@ -382,6 +387,9 @@ Auto-Deploy。验证通过。
 - [x] D 第 5 天：完成第 5 节全部打勾，填第 6 节
 - [x] **B 第 5 天**：`app/main.py` 的 `allow_origins=["*"]` 已改回配置驱动（`resolve_cors_origins()`，
       依据 NFR-S-04）；新增 `tests/unit/test_cors_config.py` 4 条用例；口径写进 `compliance.md` §4.1
-- [x] **D/B 上线时**：在 Render 后端把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`（`render.yaml` 已写死，2026-11-07 线上复验白名单生效）
-      后重启（不设也**不会挂**——会退化为 `*` 并在启动日志 WARNING，见 §6「CORS 决策」）
-- [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 `docs/acceptance/test_report.md`
+- [x] **D/B 上线时**：`CORS_ORIGINS` = `https://playerstock-frontend-mdlk.onrender.com`（已写进 `render.yaml`，
+      重新部署即生效；2026-11-07 线上复验白名单生效）。不设也**不会挂**——会退化为 `*` 并在启动日志 WARNING，见 §6「CORS 决策」
+- [x] **B 第 6 天（2026-11-07）**：把"重新部署后数据仍在"的截图与对账存进证据目录 ——
+      图 `docs/acceptance/evidence/online/online-persistence-{before,after}-{1,2,3}-*.png`，
+      逐项对账见 `docs/acceptance/evidence/online/persistence-redeploy.md`（旧 7 条流水逐行保留、
+      11 点价格逐点一致；期间新增 1 笔成交且余额变化完全吻合 → 数据没丢且部署后仍可写）

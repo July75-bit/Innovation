@@ -208,6 +208,18 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 > **后端重新部署后**按 `CORS_ORIGINS` 生效——配了前端域名就只放行它，没配则仍为 `*` 且日志告警）、
 > 前端 HTML 引用的是新构建产物（`assets/index-we8cxpp9.js`）、
 > 带 `Origin: <前端域名>` 请求 `/api/players` 仍返回 8 名选手 → 前后端版本均已更新。
+>
+> **2026-11-07 重新部署复验（TC-404 的人证，B）**：Manual Deploy → Live 前后各截一组
+> account / trades / prices（[before-1](evidence/online/online-persistence-before-1-account.png) ·
+> [before-2](evidence/online/online-persistence-before-2-trades.png) ·
+> [before-3](evidence/online/online-persistence-before-3-prices.png) ／
+> [after-1](evidence/online/online-persistence-after-1-account.png) ·
+> [after-2](evidence/online/online-persistence-after-2-trades.png) ·
+> [after-3](evidence/online/online-persistence-after-3-prices.png)）。
+> 脚本逐项对账（`scripts/persistence_check.py --diff`，退出码 0）：**部署前 7 条流水逐行原样保留、
+> 11 个价格点 (ts,price) 逐点一致、总资产守恒 5000.00**；期间新增 1 笔成交（m0NESY BUY ×10 @85.08 = 850.80），
+> 余额 5000.00 → 4149.20 与之**算术闭合** → 数据没丢，且部署后仍可写。
+> 详见 `evidence/online/persistence-redeploy.md`。
 
 ## 7. 本地持久化验证（T3-05，2026-10-24）
 

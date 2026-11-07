@@ -56,8 +56,16 @@
 | --- | --- | --- |
 | `online/online-account-5000.png` | `GET /api/account` | 线上余额 5000.00 / 总资产 5000.00 |
 | `online/online-positions-empty.png` | `GET /api/positions` | 交易测试后清仓为空 |
-| `online/online-trades-before-tc403.png` | `GET /api/trades` | **TC-403 之前的历史状态（空）**，仅作对照，不作为验收证据；当前线上为 3 条流水（见 test_report TC-404） |
+| `online/online-trades-before-tc403.png` | `GET /api/trades` | **TC-403 之前的历史状态（空）**，仅作对照，不作为验收证据；当前线上为 8 条流水（见 test_report TC-404） |
 | `online/online-prices-11points.png` | `GET /api/players/1/prices` | 11 个点、升序、末点 108.75 = current_price、reason 含「本轮得分 + S」 |
+
+## 线上重新部署复验（第 6 天 7.2，2026-11-07）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `online/online-persistence-before-{1,2,3}-*.png` | Manual Deploy **之前**的 account / trades / prices | 余额 5000.00、流水 **7 条**、价格 **11 点**（末点 108.75） |
+| `online/online-persistence-after-{1,2,3}-*.png` | Deploy 变 Live **之后**的同三个接口 | 部署前那 7 条流水一条不少；期间新增 1 笔（m0NESY BUY ×10 @85.08）→ 余额 4149.20、流水 8 条、持仓市值 850.80，总资产仍 5000.00；价格仍 11 点逐点一致 |
+| `online/persistence-redeploy.md` | 逐项对账记录 + 复跑命令 | `scripts/persistence_check.py --diff` 退出码 0；含"余额变了为何不等于丢数据"的算术闭合 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
 
