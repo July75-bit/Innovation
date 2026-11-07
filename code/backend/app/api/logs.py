@@ -12,12 +12,16 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
 from app.core.errors import ApiError
 from app.core.logging_config import current_log_path, recent_lines
 
 router = APIRouter(prefix="/debug", tags=["debug"])
+
+#: 显式声明 charset，否则 Windows PowerShell 的 Invoke-WebRequest 会按 Latin-1 解码成乱码
+JSON_UTF8 = "application/json; charset=utf-8"
 
 
 @router.get("/logs", summary="只读：最近的运行日志（默认 100 行）")
@@ -26,7 +30,7 @@ def debug_logs(
     level: str | None = Query(
         None, description="只看某个级别：WARNING / ERROR / INFO（留空返回全部）"
     ),
-) -> dict:
+) -> JSONResponse:
     """返回日志文件末尾若干行，供线上排查与答辩演示"出错能自查"。"""
     if not settings.debug_endpoints:
         raise ApiError(
@@ -42,10 +46,13 @@ def debug_logs(
         wanted = level.strip().upper()
         rows = [row for row in rows if f" {wanted}" in row]
 
-    return {
-        "日志文件": str(path) if path else "（尚未初始化：日志在应用启动时创建）",
-        "返回行数": len(rows),
-        "过滤级别": level.upper() if level else "全部",
-        "内容": rows,
-        "提示": "只读；不含口令/token/连接串。可用 DEBUG_ENDPOINTS=0 关闭本接口。",
-    }
+    return JSONResponse(
+        content={
+            "日志文件": str(path) if path else "（尚未初始化：日志在应用启动时创建）",
+            "返回行数": len(rows),
+            "过滤级别": level.upper() if level else "全部",
+            "内容": rows,
+            "提示": "只读；不含口令/token/连接串。可用 DEBUG_ENDPOINTS=0 关闭本接口。",
+        },
+        media_type=JSON_UTF8,
+    )
