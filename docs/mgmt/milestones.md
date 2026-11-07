@@ -110,7 +110,7 @@
 | T1-35 | 16:00–17:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ✅（README 已含分工/启动/已知偏差） |
 | T1-36 | 17:00–17:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ✅（风险 Top3 预案 + 第 1 天记录已落盘） |
 | T1-37 | 17:30–18:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ✅（CI 已改为监听 main+develop，三 job 绿） |
-| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | 🟡 **Milestones 已建**（M1–M6 六个，12 条 Issue 已归入，见 GitHub `/milestones`）；仓库/README/PR/Issue 流程齐；**Kanban / Team Planning 看板**需登录网页确认（API 匿名不可查） |
+| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | ✅ 2026-11-07 全部到位：**三项目** PlayerStock_Kanban / Team planning / Bug tracker 已建（Kanban 五列，Done 15 条归档）+ Milestones M1–M6 + Issues 流程；证据 `docs/acceptance/evidence/35-projects-list.png`、`36-kanban-board.png`。注：项目默认 **Private**，答辩用截图或改 Public |
 | T1-39 | —（2026-10-24 补记） | **需求规范书**（课件第 1 天 p.52）：`docs/requirements/functional_spec.md` + `nonfunctional_spec.md` + **领域类图 UML**（3 分钟汇报用） | T1-29 | 两份需求文档齐全；UML 领域类图可讲解 | ✅ 2026-10-24（两份文档已有；`functional_spec.md` §3 补 UML 领域类图 + 类到实现映射） |
 | T1-40 | —（2026-10-24 补记） | **沟通 / 风险管理计划**（课件第 1 天 p.53）：沟通管理计划 + 风险管理计划（本项目合并进根目录 `project_management_plan.md`，`docs/mgmt/communication_plan.md` / `risk_plan.md` 为指针文件） | — | 两份计划有实质内容且为唯一事实来源 | ✅ 2026-10-24（沟通 §1–8 / 风险 §9–11 已合并定稿；与课件命名不同，映射关系已注明） |
 
@@ -210,7 +210,7 @@
 
 | 天 | 计划任务数 | 完成 | 未完成及原因 |
 | --- | --- | --- | --- |
-| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 33 完成 + 3 部分 | C 第 1 天 7 项已由第 2 天 T2-06/07 吸收完成；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-38 Kanban/Team Planning 看板待确认（Milestones 已建）；T1-16 契约已于 `94ea9aa` 四人签齐 |
+| 第 1 天 | 40（含 3 条补记；必达 6 项验收中第 4 项未绿） | 33 完成 + 3 部分 | C 第 1 天 7 项已由第 2 天 T2-06/07 吸收完成；A 的 T1-06/T1-08/T1-11 待运行/文档证据；T1-38 已于 2026-11-07 三项目建齐（见 T1-38 行，证据 35/36）；T1-16 契约已于 `94ea9aa` 四人签齐 |
 | 第 2 天 | 12 | 12 完成 | —（A 前端、C 定价补齐后复核；A 两项浏览器运行证据待补，见 T3-04） |
 | 第 3 天 | 7 | **7 完成** | T3-01/02/03/04/05/06/07 全绿；M3 已于第 4 天上午由 A 的浏览器证据闭环（`docs/acceptance/evidence/`）；自动化 137 passed / 0 skipped（CI） |
 | 第 4 天 | 7 | **7 完成（T4-01/02/03/04/05/06/07）** | M4 达成（折线图 10 点 + 原因 + AI 卡 + 三态，证据 `docs/acceptance/evidence/`）；外部交叉原型测试组待约；BUG-10（本机 Windows 测试编码）已修 |

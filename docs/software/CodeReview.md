@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-07）**：pytest **134 passed / 0 skipped** · 核心逻辑覆盖率 **91%** · CI **run #71 三 job 全绿** · 已修复缺陷 **13 条**（P0/P1 清零）。
+> **当前基线（2026-11-07 16:20 复测）**：pytest **137 passed / 0 skipped** · 核心逻辑覆盖率 **92%**（956 语句 / 81 未覆盖）· CI **run #95 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
 
 ---
 
@@ -65,7 +65,7 @@
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
 | pytest | 单元+集成测试 | `pyproject.toml` | **137 passed / 0 skipped**（CI run #80；截图 17 摄于 134 条的时点，此后又补了 3 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **91%**（≥60% 达标） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **92%**（956/81，≥60% 达标） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
@@ -127,13 +127,15 @@
 
 ```powershell
 cd D:\projects\innovation\Innovation
-python -m pytest                                     # 134 passed
+# 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
+conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
+python -m pytest                                     # 137 passed
 ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501
 pylint code/core_engine code/backend/app/core        # 9.74/10
 complexipy code/core_engine                          # 认知复杂度
-coverage run --source=app,core_engine -m pytest && coverage report -m # 91%
+coverage run --source=app,core_engine -m pytest && coverage report -m # 92%
 cd code/frontend; npm ci; npm run build; npm run lint; npm run test:unit
 ```
 
-CI 结果：<https://github.com/July75-bit/Innovation/actions>（run #71 三 job 绿）。
+CI 结果：<https://github.com/July75-bit/Innovation/actions>（最新 run #95 三 job 绿）。

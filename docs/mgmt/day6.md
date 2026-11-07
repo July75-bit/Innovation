@@ -11,7 +11,7 @@
 | --- | --- |
 | 分支 / 工作区 | `develop` 领先 `origin/develop` **3 个提交**（待推：合并 + 幻灯片 + 证据），工作区干净 |
 | 测试 / CI | **137 passed / 0 skipped**；CI **run #88（`013e182`）三 job 绿**（本次合并后待 run #89 复核） |
-| 覆盖率 | 91%（839 语句 / 79 未覆盖，要求 ≥60%） |
+| 覆盖率 | **92%**（956 语句 / 81 未覆盖，要求 ≥60%；2026-11-07 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
@@ -72,9 +72,9 @@
 
 | ID | 任务 | 完成标准 | 状态 |
 | --- | --- | --- | --- |
-| **C-1** | 复核 06/07 页：α=0.15 / β=0 / floor=1.0 / clamp ±20% / `Z_FULL_SCALE=3`、100 seed 中位 −7.40%、回测三行（规则版 −3.52%/5.90%、随机 −0.59%/2.59%、买入持有 −10.78%/14.88%） | 与 `pricing_model.md` §7/§9 逐字一致 | ⬜ |
-| **C-2** | "一涨一跌"两个现场可点案例：选手 + 轮次 + 两句口播，写进 `pricing_model.md` §8 | 现场 3 秒内定位到那条价格点 | ⬜ |
-| **C-3** | 认领 `qa.md` Q4–Q8（定价 5 问）并脱稿 | 不看稿能答完 | ⬜ |
+| **C-1** | 复核 06/07 页：α=0.15 / β=0 / floor=1.0 / clamp ±20% / `Z_FULL_SCALE=3`、100 seed 中位 −7.40%、回测三行（规则版 −3.52%/5.90%、随机 −0.59%/2.59%、买入持有 −10.78%/14.88%） | 与 `pricing_model.md` §7/§9 逐字一致 | ✅ 2026-11-07（`ea0b79e`/`013e182`：06 页换线上第 9 轮真实案例、修 clamp 表述；`98590c2` 补 §7.3 回测三行） |
+| **C-2** | "一涨一跌"两个现场可点案例：选手 + 轮次 + 两句口播，写进 `pricing_model.md` §8 | 现场 3 秒内定位到那条价格点 | ✅ 2026-11-07（`98590c2`：§8 轮次 + 两句口播已写入） |
+| **C-3** | 认领 `qa.md` Q4–Q8（定价 5 问）并脱稿 | 不看稿能答完 | 🟡 认领已标注（`018221e`：Q7 换线上真实 reason + 标注 C 认领 Q4–Q8）；脱稿在彩排里验 |
 | C-4 | 线上价格抽查：`scripts/check_price_history.py` 再核一次 11 点 | 输出贴群 | ⬜ 可选 |
 
 **兜底**：100 seed 讲不清 → 只说"中位 −7.40%、方向一致率 99.99%，完整表在 `pricing_model.md` §7.2"。
@@ -118,6 +118,35 @@
 | ⑫ | — | **合计** | — | **15:00** | | |
 
 > 超时处置：幻灯片超 30s → 砍 09 页的 CI 细节；演示超时 → 跳过"故意失败"；问答超时 → D 用"文档里有，会后发您"收口。
+
+## 3.5 演示时怎么跑测试（现场脚本，一条命令不踩坑）
+
+> 场景：评委问"怎么证明质量"或进入问答段，D 在终端演示。
+
+```powershell
+cd D:\projects\innovation\Innovation
+
+# ① 切到项目环境（关键：base 里没有 pytest，会报 No module named pytest）
+conda activate playerstock
+# 若不想依赖激活，改用绝对路径最稳：
+#   & "D:\miniconda\envs\playerstock\python.exe" -m pytest -q -p no:warnings
+
+# ② 全量回归：137 条，约 2 秒
+python -m pytest -q -p no:warnings
+
+# ③ 指着一个 P0 缺陷讲：测试名就是场景
+python -m pytest tests/unit/test_trades_concurrency.py -v
+
+# ④ 覆盖率不现场跑（16 秒 + 一屏表格），改为展示 evidence/37-pytest-coverage.png
+```
+
+| 步骤 | 说一句 |
+| --- | --- |
+| ② | "137 条，0 跳过——不是没写完的占位。" |
+| ③ | "并发卖出超卖是 P0，判断写进 SQL 的 WHERE，两条连接同时卖只成一笔。" |
+| ④ | "核心逻辑 92%，课程要求 60%。这是刚才那条命令的输出渲染。" |
+
+**兜底**：终端出任何意外 → 直接打开 GitHub Actions 的 run #95，指着「后端测试」job 里的 `python -m pytest` 步骤，话术"这是同一条命令在 CI 上的记录"。
 
 ## 4. 晚验收（M6 关闭条件，逐条打勾）
 
@@ -322,4 +351,4 @@ python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
 
 **修正的 6 处**：① C 第 1 天 7 项 `⬜`→✅（第 2 天吸收）；② T1-38「Milestones 未建」→ 已建；③ 第 4 天「BUG-03 待修」→ BUG-10 已修；④ 第 5 天「三件套未开始 / CORS 仍为 `*`」→ 材料齐、已白名单复验；⑤ `day5.md` 四处 ❌/🟡；⑥ 原 `day6_tasks.md`「120 条」→137 条、`deployment.md` 两项检查单。
 
-**仍需人工确认的 2 项**：Kanban / Team Planning 看板（Projects v2 需登录，Milestones 已确认）；外部交叉原型测试（已记延期 + 补救方案，不追）。
+**核对补记（2026-11-07 16:10）**：Kanban / Team planning / Bug tracker 三项目已确认建好（证据 `evidence/35~36`），但均为 **Private**——若要评委线上查看，需在每个项目 `…→ Settings → Visibility` 改 Public，否则以截图交付。外部交叉原型测试仍为延期说明（已如实记录，不追）。
