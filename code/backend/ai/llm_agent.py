@@ -98,7 +98,19 @@ def _timeout(settings: Any) -> float:
 
 
 def _base_url() -> str:
-    return os.getenv("LLM_BASE_URL", DEFAULT_BASE_URL)
+    """模型端点 URL，两种写法都接受。
+
+    - `https://host/openai/v1`                 → 自动补成 `.../v1/chat/completions`
+    - `https://host/openai/v1/chat/completions` → 原样使用
+
+    2026-11-07 实测踩坑：变量名叫 `LLM_BASE_URL`，很自然会只填 base（`.../openai/v1`），
+    而旧实现把它当完整 URL 直接 POST → 404 → 被静默回落成规则版，看起来像"配了没生效"。
+    这里统一补齐，去掉一个只能靠记性避免的坑。
+    """
+    raw = (os.getenv("LLM_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
+    if not raw.endswith("/chat/completions"):
+        raw = f"{raw}/chat/completions"
+    return raw
 
 
 # ---------- prompt 组装 ----------

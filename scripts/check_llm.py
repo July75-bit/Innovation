@@ -77,9 +77,11 @@ def check_direct() -> int:
         print("  要切真模型，按 day6.md §7.3 在 Render 控制台填三个变量。")
         return 1
 
-    from ai.llm_agent import DEFAULT_BASE_URL, DEFAULT_MODEL
+    from ai.llm_agent import DEFAULT_MODEL, _base_url
 
-    url = env["base"] or DEFAULT_BASE_URL
+    # 直接复用后端的归一化：`LLM_BASE_URL` 填 base（`.../openai/v1`）或完整 URL 都行，
+    # 2026-11-07 就是因为只填 base 走了 404，这里不再让两处各写一套。
+    url = _base_url()
     model = env["model"] or DEFAULT_MODEL
     payload = {
         "model": model,
