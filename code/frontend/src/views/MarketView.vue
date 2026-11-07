@@ -111,7 +111,7 @@ onMounted(load)
   transition: box-shadow 0.15s ease;
 }
 .card:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 10px var(--shadow);
 }
 .card.suspended {
   opacity: 0.65;

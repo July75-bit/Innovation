@@ -50,7 +50,7 @@ app = FastAPI(
 # A 的前端在 5173；线上换成静态站点域名，通过 CORS_ORIGINS 环境变量控制
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origin_list,
+    allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

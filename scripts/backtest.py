@@ -37,9 +37,6 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "code"))
 sys.path.insert(0, str(ROOT / "code" / "backend"))
 
-from ai.fallback import rule_based_advice  # noqa: E402
-from core_engine import generate_match, standardize_score, update_price  # noqa: E402
-
 DEFAULT_CASH = Decimal("5000.00")
 WARMUP = 3
 WINDOW = 5
@@ -56,6 +53,8 @@ def load_players(seed_path: Path) -> list[dict]:
 
 def build_price_paths(players: list[dict], seed: int, rounds: int, start_date: str) -> dict:
     """用 C 的模拟器 + 定价引擎生成每名选手 rounds 轮的价格/得分序列。"""
+    from core_engine import generate_match, standardize_score, update_price
+
     paths: dict[int, dict] = {}
     start = date.fromisoformat(start_date)
     for player in players:
@@ -104,6 +103,8 @@ def _advice_context(pid: int, paths: dict, index: int, ratings: dict[int, float]
 def _decide_action(
     kind: str, rng: random.Random, pid: int, paths: dict, index: int, ratings: dict, qty: int
 ) -> str:
+    from ai.fallback import rule_based_advice
+
     if kind == "rule":
         return rule_based_advice(
             _advice_context(pid, paths, index, ratings, qty)

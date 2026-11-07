@@ -8,16 +8,21 @@
 
 | 项 | 状态 | 证据 |
 | --- | --- | --- |
-| M3 / M4 | ✅ 均已达成 | A 的 14 张浏览器证据：`docs/acceptance/evidence/` |
-| 测试 | **120 passed / 0 skipped（CI）**；本机 Windows 因 BUG-03 为 118/1/1 | `test_report.md` §1/§9 |
-| 部署准备 | 🟡 只到“脚本/驱动/文档”：`bootstrap_demo_data.py`、PG 连接串归一化、`pool_pre_ping` | `scripts/bootstrap_demo_data.py`、`deployment.md` |
-| Render / Postgres | ❌ 未注册、未建库、未配环境变量；`deployment.md` 检查单大部分仍是 `[ ]` | `deployment.md` §3 |
-| 待修 | **BUG-03**（B 的 bootstrap 测试 Windows 编码，P1）；TC-307 刷新回归未单独截图 | `test_report.md` §9 / `test_plan.md` §4.4 |
+| M3 / M4 | ✅ 均已达成 | A 的 16 张浏览器证据：`docs/acceptance/evidence/` |
+| 测试 | **120 passed / 0 skipped**（CI 与本机一致；BUG-10 已修，见下） | `test_report.md` §1/§9 |
+| 部署准备 | ✅ 已完成 | `bootstrap_demo_data.py`、PG 连接串归一化（+psycopg2）、`pool_pre_ping`、`deployment.md` §3.9 四步全绿 |
+| Render / Postgres | ✅ 三个服务已上线：前端 `playerstock-frontend-mdlk`、后端 `playerstock-backend-mdlk`、Postgres 18 `playerstock-db`（**2026-11-23 到期**）；线上已灌 9 轮数据（11 点/人） | `deployment.md` §6、`test_report.md` §6 |
+| 线上只读验收 | ✅ TC-401 / TC-402 / TC-406 已实测通过（B 用 HTTP 直连核对） | `test_report.md` §6 |
+| 线上交易验收 | ✅ TC-403 已跑通（2026-10-25，B）：买 2 @108.75 → 卖 1 → 并发卖 1 = [200,400]，余额回到 5000.00、持仓清空、流水 3 条；6 类错误码全对 | `test_report.md` §6 |
+| 线上部署对齐 | ✅ 2026-10-25 Manual Deploy 后端 + 前端，已与 `develop` 对齐（证据：CORS 头 `*`、前端 bundle 更新为 `assets/index-we8cxpp9.js`） | `deployment.md` §6 |
+| 线上持久化验收 | ✅ TC-404 通过：重新部署前后余额 5000.00 / 持仓 0 / 流水 3 条（行内容不变）/ 价格点 11 个完全一致 → Postgres 生效 | `test_report.md` §6 |
+| 线上待做 | ✅ 无；TC-405 由 D 2026-10-25 复核 `GET /players/1` → 200（SPA rewrite 生效），M5 达成；A 浏览器截图可选归档 | `test_report.md` §6 |
+| 待修 | ~~BUG-03~~ **已修**（2026-10-25，`eb0d7e7`：测试改文件捕获 + `errors="replace"`，`seed_db.py` 输出转 UTF-8；编号记为 BUG-10）；TC-307 已由 A 补截图 | `test_report.md` §9 BUG-10 / `test_plan.md` §4.4 |
 | 外部交叉原型测试 | 🟡 内部互测已记录，外部组未约 | `docs/acceptance/cross_test.md` |
 | 答辩材料 | ❌ 未开始（幻灯片/演示脚本/QA） | — |
 
 > **今天两条主线**：① **M5 上线**：Render 前后端 + 免费 Postgres，数据持久化，线上全流程验收；② **完善作品 + 答辩准备**：优化迭代清单、8 分钟幻灯片、2 分钟演示脚本、5 分钟 QA。
-> **硬前提**：上线前必须先把 **BUG-03 修掉**（否则本机 120 条不绿）；部署分支固定选 **`develop`**，否则 Render 不会随 push 自动部署。
+> **硬前提**：部署分支固定选 **`develop`**（否则 Render 不会随 push 自动部署）；BUG-10 已修，本机/CI 均 120 绿；上线前需处理 **CORS 临时放开**（见 §4 风险表）。
 
 ## 1. 全员共同段（09:00–09:40）
 
@@ -100,6 +105,7 @@
 
 | 风险 | 症状 | 缓解 / 回滚 |
 | --- | --- | --- |
+| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | 部署前改回 `settings.cors_origin_list`，并在 Render 配 `CORS_ORIGINS`=前端公网地址（B/D 执行） |
 | 免费 Postgres 30 天到期 | 答辩后数据消失 | 文档写明；如需要可换 Neon（同样只改 `DATABASE_URL`） |
 | 免费实例 15 分钟休眠 | 冷启动约 1 分钟，演示卡顿 | 演示前 5 分钟预热 `/api/health`；录屏兜底 |
 | `DATABASE_URL` 填 Internal/External 混用 | 本地连不上/线上报错 | 后端用 **Internal**，本地灌数用 **External**；填错立即改并重启 |

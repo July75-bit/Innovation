@@ -1,6 +1,6 @@
 # 线框图 / 交互原型
 
-> **负责人**：A ｜ **截止**：第 2 天 ｜ **状态**：✅ 已产出（文字版线框 + Mermaid 信息架构；截图按团队决定不落盘，验收以实机演示为准）
+> **负责人**：A ｜ **截止**：第 2 天 ｜ **状态**：✅ 已产出（文字版线框 + Mermaid 信息架构；第 4 天起实机验收截图统一落盘 `docs/acceptance/evidence/`，见文末索引）
 > **对应课程指标**：#4 产出产品设计文档（需求说明、用户故事、信息架构、**交互原型/线框图**）
 > 实现代码见 `code/frontend/`（路由与组件对照表在文末），页面要素与 `docs/software/api_contract.md` §4 字段一一对应。
 
@@ -131,5 +131,19 @@ flowchart TD
 
 ## TODO
 
-- [x] A 产出 4 页面线框 + IA 图（本文件文字版；PNG 截图按团队决定不落盘，答辩现场实机演示）
+- [x] A 产出 4 页面线框 + IA 图（本文件文字版；实机截图索引见下节）
 - [ ] 第 2 天站会用 5 分钟过一遍，B 确认字段都能对上接口（字段对照表已备好，等 B 勾）
+
+## 实机截图索引（第 4 天回填，M3/M4 验收证据）
+
+页面要素与交互状态的真实浏览器截图统一存放在 [`docs/acceptance/evidence/`](../../acceptance/evidence/README.md)（采集环境：真实后端 uvicorn :8000 + `VITE_USE_MOCK=false`）：
+
+| 界面 / 交互 | 证据文件 |
+| --- | --- |
+| 市场页 `/`（8 选手、涨跌幅、模拟评分、暂停置灰、连接徽标） | `evidence/01-market.png` |
+| 详情页 `/players/:id`（折线图 10 点 + latest_reason + AI 卡 + 交易面板） | `evidence/02-detail-chart-ai.png` |
+| 买入成功 / 持仓页 / 卖出成功 / 交易流水 | `evidence/03~06-*.png` |
+| 5 条错误分支（余额不足 / 超持仓上限 / 持仓不足 / 非法数量 / 暂停交易） | `evidence/07~11-*.png` |
+| 三态（加载中 / 空数据 / 失败可重试） | `evidence/12~14-*.png` |
+| **T4-02 每点 reason**：悬停 tooltip + 价格变动明细列表 | `evidence/15-t4-02-point-reason.png` |
+| **TC-307** 深链 F5 刷新持久化 | `evidence/16-tc307-refresh-persist.png` |

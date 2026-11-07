@@ -132,16 +132,16 @@ python -m pytest
 
 ### 联系方式
 
-> 群聊 / 电话由各人补填真值（不把私人联系方式写进公开仓库）；以下为协作入口与写权限边界，对应 `project_management_plan.md` §8.1。
+> 沟通入口统一为**课程项目群（微信群）+ GitHub Issues**；不把私人联系方式写进公开仓库；以下为协作入口与写权限边界，对应 `project_management_plan.md` §8.1。
 
 | 成员 | 负责目录 | 沟通入口 | 升级路径 |
 | --- | --- | --- | --- |
-| A | `code/frontend/` | 小组群（待填） | 前端阻塞影响验收时直接找 D 升级 |
-| B | `code/backend/app/{api,models,schemas,core}`、`requirements.txt` | 小组群（待填） | 接口字段有异议 → 契约评审，2 小时内定 |
-| C | `code/core_engine/`、`data/seed_players.json` | 小组群（待填） | 价格口径与 B 冲突时以 `api_contract.md` 为准 |
-| D | `code/backend/ai/`、`docs/`、`.github/`、`render.yaml` | 小组群（待填） | 协调人，负责汇总进度与风险升级 |
+| A | `code/frontend/` | 课程项目群 + GitHub Issues | 前端阻塞影响验收时直接找 D 升级 |
+| B | `code/backend/app/{api,models,schemas,core}`、`requirements.txt` | 课程项目群 + GitHub Issues | 接口字段有异议 → 契约评审，2 小时内定 |
+| C | `code/core_engine/`、`data/seed_players.json` | 课程项目群 + GitHub Issues | 价格口径与 B 冲突时以 `api_contract.md` 为准 |
+| D | `code/backend/ai/`、`docs/`、`.github/`、`render.yaml` | 课程项目群 + GitHub Issues | 协调人，负责汇总进度与风险升级 |
 
-> GitHub 协作账号（取自 `git log` 提交记录）：`July75-bit`（仓库所有者）、`wlkaqw`、`weedflame`、`Hu De Hao`；与 A/B/C/D 的对应关系请各人补填。
+> GitHub 协作账号（取自 `git log` 提交记录）：`July75-bit`（仓库所有者）、`wlkaqw`、`weedflame`（A）、`Hu De Hao`（B）、`fusde0`（C）。
 
 ## 接口一览
 
@@ -191,6 +191,8 @@ python -m pytest
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告 | D |
 | [`docs/presentation/`](docs/presentation/) | 答辩幻灯片 | 全员 |
 | [`docs/retrospection/`](docs/retrospection/) | 每日站会记录与复盘 | 全员 |
+
+> 额外参考：[`docs/software/agent_workflow_design.md`](docs/software/agent_workflow_design.md)（AI Agent 工作流模式选型与完善路线，非课程交付物，供答辩加分参考；由 A 于第 4 天提交，待团队评审）。
 
 ## 部署（Render）
 

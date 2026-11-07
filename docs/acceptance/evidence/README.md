@@ -32,4 +32,31 @@
 | `13-state-empty.png` | 空数据 | `/api/players` 返回 `[]` |
 | `14-state-offline-error.png` | 失败（拔网线） | 真实停止后端进程：错误条"无法连接后端服务…"+ 重试按钮 + 顶栏徽标"后端未连接" |
 
+## T4-02 每点 reason 展示（第 4 天补）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `15-t4-02-point-reason.png` | ZywOo 详情页折线图：悬停 #3 数据点 + 展开「价格变动明细（10）」 | tooltip 显示 `2026-11-01 08:00:00 · 107.10 币` + "本场表现下滑（S=-1.00），价格下跌 15.00%（本轮模拟得分 76.6）"，与 `GET /api/players/1/prices` 第 3 点逐字一致；明细列表 10 行逐点带 时间/价格/reason |
+
+## TC-307 刷新持久化（第 4 天补）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `16-tc307-refresh-persist.png` | 深链 `/players/1` 直接打开后 F5 刷新全页 | 余额 / 价格历史（10 点）/ AI 卡 / 持仓提示全部由后端重建，无丢数据、控制台零报错 |
+
+## 代码质量扫描报告（第 4 天补）
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `17-code-quality-scan.png` | 代码质量报告截图（实际命令输出渲染） | `pytest` 120 passed；`ruff check --statistics .` 第 3 次扫描 72 项（D 负责文件 0）；CI 三门槛全绿；含重构前后对比 |
+
+## 线上验收（第 5 天，Render）
+
+| 文件 | 内容 | 说明 |
+| --- | --- | --- |
+| `online/online-account-5000.png` | `GET /api/account` | 线上余额 5000.00 / 总资产 5000.00 |
+| `online/online-positions-empty.png` | `GET /api/positions` | 交易测试后清仓为空 |
+| `online/online-trades-before-tc403.png` | `GET /api/trades` | **TC-403 之前的历史状态（空）**，仅作对照，不作为验收证据；当前线上为 3 条流水（见 test_report TC-404） |
+| `online/online-prices-11points.png` | `GET /api/players/1/prices` | 11 个点、升序、末点 108.75 = current_price、reason 含「本轮得分 + S」 |
+
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。

@@ -140,10 +140,10 @@
 
 | # | 步骤 | 命令 / 要点 | 状态 |
 | --- | --- | --- | --- |
-| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**（必须与后端同区，才能用 Internal URL）；Plan = Free；建好复制 **Internal Database URL** | ⬜ 待控制台（需账号） |
-| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ⬜ 待控制台 |
-| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS` = 先留空后在 §3.5 回填、`LLM_API_KEY` = 没有就留空（自动走 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ⬜ 待控制台 |
-| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | 🟡 命令已就绪，干净库实测通过（见下）；线上那一次要等 1–3 完成 |
+| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**；Plan = Free；建好复制 **Internal Database URL** | ✅ 已建（PG 18，Service ID `dpg-dbe8nvrjlhs73ervmu0-a`，**2026-11-23 到期**） |
+| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ✅ 已导入（两服务均 "Blueprint managed"，分支 `develop`，Live） |
+| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS`、`LLM_API_KEY`（留空 → 自动 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ✅ 已生效（前端能取到数据 = CORS 与 `VITE_API_BASE_URL` 都对；线上无密钥时 `/api/analysis` 返回 `rule_fallback`） |
+| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | ✅ 已灌（线上 `/api/players/1/prices` = **11 点**，8 人价格与本地 `--rounds 9` 逐条一致；见 §6 / `test_report.md` §6） |
 
 **第 4 步的配方在干净库上的实测（2026-10-25，B 本机）**
 
@@ -225,7 +225,9 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 - [ ] D：注册 Render、建 Postgres、建两个服务、填环境变量
 - [ ] D：把 `DATABASE_URL` 设为 **Internal Database URL**
-- [ ] B：实现 `scripts/seed_db.py`，然后用 **External Database URL** 从本地灌种子数据（3.6 节）
+- [x] B：`scripts/seed_db.py` 与一键灌数脚本 `scripts/bootstrap_demo_data.py` 均已实现并在干净库验证（每人 ≥10 点，见 §3.9）
+- [ ] B：等 1–2 完成拿到 **External Database URL** 后，从本地跑一次 `bootstrap_demo_data.py` 灌线上库（3.6 节）
+- [ ] B：线上跑一次 `python scripts/smoke_test_api.py --base https://<后端>.onrender.com`（第 5 天线上验收的第 4/6 项证据）
 - [ ] 全员：第 5 天按第 5 节验收清单逐条打勾
 
 **风险与兜底**：
@@ -249,36 +251,42 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 | 代码侧铺垫 | ✅ 已完成（驱动、URL 归一化、连接探活、误用 SQLite 告警） |
 | `render.yaml` | ✅ 已改为 `DATABASE_URL` 由控制台填写（`sync: false`） |
 | Render 账号 / 服务 | ⬜ 未创建（D 本人操作） |
-| 种子数据落库 | ⬜ 待 B 实现 `scripts/seed_db.py` |
+| 种子数据落库 | ✅ 脚本就绪：`scripts/bootstrap_demo_data.py`（种子 + 9 轮价格；线上用 External URL 执行） |
 | 实测回填 | ⬜ 第 5 天部署后填：冷启动秒数、重启后数据是否仍在 |
 
 > 提醒：免费实例休眠（15 分钟无流量，冷启动约 1 分钟）→ 演示前 10–15 分钟预热，见 4.4。
 
 ## 5. 线上验收清单（必须逐条打勾）
 
-- [ ] `GET https://<backend>/api/health` 返回 `{"status":"ok",...}`
-- [ ] 前端页面能打开，且不是白屏
-- [ ] 前端成功拉到 `/api/players`（浏览器 Network 无 CORS 报错）
-- [ ] 线上完成一次买入：余额减少、持仓增加、流水新增
-- [ ] 线上完成一次卖出：余额增加、持仓减少
-- [ ] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
-- [ ] 后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告（有则说明 `DATABASE_URL` 没生效）
-- [ ] Postgres 控制台能看到 `players` / `trades` 等表（表由启动时 `init_db()` 自动创建）
-- [ ] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
-- [ ] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
+- [x] `GET https://<backend>/api/health` 返回 `{"status":"ok",...}`
+- [x] 前端页面能打开，且不是白屏
+- [x] 前端成功拉到 `/api/players`（浏览器 Network 无 CORS 报错）
+- [x] 线上完成一次买入：余额减少、持仓增加、流水新增
+- [x] 线上完成一次卖出：余额增加、持仓减少
+- [x] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
+- [ ] 后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告（有则说明 `DATABASE_URL` 没生效；数据已持久化可反证，截图待补）
+- [ ] Postgres 控制台能看到 `players` / `trades` 等表（表由启动时 `init_db()` 自动创建；控制台截图待补）
+- [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
+- [x] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
 - [ ] **演示前预热**：提前 10–15 分钟访问一次 `/api/health`（免费实例会休眠，冷启动约 1 分钟，见 4.4）
-- [ ] 记录访问地址与已知问题（见下）
+- [x] 记录访问地址与已知问题（见下）
+
+> 勾选依据：`test_report.md` §6（TC-401/402/403/404/406）；未勾 3 项为“日志/控制台截图待补”与“演示当天预热”，不影响 M5 达成。
 
 ## 6. 访问地址与已知问题
 
 | 项 | 内容 |
 | --- | --- |
-| 前端地址 | ______ |
-| 后端地址 | ______ |
-| Swagger 文档 | ______/docs |
-| 部署日期 | ______ |
-| 已知问题 1 | ______ |
-| 已知问题 2 | ______ |
+| 前端地址 | https://playerstock-frontend-mdlk.onrender.com （Static Site，`develop`，已重新部署至最新提交，Live） |
+| 后端地址 | https://playerstock-backend-mdlk.onrender.com （Web Service，Python 3 / Free，`develop`，Live） |
+| Swagger 文档 | https://playerstock-backend-mdlk.onrender.com/docs |
+| 数据库 | Render **PostgreSQL 18**，服务名 `playerstock-db`（Service ID `dpg-dbe8nvrjlhs73ervmu0-a`） |
+| 部署日期 | 2026-10-25 首次上线（`render.yaml` Blueprint 创建三服务）；同日 **Manual Deploy 重新部署前后端**，与 `develop` 对齐 |
+| 已知问题 1 | **数据库 2026-11-23 到期**（免费库到期即删除）。答辩/验收在此之前完成；若之后还要访问，需在到期前升级付费或迁到 Neon（只改 `DATABASE_URL`） |
+| 已知问题 2 | 免费实例会休眠，冷启动约 1 分钟 → **演示前 10–15 分钟预热 `/api/health`**（见 §4.4） |
+| 已知问题 3 | CORS 目前是 `access-control-allow-origin: *`（提交 `9abacf9`，重新部署后已实测生效），演示可接受；若要收紧，把 `CORS_ORIGINS` 设为前端域名并把中间件改回按白名单 |
+| 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
+| 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
 
 ## 7. 常见故障排查
 
@@ -299,10 +307,11 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 | --- | --- |
 | 新版本后端启动失败 | Render → 该服务 → Deploys → 选上一个成功版本 → Redeploy |
 | 前端构建失败 | 同上 |
-| 数据库被改坏 | 重新 `python scripts/seed_db.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
+| 数据库被改坏 | 重新 `python scripts/bootstrap_demo_data.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
 
 ## 9. TODO
 
 - [ ] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
 - [ ] D 第 5 天：完成第 5 节全部打勾，填第 6 节
+- [ ] **B/D 上线前**：把 `app/main.py` 的临时提交 `allow_origins=["*"]`（`9abacf9`）改回 `settings.cors_origin_list`，Render 配 `CORS_ORIGINS` 为前端公网地址（合规与安全要求）
 - [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 `docs/acceptance/test_report.md`

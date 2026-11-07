@@ -136,7 +136,7 @@ input {
   color: var(--muted);
 }
 .suspended-hint {
-  color: #b26a00;
+  color: var(--warn);
 }
 .invalid-hint {
   color: var(--down);
