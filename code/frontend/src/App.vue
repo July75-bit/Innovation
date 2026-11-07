@@ -4,13 +4,21 @@
  * 余额始终从后端 GET /api/account 拉取（交易后由各页面触发 refreshAccount）。
  * 连接徽标走 GET /api/health（day1 验收项：页面显示"连接成功：<service>"）。
  */
-import { computed, onMounted } from 'vue'
-import { RouterLink, RouterView } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
 
 const { account } = useAccount()
+
+/** A4 响应式：≤720px 时导航收进汉堡按钮，路由切换后自动收起 */
+const navOpen = ref(false)
+const route = useRoute()
+watch(
+  () => route.path,
+  () => (navOpen.value = false),
+)
 
 const { service: backend } = useBackendHealth()
 
@@ -34,7 +42,7 @@ onMounted(() => {
   <header class="nav">
     <div class="nav-inner">
       <RouterLink to="/" class="brand">PlayerStock <span class="sub">虚拟选手股</span></RouterLink>
-      <nav>
+      <nav :class="{ open: navOpen }">
         <RouterLink to="/">市场</RouterLink>
         <RouterLink to="/positions">持仓</RouterLink>
         <RouterLink to="/trades">交易记录</RouterLink>
@@ -45,6 +53,15 @@ onMounted(() => {
       <div class="balance" v-if="account">
         余额 <strong>{{ money(account.balance) }}</strong>
       </div>
+      <button
+        class="menu-toggle"
+        type="button"
+        :aria-expanded="navOpen"
+        aria-label="折叠导航菜单"
+        @click="navOpen = !navOpen"
+      >
+        {{ navOpen ? '关闭菜单' : '菜单' }}
+      </button>
     </div>
   </header>
 
@@ -145,6 +162,38 @@ nav a.router-link-active {
   font-size: 12px;
   color: var(--muted);
   border-top: 1px solid var(--border);
+}
+
+/* ===== A4 响应式样式（≤720px）：导航折叠、徽标换行 ===== */
+.menu-toggle {
+  display: none;
+}
+@media (max-width: 720px) {
+  .nav-inner {
+    padding: 10px 14px;
+    gap: 8px 12px;
+  }
+  nav {
+    order: 5;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 2px;
+    display: none;
+  }
+  nav.open {
+    display: flex;
+  }
+  .menu-toggle {
+    display: inline-block;
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
 }
 
 /* ===== CS2 氛围背景层：雷达网格 + 氛围光 + 警示斜纹 ===== */

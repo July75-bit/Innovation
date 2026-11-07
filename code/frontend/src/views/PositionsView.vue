@@ -83,14 +83,14 @@ onMounted(load)
       </thead>
       <tbody>
         <tr v-for="p in positions" :key="p.player_id">
-          <td>{{ p.name }}</td>
-          <td class="num">{{ p.quantity }}</td>
-          <td class="num">{{ money(p.avg_cost) }}</td>
-          <td class="num">{{ money(p.current_price) }}</td>
-          <td class="num">{{ money(p.market_value) }}</td>
-          <td :class="['num', trendClass(p.profit)]">{{ money(p.profit) }}</td>
-          <td :class="['num', trendClass(p.profit_pct)]">{{ pct(p.profit_pct) }}</td>
-          <td><RouterLink :to="`/players/${p.player_id}`">交易</RouterLink></td>
+          <td data-label="选手">{{ p.name }}</td>
+          <td data-label="持仓" class="num">{{ p.quantity }}</td>
+          <td data-label="买入均价" class="num">{{ money(p.avg_cost) }}</td>
+          <td data-label="现价" class="num">{{ money(p.current_price) }}</td>
+          <td data-label="市值" class="num">{{ money(p.market_value) }}</td>
+          <td data-label="盈亏" :class="['num', trendClass(p.profit)]">{{ money(p.profit) }}</td>
+          <td data-label="盈亏率" :class="['num', trendClass(p.profit_pct)]">{{ pct(p.profit_pct) }}</td>
+          <td data-label="操作"><RouterLink :to="`/players/${p.player_id}`">交易</RouterLink></td>
         </tr>
       </tbody>
     </table>
@@ -171,5 +171,56 @@ th {
 }
 .flat {
   color: var(--muted);
+}
+
+/* A4 响应式（≤720px）：表格转卡片，杜绝横向滚动 */
+@media (max-width: 720px) {
+  table {
+    display: block;
+    background: transparent;
+    border-radius: 0;
+    margin-top: 12px;
+  }
+  thead {
+    display: none;
+  }
+  tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  td {
+    border: none;
+    padding: 3px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+    font-size: 13px;
+  }
+  td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  td:first-child {
+    grid-column: 1 / -1;
+    font-weight: 700;
+    font-size: 15px;
+    padding-bottom: 6px;
+  }
+  .num {
+    text-align: right;
+  }
 }
 </style>
