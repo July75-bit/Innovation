@@ -175,7 +175,7 @@ flowchart LR
 | 数据库 | 本地/CI 用 SQLite，线上用 Render Postgres | 纯 SQLite、纯 MySQL | SQLite 零运维、测试快；免费实例无持久盘、重启会丢数据，线上必须 Postgres（部署方案 B）；SQLAlchemy 一套模型双环境复用（见 `deployment.md` §3） |
 | 智能体编排 | 单智能体 | LangGraph 多智能体 DAG | 时间不够，单智能体已能体现"智能体肌肉" |
 | 真实赛事数据 | 模拟数据 + 适配器接口 | 直接接 SportScore | 接口可用性未知，模拟数据保证演示稳定 |
-| 鉴权 | 单演示账户 | JWT + 注册登录 | 不是课程考察重点 |
+| 鉴权 | 演示账户 + **私人账号（PBKDF2-HMAC-SHA256 + 不透明令牌）** | JWT / OAuth 第三方登录 | 只用标准库就能做到「口令加盐散列 + 可撤销令牌」，引 JWT 库反而多一个依赖与过期时钟坑；第三方登录与课程目标无关 |
 | 价格归因（score/S） | 写进 `price_history.reason`：`S=…` + 本轮得分（方案 A，2026-10-24；现由 C 在 `update_price` 生成「本轮得分 76.6，S=-1.00」，B 只透传） | 给 `price_history` 加 `score` 列 / 新建 `matches` 表（方案 B） | 6 天课程优先"可解释、可复现"：reason 文本直接服务详情页、AI 上下文与答辩，且**不改表、不改契约**；方案 B 要走契约 §6 变更流程 + 第 5 天 Postgres 迁移，风险高。精确复现靠 `simulate_match.py` 固定 seed 与 reason 里的得分对齐；结构化统计列入课程后 backlog（对应验收 `TC-110`） |
 
 ## 6. 部署拓扑

@@ -206,6 +206,10 @@ python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率�
 | 健康检查 | `GET /api/health` | 全员 |
 | 查询市场选手 | `GET /api/players` | A + B |
 | 查询单个选手 | `GET /api/players/{id}` | A + B |
+| 注册私人账号 | `POST /api/auth/register` | A + B |
+| 登录（签发令牌） | `POST /api/auth/login` | A + B |
+| 当前身份 | `GET /api/auth/me` | A + B |
+| 退出 / 删除账号 | `POST /api/auth/logout` · `DELETE /api/auth/account` | A + B |
 | 查询账户 | `GET /api/account` | A + B |
 | 买入 | `POST /api/trades/buy` | A + B |
 | 卖出 | `POST /api/trades/sell` | A + B |
