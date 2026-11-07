@@ -14,7 +14,23 @@
 | 4 | 准备一辆"干净账户"（流水为空） | 演示更有说服力；若脏了：外部 URL 跑 `bootstrap_demo_data.py --reset` |
 | 5 | 备用：屏录制好的 2 分钟视频 | 断网兜底 |
 
-> 当前线上账户已有 3 条历史流水（TC-403 验收留下），**如需从 0 开始**，按上表第 4 项重置。
+> 当前线上账户：**余额 4149.20、持仓 m0NESY ×10、流水 8 条**（7.2 复验时 A 走查买入的）。
+> 若不希望演示里出现历史持仓/流水，**上台前 10 分钟**用外部 URL 跑一次
+> `python scripts/bootstrap_demo_data.py --reset` 回到「余额 5000.00、0 持仓、0 流水、每人 11 点」的干净态；
+> 重置后要重新买才有持仓，别在演示前 3 分钟内做。
+
+## 0.1 值守流程（B 负责，答辩当天）
+
+| 时刻 | 谁 | 做什么 | 判断标准 |
+| --- | --- | --- | --- |
+| T−15 分钟 | B | `python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com --min-points 10` | 退出码 0（会打印冷启动耗时，实测 ~49s；顺带核对 7 名可交易选手 ≥10 点） |
+| T−10 分钟 | B | 浏览器打开一次前端首页 | 8 张卡都在、顶部显示「连接成功」、余额数字正确 |
+| T−5 分钟 | B | 再打一次 `/api/health` 保持实例醒着 | 200 |
+| 演示中 | B | 盯着浏览器 Network 面板（不是自己操作） | 任一 `/api/*` 出现 5xx 或超时 → 立刻给 D 打手势，走「备用路径」（§2） |
+| 出故障 | B | Render → `playerstock-backend-mdlk` → Manual Deploy → Redeploy（**不要**新建服务） | 状态变 Live 后 `/api/health` 200；回滚路径已演练，见 `deployment.md` §8.1 |
+| 收尾 | B | 记录是否重启过、耗时多少 | 写进 `docs/retrospection/daily_summary.md` |
+
+> 三条铁律：① **演示期间不碰数据库**（不 reset、不灌数）；② 只 Redeploy 不重建服务（重建会换域名）；③ 任何操作先截图再动手，出问题才知道从哪恢复。
 
 ## 1. 脚本（逐秒对齐）
 
