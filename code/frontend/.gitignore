@@ -37,3 +37,6 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# day5：生产构建配置（只含线上后端公网地址，无密钥），需要入库供队友/Render 复现
+!.env.production
