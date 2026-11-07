@@ -35,6 +35,10 @@ DEMO_POSITIONS: dict[int, dict[str, float]] = {
 }
 DEMO_POSITION_DEFAULT = {"quantity": 0.0, "avg_cost": 0.0}
 
+# 只把最近这么多个价格点喂给模型：线上单名选手已有 78 条历史，
+# 全量塞进 prompt 既浪费 token，也让 `recent_*` 名不副实。
+HISTORY_LIMIT = 10
+
 
 # ---------------------------------------------------------------- 工具函数
 
@@ -58,6 +62,11 @@ def _fmt_ts(value: Any) -> str:
     return str(value)
 
 
+def _as_rating(value: Any) -> int:
+    """评分缺失才兜底 50；`0` 是合法评分，不能被 `or` 吞掉。"""
+    return 50 if value is None else int(value)
+
+
 # ---------------------------------------------------------------- mock 路径
 
 def load_seed_players() -> list[dict[str, Any]]:
@@ -66,10 +75,11 @@ def load_seed_players() -> list[dict[str, Any]]:
 
 
 def _seed_player(player_id: int) -> dict[str, Any]:
-    for player in load_seed_players():
+    players = load_seed_players()
+    for player in players:
         if player.get("player_id") == player_id:
             return player
-    raise LookupError(f"选手 {player_id} 不存在（seed 数据共 {len(load_seed_players())} 名）")
+    raise LookupError(f"选手 {player_id} 不存在（seed 数据共 {len(players)} 名）")
 
 
 def mock_context(player_id: int) -> dict[str, Any]:
@@ -89,7 +99,7 @@ def mock_context(player_id: int) -> dict[str, Any]:
         "role": player.get("role", ""),
         "current_price": current,
         "change_pct": round(pct_change(prev, current), 2),
-        "rating": player.get("rating", 50),
+        "rating": _as_rating(player.get("rating")),
         "recent_prices": [
             {"ts": "初始价格", "price": initial},
             {"ts": "上一价格", "price": prev},
@@ -110,12 +120,18 @@ WHERE player_id = :player_id
 """
 
 _SQL_HISTORY = """
-SELECT price, reason, ts
-FROM price_history
-WHERE player_id = :player_id
+SELECT price, reason, ts FROM (
+    SELECT price, reason, ts
+    FROM price_history
+    WHERE player_id = :player_id
+    ORDER BY ts DESC
+    LIMIT :limit
+)
 ORDER BY ts
 """
 
+# 说明：positions 表有 `user_id`，但本项目是**单一共享演示账户**（`users.nickname='demo'`，
+# 见 `app/api/deps.py`），故这里只按 player_id 取。将来接多用户时必须同时按 user_id 过滤。
 _SQL_POSITION = """
 SELECT quantity, avg_cost
 FROM positions
@@ -131,7 +147,11 @@ def _read_context(db: Any, player_id: int) -> dict[str, Any]:
     if player is None:
         raise LookupError(f"数据库里没有选手 {player_id}")
 
-    history = db.execute(text(_SQL_HISTORY), {"player_id": player_id}).mappings().all()
+    history = (
+        db.execute(text(_SQL_HISTORY), {"player_id": player_id, "limit": HISTORY_LIMIT})
+        .mappings()
+        .all()
+    )
     position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
 
     recent_prices = [
@@ -152,8 +172,10 @@ def _read_context(db: Any, player_id: int) -> dict[str, Any]:
         "team": player.get("team") or "",
         "role": player.get("role") or "",
         "current_price": float(player["current_price"]),
-        "change_pct": round(pct_change(float(player["prev_price"]), float(player["current_price"])), 2),
-        "rating": player.get("rating") or 50,
+        "change_pct": round(
+            pct_change(float(player["prev_price"]), float(player["current_price"])), 2
+        ),
+        "rating": _as_rating(player.get("rating")),
         "recent_prices": recent_prices,
         "recent_reasons": reasons[-5:],
         "position": {
@@ -194,7 +216,12 @@ def build_player_context(
         try:
             return db_context(player_id, db=db)
         except Exception as exc:  # noqa: BLE001 —— 兜底链路：查库失败必须回落 mock，不能把 AI 故障升级成 5xx
-            logger.warning("AI 上下文查库失败，回落 seed 数据：player_id=%s %s: %s", player_id, type(exc).__name__, exc)
+            logger.warning(
+                "AI 上下文查库失败，回落 seed 数据：player_id=%s %s: %s",
+                player_id,
+                type(exc).__name__,
+                exc,
+            )
             context = mock_context(player_id)
             context["context_fallback_reason"] = f"{type(exc).__name__}: {exc}"
             return context
