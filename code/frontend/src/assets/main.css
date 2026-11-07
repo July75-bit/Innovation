@@ -41,19 +41,14 @@ body {
 a {
   color: inherit;
 }
-
-/* ---------- 键盘可达性（无障碍最小集）----------
- * 1) 只用键盘时给出清晰焦点框（鼠标点击不显示，避免视觉噪音）
- * 2) SVG 数据点等非原生可聚焦元素也统一走这套样式
- * 验收：Tab 键可在市场卡片、折线图数据点、买卖按钮之间移动并看清位置。
- */
+/* A6 无障碍：键盘操作时显示红色焦点环（黑红主题点缀色 + 队友圆角细节） */
 :focus-visible {
-  outline: 2px solid var(--text);
+  outline: 2px solid var(--up);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* 尊重"减少动效"偏好：关闭过渡与动画 */
+/* 尊重"减少动效"偏好：关闭过渡与动画（队友无障碍补充） */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
