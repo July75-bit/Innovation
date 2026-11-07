@@ -29,7 +29,16 @@
 | 输入校验 | Pydantic schema + `TradePanel` 前端预校验 | 非法数量 422、余额不足 400、暂停交易 400，均有测试 |
 | 降级链路 | `ai/fallback.py` | 无密钥/超时/脏输出 → 同结构 6 字段兜底 |
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（137 条中约 40 条是异常路径）。
+**一条真实降级日志长什么样**（2026-11-07 本机实跑：注入一个超时的假 client，不触网）：
+
+```
+WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model did not respond in 20s
+→ 接口返回 200，source=rule_fallback，action=HOLD
+```
+
+这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**，线上能查到为什么没用上模型；③ 故障**没有升级成 5xx**，交易与行情完全不受影响。复跑方式见 §5 最后一条。
+
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（176 条中约 50 条是异常/边界路径）。
 
 ---
 
@@ -64,43 +73,52 @@
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **137 passed / 0 skipped**（CI run #80；截图 17 摄于 134 条的时点，此后又补了 3 条） |
+| pytest | 单元+集成测试 | `pyproject.toml` | **176 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 176 条） |
 | coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（956/17，≥60% 达标） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
 | vitest | 前端单测 | 3 个 spec（format / PriceChart / router） | 本地绿 |
-| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #80 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库卫生（误提交拦截）** |
+| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #95 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库卫生（误提交拦截）** |
 | VS Code 扩展 | 编码即时反馈 | `.vscode/settings.json`（Pylance basic + Ruff 保存自动修） | 全员共用 |
 
 ---
 
 ## 3. 3.7 代码统计
 
-| 语言 | 文件数 | 行数 |
-| --- | ---: | ---: |
-| Python（.py） | 70 | 8342 |
-| Vue（.vue） | 10 | 1737 |
-| TypeScript（.ts） | 12 | 852 |
-| Markdown（.md，文档交付物） | 41 | 6489 |
-| **合计** | **133** | **17420** |
+> 统计口径：`git ls-files` 跟踪的文件（排除 `node_modules/`、`package-lock.json`、构建产物），按语言聚合文件数与行数；与 VS Code Counter 的"按语言统计"一致。复跑脚本见 §5。
 
-- **模块数：17**（`code/backend/app`、`code/core_engine`、`code/backend/ai`、`code/frontend/src`、`scripts`、`tests` 及子包）。
-- 统计口径与 VS Code Counter 一致（按语言聚合文件数/行数，排除 `node_modules`）。
-- 截图：`evidence/19-complexity-stats.png` 第 2 段。
+| 类别 | 语言 | 文件数 | 行数 |
+| --- | --- | ---: | ---: |
+| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 78 | 9917 |
+| | Vue（单文件组件） | 13 | 3486 |
+| | TypeScript（api / router / composables / 测试） | 19 | 1641 |
+| | CSS | 1 | 108 |
+| | HTML（原型 591 + 入口 13） | 2 | 604 |
+| **文档** | Markdown（README + 51 份 docs 交付文档） | 51 | 8027 |
+| **配置与数据** | JSON（种子数据、package、tsconfig 等） | 12 | 729 |
+| | YAML（CI、render 蓝图） | 2 | 252 |
+| | **合计（全部跟踪文件）** | **178** | **24764** |
+
+- **代码行小计（Python + Vue + TS + CSS + HTML）= 15756 行**；文档与配置单列，不计入代码。
+- **模块数：18** —— 后端 Python 包 7（`ai`、`app`、`app/api`、`app/core`、`app/models`、`app/schemas`、`core_engine`）+ `scripts` + 测试 2（`tests/unit`、`tests/integration`）+ 前端 `src` 目录 8（`api`/`assets`/`components`/`composables`/`mock`/`router`/`utils`/`views`）。
+- 相比第 5 天的统计（133 文件 / 17420 行），增长主要来自 A 的登录注册页（`AuthView.vue` 737 行、`useAuth.ts` 315 行及其单测）与 D 的汇报材料。
+- 截图：`evidence/19-complexity-stats.png` 第 2 段（该图摄于第 5 天，行数为当时快照）。
 
 ### 3.1 AI Vibe coding / 团队自写比例（估算，如实标注）
 
-| 部分 | AI 参与度 | 说明 |
-| --- | --- | --- |
-| 前端首版（`9782dc7`） | **AI 生成初稿 → A 逐行复核修改** | A 的提交说明即"由 AI 全权出力打造初版"，后续 6 次提交为人工修正 |
-| 交互原型 `prototype/index.html` | AI 生成草稿 → D 校验 18 项交互 | 仅评审用，不进构建 |
-| 后端核心（交易/落库/AI） | **人工编写**，AI 仅辅助排错 | 每条逻辑有测试背书（134 条） |
-| 文档 | AI 起草 → 各负责人补真实数据 | "只填真实跑出来的结果"是填表铁律 |
+**算法**（人人可复核）：把"由 AI 起草的代码"除以"代码总行"，分子只算前端与原型，分母不含文档与配置。
 
-> 估算：**AI 首稿约占代码行数的 35–40%**（前端 + 原型），但**100% 的提交代码经负责人逐行阅读并本地运行验证**（见 `compliance.md` §3，已声明"不存在直接复制未理解代码"）。
+| 部分 | 行数 | AI 参与度 |
+| --- | ---: | --- |
+| 前端 Vue + TS + CSS | 5235 | **AI 出初稿**，A 逐行复核并做 6 次人工修正 |
+| 交互原型 `docs/software/prototype/index.html` | 591 | **AI 草稿**，D 校验 18 项交互后定稿 |
+| 后端 + 定价引擎 + 脚本 + 测试（Python） | 9917 | **人工编写**，AI 仅辅助排错与补测试 |
+| **合计（代码行）** | **15756** | — |
 
----
+> **结论：AI 首稿约 5826 行 / 15756 行 ≈ 37%**；其余 63% 人工编写。
+> **但 100% 的提交代码经负责人逐行阅读、本地运行验证并配测试背书**（见 `compliance.md` §3 的声明："不存在直接复制未理解代码"）。
+> 比例本身不是评分点，"**用了 AI 但每一行都过手**"才是——这也是我们能在被追问时现场改代码、讲清每处设计的前提。
 
 ## 4. 代码评审（流程与记录）
 
@@ -136,6 +154,12 @@ pylint code/core_engine code/backend/app/core        # 9.74/10
 complexipy code/core_engine                          # 认知复杂度
 coverage run --source=app,core_engine -m pytest && coverage report -m # 98%
 cd code/frontend; npm ci; npm run build; npm run lint; npm run test:unit
+
+# 代码统计（§3 那张表就是它跑出来的）
+git ls-files | Select-String -Pattern '\.py$|\.vue$|\.ts$|\.md$|\.css$|\.html$|\.json$|\.ya?ml$'
+
+# 真实降级日志（§1.1 那条 WARNING，注入超时假 client，不触网）
+python -c "import logging; logging.basicConfig(level=logging.INFO); from ai.llm_agent import analyze; analyze({'player_id':1,'name':'ZywOo','current_price':126.0,'change_pct':5.0,'rating':88,'recent_prices':[{'price':120.0},{'price':126.0}],'position':{'quantity':10,'avg_cost':120.0}}, chat=lambda p: (_ for _ in ()).throw(TimeoutError('model did not respond in 20s')))"
 ```
 
 CI 结果：<https://github.com/July75-bit/Innovation/actions>（最新 run #95 三 job 绿）。
