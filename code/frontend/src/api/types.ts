@@ -1,4 +1,15 @@
 /**
+ * 白话导读：后端返回数据的"形状说明书"（TypeScript 类型定义），只有类型、没有一行运行代码。
+ *
+ * TypeScript 编译后这些 interface 会被完全删掉，它的作用是：
+ *   - 写代码时编辑器能提示"PlayerSummary 里有 current_price 这个字段"；
+ *   - 字段名写错 / 少写，保存时就报错，而不是运行时 undefined 白屏。
+ *
+ * 注意字段全是下划线（snake_case），和后端 JSON 一字不差——故意的，方便两边对照排查。
+ * 想知道某个字段是什么业务含义 → 看接口契约 docs/software/api_contract.md。
+ */
+
+/**
  * 接口契约类型（docs/software/api_contract.md §4）
  *
  * 铁律：
@@ -118,4 +129,53 @@ export interface ApiErrorBody {
   message: string
   /** 机器码，如 INSUFFICIENT_BALANCE */
   code: string
+}
+
+/* ---------------- 第 7 轮：私人账号（契约 §4.11~§4.14） ---------------- */
+
+/** 账户身份：private = 注册出来的私人账户，public_demo = 未登录时共用的演示账户 */
+export type AccountType = 'private' | 'public_demo'
+
+/** 注册 / 登录响应里的账户信息（后端不回任何口令相关字段） */
+export interface AuthUser {
+  user_id: number
+  nickname: string
+  balance: number
+  initial_balance: number
+  created_at: string
+  account_type: AccountType
+}
+
+/** §4.11 / §4.12：注册与登录成功都直接给令牌，前端不用再发一次登录 */
+export interface AuthResponse {
+  /** 原文只在这一次响应里出现，库里只存它的 SHA-256 */
+  token: string
+  expires_at: string
+  user: AuthUser
+}
+
+/** §4.13：当前身份。authenticated=false 表示这一请求没带令牌，用的是公共演示账户 */
+export interface MeResponse {
+  authenticated: boolean
+  user: AuthUser
+}
+
+/** §4.14：退出。revoked=false 表示本来就没带令牌（幂等成功，不是错误） */
+export interface LogoutResponse {
+  success: boolean
+  message: string
+  revoked: boolean
+}
+
+/**
+ * §4.16：删除账号的结果。
+ * 三个 deleted_* 是后端回报的真实行数——"级联删干净了"这件事要能在响应里看见，
+ * 不能只靠一句 message 承诺（界面用它拼出"已删除 N 条持仓 / M 条流水"）。
+ */
+export interface DeleteAccountResponse {
+  success: boolean
+  message: string
+  deleted_positions: number
+  deleted_trades: number
+  deleted_tokens: number
 }

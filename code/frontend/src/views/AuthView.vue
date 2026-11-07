@@ -1,25 +1,32 @@
 <script setup lang="ts">
 /**
+ * 白话导读：注册 / 登录页（/auth），整页 CS2 背景，表单样式最重的一页，但逻辑很薄。
+ *
+ * 它自己不发任何请求，全部动作交给 composables/useAuth.ts（register/login/访客进入）。
+ * 本页负责：登录/注册两个标签页切换、失焦逐字段校验、密码强度条、提交后跳去哪。
+ *
+ * 登录后跳哪：路由守卫把原本要去的地址放进 ?redirect=，这里读出来再跳过去；
+ * 只接受以单个 / 开头的站内路径（防"开放重定向"，避免被利用跳转到外站）。
+ */
+/**
  * 注册 / 登录页（界面层）。
  *
  * 视觉：整页背景用处理过的 CS2 主视觉（压暗 + 轻微模糊 + 暗角，见 assets/auth-bg*.jpg），
  * 上面再叠一层渐变遮罩，保证表单文字在任何屏幕上都有足够对比度。
  * 窄屏（≤900px）换竖版裁切图，避免人物被横向挤扁、表单压成一条。
  *
- * 行为：只调用 src/composables/useAuth.ts 的本地账号态，**不发任何网络请求**，
- * 所以本地打开不需要后端、也不需要 CORS。
+ * 行为：表单只调用 src/composables/useAuth.ts，界面不碰 fetch；
+ * 第 7 轮之后那层已经改成真鉴权（令牌由后端签发），所以这一页现在**会**打后端。
+ * 后端没起时提交会直接显示"无法连接后端服务"，不会假装登录成功。
  *
  * 注册字段按要求收敛到最小：用户名 + 密码（+ 确认密码）。
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
 import bgWide from '../assets/auth-bg.jpg'
 import bgNarrow from '../assets/auth-bg-narrow.jpg'
 import {
-  DEMO_PASSWORD,
-  DEMO_USERNAME,
-  ensureDemoUser,
   enterAsGuest,
   login,
   passwordStrength,
@@ -63,7 +70,17 @@ const regErrors = reactive<Record<string, string | null>>({
   confirm: null,
 })
 
-const banner = reactive({ kind: 'idle' as 'idle' | 'error' | 'ok', text: '' })
+/**
+ * 删除账号后 App.vue 会带 ?deleted=1 跳回这里。
+ * 初始就把提示摆出来：用户刚做完一个不可逆操作，最不该看到的是"页面什么都没变"。
+ */
+const banner = reactive<{ kind: 'idle' | 'error' | 'ok'; text: string }>({
+  kind: route.query.deleted === '1' ? 'ok' : 'idle',
+  text:
+    route.query.deleted === '1'
+      ? '账号已删除，余额、持仓与流水已一并清除。可以重新注册一个，或用公共演示账户逛逛。'
+      : '',
+})
 const pending = ref(false)
 const showPassword = ref(false)
 
@@ -124,19 +141,6 @@ function asGuest(): void {
   enterAsGuest()
   void router.replace(redirectTo.value)
 }
-
-/** 一键填演示账号（demo / demo1234），答辩现场不用手敲 */
-function fillDemo(): void {
-  tab.value = 'login'
-  loginForm.username = DEMO_USERNAME
-  loginForm.password = DEMO_PASSWORD
-  loginErrors.username = null
-  loginErrors.password = null
-}
-
-onMounted(() => {
-  void ensureDemoUser()
-})
 </script>
 
 <template>
@@ -166,7 +170,7 @@ onMounted(() => {
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
-            账号只存在你这台电脑的浏览器里
+            注册即隔离账户：你的持仓与别人的互不可见
           </li>
         </ul>
 
@@ -201,8 +205,8 @@ onMounted(() => {
 
         <h2 id="panel-title">{{ tab === 'login' ? '欢迎回来' : '创建本地账号' }}</h2>
         <p class="hint">
-          本地演示模式：账号写在浏览器 localStorage，
-          <strong>不会向后端发任何请求</strong>（也就不需要 CORS）。
+          账号由后端签发访问令牌：注册后<strong>余额、持仓、流水各自独立</strong>，
+          退出会真的撤销令牌（不是只删浏览器里的东西）。
         </p>
 
         <p
@@ -266,10 +270,10 @@ onMounted(() => {
             {{ pending ? '登录中…' : '进入市场' }}
           </button>
 
-          <div class="row">
-            <button type="button" class="link-btn" @click="fillDemo">用演示账号填充</button>
-            <button type="button" class="link-btn" @click="asGuest">先随便逛逛（访客）</button>
-          </div>
+          <p class="guest-note">
+            不想注册？<button type="button" class="link-btn" @click="asGuest">先随便逛逛</button>
+            —— 未登录时用的是公共演示账户，余额与持仓会和别的访客共享。
+          </p>
           <p class="swap">
             还没有账号？
             <button type="button" class="link-btn" @click="switchTab('register')">立即注册</button>
@@ -670,11 +674,12 @@ onMounted(() => {
   cursor: progress;
 }
 
-.row {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+.guest-note {
+  margin: 0;
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  color: var(--muted);
+  text-align: center;
 }
 .note {
   margin: 0;

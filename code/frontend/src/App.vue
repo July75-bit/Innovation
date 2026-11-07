@@ -1,5 +1,17 @@
 <script setup lang="ts">
 /**
+ * 白话导读：全站唯一的"外壳"页面——侧栏、导航、账户卡片、后端连接徽标都在这里，
+ * 中间的 <RouterView> 才是当前 URL 对应页面的出口（市场/详情/持仓/流水都渲染在那一块）。
+ *
+ * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped> 写样式（CSS）。
+ * scoped 的意思是"这里的样式只管本组件"，不会污染别的页面。
+ *
+ * 本文件里的关键逻辑：
+ *   - 挂载时(onMounted)拉一次余额 + 检测后端；
+ *   - ≤960px 时侧栏变成抽屉（CSS 媒体查询 + navOpen 控制）；
+ *   - 登录页 /auth 不套外壳，直接全屏渲染（isAuthPage）。
+ */
+/**
  * 应用外壳（界面设计层）：
  * - 桌面端 = 左侧栏（品牌 + 导航 + 账户概览 + 连接状态 + 合规）+ 右主区（内容）；
  * - ≤960px = 顶栏 + 抽屉导航（A4 响应式保留），合规声明回页面底部。
@@ -13,6 +25,7 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
+import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
 import { useAuth } from './composables/useAuth'
 
 const { account } = useAccount()
@@ -25,24 +38,35 @@ watch(
   () => (navOpen.value = false),
 )
 
-const { currentUser, logout } = useAuth()
+const { currentUser, accountLabel: accountKind, isLoggedIn, logout } = useAuth()
 const router = useRouter()
+
+/** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
+const deleteOpen = ref(false)
+
+/**
+ * 删除成功后：弹窗内部已经清掉会话，这里只负责把人送回登录页，
+ * 并用 ?deleted=1 让登录页显示一句结果说明（不带 message 进 query：
+ * 后端回报的行数已经打在控制台，URL 里塞长文本既难看又会被收藏成怪链接）。
+ */
+async function onAccountDeleted(): Promise<void> {
+  await router.push({ name: 'auth', query: { deleted: '1' } })
+}
 
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
 
-/** 本地账号只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
-const displayName = computed(() => currentUser.value?.username ?? '访客')
+/** 私人账户只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
+const displayName = computed(() => currentUser.value?.nickname ?? '访客')
 const userInitial = computed(() => displayName.value.charAt(0).toUpperCase())
-const accountKind = computed(() => (currentUser.value ? '本地账号' : '未登录浏览'))
 
 /**
- * 侧栏账号按钮：已登录 = 退出，访客 = 放弃访客态去登录。
- * 两种情况都先清会话再跳 /auth——不清的话守卫会把已"登录"的用户从 /auth 弹回市场页。
+ * 侧栏账号按钮：私人账户 = 退出（撤销服务端令牌），访客 = 放弃访客态去登录页。
+ * 两种情况都先清会话再跳 /auth——不清的话守卫会把"已登录"的用户从 /auth 弹回市场页。
  */
-function onAccountAction(): void {
-  logout()
-  void router.push({ name: 'auth' })
+async function onAccountAction(): Promise<void> {
+  await logout()
+  await router.push({ name: 'auth' })
 }
 
 const { service: backend } = useBackendHealth()
@@ -101,7 +125,7 @@ onMounted(() => {
           </RouterLink>
         </nav>
 
-        <!-- 本地账号态：注册 / 登录页写入，仅存浏览器（见 composables/useAuth.ts） -->
+        <!-- 当前身份：私人账户（令牌）/ 公共演示账户（访客）/ 未登录 -->
         <div class="user-card">
           <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
           <span class="who">
@@ -112,6 +136,11 @@ onMounted(() => {
             {{ currentUser ? '退出' : '登录' }}
           </button>
         </div>
+
+        <!-- 删除账号：只有私人账户能删，且要口令二次确认（契约 §4.16） -->
+        <button v-if="isLoggedIn" type="button" class="danger-link" @click="deleteOpen = true">
+          删除账号
+        </button>
 
         <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
         <div class="account-card" v-if="account">
@@ -173,6 +202,18 @@ onMounted(() => {
 
     <!-- 抽屉遮罩（移动端） -->
     <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+
+    <!-- 删除账号确认弹窗（Teleport 到 body，不受侧栏 / 抽屉布局影响） -->
+    <!--
+      这里故意不写 v-if="currentUser"：删除成功时 useAuth 会清会话，
+      currentUser 立刻变 null，组件会在 emit('deleted') 之前被卸载，父层就再也收不到通知
+      （实测踩过：账号删掉了但页面停在市场页）。组件自己按 open 控制渲染。
+    -->
+    <DeleteAccountDialog
+      v-model="deleteOpen"
+      :nickname="currentUser?.nickname ?? ''"
+      @deleted="onAccountDeleted"
+    />
   </template>
 </template>
 
@@ -508,6 +549,23 @@ nav {
 }
 .acct-action:hover {
   border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* 删除账号入口：刻意做成不起眼的文字链——低频高危操作，不该长得像主按钮 */
+.danger-link {
+  align-self: flex-start;
+  margin-top: calc(var(--space-2) * -1);
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-cap);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.danger-link:hover {
   color: var(--accent);
 }
 </style>

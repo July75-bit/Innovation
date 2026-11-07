@@ -18,7 +18,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import account, ai, debug, health, players, positions, prices, trades
+from app.api import account, ai, auth, debug, health, players, positions, prices, trades
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.errors import register_exception_handlers
@@ -123,5 +123,5 @@ def root() -> dict[str, str]:
 
 
 # 统一挂到 /api 前缀下，对应 docs/software/api_contract.md 里的路径
-for _module in (health, players, account, trades, positions, prices, ai, debug):
+for _module in (health, players, account, trades, positions, prices, ai, auth, debug):
     app.include_router(_module.router, prefix=settings.api_prefix)

@@ -59,6 +59,11 @@
 | 9 | GET | `/api/trades` | 交易流水 | A + B | ✅ 已实现 |
 | 10 | GET | `/api/analysis/{player_id}` | AI 分析建议 | A + B + D | ✅ 已实现（第 3 天 D 接线） |
 | 11 | POST | `/api/prices/recalc` | **赛后结算（运维接口，不对前端开放）**：写入一轮比赛后的价格 | B + C | ✅ 已实现（第 4 天 C；`tests/integration/test_prices_recalc.py` 5 条） |
+| 13 | POST | `/api/auth/register` | **注册私人账号（第 7 轮）**：成功即登录，返回访问令牌 | A + B | ✅ 已实现（`tests/unit/test_api_auth.py`） |
+| 14 | POST | `/api/auth/login` | **登录**：口令校验通过签发新令牌 | A + B | ✅ 已实现 |
+| 15 | GET | `/api/auth/me` | **当前身份**：首屏用本地令牌确认还管不管用 | A + B | ✅ 已实现 |
+| 16 | POST | `/api/auth/logout` | **退出**：撤销当前令牌（幂等） | A + B | ✅ 已实现 |
+| 17 | DELETE | `/api/auth/account` | **删除账号**：口令二次确认，级联删持仓/流水/令牌 | A + B | ✅ 已实现（`tests/unit/test_api_auth.py` + `tests/integration/test_auth_multiuser.py`） |
 | 12 | GET | `/api/debug/db` | **只读自检（验收探针，不对前端开放）**：返回数据库方言、表清单与行数 | B | ✅ 已实现（第 5 天 B；`tests/unit/test_debug_api.py` 3 条）。只回元信息、不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 可关闭（关后 404） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
@@ -317,6 +322,124 @@
 
 **响应形态注意**：本接口成功时返回**裸对象**（无 `success` 字段），失败时返回 §2 的统一错误体 `{success:false, message, code}`；前端按 HTTP 状态码分支处理。
 
+### 4.11 `POST /api/auth/register`（第 7 轮）
+
+请求：
+
+```json
+{ "username": "lan_player", "password": "cs2go1234" }
+```
+
+成功 `201`：
+
+```json
+{
+  "token": "bH_…",
+  "expires_at": "2026-12-07T08:12:31Z",
+  "user": {
+    "user_id": 2,
+    "nickname": "lan_player",
+    "balance": 5000.0,
+    "initial_balance": 5000.0,
+    "created_at": "2026-11-07T08:12:31Z",
+    "account_type": "private"
+  }
+}
+```
+
+失败码（都是 §2 的统一错误体）：
+
+| HTTP | `code` | 触发条件 | 前端处理 |
+| --- | --- | --- | --- |
+| 422 | `INVALID_INPUT` | 用户名不合法 / 口令不满足规则 | 直接展示 `message` |
+| 409 | `USERNAME_TAKEN` | 同名已存在（大小写不敏感） | 直接展示 `message` |
+| 409 | `USERNAME_RESERVED` | 用了保留名 `demo` | 直接展示 `message` |
+
+**规则两边各校验一遍**：前端 `src/composables/useAuth.ts` 先挡一道（少发一次请求），
+后端 `app/core/security.py` 是准绳（不能靠前端）。改规则必须两处一起改。
+
+### 4.12 `POST /api/auth/login`
+
+请求同 §4.11。成功 `200` 同 §4.11 响应形状（每次登录签发**新**令牌，多设备互不影响）。
+
+| HTTP | `code` | 说明 |
+| --- | --- | --- |
+| 401 | `INVALID_CREDENTIALS` | 账号不存在**与**口令错误都是这一句 `用户名或密码不正确`——接口不能用来枚举账号名 |
+| 403 | `PUBLIC_ACCOUNT` | `demo` 是公共账户，没有口令，不接受密码登录 |
+
+### 4.13 `GET /api/auth/me`
+
+带 `Authorization: Bearer <token>` 时返回该账号身份；**不带**该头时返回公共演示账户（`authenticated: false`）。
+
+```json
+{ "authenticated": true, "user": { "user_id": 2, "nickname": "lan_player", "…": "同上" } }
+```
+
+| HTTP | `code` | 前端动作 |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | 令牌过期/被撤销 → 清本地令牌，回 `/auth` |
+| 0（网络错误） | `NETWORK_ERROR` | **保留令牌**，不踢人回登录页（后端重启不该让全员掉线） |
+
+### 4.14 `POST /api/auth/logout`
+
+撤销**当前这枚**令牌（删 `auth_tokens` 行）。没带令牌也返回成功，`revoked: false`——幂等，
+前端清本地存储后重复调用不该报错。
+
+```json
+{ "success": true, "message": "已退出登录", "revoked": true }
+```
+
+### 4.16 `DELETE /api/auth/account`（删除账号）
+
+请求（**必须再输一次口令**）：
+
+```json
+{ "password": "cs2go1234" }
+```
+
+成功 `200`：
+
+```json
+{
+  "success": true,
+  "message": "账号已删除",
+  "deleted_positions": 1,
+  "deleted_trades": 1,
+  "deleted_tokens": 1
+}
+```
+
+四道闸，少一道都可能删错东西：
+
+| HTTP | `code` | 条件 |
+| --- | --- | --- |
+| 401 | `UNAUTHORIZED` | 没带 `Authorization`——那会落到公共演示账户，它不属于任何个人，不能删 |
+| 403 | `PUBLIC_ACCOUNT` | 带了令牌但账户无口令（理论上不该出现，兜底用） |
+| 401 | `INVALID_CREDENTIALS` | 口令不对，**且必须什么都没删**（测试专门守这条） |
+| 200 | — | 删除成功，响应里报告删掉的持仓 / 流水 / 令牌行数 |
+
+**为什么删号要输口令**：删的是余额、持仓、流水，不可恢复。只靠令牌就能删号，
+在"共用电脑忘了退出"这种场景下是不可接受的失败模式。
+
+**删除范围**：`positions`、`trades`、`auth_tokens` 里属于该 `user_id` 的行，然后 `users` 行本身。
+`players` / `price_history` 与公共演示账户 `demo` 的数据**一律不动**（有集成用例守着）。
+删除顺序是先子表后 `users`，不依赖 ORM 级联，也就不怕某个环境的 SQLite 没开 `PRAGMA foreign_keys`。
+
+**DELETE 带请求体**：`TestClient` 的 `.delete()` 不收 `json=`，测试里走 `client.request("DELETE", …)`；
+浏览器 `fetch` 没有这个限制，前端就是这么发的。
+
+### 4.15 身份与数据归属（本轮新增的全局约定）
+
+| 请求 | 落到哪个账户 | 说明 |
+| --- | --- | --- |
+| 带有效 `Authorization: Bearer …` | 该令牌的私人账户 | 余额 / 持仓 / 流水按 `user_id` 隔离，50 股上限**按人算** |
+| 不带 `Authorization` | 公共演示账户 `demo` | 未登录访客共用；第 1~6 轮的历史数据都留在这里，**不迁移** |
+| 带无效/过期令牌 | — | 一律 401，不静默降级成访客（否则"退出后还以为自己登录着"） |
+
+`GET /api/account` / `GET /api/positions` / `GET /api/trades` / `POST /api/trades/buy|sell`
+**响应形状一字未改**，只是背后的 `user_id` 换了来源（`app/api/deps.py:get_current_user`）。
+所以 A 的页面代码零改动，只有 `useAuth` 从"本地假账号"换成真接口。
+
 ---
 
 ## 5. 字段命名对照（防扯皮表）
@@ -334,6 +457,9 @@
 | 方向 | `side`（BUY/SELL） | `type`, `direction` |
 | 变化原因 | `reason` | `desc`, `note`, `msg` |
 | 风险等级 | `risk_level` | `risk`, `level` |
+| 账号名 | `nickname` | `username`, `user_name`, `account`（请求体入参叫 `username`，响应里的账户字段仍是 `nickname`） |
+| 访问令牌 | `token` | `accessToken`, `jwt`, `auth` |
+| 账户类型 | `account_type`（`private` / `public_demo`） | `type`, `is_private` |
 
 ## 6. 变更流程
 
