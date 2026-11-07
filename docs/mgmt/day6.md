@@ -9,7 +9,7 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 / 工作区 | `develop` = `origin/develop`，干净 |
+| 分支 / 工作区 | `develop` 领先 `origin/develop` **3 个提交**（待推：合并 + 幻灯片 + 证据），工作区干净 |
 | 测试 / CI | **137 passed / 0 skipped**；CI **run #88（`013e182`）三 job 绿**（本次合并后待 run #89 复核） |
 | 覆盖率 | 91%（839 语句 / 79 未覆盖，要求 ≥60%） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
