@@ -13,16 +13,17 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **120**（单元 107 + 集成 13） |
-| 通过 / 失败 / 跳过 | **120 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **130**（单元 117 + 集成 13） |
+| 通过 / 失败 / 跳过 | **130 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 
-> 复跑说明（2026-10-24，D 核对）：总数由 B 已合入的 **120** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对）：总数由 **130** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
-> B 的部署预检 `test_config_db_url.py`（+6）与 `test_bootstrap_demo_data.py`（+2）。
+> B 的部署预检 `test_config_db_url.py`（+6）与 `test_bootstrap_demo_data.py`（+2）、
+> 第 5 天 B 的 `test_cors_config.py`（+4，CORS 三档策略）与 `test_trade_rules_unit.py` 增至 11 条（+6，错误文案"下一步"）。
 > CI（ubuntu-latest）全绿；本机 Windows 亦全绿——原先那 1 failed + 1 error 是测试代码的编码问题
 > （BUG-03），B 已修并复现验证，见 §9。
 
@@ -32,9 +33,9 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-120 passed
+130 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-120 passed, 1 warning
+130 passed, 1 warning in 16.00s
 ```
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -43,7 +44,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | `tests/unit/test_api_players.py` | 7 | 7 | 0 | 0 | 市场/详情/价格历史/账户/持仓 |
 | `tests/unit/test_api_trades.py` | 6 | 6 | 0 | 0 | B 第 2 天新增，守交易返回契约 |
 | `tests/unit/test_trades_rule.py` | 14 | 14 | 0 | 0 | 9 条 skip 已全部转绿 |
-| `tests/unit/test_trade_rules_unit.py` | 5 | 5 | 0 | 0 | 纯规则函数 |
+| `tests/unit/test_trade_rules_unit.py` | 11 | 11 | 0 | 0 | 纯规则函数；第 5 天 +6 条守"错误文案要给下一步"（最多可买/还能买/可卖） |
 | `tests/unit/test_trades_concurrency.py` | 3 | 3 | 0 | 0 | B 第 2 天新增，并发/条件更新 |
 | `tests/unit/test_price_update.py` | 6 | 6 | 0 | 0 | B 第 3 天新增，价格落库脚本（只改 players/price_history） |
 | `tests/unit/test_update_prices_script.py` | 9 | 9 | 0 | 0 | B 第 3 天新增：`--from-json` / 跳过 suspended / 同 seed 可复现 / reason 幂等不双写 / 非法输入 |
@@ -55,6 +56,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | `tests/unit/test_api_ai.py` | 7 | 7 | 0 | 0 | `/api/analysis` 接口契约/只读/降级 |
 | `tests/unit/test_core_exceptions.py` | 7 | 7 | 0 | 0 | T4-06：卖出暂停/未知选手、缺字段 422、未知价格历史 404、卖超回滚 |
 | `tests/unit/test_config_db_url.py` | 6 | 6 | 0 | 0 | B 部署预检新增：`postgres://`/裸 `postgresql://` 补成 `+psycopg2`、显式驱动不改写、建引擎解析到 psycopg2、SQLite 相对路径归一化 |
+| `tests/unit/test_cors_config.py` | 4 | 4 | 0 | 0 | 第 5 天 B 新增：CORS 三档策略（配了域名→白名单 / 显式 `*`→放开+告警 / 没配→退化+告警），依据 NFR-S-04 |
 
 ### 2.2 集成测试
 
@@ -275,7 +277,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 120 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P0 缺陷：**0** 个（自动化层 130 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证）
 - 是否达到答辩出口标准：⬜ 是 / **☑ 否（第 4 天）**——浏览器闭环与 M4 已有证据，**线上尚未部署**
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-24，自动化层 + 代码质量）**
@@ -284,6 +286,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [ ] 线上地址与截图：`docs/acceptance/screenshots/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 120 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（CI 与本机均 130 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [ ] 部署持久化验证截图（线上，第 5 天）

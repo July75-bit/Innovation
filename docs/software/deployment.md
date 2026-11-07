@@ -179,6 +179,32 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 > 这一步只证明"命令在任何空库上都能灌出同样的数"；**线上 Render Postgres 上的一次还没做**
 > （要等第 1–3 步建库拿 External URL）。做法与上面完全一致，只是把 `DATABASE_URL` 换成 External URL。
 
+### 3.10 演示前预热（B，2026-10-25）
+
+> 免费 Web Service 空闲约 15 分钟会休眠，下一次请求要等容器冷启动。**实测冷启动 49s**
+> （2026-10-25，`prewarm.py` 打线上后端：第 1、2 次 ReadTimeout，第 3 次 200，总耗时 49.3s）。
+> 如果答辩时直接打开前端，很可能先看到转圈或"连接失败"，看起来像服务挂了。
+
+**做法**（演示前 10–15 分钟执行，一条命令）：
+
+```powershell
+python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com --min-points 10
+```
+
+它会：轮询 `/api/health` 直到 200（打印冷启动耗时）→ 核对 `/api/players` 与每人的 `/api/prices` 点数
+→ 全绿才打印"已就绪"。退出码 0 才算可以演示；1 就去看 Render 控制台/日志，别硬上。
+
+**答辩当天时间表建议**
+
+| 时间 | 动作 |
+| --- | --- |
+| 演示前 15 分钟 | 跑 `prewarm.py`（等它把实例叫醒，顺便确认数据在） |
+| 演示前 10 分钟 | 浏览器打开前端一次，确认首页有 8 张卡（前端本身是静态站，不需要预热，但要确认 `VITE_API_BASE_URL` 指对了） |
+| 演示前 5 分钟 | 再刷一次 `/api/health`（保持实例醒着）；若此时仍报错，切到提前录好的 2 分钟演示视频 |
+
+> 为什么把"预热"做成脚本而不是写"记得点一下"：口头约定会被忘，脚本跑完有退出码和耗时数字，
+> 而且顺带把"数据是否还在"一起验了（冷启动 + 数据核对一次完成）。
+
 ## 4. 数据持久化（必须解决，否则第 5 天验收不过）
 
 ### 4.1 已确认的平台事实
@@ -239,7 +265,7 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 | 场景 | 必须做的事 |
 | --- | --- |
-| 答辩/演示前 | **提前 10–15 分钟**用浏览器打开一次后端 `/api/health` 和前端首页，把服务唤醒 |
+| 答辩/演示前 | **提前 10–15 分钟**跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10）；顺带确认数据在 |
 | 老师突然访问 | 首次约 1 分钟加载属正常现象；在演示开场或 README 里提前写明，避免被误判为"打不开" |
 | 长期无访问 | 休眠期间不消耗每月 750 小时免费额度，但本地 SQLite 数据（方案 C）已丢失 |
 
@@ -281,10 +307,11 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 | 数据库 | Render **PostgreSQL 18**，服务名 `playerstock-db`（Service ID `dpg-dbe8nvrjlhs73ervmu0-a`） |
 | 部署日期 | 2026-10-25 首次上线（`render.yaml` Blueprint 创建三服务）；同日 **Manual Deploy 重新部署前后端**，与 `develop` 对齐 |
 | 已知问题 1 | **数据库 2026-11-23 到期**（免费库到期即删除）。答辩/验收在此之前完成；若之后还要访问，需在到期前升级付费或迁到 Neon（只改 `DATABASE_URL`） |
-| 已知问题 2 | 免费实例会休眠，冷启动约 1 分钟 → **演示前 10–15 分钟预热 `/api/health`**（见 §4.4） |
-| 已知问题 3 | CORS 目前是 `access-control-allow-origin: *`（提交 `9abacf9`，重新部署后已实测生效），演示可接受；若要收紧，把 `CORS_ORIGINS` 设为前端域名并把中间件改回按白名单 |
+| 已知问题 2 | 免费实例会休眠，**实测冷启动 49s** → 演示前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（见 §3.10） |
+| 已知问题 3（CORS 决策，B） | 代码已从硬编码 `allow_origins=["*"]` 改回**配置驱动**（`app.main.resolve_cors_origins`）：① `CORS_ORIGINS` 配了域名 → 白名单；② 显式 `*` → 放开并 WARNING；③ **没配 → 退化为 `*` 并 WARNING**（运维兜底，避免演示静默跨域失败）。口径见 `compliance.md` §4.1。**上线建议**：把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`，然后重启后端；启动日志会打印生效来源，可当截图证据 |
 | 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
 | 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
+| 已知问题 6 | `/market` 直接访问曾白屏（市场页在 `/`、无兜底路由）。已修：`/market → /` 重定向 + `/:pathMatch(.*)* → /` 兜底（BUG-11）。**前端需重新部署后生效** |
 
 ## 7. 常见故障排查
 
@@ -309,7 +336,10 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
 
 ## 9. TODO
 
-- [ ] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
-- [ ] D 第 5 天：完成第 5 节全部打勾，填第 6 节
-- [ ] **B/D 上线前**：把 `app/main.py` 的临时提交 `allow_origins=["*"]`（`9abacf9`）改回 `settings.cors_origin_list`，Render 配 `CORS_ORIGINS` 为前端公网地址（合规与安全要求）
+- [x] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
+- [x] D 第 5 天：完成第 5 节全部打勾，填第 6 节
+- [x] **B 第 5 天**：`app/main.py` 的 `allow_origins=["*"]` 已改回配置驱动（`resolve_cors_origins()`，
+      依据 NFR-S-04）；新增 `tests/unit/test_cors_config.py` 4 条用例；口径写进 `compliance.md` §4.1
+- [ ] **D/B 上线时**：在 Render 后端把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`
+      后重启（不设也**不会挂**——会退化为 `*` 并在启动日志 WARNING，见 §6「CORS 决策」）
 - [ ] D 第 6 天：把"重新部署后数据仍在"的截图存进 `docs/acceptance/test_report.md`
