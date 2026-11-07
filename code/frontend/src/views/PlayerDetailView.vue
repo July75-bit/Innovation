@@ -30,6 +30,8 @@ const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+/** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
+const analysisLoading = ref(false)
 
 const ACTION_LABEL: Record<string, string> = { BUY: '买入', SELL: '卖出', HOLD: '持有' }
 const RISK_LABEL: Record<string, string> = { LOW: '低', MEDIUM: '中', HIGH: '高' }
@@ -66,10 +68,13 @@ async function loadCore(silent = false) {
     loading.value = false
   }
   // AI 分析单独加载：慢/降级都不阻塞行情展示
+  analysisLoading.value = true
   try {
     analysis.value = await api.getAnalysis(playerId.value)
   } catch {
     analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+  } finally {
+    analysisLoading.value = false
   }
 }
 
@@ -112,7 +117,11 @@ watch(playerId, () => loadCore())
       <PriceChart :points="points" />
 
       <h3>AI 建议</h3>
-      <section v-if="analysis" class="ai-card">
+      <section v-if="analysisLoading" class="ai-card ai-loading" aria-busy="true" aria-live="polite">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>AI 分析中…（行情与交易不受影响）</span>
+      </section>
+      <section v-else-if="analysis" class="ai-card">
         <div class="ai-head">
           <span :class="['advice', analysis.action.toLowerCase()]">{{
             ACTION_LABEL[analysis.action] ?? analysis.action
@@ -232,6 +241,41 @@ h3 {
   border-radius: 12px;
   padding: 16px;
 }
+/* AI 请求中的占位卡片：不空白、不跳动，告知"正在分析" */
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.ai-loading .dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.ai-loading .dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: ai-blink 1.2s infinite ease-in-out;
+}
+.ai-loading .dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ai-loading .dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes ai-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
 .ai-head {
   display: flex;
   gap: 10px;
@@ -280,5 +324,23 @@ h3 {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* ===== 窄屏：标题与价格上下排、价格字号收敛 ===== */
+@media (max-width: 720px) {
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .head h2 {
+    font-size: 22px;
+  }
+  .price {
+    font-size: 28px;
+  }
+  .price-box {
+    text-align: left;
+  }
 }
 </style>

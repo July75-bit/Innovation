@@ -171,4 +171,14 @@ th {
 .flat {
   color: var(--muted);
 }
+
+/* ===== 窄屏：表格改为横向滚动，不挤压列宽 ===== */
+@media (max-width: 720px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 </style>
