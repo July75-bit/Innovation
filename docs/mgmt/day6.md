@@ -101,6 +101,8 @@
 
 ---
 
+> **彩排当天用 [`docs/presentation/rehearsal-plan.md`](../presentation/rehearsal-plan.md)**：准备清单（T−60）、两遍彩排的逐段计时、改稿与事故演练、定稿清单。下表是它的精简版。
+
 ## 3. 彩排计时表（打印，现场填）
 
 | 段 | 页 | 内容 | 讲者 | 目标 | 彩排 1 | 彩排 2 |

@@ -13,6 +13,9 @@ license = { text = "MIT" }
 pythonpath = ["code/backend", "code"]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
+# 缓存目录（--lf / --sw 的落点）也钉在仓库内：默认的仓库根 .pytest_cache 一旦被外部
+# 工具用错误的 ACL 建出来，属主连写都会被打回 WinError 5（第 7 轮实测踩过）
+cache_dir = ".pytest-tmp/cache"
 markers = [
     "slow: 耗时较长的集成测试",
     "integration: 需要完整数据库/端到端的测试",

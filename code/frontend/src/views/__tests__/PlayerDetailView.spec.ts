@@ -1,3 +1,10 @@
+/**
+ * 白话导读：详情页测试——用受控 Promise 造一个"很慢的 AI 接口"，
+ * 验证 AI 结果还没回来时页面显示「AI 分析中…」占位，回来后换成真正的建议卡片。
+ * vi.hoisted / vi.mock 是 Vitest 的"假接口(mock)"写法：把 src/api 整个换成可控的假货，
+ * 这样测试不需要真的后端在跑，也不会真的下单。
+ */
+
 import { describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import PlayerDetailView from '../PlayerDetailView.vue'

@@ -1,3 +1,11 @@
+/**
+ * 白话导读：给编辑器/类型检查看的"环境变量声明"，没有任何运行代码。
+ *
+ * Vite 的约定：只有以 VITE_ 开头的变量才会被塞进前端代码（import.meta.env.VITE_XXX）。
+ * 这个文件把这两个变量声明出来，写 import.meta.env.VITE_API_BASE_URL 时才有补全、也不会报类型错误。
+ * 实际取值来自 .env.local（本地）/ Render 环境变量（线上），见 README「环境变量」一节。
+ */
+
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {

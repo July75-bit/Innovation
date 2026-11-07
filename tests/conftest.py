@@ -39,6 +39,30 @@ SEED_SH1RO = 7
 SEED_FLAMEZ = 8
 
 
+# tmp_path 基目录：钉在仓库内，不用系统 Temp（原因见 pytest_configure 注释）
+PYTEST_BASETMP = REPO_ROOT / ".pytest-tmp" / "run"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """把 pytest 的临时目录基址改到仓库内的 .pytest-tmp/run。
+
+    默认行为是 %TEMP%/pytest-of-<user>/，而那个位置在 Windows 上很容易被外部工具
+    （沙箱化的运行器等）用错误的 ACL 抢先建出来；一旦 ACL 坏了，**目录属主本人连
+    scandir 都会被拒绝**，于是所有用到 tmp_path 的用例都在 setup 阶段报
+    PermissionError: [WinError 5]，跟被测代码毫无关系，换台机器还复现不出来。
+    第 7 轮合并 origin/develop 时就撞上这个，205 条用例里成片 ERROR。
+
+    放进仓库内的固定目录有三个好处：任何机器 / agent / CI 只看同一个位置；
+    目录每次运行由 pytest 自己清空重建；也不再会在仓库根目录甩出 pytest-of-*/。
+    显式传了 --basetemp 时尊重调用方的选择，不覆盖。
+    """
+    # pytest 只 mkdir(basetemp) 本身，不会建父目录；缓存目录也落在同一个父目录下
+    PYTEST_BASETMP.parent.mkdir(parents=True, exist_ok=True)
+    # 显式传了 --basetemp 时尊重调用方的选择
+    if config.option.basetemp is None:
+        config.option.basetemp = str(PYTEST_BASETMP)
+
+
 @pytest.fixture()
 def session_factory(tmp_path):
     """临时库 + 固定演示数据（4 名选手，覆盖涨/跌/横盘/暂停交易）。"""

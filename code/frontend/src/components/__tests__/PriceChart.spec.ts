@@ -1,3 +1,9 @@
+/**
+ * 白话导读：组件测试——把 PriceChart.vue 用 @vue/test-utils 的 mount() 在假浏览器(jsdom)里渲染出来，
+ * 再检查"没数据时不画 svg""每个点的 reason 能在明细里看到"这些行为是否成立。
+ * mount 的 props 就是父组件正常会传的数据，测试用的 points 是手写的假行情。
+ */
+
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PriceChart from '../PriceChart.vue'
