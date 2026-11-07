@@ -130,8 +130,15 @@ SLIDES: list[str] = [
             <li>计算机 / 数据分析学习者：要一个能跑通的工程范本</li>
           </ul>
           <p class="small"><b>明确不做</b>：想靠它赚钱的人 / 未成年人 / 真钱竞猜用户</p>
+          <h3>如何获得用户</h3>
+          <ul class="tight-list">
+            <li>赛事节点：Major/IEM 开赛前 3 天预告、赛后 10 分钟涨跌日报</li>
+            <li>内容与社群：B 站 / 贴吧 / 校园电竞社群；答辩现场即首批种子</li>
+            <li>产品自带传播：持仓卡（标注虚拟）与 AI 复盘卡可分享</li>
+          </ul>
         </div>
       </div>
+      <p class="foot"><b>团队优势</b>：A 前端交互 / B 交易事务与部署 / C 定价与回测 / D AI·测试·质量·文档——四人覆盖一条完整链路，无职责重叠</p>
       <table class="tight">
         <tr><th>维度</th><th>赛事竞猜</th><th>电竞养成</th><th>模拟炒股</th><th>PlayerStock</th></tr>
         <tr><td>标的</td><td>比赛结果</td><td>策划定数值</td><td>公司与财报</td><td><b>单个选手的身价</b></td></tr>

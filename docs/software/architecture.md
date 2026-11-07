@@ -91,7 +91,37 @@ sequenceDiagram
 
 见 `docs/algorithm/ai_agent_prompt.md` 第 5 节的失败处理链路图。
 
-## 4. 技术选型与版本
+### 3.4 文档图表的绘制工具（汇报 3.5.0）
+
+课程要求说明「用了什么画图工具」。本项目**不依赖任何图形软件**：所有架构图 / ER 图 / 时序图都写在 Markdown 里用
+**Mermaid** 描述，随代码一起版本化、评审时可 diff、不会过期。
+
+| 图 | 位置 | 类型 |
+| --- | --- | --- |
+| 架构分层图 | 本文件 §1 | `flowchart` |
+| 交易 / 价格 / AI 三条数据流 | 本文件 §3.1–3.3 | `sequenceDiagram` |
+| 部署拓扑 | 本文件 §6 | `flowchart` |
+| ER 图（5 张表） | `database_design.md` §2 | `erDiagram` |
+| 领域模型 | `functional_spec.md` §3 | `classDiagram` |
+| 交易并发时序 | `database_design.md` §3.1 | `sequenceDiagram` |
+
+渲染：VS Code 装 *Markdown Preview Mermaid Support* 即可本地预览，GitHub 网页直接渲染。
+**为什么不用 draw.io / Visio**：二进制图无法评审、改一次要重画；Mermaid 是文本，评审时能看到「这次动了哪个节点」。
+
+### 3.5 前端设计（汇报 3.5.6）
+
+| 决策 | 选择 | 理由 |
+| --- | --- | --- |
+| 框架 | Vue 3.5（组合式 API）+ TypeScript 6.0 | A 有 Vue 基础；官方脚手架自带 Router/Vitest/ESLint，6 天里配置成本最低 |
+| 构建 | Vite 8.2 | 冷启动快，不需要 SSR |
+| 路由 | vue-router 5.3，4 条主路由 + `/auth`，含 `/market` 重定向与 `:pathMatch` 兜底 | 深链刷新不 404（BUG-11 的修复） |
+| 状态 | **不引入 Pinia**，用 `ref`/`computed` + 组合式函数（`useAuth`） | 单演示账户 + 4 个视图，全局状态极少，引库反增理解成本 |
+| 图表 | **自绘 SVG**（`PriceChart.vue`，约 200 行） | 只画折线 + 数据点 + tooltip，图表库体积是自绘的十倍以上 |
+| 样式 | 原生 CSS + CSS 变量（`main.css` 13 个 token），无 UI 库 | 需要 CS2 视觉风格，UI 库反而要大量覆盖 |
+| 响应式 | `@media (max-width: 960px / 720px)` + 导航抽屉 + 表格转卡片 | 375px 无横向滚动（证据 `evidence/23~27`、`35`） |
+| 可访问性 | 数据点 `tabindex` + `@focus` 出 tooltip、`:focus-visible` 描边、`prefers-reduced-motion` | 键盘可达（证据 `evidence/28`） |
+
+## 4. 技术选型与版本## 4. 技术选型与版本
 
 | 组件 | 选型 | 版本 | 选它的理由 | 备选 |
 | --- | --- | --- | --- | --- |

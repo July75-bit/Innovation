@@ -100,7 +100,7 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 
 ## 7. 回测数据（第 4 天正式回测）
 
-**回测口径**：`simulator.generate_match_series(seed, 30 轮)` × 8 名选手（sh1ro 全程 `suspended` 跳过），
+**回测口径**：`simulator.generate_match_series(seed, 30 轮)` × 8 名选手（sh1ro 全程 `suspended` 跳过）。**注**：该回测跑在「8 名选手」的种子版本上，2026-11-07 晚扩至 16 人后未重跑——结论用于说明机制特性，不代表扩种后的绝对收益。
 初始历史回填最近 3 场，逐场 `standardize_score → update_price`；参数取默认值
 （α=0.15 / β=0 / floor=1.0 / N=5 / ±20% clamp）。数据源 `data/seed_players.json`。
 > 注：2026-11-07 演示种子扩至 **16 名 / 8 队**；本节的 30 轮回测仍是当时 8 名口径的历史结论，
