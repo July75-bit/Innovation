@@ -9,12 +9,13 @@
 
 | 项 | 值 |
 | --- | --- |
-| 分支 / 工作区 | `develop` 领先 `origin/develop` **3 个提交**（待推：合并 + 幻灯片 + 证据），工作区干净 |
-| 测试 / CI | **178 passed / 0 skipped**（单元 165 / 集成 13；第 6 天补 39 条守卫用例）；覆盖率 **98%**；CI 最新 run #95 三 job 绿 |
+| 分支 / 工作区 | `develop` 合并推送后与 `origin/develop` 齐（本机先领先 1 个合并提交，`4c9e177` 前） |
+| 测试 / CI | **178 passed / 0 skipped**（单元 165 / 集成 13；本机复核）；覆盖率 **98%**；CI 最新 **run #104（`3026d8a`）三 job 绿**，该 run 时点 176 条，差值为随后合入的 2 条 URL/引号单测 |
 | 覆盖率 | **98%**（956 语句 / 17 未覆盖，要求 ≥60%；2026-11-07 17:00 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
+| **AI 线上** | ✅ **真模型**：`source=llm`，中位 **2461ms**（1.8–3.9s）；DeepSeek 官方 API（Zen 免费档 429 后切换，`6aad25c`） |
 | **唯一硬缺口** | **彩排 0 次**（B-5 的"现场追问"也挂在彩排上） |
 
 ## 1. 今日目标（三句话）
@@ -87,7 +88,7 @@
 | --- | --- | --- | --- |
 | D-1 | 导出 `docs/presentation/defense.pdf` | 与 `slides.md` 一致 | ✅ 16 页 / 653 KB（2026-11-07 含 01B/01C/01D 重导），`build_deck.py` 可重生成 |
 | D-2 | 文档收口：`user_manual` 线上地址 / `compliance` §4.1/§4.2 / `day5.md` 勾选 / `prototype_review` 索引 | 无空白、索引齐 | ✅ |
-| D-3 | 回归 + CI：178 条 + 三 job 绿 + `test_report` 结论 | run #95 绿 | ✅ 本机 178 passed；CI run #95 success |
+| D-3 | 回归 + CI：178 条 + 三 job 绿 + `test_report` 结论 | run #104 绿 | ✅ 本机 **178 passed** / 覆盖率 98%；CI **run #104（`3026d8a`）success**（该 run 时点 176 条，随后合入 2 条 URL/引号单测） |
 | D-4 | 合并后跑一次线上全链路（market→detail→buy→positions→trades） | 有截图或记录 | 🟡 未单独留证据，今天 A-8/A-7 覆盖一次即可 |
 | **D-5** | 主讲 01 / 03 / 08 / 09 / 10 页 | 8:00 ±30s | ⬜ |
 | **D-6** | 控时：演示 2:00 提示、问答 5:00 收口 | 全程 ≤15:00 | ⬜ |
