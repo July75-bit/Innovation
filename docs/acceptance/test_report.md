@@ -195,7 +195,9 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 > 末点 `108.75` = `current_price`、`reason` 为「本轮得分 xx，S=±x.xx」；
 > 8 人价格与本地 `bootstrap_demo_data.py --rounds 9` 的输出逐条一致（108.75/131.45/85.08/58.11/127.04/105.27/136.50/74.45）。
 >
-> 重新部署后另核：`access-control-allow-origin: *`（CORS 放开的那次提交已生效）、
+> 重新部署后另核：`access-control-allow-origin: *`（当时线上跑的是硬编码 `*` 的那版代码；
+> 2026-10-25 已改为 `resolve_cors_origins()` 配置驱动，见 `compliance.md` §4.1 / `deployment.md` §6，
+> **后端重新部署后**按 `CORS_ORIGINS` 生效——配了前端域名就只放行它，没配则仍为 `*` 且日志告警）、
 > 前端 HTML 引用的是新构建产物（`assets/index-we8cxpp9.js`）、
 > 带 `Origin: <前端域名>` 请求 `/api/players` 仍返回 8 名选手 → 前后端版本均已更新。
 

@@ -106,7 +106,7 @@
 
 | 风险 | 症状 | 缓解 / 回滚 |
 | --- | --- | --- |
-| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | 部署前改回 `settings.cors_origin_list`，并在 Render 配 `CORS_ORIGINS`=前端公网地址（B/D 执行） |
+| 临时放开 CORS（`allow_origins=["*"]`，`9abacf9`） | 与 `CORS_ORIGINS` 设计/合规口径冲突 | ✅ **已解决**（B，`b548a0b`）：代码改为 `resolve_cors_origins()` 配置驱动（配了域名→白名单；显式 `*`→放开并 WARNING；没配→退化 `*` 并 WARNING），口径进 `compliance.md` §4.1。**只剩**：Render 后端填 `CORS_ORIGINS`=前端公网地址后重启（不填也不会挂，会退化为 `*` 且日志告警） |
 | 免费 Postgres 30 天到期 | 答辩后数据消失 | 文档写明；如需要可换 Neon（同样只改 `DATABASE_URL`） |
 | 免费实例 15 分钟休眠 | 冷启动约 1 分钟，演示卡顿 | 演示前 5 分钟预热 `/api/health`；录屏兜底 |
 | `DATABASE_URL` 填 Internal/External 混用 | 本地连不上/线上报错 | 后端用 **Internal**，本地灌数用 **External**；填错立即改并重启 |
