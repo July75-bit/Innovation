@@ -11,7 +11,7 @@
 | --- | --- |
 | 分支 / 工作区 | `develop` 领先 `origin/develop` **3 个提交**（待推：合并 + 幻灯片 + 证据），工作区干净 |
 | 测试 / CI | **137 passed / 0 skipped**；CI **run #88（`013e182`）三 job 绿**（本次合并后待 run #89 复核） |
-| 覆盖率 | 91%（839 语句 / 79 未覆盖，要求 ≥60%） |
+| 覆盖率 | **92%**（956 语句 / 81 未覆盖，要求 ≥60%；2026-11-07 本机实测） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）；8 选手 / 11 价格点 / 5 表 / 8 条流水 |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |

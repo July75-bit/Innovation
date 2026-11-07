@@ -1,5 +1,10 @@
 # PlayerStock —— 数据驱动的虚拟选手股交易与智能体市场模拟系统
 
+[![CI](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml)
+[![后端](https://img.shields.io/badge/pytest-137%20passed-brightgreen)](docs/acceptance/test_report.md)
+[![覆盖率](https://img.shields.io/badge/coverage-92%25-brightgreen)](docs/acceptance/test_report.md)
+[![许可](https://img.shields.io/badge/license-see%20LICENSE-blue)](LICENSE)
+
 > 软件创新工程实践（软件新技术创新实践）课程作品 · 4 人团队 · 6 天冲刺
 > 仓库名建议：`playerstock`（本地目录名可为 `innovation`，两者不必一致）
 
