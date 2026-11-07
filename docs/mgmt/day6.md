@@ -322,4 +322,4 @@ python scripts/check_llm.py --base https://playerstock-backend-mdlk.onrender.com
 
 **修正的 6 处**：① C 第 1 天 7 项 `⬜`→✅（第 2 天吸收）；② T1-38「Milestones 未建」→ 已建；③ 第 4 天「BUG-03 待修」→ BUG-10 已修；④ 第 5 天「三件套未开始 / CORS 仍为 `*`」→ 材料齐、已白名单复验；⑤ `day5.md` 四处 ❌/🟡；⑥ 原 `day6_tasks.md`「120 条」→137 条、`deployment.md` 两项检查单。
 
-**仍需人工确认的 2 项**：Kanban / Team Planning 看板（Projects v2 需登录，Milestones 已确认）；外部交叉原型测试（已记延期 + 补救方案，不追）。
+**核对补记（2026-11-07 16:10）**：Kanban / Team planning / Bug tracker 三项目已确认建好（证据 `evidence/35~36`），但均为 **Private**——若要评委线上查看，需在每个项目 `…→ Settings → Visibility` 改 Public，否则以截图交付。外部交叉原型测试仍为延期说明（已如实记录，不追）。
