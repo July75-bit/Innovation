@@ -1,0 +1,38 @@
+{
+  // 团队共享的 VS Code 设置（提交进仓库，四个人 + CI 同一套口径）
+  // 规则来源：pyproject.toml 的 [tool.ruff.lint]；此处只管“编辑器行为”。
+  // 参考：Methodology/VSCodePlugins.md（项目级配置优先于全局配置）
+
+  // ---------- 类型检查（Pylance）----------
+  "python.analysis.typeCheckingMode": "basic",
+
+  // ---------- 格式化与自动修复（Ruff 一个插件全包）----------
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    }
+  },
+
+  // ---------- 前端（Vue/TS）----------
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+
+  // ---------- 测试：让 VS Code 的测试面板能找到 pytest ----------
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["tests"],
+
+  // ---------- 杂项 ----------
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n"
+}
