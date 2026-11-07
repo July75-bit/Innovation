@@ -35,6 +35,10 @@ class Settings(BaseSettings):
     # 只读运维自检接口 `GET /api/debug/db`（见 app/api/debug.py）。
     # 默认开着是为了上线验收能直接截图；功能验收完成后设 DEBUG_ENDPOINTS=0 关掉。
     debug_endpoints: bool = True
+    # 运维重灌接口 `POST /api/debug/reseed` 的口令（见 app/api/debug.py）。
+    # 它会**清空并重建**演示数据（16 名选手 + demo 账户），所以必须带 token 防误触；
+    # 默认值仅用于课程演示，上线正式环境请设 RESEED_TOKEN 环境变量覆盖。
+    reseed_token: str = "playerstock-demo-reseed-2026"
 
     # ---------- 交易规则（B） ----------
     initial_balance: int = 5000

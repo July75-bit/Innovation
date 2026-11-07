@@ -34,13 +34,13 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-178 passed
+208 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-178 passed, 1 warning in 16.70s
+208 passed, 1 warning in 16.70s
 ```
 
-> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天补 39 条守卫/兜底用例 + 合并后 **178**
-> （单元 165 / 集成 13，`pytest --collect-only` 复核）。
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **208**（auth 22+7、重灌端点 3 等
+> 随合并全部入账；单元 188 / 集成 20，`--collect-only` 分目录复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
 | --- | --- | --- | --- | --- | --- |
@@ -352,7 +352,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 **176** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验）
-- **结论：可交付** —— M3/M4/M5 均已达成；**178** 条自动化（单元 165 / 集成 13；2026-11-07 补 39 条守卫/兜底用例）+ 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**208** 条自动化（单元 188 / 集成 20；auth 22+7 与重灌端点 3 随合并入账，2026-11-07 深夜）+ 核心逻辑覆盖率 **98%**（956 语句 / 17 未覆盖） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **14 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
@@ -365,6 +365,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 178 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 208 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）
