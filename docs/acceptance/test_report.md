@@ -99,6 +99,11 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
+
+**最新一轮（第 5 天收尾后的手工合并）由 CI 验证**：本机 npm registry 不可达（无 `node_modules`），
+`PlayerDetailView.vue` 的手工合并只能靠 CI 判定 → **CI run #70（`4e45433`）前端 job 绿**：
+`npm ci` → `npm run lint` → `npm run build`（含 `vue-tsc` 类型检查）全部通过，耗时 20s。
+证据：<https://github.com/July75-bit/Innovation/actions/runs/42326740664>
 > 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
 
 ### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
@@ -310,7 +315,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 130 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证）
-- 是否达到答辩出口标准：⬜ 是 / **🟡 接近（第 5 天）**——M3/M4/M5 已达成（线上 5 项验收 ✅、TC-405 服务端复核 200），待第 6 天回归 + 答辩材料
+- 是否达到答辩出口标准：⬜ 是 / **🟡 接近（第 5 天末）**——M3/M4/M5 已达成；自动化层 120 条 + 91% 覆盖率 + 线上 TC-401~406 全过 + 答辩材料（`defense.pdf` 13 页/`demo-script.md`/`qa.md`）已就绪；**待**：push 后 CI 三 job 复核 + 全员彩排 + 第 5 天 P0 三条前端优化
 - 签字：A____ B____ C____ **D 王泽棠（2026-10-25，自动化 + 代码质量 + 线上验收）**
 
 ## 12. 附件

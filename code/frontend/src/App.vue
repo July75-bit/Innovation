@@ -147,6 +147,38 @@ nav a.router-link-active {
   border-top: 1px solid var(--border);
 }
 
+/* ===== 窄屏适配（≤720px，手机/小窗）：导航折行 + 内容收边 ===== */
+@media (max-width: 720px) {
+  .nav-inner {
+    padding: 10px 14px;
+    gap: 8px 12px;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .brand .sub {
+    display: none; /* 窄屏优先保证导航与徽标可见 */
+  }
+  nav {
+    order: 3; /* 导航整体换到第二行，横向可滑动 */
+    flex-basis: 100%;
+    gap: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .health {
+    margin-left: auto;
+    font-size: 11px;
+  }
+  .content {
+    padding: 14px 14px 22px;
+  }
+  .foot {
+    padding: 12px 14px 22px;
+    font-size: 11px;
+  }
+}
+
 /* ===== CS2 氛围背景层：雷达网格 + 氛围光 + 警示斜纹 ===== */
 .backdrop {
   position: fixed;

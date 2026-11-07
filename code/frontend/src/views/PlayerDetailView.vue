@@ -24,12 +24,18 @@ import LoadingState from '../components/LoadingState.vue'
 const route = useRoute()
 const playerId = computed(() => Number(route.params.id))
 
+/** 路由参数非法（NaN / 非正整数）时不发请求，直接友好提示；
+ *  day5 走查 P2：不再把后端 "请求参数不合法：path.player_id" 这种开发术语甩给用户 */
+const invalidId = computed(() => !Number.isInteger(playerId.value) || playerId.value <= 0)
+
 const player = ref<PlayerDetail | null>(null)
 const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+/** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
+const analysisLoading = ref(false)
 
 const ACTION_LABEL: Record<string, string> = { BUY: '买入', SELL: '卖出', HOLD: '持有' }
 const RISK_LABEL: Record<string, string> = { LOW: '低', MEDIUM: '中', HIGH: '高' }
@@ -39,12 +45,22 @@ const RISK_LABEL: Record<string, string> = { LOW: '低', MEDIUM: '中', HIGH: '�
  * silent=true 用于交易成功后的刷新：不清旧数据、不进 loading 分支，
  * 避免 TradePanel 被卸载重挂（数量输入被重置 + 页面闪烁）。
  */
+/** 请求令牌：快速切换选手时，丢弃上一个选手的过期响应，防止旧数据覆盖新页面 */
+let requestToken = 0
+
 async function loadCore(silent = false) {
+  const token = ++requestToken
   if (!silent) {
     loading.value = true
     error.value = null
     player.value = null
     analysis.value = null
+    analysisLoading.value = false
+  }
+  if (invalidId.value) {
+    error.value = '选手编号无效，请从市场页选择选手'
+    loading.value = false
+    return
   }
   checkBackendHealth()
   try {
@@ -54,22 +70,29 @@ async function loadCore(silent = false) {
       api.getPriceHistory(id),
       api.getPositions(),
     ])
+    if (token !== requestToken) return // 已切走，丢弃过期响应
     player.value = detail
     points.value = history.points
     held.value = positions.find((p: PositionItem) => p.player_id === id)?.quantity ?? 0
   } catch (err) {
+    if (token !== requestToken) return
     if (!silent) {
       error.value = err instanceof ApiError ? err.message : '加载选手详情失败'
     }
     // silent 刷新失败时保留旧数据即可，交易结果本身已由面板展示
   } finally {
-    loading.value = false
+    if (token === requestToken) loading.value = false
   }
   // AI 分析单独加载：慢/降级都不阻塞行情展示
+  analysisLoading.value = true
   try {
-    analysis.value = await api.getAnalysis(playerId.value)
+    const a = await api.getAnalysis(playerId.value)
+    if (token === requestToken) analysis.value = a
   } catch {
-    analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+    if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+  } finally {
+    // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
+    if (token === requestToken) analysisLoading.value = false
   }
 }
 
@@ -112,7 +135,11 @@ watch(playerId, () => loadCore())
       <PriceChart :points="points" />
 
       <h3>AI 建议</h3>
-      <section v-if="analysis" class="ai-card">
+      <section v-if="analysisLoading" class="ai-card ai-loading" aria-busy="true" aria-live="polite">
+        <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span>AI 分析中…（行情与交易不受影响）</span>
+      </section>
+      <section v-else-if="analysis" class="ai-card">
         <div class="ai-head">
           <span :class="['advice', analysis.action.toLowerCase()]">{{
             ACTION_LABEL[analysis.action] ?? analysis.action
@@ -136,7 +163,7 @@ watch(playerId, () => loadCore())
         @traded="
           async () => {
             await loadCore(true)
-            await refreshAccount()
+            await refreshAccount().catch(() => {}) // 余额刷新失败不影响交易结果展示
           }
         "
       />
@@ -232,6 +259,41 @@ h3 {
   border-radius: 12px;
   padding: 16px;
 }
+/* AI 请求中的占位卡片：不空白、不跳动，告知"正在分析" */
+.ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+}
+.ai-loading .dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.ai-loading .dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn);
+  animation: ai-blink 1.2s infinite ease-in-out;
+}
+.ai-loading .dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ai-loading .dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes ai-blink {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
 .ai-head {
   display: flex;
   gap: 10px;
@@ -280,5 +342,23 @@ h3 {
   margin: 8px 0 0;
   font-size: 12px;
   color: var(--muted);
+}
+
+/* ===== 窄屏：标题与价格上下排、价格字号收敛 ===== */
+@media (max-width: 720px) {
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .head h2 {
+    font-size: 22px;
+  }
+  .price {
+    font-size: 28px;
+  }
+  .price-box {
+    text-align: left;
+  }
 }
 </style>

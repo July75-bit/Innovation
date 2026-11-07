@@ -134,4 +134,14 @@ th {
 .side.sell {
   background: var(--down);
 }
+
+/* ===== 窄屏：流水表横向滚动（列多，不换行压缩） ===== */
+@media (max-width: 720px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 </style>
