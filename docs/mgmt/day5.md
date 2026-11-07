@@ -35,42 +35,70 @@
 | 子路由刷新 | `GET /players/1` → 200（`render.yaml` SPA rewrite 生效） | TC-405 |
 | 回滚路径 | Render → Deploys → 选上一成功版本 → Redeploy | `deployment.md` §8 |
 
-## 2. 剩余任务（按人，建议 6 小时内收口）
+## 2. 分人任务与状态（第 5 天全景，2026-10-25 20:20 实测）
 
-### 2.1 A：答辩演示 + 前端优化迭代（约 5h）
+> 这一节是**唯一的任务真相**：✅ 已完成 / 🟡 部分 / ❌ 未做。未完成项与 `day6_tasks.md` §1「闸门 A」一一对应。
 
-| 事项 | 完成标准 |
-| --- | --- |
-| **2 分钟演示脚本**：市场 → 详情（折线图/原因/AI 卡）→ 买 2 股 → 持仓 → 卖 1 股 → 流水 | 按顺序点通，无翻车；录屏备份 |
-| **8 分钟幻灯片**前端/交互素材（信息架构、三态、错误直出、响应式） | 出 2–3 页素材 |
-| **优化迭代 P0 三条**（见 §3） | 响应式 + AI「思考中」+ 无障碍最小集 |
-| 浏览器 F5 截图归档（`/`、`/players/1`、`/positions`、`/trades`） | 4 张进 `evidence/online/` |
+### 2.0 总表
 
-### 2.2 B：线上运维收尾（约 2h）
+| 人 | 第 5 天完成度 | 剩余项 |
+| --- | --- | --- |
+| **A 倪颢容** | 部署 ✅ / 完善作品 ❌ | **A4/A5/A6 三项 P0**（响应式、AI 思考中、键盘可达） |
+| **B 胡德昊** | 部署 ✅ / 运维收尾 🟡 | **B6/B7/B8 三项**（CORS 决策、2 张截图、回滚演练） |
+| **C 刘宏** | ✅ 100% | 无（第 6 天只需复核定价页） |
+| **D 王泽棠** | 文档 ✅ / 收尾 🟡 | **D7/D8 两项**（导出 PDF、回归+CI 复核） |
 
-| 事项 | 完成标准 |
-| --- | --- |
-| **CORS 决策**：保留 `allow_origins=["*"]` 并写明理由，或改回 `settings.cors_origin_list` + 配 `CORS_ORIGINS` | 二者选一，写进 `compliance.md` / `deployment.md` §6 |
-| 补 2 张检查单截图：后端日志（无 SQLite 警告）、Postgres 控制台表清单 | `deployment.md` §5 剩余 2 项可勾 |
-| 演示前预热流程确认（免费实例 15 分钟休眠、冷启动约 1 分钟） | 写进演示脚本 |
+**第 5 天关闭条件**：A4+A5+A6 + B6+B7+B8 + D7+D8 全绿 → 才进入第 6 天。
 
-### 2.3 C：定价答辩材料（约 2h）
+### 2.1 A：前端上线 ✅ + 完善作品 ❌
 
-| 事项 | 完成标准 |
-| --- | --- |
-| 定价 2–3 页幻灯片：公式 `P' = max(floor, P×(1+αS+βD))`、α=0.15 / β=0 / floor=1.0 / ±20% clamp / 3σ 满格 | 参数表与 `pricing_model.md` 一致 |
-| 100 seed 稳定性 + **下行风险**口径（中位数 −7.4%，α 敏感性） | 能口头解释"为什么不是 bug" |
-| 一涨一跌案例（页面可复现） | 现场能点到 |
+| ID | 任务 | 状态 | 验收 / 证据 |
+| --- | --- | --- | --- |
+| A1 | 生产构建 + Render Static Site + `VITE_API_BASE_URL` | ✅ | `playerstock-frontend-mdlk.onrender.com` 打开不白屏、拉到 8 名选手 |
+| A2 | 线上走查（文案/间距/空态/错误态） | 🟡 | 第 4 天已闭；无线上的二次走查记录 |
+| A3 | TC-307 刷新截图 + 子路由刷新 | ✅ / 🟡 | 深链 F5 截图已有；4 张 F5 图可选补 |
+| **A4** | **响应式**：`@media (max-width:720px)`，表格转卡片、导航折叠 | ❌ | 375px 无横向滚动（全仓 `@media` = **0**） |
+| **A5** | **AI「思考中」**：`analysisLoading`，卡片位显示"AI 分析中…" | ❌ | Slow 3G 能截到该状态（`analysisLoading` = **0**） |
+| **A6** | **无障碍最小集**：折线图 `tabindex`+`@focus` 触发 tooltip；按钮 `:focus-visible` | ❌ | 纯键盘能读某点原因（`tabindex/focus-visible` = **0**） |
+| A7 | 2 分钟演示排练（`demo-script.md`） | 🟡 | 2:00 内走完、数字不念错 |
 
-### 2.4 D：答辩三件套 + 文档收口（约 4h）
+### 2.2 B：部署 ✅ + 运维收尾 🟡
 
-| 事项 | 完成标准 |
-| --- | --- |
-| **8 分钟幻灯片**大纲与主笔：问题 → 方案 → 演示 → 工程/测试/部署 → 反思 | `docs/presentation/` 有稿 |
-| **5 分钟 QA 清单**（≥15 问，含合规/AI 含量/并发/为什么不上付费） | 每题 2–3 句答案 |
-| `prototype_review.md`：三层模型 + 用户体验检查清单对照（含缺口与后续） | ✅ 已产出 `docs/requirements/prototype_review.md`（含视觉设计规范 §3） |
-| 外部交叉原型测试（约组或写延期说明） | ✅ 延期说明已写进 `cross_test.md` §4（含补救方案，不伪造记录） |
-| 组织 **第 1 次完整彩排**（8+2+5=15 分钟） | 录像/纪要 |
+| ID | 任务 | 状态 | 验收 / 证据 |
+| --- | --- | --- | --- |
+| B1 | Render 三服务（前端/后端/Postgres 18）+ 分支 `develop` | ✅ | 三服务 Live，`deployment.md` §6 |
+| B2 | 环境变量 + 驱动修复（`+psycopg2`）+ `pool_pre_ping` | ✅ | `/api/health` 200；BUG-08 已修 |
+| B3 | 线上灌数（External URL + `bootstrap_demo_data.py`） | ✅ | `/prices` 11 点/人、末点 = 现价 |
+| B4 | 持久化验收（TC-404） | ✅ | 重新部署后 3 条流水 + 11 点不变 → Postgres 生效 |
+| B5 | 线上交易闭环 + 6 类错误码（TC-403） | ✅ | `smoke_test_api.py`；[200,400] 只入账一次 |
+| **B6** | **CORS 口径决策**（保留 `*` 写理由 / 改回白名单） | ❌ | 代码与文档口径一致（现代码 `*`、文档写白名单） |
+| **B7** | 补 2 张截图：后端日志无 SQLite 警告 / Postgres 控制台表 | ❌ | 图进 `evidence/online/`；`deployment.md` §5 两项打勾 |
+| **B8** | 回滚演练（Redeploy 上一版本并验证） | ❌ | 演练记录写进 `deployment.md` §8（有方案未演练） |
+
+### 2.3 C：定价 ✅ 全部完成
+
+| ID | 任务 | 状态 | 验收 / 证据 |
+| --- | --- | --- | --- |
+| C1 | 线上价格核对（点数/升序/reason/末点=现价） | ✅ | 只读脚本 `scripts/check_price_history.py`；线上 11 点核对通过 |
+| C2 | `POST /api/prices/recalc` 幂等 | ✅ | `test_prices_recalc.py` 5 条 |
+| C3 | `pricing_model.md` 校对（α/β/floor/clamp/3σ/100 seed） | ✅ | §7 正式回测 + §7.2 100 seed；§9 TODO 清空 |
+| C4 | "一涨一跌"演示案例 | ✅ | §8（seed 42，区间案例 + 单点案例） |
+| C5 | 定价 2–3 页幻灯片素材 | 🟡 | 已写进 `slides.md` 06/07 页，**复核属第 6 天** |
+
+### 2.4 D：文档 ✅ + 收尾 🟡
+
+| ID | 任务 | 状态 | 验收 / 证据 |
+| --- | --- | --- | --- |
+| D1 | 线上验收 TC-401~406（含 TC-405 服务端复核） | ✅ | `test_report.md` §6 全 ✅ |
+| D2 | 部署文档定稿（地址/环境变量/检查单/回滚/已知问题） | ✅ | `deployment.md` §6 + §5 勾 8 项 |
+| D3 | 证据归档（4 张线上截图改名） | ✅ | `evidence/online/online-account/prices/positions/trades` |
+| D4 | `prototype_review.md`（三层模型 + 两张清单） | ✅ | 7 节，含视觉规范与 12 条缺口 |
+| D5 | 隐私文案稿 / 交叉测试延期说明 / `user_manual` 线上地址 | ✅ | `compliance.md` §4.1、`cross_test.md` §4、`user_manual` §2 |
+| D6 | 答辩三件套材料（`slides.md`/`demo-script.md`/`qa.md`） | ✅ | 14 页 + 20 问 |
+| **D7** | **导出 `docs/presentation/defense.pdf`** | ❌ | 文件存在、页序与 `slides.md` 一致 |
+| **D8** | **回归 + CI 复核**（120 条 + 三 job 绿 + `test_report` 结论） | ❌ | push 后 Actions 三 job 绿 |
+
+> 详细的任务定义、验收细节与"闸门 A/B"依赖关系见 `docs/mgmt/day6_tasks.md` §1（本节只保留状态总览，避免两处口径漂移）。
 
 ## 3. 完善作品：优化迭代清单（课件第 5 天第 2 部分 p.267）
 
