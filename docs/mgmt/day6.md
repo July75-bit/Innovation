@@ -267,6 +267,8 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 
 > 安全：这条 key 已经出现在聊天记录里，答辩结束后请到 OpenCode 后台**吊销/轮换**一次。
 
+> **逐步操作已写成独立文档**：[`render-llm-guide.md`](render-llm-guide.md)（含控制台路径、三变量、日志对照表、撤回方式、答辩限流提醒），直接转给 B 即可。
+
 ### 7.4 两张委派单的共同验收
 
 | 检查 | 谁 |
