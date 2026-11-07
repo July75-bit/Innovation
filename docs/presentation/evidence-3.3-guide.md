@@ -35,7 +35,7 @@
 
 ## 2. 必须补一张对照表：pulse 显示的是账号名，不是真名
 
-pulse 的 `July75-bit` 会让评委以为是"仓库所有者单独提交了 41 次"，其实是 **B 的提交**（该账号绑定的是 B 的邮箱 1975473007@qq.com，41 = B 的 38 条 + 该账号自身 3 条）。
+pulse 的 `July75-bit` 会让评委以为是"仓库所有者单独提交了 41 次"，其实是 **B 的提交**（该账号绑定的是 B 的邮箱 1975473007@qq.com，41 = B 的 38 条 + 该账号自身 3 条）。**账号归属已由 B 本人（胡德昊）于 2026-11-07 确认。**
 
 | git 提交里的名字 | GitHub 账号（pulse 显示） | 真人 | 全周期提交 |
 | --- | --- | --- | ---: |
@@ -78,5 +78,5 @@ git config --get user.email            # 回显确认
 - [x] `22-pulse-top-committers.png`：Top committers 弹窗，每人具体次数
 - [x] `20-commit-stats.png`：本地准数 + 账号对照 + 双口径说明
 - [ ] `pulse-committers.csv`：弹窗里的 `Download CSV`（导出后放同目录）
-- [ ] `docs/acceptance/evidence/README.md` 索引补这 4 行
-- [ ] 确认 §2 对照表里"账号 → 真人"的映射无误（B = July75-bit 需 B 本人确认）
+- [x] `docs/acceptance/evidence/README.md` 索引补这 4 行
+- [x] 确认 §2 对照表里"账号 → 真人"的映射无误：**July75-bit = B 胡德昊（本人已确认，2026-11-07）**
