@@ -11,4 +11,5 @@
 | 持仓 | positions.py | B |
 | 价格历史 | prices.py | B（数据来自 C） |
 | AI 分析 | ai.py | B（逻辑来自 D） |
+| 注册 / 登录 / 退出 | auth.py | B + A（第 7 轮私人账号） |
 """

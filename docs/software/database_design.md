@@ -10,16 +10,25 @@
 erDiagram
     USERS ||--o{ POSITIONS : "持有"
     USERS ||--o{ TRADES : "产生"
+    USERS ||--o{ AUTH_TOKENS : "签发（第 7 轮私人账号）"
     PLAYERS ||--o{ POSITIONS : "被持有"
     PLAYERS ||--o{ TRADES : "被交易"
     PLAYERS ||--o{ PRICE_HISTORY : "有价格历史"
 
     USERS {
         int user_id PK
-        string nickname
+        string nickname "UNIQUE，登录凭据"
         float balance
         float initial_balance
+        string password_hash "可空：demo 公共账户无口令"
+        string salt "可空"
         datetime created_at
+    }
+    AUTH_TOKENS {
+        string token_hash PK "令牌的 SHA-256，原文不入库"
+        int user_id FK
+        datetime created_at
+        datetime expires_at
     }
     PLAYERS {
         int player_id PK
@@ -67,10 +76,21 @@ erDiagram
 | 字段 | 类型 | 约束 | 说明 |
 | --- | --- | --- | --- |
 | `user_id` | INTEGER | PK, autoincrement | |
-| `nickname` | VARCHAR(50) | NOT NULL | 演示账户可为 "demo" |
+| `nickname` | VARCHAR(50) | NOT NULL, **UNIQUE** | 登录凭据；`demo` = 公共演示账户（第 7 轮起仍保留） |
 | `balance` | FLOAT | NOT NULL, default 5000 | 虚拟币余额，不可为负 |
 | `initial_balance` | FLOAT | NOT NULL, default 5000 | 用于算收益率 |
+| `password_hash` | VARCHAR(255) | NULL | 第 7 轮新增：`pbkdf2_sha256$<迭代>$<盐>$<散列>`（`app/core/security.py`） |
+| `salt` | VARCHAR(64) | NULL | 第 7 轮新增：每用户独立随机盐（hex） |
 | `created_at` | DATETIME | NOT NULL, default now | |
+
+**为什么口令列可空、不加 CHECK**：`demo` 是历史账户，按设计保留为**公共演示账户**——
+未登录（不带 `Authorization`）时所有人共用它，它没有口令。
+如果加 `CHECK (password_hash IS NOT NULL)`，已有那一行立刻变成非法数据，
+线上 Postgres 上等于自找 500；"新账号必须有口令"这条规则放在接口层（`POST /api/auth/register`）。
+
+**老库怎么补这两列**：`Base.metadata.create_all()` 只建缺失的表、不会给已有表加列，
+所以 `app/core/database.py` 的 `_ensure_user_auth_columns()` 在启动时幂等地 `ALTER TABLE users ADD COLUMN`
+（SQLite 与 Postgres 都走这一条）。不引 Alembic 是 6 天版的既定取舍，见 §4。
 
 ### 2.2 `players` 选手
 
@@ -141,6 +161,24 @@ erDiagram
 | `ts` | DATETIME | NOT NULL | 升序查询 |
 
 **索引**：`INDEX(player_id, ts)`。
+
+### 2.6 `auth_tokens` 访问令牌（第 7 轮新增）
+
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| `token_hash` | VARCHAR(64) | PK | 令牌的 SHA-256；**原文不入库**，只在注册/登录响应里出现一次 |
+| `user_id` | INTEGER | FK → users, NOT NULL, INDEX | 删除用户时级联清掉令牌 |
+| `created_at` | DATETIME | NOT NULL, default now | |
+| `expires_at` | DATETIME | NOT NULL | 后端签发时算（`TOKEN_TTL` = 30 天），客户端改不了 |
+
+三条设计理由：
+
+1. **只存摘要**：拖库也拿不到能用的令牌；代价是服务端无法"列出用户当前的设备"，本项目不需要这个能力。
+2. **不透明令牌而不是 JWT**：没有密钥管理、没有签名/验签代码，撤销 = 删一行，立刻生效。
+   本项目只有一个后端进程、单机数据库，JWT 的"无状态校验"收益在这里体现不出来。
+3. **过期时间由后端定**：前端 localStorage 里的时间戳是用户可改的，不能作为有效期依据。
+
+**索引**：`token_hash` 主键 + `INDEX(user_id)`（登录时清理该用户的过期令牌用）。
 
 ## 3. 一致性规则（事务）
 
