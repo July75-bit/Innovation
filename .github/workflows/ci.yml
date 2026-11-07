@@ -95,19 +95,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 检查 docs 必需文件是否存在
+      # 仓库卫生：这些文件绝不该进版本库（.gitignore 已有规则，这里是兜底告警）
+      - name: 仓库卫生（误提交拦截）
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)(node_modules|\.venv)/|\.db$|\.db-wal$|\.db-shm$|/\.env$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::以下文件不该进版本库（见 .gitignore）："
+            echo "$bad"
+            exit 1
+          fi
+          echo "仓库卫生检查通过。"
+
+      - name: 检查 docs 必需文件是否存在（且非空）
         run: |
           missing=0
+          total=0
           for f in \
             README.md \
             .gitignore \
             LICENSE \
+            render.yaml \
             data/seed_players.json \
             docs/requirements/problem_definition.md \
             docs/requirements/functional_spec.md \
             docs/requirements/nonfunctional_spec.md \
             docs/requirements/user_stories.md \
             docs/requirements/mechanism_design.md \
+            docs/requirements/prototype_review.md \
+            docs/requirements/wireframes/README.md \
             docs/algorithm/pricing_model.md \
             docs/algorithm/ai_agent_prompt.md \
             docs/algorithm/backtest_report.md \
@@ -116,18 +131,36 @@ jobs:
             docs/software/database_design.md \
             docs/software/deployment.md \
             docs/software/frontend_setup.md \
+            docs/software/agent_workflow_design.md \
+            docs/software/CodeReview.md \
             docs/software/prototype/index.html \
             docs/mgmt/communication_plan.md \
             docs/mgmt/risk_plan.md \
             docs/mgmt/milestones.md \
+            docs/mgmt/code_review_template.md \
+            docs/mgmt/day6.md \
             docs/acceptance/test_plan.md \
             docs/acceptance/test_report.md \
+            docs/acceptance/code_quality_report.md \
+            docs/acceptance/lifecycle_issues.md \
+            docs/acceptance/defect_stories.md \
+            docs/acceptance/cross_test.md \
+            docs/acceptance/backend_joint_debug.md \
             docs/acceptance/user_manual.md \
             docs/acceptance/compliance.md \
+            docs/acceptance/evidence/README.md \
+            docs/acceptance/evidence/online/backend-debug-db.md \
+            docs/presentation/README.md \
+            docs/presentation/slides.md \
+            docs/presentation/demo-script.md \
+            docs/presentation/qa.md \
+            docs/presentation/defense.pdf \
             docs/retrospection/daily_summary.md
           do
-            if [ ! -f "$f" ]; then
-              echo "::error file=$f::缺少课程要求的交付物"
+            total=$((total + 1))
+            # -s = 存在且非空：空文件在答辩时同样是"没做"
+            if [ ! -s "$f" ]; then
+              echo "::error file=$f::缺少或为空的课程交付物"
               missing=1
             fi
           done
@@ -135,4 +168,19 @@ jobs:
             echo "交付物不完整，请补齐后再合并。"
             exit 1
           fi
-          echo "交付物完整性检查通过。"
+          echo "交付物完整性检查通过（$total 项）。"
+
+      # 验收证据是答辩的硬证据：被误删/漏提交时，靠这一关发现
+      - name: 检查验收证据与答辩材料
+        run: |
+          n=$(find docs/acceptance/evidence -name '*.png' | wc -l)
+          echo "evidence 目录下 png 数量：$n"
+          if [ "$n" -lt 20 ]; then
+            echo "::error::验收证据少于 20 张（当前 $n），疑似误删或漏提交"
+            exit 1
+          fi
+          if [ ! -s docs/presentation/defense.pdf ]; then
+            echo "::error::docs/presentation/defense.pdf 缺失或为空"
+            exit 1
+          fi
+          echo "证据与答辩材料检查通过。"

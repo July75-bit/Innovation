@@ -29,7 +29,7 @@
 | 输入校验 | Pydantic schema + `TradePanel` 前端预校验 | 非法数量 422、余额不足 400、暂停交易 400，均有测试 |
 | 降级链路 | `ai/fallback.py` | 无密钥/超时/脏输出 → 同结构 6 字段兜底 |
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（134 条中约 40 条是异常路径）。
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（137 条中约 40 条是异常路径）。
 
 ---
 
@@ -64,13 +64,13 @@
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **134 passed / 0 skipped** |
+| pytest | 单元+集成测试 | `pyproject.toml` | **137 passed / 0 skipped**（CI run #80；截图 17 摄于 134 条的时点，此后又补了 3 条） |
 | coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **91%**（≥60% 达标） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
 | vitest | 前端单测 | 3 个 spec（format / PriceChart / router） | 本地绿 |
-| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #71 全绿 |
+| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #80 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库卫生（误提交拦截）** |
 | VS Code 扩展 | 编码即时反馈 | `.vscode/settings.json`（Pylance basic + Ruff 保存自动修） | 全员共用 |
 
 ---
