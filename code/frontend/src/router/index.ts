@@ -37,6 +37,7 @@ const router = createRouter({
       path: '/',
       name: 'market',
       component: MarketView,
+      meta: { title: '选手市场' },
     },
     // 市场页的正经路径是 `/`，但 `/market` 太容易被手输/收藏/写进文档。
     // 没有这条时 vue-router 匹配不到组件、又没有兜底，页面会**白屏但不报错**
@@ -49,16 +50,19 @@ const router = createRouter({
       path: '/players/:id',
       name: 'player-detail',
       component: () => import('../views/PlayerDetailView.vue'),
+      meta: { title: '选手详情' },
     },
     {
       path: '/positions',
       name: 'positions',
       component: () => import('../views/PositionsView.vue'),
+      meta: { title: '我的持仓' },
     },
     {
       path: '/trades',
       name: 'trades',
       component: () => import('../views/TradesView.vue'),
+      meta: { title: '交易记录' },
     },
     // 赛程（第 8 天新增）：展示"赛程 → 队伍级暂停 → 点数"的派生算法本身，
     // 数据来自 src/data/demoSchedule.ts，规则来自 src/core/schedule.ts
@@ -66,6 +70,7 @@ const router = createRouter({
       path: '/schedule',
       name: 'schedule',
       component: () => import('../views/ScheduleView.vue'),
+      meta: { title: '赛程与停牌' },
     },
     // UI 组件库预览（设计系统验收用；不在主导航里，地址直达）
     {

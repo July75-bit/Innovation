@@ -209,7 +209,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 | `UiSelect` 弹层（下拉） | 材质层 | **玻璃**：圆角 20 | 弹层悬浮在内容上；触发框仍是内容层实色 |
 | `UiSelect` 触发框 | 内容层 | 实色输入框 + 1px 边框 + 圆角 6 | 输入控件不放玻璃 |
 | `UiCard` / `UiTable` / `UiInput` / `UiButton` | 内容层 | **扁平实色**：1px 边框、零阴影、无模糊 | 阅读/输入/数据区，玻璃会直接毁掉可读性 |
-| 桌面侧栏 / 移动顶栏 / 抽屉 | 壳 | 侧栏/顶栏玻璃；抽屉实色 | 抽屉占屏 78% 且是文字密集区 |
+| 桌面侧栏 / **桌面顶栏** / 移动顶栏 / 抽屉 | 壳 | 侧栏与顶栏玻璃；抽屉实色 | 桌面顶栏 fixed、内容从下滚过（桌面唯一"有东西可糊"的常驻玻璃）；抽屉占屏 78% 且文字密集 |
 
 ### 7.2 使用示例
 
@@ -266,6 +266,9 @@ import UiButton from '@/components/ui/UiButton.vue'
 ```
 
 - 键盘：下拉支持 ↑↓ / Home / End / Enter / Esc；弹窗 Tab 循环 + Esc；底部 Tab 可 Tab 遍历、Enter 触发。
+- 动态高光：桌面指针在玻璃上移动时，`--glow-x/--glow-y` 跟随（`composables/useGlassGlow.ts`），移动端与
+  `prefers-reduced-motion: reduce` 自动不启用；hover 时整块轻微提亮（`--glass-hover-tint`）。
+- 桌面顶栏：Fixed 56px 玻璃条（页面标题来自路由 `meta.title`），内容从它下面滚过；小浮层（下拉/tooltip）用更浅的 `--glass-bg-popover`。
 - 点击区：底部 Tab 48px、下拉选项 44px、按钮 36/40/44。
 - 焦点环：2px `--color-focus`，不覆盖元素自身圆角。
 

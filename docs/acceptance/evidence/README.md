@@ -132,6 +132,12 @@
 | `76-select-popover-light.png` | **玻璃下拉（浅色）** | 同一弹层浅色分支：`rgba(255,255,255,.72)` + 1px 内高光，文字 `#1a1d23` |
 | `77-modal-open-light.png` | **玻璃弹窗（浅色）** | 圆角 20 / 极轻阴影 / 遮罩 0.32 纯压暗；`aria-labelledby` 指向标题（可访问性核对） |
 | `78-toolbar-light.png` | **悬浮工具栏（浅色）** | 圆角 12；内部按钮全部实色（禁止玻璃叠玻璃） |
+| `79-desktop-topbar-dark.png` | **桌面玻璃顶栏 · 深色**（2026-11-14 17:50） | 新增 fixed 玻璃顶栏（56px，内容从它下面滚过）：页面标题/服务状态/余额/主题切换；实测 blur 贡献 2.55 均值、9.2% 像素明显变化 |
+| `80-desktop-topbar-light.png` | **桌面玻璃顶栏 · 浅色** | 同一顶栏浅色分支；blur 贡献 1.69、7.2% 像素变化；标题/余额/主题按钮 AA 合规 |
+| `81-desktop-modal-dark.png` | **玻璃弹窗 · 深色（A 项调整后）** | 遮罩 .72→.58、面板 scrim .72→.66：blur 贡献由 **0 → 2.03（12.6% 像素）**，背后内容开始"透出来" |
+| `82-desktop-modal-light.png` | **玻璃弹窗 · 浅色** | 遮罩 .32→.26、面板 .72→.66：blur 贡献 **2.41 → 4.42（25.4% 像素）** |
+| `83-select-popover-light-v2.png` | **下拉弹层 · 浅色（popover 档 .56）** | 弹层比面板更浅（`--glass-bg-popover`），blur 贡献 0.01→1.26（3.2%）；文字仍 AA |
+| `84-pointer-glow.png` | **指针跟随高光（B 项）** | 鼠标移动到工具条 30%→70% 处，`--glow-x` 同步变化、`::after` 高光淡入；reduced-motion 下变量不写入、高光 opacity 恒 0 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

@@ -513,8 +513,8 @@
     },
     "--color-overlay": {
       "group": "color.overlay",
-      "light": "rgba(15,18,24,0.32)",
-      "dark": "rgba(9,10,14,0.72)",
+      "light": "rgba(15, 18, 24, 0.26)",
+      "dark": "rgba(9, 10, 14, 0.58)",
       "purpose": "模态遮罩（纯压暗、不做 blur）",
       "requirement": "非文字；透出内容不应再被阅读"
     },
@@ -544,8 +544,8 @@
     },
     "--color-up-subtle": {
       "group": "color.business",
-      "light": "rgba(229,72,77,0.12)",
-      "dark": "rgba(229,72,77,0.14)",
+      "light": "rgba(229, 72, 77, 0.12)",
+      "dark": "rgba(229, 72, 77, 0.14)",
       "purpose": "涨的浅底块",
       "requirement": "仅背景块"
     },
@@ -568,8 +568,8 @@
     },
     "--color-down-subtle": {
       "group": "color.business",
-      "light": "rgba(15,107,61,0.12)",
-      "dark": "rgba(95,211,148,0.14)",
+      "light": "rgba(15, 107, 61, 0.12)",
+      "dark": "rgba(95, 211, 148, 0.14)",
       "purpose": "跌的浅底块",
       "requirement": "仅背景块"
     },
@@ -592,29 +592,29 @@
     },
     "--color-halt-subtle": {
       "group": "color.business",
-      "light": "rgba(122,77,10,0.14)",
-      "dark": "rgba(232,180,92,0.16)",
+      "light": "rgba(122, 77, 10, 0.14)",
+      "dark": "rgba(232, 180, 92, 0.16)",
       "purpose": "停牌浅底块",
       "requirement": "仅背景块"
     },
     "--glass-bg": {
       "group": "material.glass",
-      "light": "rgba(255,255,255,0.62)",
-      "dark": "rgba(20,20,20,0.6)",
+      "light": "rgba(255, 255, 255, 0.62)",
+      "dark": "rgba(20, 20, 20, 0.6)",
       "purpose": "玻璃底（导航壳/控件，文字较少）",
       "requirement": "玻璃上的文字必须 ≥4.5:1；同屏玻璃面积 ≤30%"
     },
     "--glass-bg-strong": {
       "group": "material.glass",
-      "light": "rgba(255,255,255,0.72)",
-      "dark": "rgba(20,20,20,0.72)",
+      "light": "rgba(255, 255, 255, 0.66)",
+      "dark": "rgba(20, 20, 20, 0.66)",
       "purpose": "浮层面板底（弹窗/Popover）",
       "requirement": "同上；面板内正文 ≥4.5:1"
     },
     "--glass-border": {
       "group": "material.glass",
-      "light": "rgba(255,255,255,0.72)",
-      "dark": "rgba(255,255,255,0.16)",
+      "light": "rgba(255, 255, 255, 0.72)",
+      "dark": "rgba(255, 255, 255, 0.16)",
       "purpose": "1px 描边（内高光外的边界）",
       "requirement": "非文字；用于界定材质边界"
     },
@@ -641,22 +641,22 @@
     },
     "--glass-scrim": {
       "group": "material.glass",
-      "light": "rgba(255,255,255,0.72)",
-      "dark": "rgba(20,20,20,0.72)",
+      "light": "rgba(255, 255, 255, 0.72)",
+      "dark": "rgba(20, 20, 20, 0.72)",
       "purpose": "可读性 scrim：文字直接坐玻璃时用这档",
       "requirement": "玻璃上正文 ≥4.5:1（v2 实测最低 8.55:1）"
     },
     "--glass-shadow": {
       "group": "material.glass",
-      "light": "0 8px 24px rgba(0,0,0,0.08)",
-      "dark": "0 8px 24px rgba(0,0,0,0.32)",
+      "light": "0 8px 24px rgba(0, 0, 0, 0.08)",
+      "dark": "0 8px 24px rgba(0, 0, 0, 0.32)",
       "purpose": "仅浮层极轻阴影",
       "requirement": "非文字；禁止内容卡片使用阴影"
     },
     "--glass-highlight": {
       "group": "material.glass",
-      "light": "rgba(255,255,255,0.9)",
-      "dark": "rgba(255,255,255,0.14)",
+      "light": "rgba(255, 255, 255, 0.9)",
+      "dark": "rgba(255, 255, 255, 0.14)",
       "purpose": "顶部 1px 内高光（材质边界）",
       "requirement": "非文字；1px 以内，禁止用大范围高光/渐变替代"
     },
@@ -816,8 +816,8 @@
     },
     "--shadow-overlay": {
       "group": "shadow",
-      "light": "0 8px 24px rgba(16,24,40,0.12)",
-      "dark": "0 1px 2px rgba(0,0,0,0.3)",
+      "light": "0 8px 24px rgba(16, 24, 40, 0.12)",
+      "dark": "0 1px 2px rgba(0, 0, 0, 0.3)",
       "purpose": "仅弹层/抽屉的极轻投影",
       "requirement": "非文字；内容卡片必须用 1px 边框，不用阴影"
     },
@@ -837,10 +837,38 @@
     },
     "--color-neutral-bg": {
       "group": "color.surface",
-      "light": "rgba(15,20,30,0.05)",
-      "dark": "rgba(255,255,255,0.06)",
+      "light": "rgba(15, 20, 30, 0.05)",
+      "dark": "rgba(255, 255, 255, 0.06)",
       "purpose": "中性弱底（徽章/按钮 hover）",
       "requirement": "仅背景块，与文字搭配时对比度按文字令牌计算"
+    },
+    "--glass-bg-popover": {
+      "group": "material.glass",
+      "purpose": "小浮层（下拉/tooltip）玻璃底：比面板更浅，透出更多背景",
+      "requirement": "玻璃上正文 ≥4.5:1（靠 popover 档实测 7.6:1 余量）",
+      "light": "rgba(255, 255, 255, 0.56)",
+      "dark": "rgba(20, 20, 20, 0.56)"
+    },
+    "--glass-edge": {
+      "group": "material.glass",
+      "purpose": "左右 1px 边缘光（液态材质的边缘感）",
+      "requirement": "非文字；严格 1px 以内",
+      "light": "rgba(255, 255, 255, 0.6)",
+      "dark": "rgba(255, 255, 255, 0.06)"
+    },
+    "--glass-hover-tint": {
+      "group": "material.glass",
+      "purpose": "hover 时整块轻微提亮（不改变 backdrop-filter）",
+      "requirement": "非文字；仅桌面 hover，reduced-motion 关闭",
+      "light": "rgba(255, 255, 255, 0.4)",
+      "dark": "rgba(255, 255, 255, 0.05)"
+    },
+    "--layout-topbar-height": {
+      "group": "layout",
+      "purpose": "桌面玻璃顶栏高度（内容从它下面滚过）",
+      "requirement": "非颜色；移动端顶栏另算",
+      "light": "",
+      "dark": "56px"
     }
   },
   "typography": {
