@@ -13,6 +13,7 @@ S=-0.68），价格下跌 10.12%"），信息准确但干巴。叙事归因在�
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from ai.llm_agent import _default_chat
@@ -63,9 +64,42 @@ def generate_narrative(
         f"{NARRATIVE_PROMPT}\n\n选手：{name}（{team}）\n最近价格点：\n{detail}"
     )
     try:
-        text = _default_chat(prompt, settings=settings).strip()
+        text = _clean_model_text(_default_chat(prompt, settings=settings))
         if not text:
             raise ValueError("模型返回空文本")
         return text[:400], "llm", _model(settings)
     except Exception:  # noqa: BLE001 —— 任何失败都回落规则版
         return compose_narrative(points), "rule_fallback", ""
+
+
+#: 模型偶尔不按"说人话"来，直接把 JSON 吐出来（页面就会显示 {"action":"SELL",...}）
+_JSON_KEY_RE = re.compile(r'"(?:reason|summary|text|narrative)"\s*:\s*"((?:[^"\\]|\\.)*)')
+
+
+def _clean_model_text(raw: str) -> str:
+    """把模型输出清洗成**一句人话**：剥代码围栏、若为 JSON 就取 reason/summary 字段。
+
+    2026-11-14 用户截图发现：叙事归因位置直接显示了
+    `{"action":"SELL","reason":"…","risk_level":"HIGH"}`，页面观感很差。
+    这里统一兜底（与简报的 `_clean_brief_summary` 同一套路）：
+    1. 去 markdown 围栏；
+    2. 是 JSON → 正则取 reason/summary/text/narrative（截断的 JSON 也能救）；
+    3. 取不到就剥掉花括号、引号与常见字段名，当纯文本用；
+    4. 合并空白、去掉首尾空白。
+    """
+    text = (raw or "").strip()
+    if not text:
+        return ""
+
+    text = re.sub(r"^```\w*\s*", "", text)
+    text = re.sub(r"\s*```$", "", text).strip()
+
+    if text.startswith("{"):
+        match = _JSON_KEY_RE.search(text)
+        if match:
+            text = match.group(1).replace('\\"', '"').replace("\\n", " ")
+        else:
+            text = re.sub(r'[{}"]', "", text)
+            text = re.sub(r"\b(action|risk_level|reason|summary|text|narrative)\s*[:：]\s*", "", text)
+
+    return re.sub(r"\s+", " ", text).strip()

@@ -184,3 +184,18 @@ def test_brief_halt_note_uses_schedule_not_manual_status():
 
     # 非比赛日：明确说"没有本轮停牌"，不谎报
     assert "不是比赛日" in _round_halt_detail(players, None)
+
+
+# ---------------------------------------------------------------- 叙事归因的 JSON 清洗
+def test_narrative_cleaning_strips_model_json():
+    """模型偶尔把 JSON 直接吐到叙事里，页面会显示 {"action":"SELL",...}（用户截图反馈）。"""
+    from ai.narrate import _clean_model_text
+
+    raw = '{"action":"SELL","reason":"价格三日跌 16.8%，跌势未止。","risk_level":"HIGH"}'
+    assert _clean_model_text(raw) == "价格三日跌 16.8%，跌势未止。"
+
+    fenced = '```json\n{"reason":"先说结论：继续下行"}\n```'
+    assert _clean_model_text(fenced) == "先说结论：继续下行"
+
+    plain = "价格由 120 跌到 89，属于明显回调。"
+    assert _clean_model_text(plain) == plain

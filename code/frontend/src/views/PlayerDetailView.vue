@@ -264,6 +264,27 @@ function cleanReason(text: string): string {
   return text.replace(/（规则版建议）/g, "").replace(/\(规则版建议\)/g, "").trim()
 }
 
+/**
+ * 主卡只显示"一句简介"（2026-11-14 用户要求：大字区域要短，细节放折叠区）。
+ * 规则：去掉套话 → 取第一个句子（到 。！？； 为止）→ 仍超过 44 字再截断补省略号。
+ */
+function shortReason(text: string): string {
+  const clean = cleanReason(text)
+  const firstSentence = clean.split(/(?<=[。！？；])/)[0]?.trim() || clean
+  const short = firstSentence.length > 44 ? `${firstSentence.slice(0, 44).trim()}…` : firstSentence
+  return short
+}
+
+/** 防御：模型/缓存里万一把 JSON 漏到页面上，这里取其中的 reason/summary 展示 */
+function humanizeText(text: string | null | undefined): string {
+  const raw = (text || '').trim()
+  if (!raw) return ''
+  if (!raw.startsWith('{')) return raw
+  const m = raw.match(/"(?:reason|summary|text|narrative)"\s*:\s*"((?:[^"\\]|\\.)*)/)
+  if (m) return (m[1] ?? '').replace(/\\"/g, '"').replace(/\\n/g, ' ').trim()
+  return raw.replace(/[{}"]/g, '').replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, '')
+}
+
 /** 把握档位：把 48% 这种精确数字翻成"较高/一般/较低"（用户不需要两位小数的置信度） */
 function confidenceLabel(value: number): string {
   if (value >= 0.75) return '较高'
@@ -328,7 +349,7 @@ watch(playerId, () => loadCore())
                   <span :class="['advice-pill', analysis.action.toLowerCase()]">{{
                     ACTION_LABEL[analysis.action] ?? analysis.action
                   }}</span>
-                  <p class="ai-line">{{ cleanReason(analysis.reason) }}</p>
+                  <p class="ai-line">{{ shortReason(analysis.reason) }}</p>
                 </template>
                 <template v-else-if="analysisLoading">
                   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -378,7 +399,7 @@ watch(playerId, () => loadCore())
                   <p v-if="analysis" class="ai-full">
                     <strong>完整理由：</strong>{{ cleanReason(analysis.reason) }}
                   </p>
-                  <p v-if="narrative" class="ai-quote">{{ narrative }}</p>
+                  <p v-if="narrative" class="ai-quote">{{ humanizeText(narrative) }}</p>
                   <ul v-if="plan && plan.rationale.length" class="ai-why">
                     <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
                   </ul>
@@ -924,10 +945,10 @@ h3 {
   font-size: var(--fs-body);
   line-height: 1.65;
   color: var(--text);
-  /* 主卡最多 3 行：长理由不再把卡片撑开，完整版放进「为什么这么建议」 */
+  /* 主卡只给"一句简介"：最多 2 行，完整理由在下方「为什么这么建议」里 */
   display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
