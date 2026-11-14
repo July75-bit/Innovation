@@ -11,7 +11,7 @@
 | --- | --- |
 | 分支 / 工作区 | `develop` 与 `origin/develop` 待齐（合并解决后随推） |
 | 测试 / CI | **308 passed / 0 skipped**（单元 254 / 集成 21 / 评测 33；前端 Vitest 62；junitxml 复核 failures=0）；覆盖率 **98%**；CI 合并后 push 复核新一轮三 job |
-| 覆盖率 | **97%**（1782 语句 / 35 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测，auth/重启后 D 复核） |
+| 覆盖率 | **98%**（1782 语句 / 35 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测，auth/重启后 D 复核） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）。**2026-11-07 晚重灌后：16 选手 / 8 队 / 每人 11 价格点 / 5 表 / 0 流水（干净演示态），m0NESY 已在 Falcons** |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
@@ -346,4 +346,4 @@ document.documentElement.scrollWidth + ' / ' + window.innerWidth
 
 **修正的 6 处**：① C 第 1 天 7 项 `⬜`→✅（第 2 天吸收）；② T1-38「Milestones 未建」→ 已建；③ 第 4 天「BUG-03 待修」→ BUG-10 已修；④ 第 5 天「三件套未开始 / CORS 仍为 `*`」→ 材料齐、已白名单复验；⑤ `day5.md` 四处 ❌/🟡；⑥ 原 `day6_tasks.md`「120 条」→137 条、`deployment.md` 两项检查单。
 
-**核对补记（2026-11-07 16:10）**：Kanban / Team planning / Bug tracker 三项目已确认建好（证据 `evidence/35~36`），但均为 **Private**——若要评委线上查看，需在每个项目 `…→ Settings → Visibility` 改 Public，否则以截图交付。外部交叉原型测试仍为延期说明（已如实记录，不追）。
+**核对补记（2026-11-07 16:10，2026-11-14 更新）**：Kanban / Team planning / Bug tracker 三项目已建好（证据 `evidence/35~36`）；**2026-11-14 无痕窗口实测已可见**（页面右上角显示 Sign in/Sign up 未登录状态，三个项目仍列出 → 说明已 **Public**，证据 `evidence/38-projects-public-incognito.png`）。外部交叉原型测试仍为延期说明（已如实记录，不追）。

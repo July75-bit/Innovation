@@ -152,7 +152,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
 | pytest | 单元+集成测试 | `pyproject.toml` | **308 passed / 0 skipped**（截图 17 摄于 134 条的时点，此后补到 308 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **97%**（1782/35，≥60% 达标，auth 扩容后复测） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1782/35，≥60% 达标，auth 扩容后复测） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
@@ -230,7 +230,7 @@ ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501
 pylint code/core_engine code/backend/app/core        # 9.74/10
 complexipy code/core_engine                          # 认知复杂度
-coverage run --source=app,core_engine -m pytest && coverage report -m # 97%
+coverage run --source=app,core_engine -m pytest && coverage report -m # 98%
 cd code/frontend; npm ci; npm run build; npm run lint; npm run test:unit
 
 # 代码统计（§3 那张表就是它跑出来的）

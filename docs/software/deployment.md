@@ -168,6 +168,11 @@ python scripts/bootstrap_demo_data.py                  # 一条命令：种子 +
   price_history 合计 = 78 条；demo 余额 = 5000.00；持仓 = 0 条；流水 = 0 条
 ```
 
+> **历史快照说明**：上面这段是 **2026-11-07 首次灌数（8 名选手时期）** 的输出，原样保留以便追溯；
+> **当前线上状态（2026-11-14 实测）**：16 名选手 / 175 条价格历史 / 9 张表；
+> `demo` 账户余额 5000.00、持仓 0、流水 0（干净演示态），另有 9 个注册账号的持仓与流水各自独立。
+> 实时数据可随时打开 `GET /api/debug/db` 查看。
+
 再用**真实 uvicorn**（同一个库）走 HTTP 核一遍，证明"10+ 点"不是只写在文档里：
 
 | 接口 | 结果 |
@@ -315,7 +320,7 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
       [部署后 trades 8 条](../acceptance/evidence/online/online-persistence-after-2-trades.png)，
       逐项对账见 `evidence/online/persistence-redeploy.md`
 - [x] **后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告** —— 已用 `/api/debug/db` 实测反证（`是否 SQLite: false`、方言 `postgresql`），文本证据 `docs/acceptance/evidence/online/backend-debug-db.md` §1；Logs 截图可选
-- [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 5 张表与行数（`players 8 / price_history 78 / trades 5 / users 1`），表由启动时 `init_db()` 自动创建；文本证据同上
+- [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 **9 张表**与行数（**2026-11-14 实测**：`players 16 / price_history 175 / trades 10 / positions 6 / users 9 / auth_tokens 9 / agent_traces 8 / decision_logs 0 / price_narratives 0`），表由启动时 `init_db()` 自动创建；文本证据同上
 - [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
 - [x] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
 - [x] **演示前预热**：提前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10；脚本会顺带核对数据）

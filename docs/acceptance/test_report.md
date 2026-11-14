@@ -86,7 +86,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
 | 模型 + 响应 schema | 238 | 0 | 100% |
 
-> 结论：核心逻辑 **97% ≥ 课程要求的 60%**（2026-11-07 复测：1782 语句 / 35 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（2026-11-07 复测：1782 语句 / 35 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -232,7 +232,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 ```powershell
 $env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
-python scripts/seed_db.py                  # 建表 + 8 名选手 + demo 账户
+python scripts/seed_db.py                  # 建表 + 16 名选手（8 队×2 人）+ demo 账户
 cd code/backend
 python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
 ```

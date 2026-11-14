@@ -110,7 +110,7 @@
 | T1-35 | 16:00–17:00 | 通读 `README.md`：补四人分工与联系方式、复核启动命令、确认“已知偏差”5 条全员知情 | T1-28 | README 可直接给老师看 | ✅（README 已含分工/启动/已知偏差） |
 | T1-36 | 17:00–17:30 | 确认 `risk_plan.md` 前三个高风险有预案；开写 `daily_summary.md` 第 1 天（站会 + 晚验收） | T1-31 | 两份文档有实质内容 | ✅（风险 Top3 预案 + 第 1 天记录已落盘） |
 | T1-37 | 17:30–18:00 | 提交文档 PR；确认 CI 三个 job：后端 pass、前端 pass/skip、交付物检查 pass | T1-36 | CI 全绿 | ✅（CI 已改为监听 main+develop，三 job 绿） |
-| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | ✅ 2026-11-07 全部到位：**三项目** PlayerStock_Kanban / Team planning / Bug tracker 已建（Kanban 五列，Done 15 条归档）+ Milestones M1–M6 + Issues 流程；证据 `docs/acceptance/evidence/35-projects-list.png`、`36-kanban-board.png`。注：项目默认 **Private**，答辩用截图或改 Public |
+| T1-38 | —（2026-10-24 补记） | **仓库协作三件套**（课件第 1 天 p.28）：GitHub Kanban / Team Planning / Bug Tracker + 提交仓库链接 + 通过 Issues 收第一轮反馈 | — | 仓库有看板/里程碑/Issue 流程，能展示协作痕迹 | ✅ 2026-11-07 全部到位：**三项目** PlayerStock_Kanban / Team planning / Bug tracker 已建（Kanban 五列，Done 15 条归档）+ Milestones M1–M6 + Issues 流程；证据 `docs/acceptance/evidence/35-projects-list.png`、`36-kanban-board.png`。**2026-11-14 已确认 Public**（无痕窗口实测可见，证据 `evidence/38-projects-public-incognito.png`） |
 | T1-39 | —（2026-10-24 补记） | **需求规范书**（课件第 1 天 p.52）：`docs/requirements/functional_spec.md` + `nonfunctional_spec.md` + **领域类图 UML**（3 分钟汇报用） | T1-29 | 两份需求文档齐全；UML 领域类图可讲解 | ✅ 2026-10-24（两份文档已有；`functional_spec.md` §3 补 UML 领域类图 + 类到实现映射） |
 | T1-40 | —（2026-10-24 补记） | **沟通 / 风险管理计划**（课件第 1 天 p.53）：沟通管理计划 + 风险管理计划（本项目合并进根目录 `project_management_plan.md`，`docs/mgmt/communication_plan.md` / `risk_plan.md` 为指针文件） | — | 两份计划有实质内容且为唯一事实来源 | ✅ 2026-10-24（沟通 §1–8 / 风险 §9–11 已合并定稿；与课件命名不同，映射关系已注明） |
 

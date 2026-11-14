@@ -77,7 +77,7 @@
 | 文件 | 内容 | 关键断言 |
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
-| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **308 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1782 语句 / 35 未覆盖 / 97%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
+| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **308 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1782 语句 / 35 未覆盖 / 98%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
 | `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
@@ -90,7 +90,8 @@
 | `28-keyboard-focus.png` | 键盘可达（A6） | 折线图首点获得焦点（`:focus-visible` 描边）+ tooltip「2026/10/24 18:18:21 · 120.00 币 · 初始价格」 |
 
 | `29-ai-loading.png` | AI「分析中…」占位态（A5） | 375px 详情页：AI 卡片处显示「**AI 分析中…（行情与交易不受影响）**」+ 三点动画，同时下方交易面板已可用（说明行情/交易不被 AI 阻塞） |
-| `35-projects-list.png` | 仓库 Projects 页：协作三件套已建（2026-11-07） | PlayerStock_Kanban(#1) / Team planning(#2) / Bug tracker(#3)，均 Open；**注意均标 Private**，评委线上要看需改 Public 或以本截图为准 |
+| `35-projects-list.png` | 仓库 Projects 页：协作三件套已建（2026-11-07，当时为 Private） | PlayerStock_Kanban(#1) / Team planning(#2) / Bug tracker(#3) |
+| `38-projects-public-incognito.png` | **协作三件套已 Public（2026-11-14 无痕窗口实测）** | 未登录状态（右上角 Sign in / Sign up）仍能看到三个项目：Bug tracker(#3) / Team planning(#2) / Kanban(#1)，Open 3 / Closed 0 → 证明匿名可见 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
