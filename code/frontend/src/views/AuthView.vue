@@ -32,11 +32,24 @@ import {
   validatePassword,
   validateUsername,
 } from '../composables/useAuth'
+import { useTheme } from '../composables/useTheme'
 
 type Tab = 'login' | 'register'
 
 const route = useRoute()
 const router = useRouter()
+
+/** 主题：与全站同一个 useTheme（自动 → 浅色 → 深色 循环），登录页也能切 */
+const { preference, theme, cycleTheme } = useTheme()
+const THEME_LABEL: Record<string, string> = { auto: '自动', light: '浅色', dark: '深色' }
+const themePreferenceLabel = computed(() => THEME_LABEL[preference.value] ?? '自动')
+const themeActionLabel = computed(() => {
+  const next =
+    preference.value === 'auto' ? '浅色' : preference.value === 'light' ? '深色' : '自动'
+  return `主题：${themePreferenceLabel.value}${
+    preference.value === 'auto' ? '（跟随系统）' : ''
+  }，点击切换到${next}`
+})
 
 const tab = ref<Tab>(route.query.tab === 'register' ? 'register' : 'login')
 
@@ -137,6 +150,28 @@ function asGuest(): void {
 
 <template>
   <div class="auth-page">
+    <!-- 登录页没有外壳，主题切换自带一个（与全站同一套 auto/light/dark 逻辑） -->
+    <button
+      type="button"
+      class="theme-fab"
+      :aria-label="themeActionLabel"
+      :title="themeActionLabel"
+      @click="cycleTheme"
+    >
+      <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="5.5" />
+        <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
+      </svg>
+      <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="3" />
+        <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+      </svg>
+      <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+      </svg>
+      <span>{{ themePreferenceLabel }}</span>
+    </button>
+
     <div class="inner">
       <!-- ===== 左：品牌与说明 ===== -->
       <section class="pitch">
@@ -370,6 +405,52 @@ function asGuest(): void {
   justify-content: center;
   padding: var(--space-5);
   background: var(--color-canvas);
+}
+
+.theme-fab {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-nav);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px; /* 点击区 ≥44px */
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-cap);
+  cursor: pointer;
+}
+.theme-fab:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+.theme-fab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.theme-fab svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+@media (max-width: 600px) {
+  .theme-fab span {
+    display: none; /* 窄屏只留图标，文字进 aria-label */
+  }
+  .theme-fab {
+    left: auto;
+    top: var(--space-3);
+    right: var(--space-3);
+    padding: 0 var(--space-2);
+  }
 }
 
 .inner {

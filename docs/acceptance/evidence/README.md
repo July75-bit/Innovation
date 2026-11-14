@@ -148,6 +148,9 @@
 | `92-auth-dark-desktop.png` | **登录页 · 深色（同版新实现）** | 深色分支同样走语义令牌：深色画布 + 深色面板 + 浅色文字；与浅色共用一套结构，不再有硬编码的"只在深色下成立"的颜色 |
 | `93-auth-light-375.png` | **登录页 · 浅色 375px** | 单列堆叠：品牌区在上、表单在下；输入框/按钮 44px 高；无横向溢出 |
 | `94-auth-dark-375.png` | **登录页 · 深色 375px** | 同结构深色分支；标题与表单文字均可读 |
+| `95-auth-theme-light.png` | **登录页 · 主题按钮（浅色）**（2026-11-14 19:15） | 登录页右上角新增主题按钮（自动/浅色/深色三档循环，与全站同一 `useTheme`）；当前「自动·系统浅色」→ 实际浅色；按钮 76×44、与品牌区不重叠 |
+| `96-auth-theme-dark.png` | **登录页 · 主题按钮（深色）** | 切到深色后整页立即变深，按钮显示「深色」+ 月亮图标；表单/标题/链接对比度实测达标 |
+| `97-auth-theme-mobile-light.png` | **登录页 · 主题按钮 375px** | 窄屏按钮收成图标（34×44，文字进 aria-label），不遮挡品牌与表单；无横向溢出 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
