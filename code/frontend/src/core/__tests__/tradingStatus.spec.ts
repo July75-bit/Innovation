@@ -8,7 +8,6 @@
  * 4. 文案原样复用后端那句"X vs Y 比赛中，暂停交易"。
  */
 import { describe, expect, it } from 'vitest'
-import { roundMatch } from '../schedule'
 import {
   currentRound,
   haltReason,
@@ -66,16 +65,22 @@ describe('tradingStatus', () => {
     expect(listed.filter((p) => p.status === 'suspended')).toHaveLength(4)
   })
 
-  it('今天落在赛程第几轮，就按那一轮派生', () => {
-    const round = currentRound('2026-11-14')
+  it('比赛日（UTC）才派生停牌：2026-11-14 是第 14 轮', () => {
+    const round = currentRound(new Date('2026-11-14T04:00:00Z'))
     expect(round).toBe(14)
-    const match = roundMatch(round)
-    const a = player('A', 'G2')
-    const b = player('B', 'Vitality')
-    expect(isHalted(a, round)).toBe(withRoundStatusAll([a], round)[0]!.status === 'suspended')
-    expect(withRoundStatusAll([b], round)[0]!.status).toBe(
-      match.team_a === 1 || match.team_b === 1 ? 'suspended' : 'trading',
-    )
+    expect(isHalted(player('A', 'G2'), round)).toBe(true)
+    expect(isHalted(player('B', 'Vitality'), round)).toBe(false)
+    expect(haltReason(player('A', 'G2'), round)).toBe('G2 vs Astralis 比赛中，暂停交易')
+  })
+
+  it('休赛日（不在 28 天赛季里）返回 null，不因赛程拦任何人', () => {
+    const round = currentRound(new Date('2026-12-01T04:00:00Z'))
+    expect(round).toBeNull()
+    // 休赛日照样保留手动冻结的结论
+    expect(withRoundStatus(player('ZywOo', 'Vitality'), round).status).toBe('trading')
+    expect(withRoundStatus(player('x', 'Vitality', 'halted'), round).status).toBe('halted')
+    expect(haltReason(player('x', 'Vitality', 'halted'), round)).toBe('状态 halted（手动暂停）')
+    expect(haltReason(player('ZywOo', 'Vitality'), round)).toBeNull()
   })
 
   it('赛程里没有的队（本地 mock 名单）不会被误判成停牌', () => {

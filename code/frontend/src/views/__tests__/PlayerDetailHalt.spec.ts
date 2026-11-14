@@ -5,7 +5,7 @@
  * 一旦详情页只认后端字段，就会出现"徽章说能买、其实这一轮他正在打比赛"的矛盾。
  * 断言不写死轮次：先算出本轮正在比赛的两队，再把选手挂到其中一队，换日子也不会红。
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
 const h = vi.hoisted(() => ({
@@ -63,6 +63,9 @@ async function mountView(team: string) {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers()
+  // 钉在赛季内的比赛日（UTC）：第 14 轮 G2 vs Astralis，避免用例跟着真实日期变红
+  vi.setSystemTime(new Date('2026-11-14T04:00:00Z'))
   vi.clearAllMocks()
   h.health.mockResolvedValue({ status: 'ok', service: 'playerstock-backend' })
   h.getAccount.mockResolvedValue({
@@ -84,9 +87,13 @@ beforeEach(() => {
   })
 })
 
+afterEach(() => {
+  vi.useRealTimers()
+})
+
 describe('详情页 · 本轮停牌', () => {
   it('本轮有比赛的选手：徽章变停牌、原因写清楚、买卖按钮禁用', async () => {
-    const round = currentRound()
+    const round = currentRound()!
     const playing = [...playingTeams(round)]
     const w = await mountView(names.get(playing[0] as number) as string)
 
@@ -102,7 +109,7 @@ describe('详情页 · 本轮停牌', () => {
   })
 
   it('本轮没比赛的选手：照常显示交易中，按钮可用', async () => {
-    const round = currentRound()
+    const round = currentRound()!
     const playing = playingTeams(round)
     const idleTeam = [...names.entries()].find(([id]) => !playing.has(id))?.[1] ?? ''
     const w = await mountView(idleTeam)

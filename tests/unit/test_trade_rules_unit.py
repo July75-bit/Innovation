@@ -13,12 +13,14 @@ from decimal import Decimal
 import pytest
 
 from app.core.errors import ApiError
+from app.core.demo_schedule import DEMO_SCHEDULE
 from app.core.rules import (
     calc_amount,
     ensure_available_position,
     ensure_position_limit,
     ensure_sufficient_balance,
     ensure_tradable,
+    ensure_tradable_now,
 )
 
 
@@ -118,3 +120,39 @@ def test_available_position_tells_max_sellable_and_guides_empty_holder():
     with pytest.raises(ApiError) as excinfo:
         ensure_available_position(0, 1)
     assert "请先买入" in excinfo.value.message
+
+
+# ---------------- 第 8 轮：本轮赛程派生的停牌也要挡住下单 ----------------
+# 背景：players.status 存的是"初始 / 运维手动"状态，"本轮在打比赛"是按赛程派生的。
+# 只查前者就会出现"界面显示暂停交易、接口照样收单"，所以闸门必须两层都看。
+
+
+def test_tradable_now_blocks_playing_team() -> None:
+    """第 12 轮 Vitality vs Spirit：两队整队拦单，其余队伍照常。"""
+    with pytest.raises(ApiError) as excinfo:
+        ensure_tradable_now("trading", "Vitality", round_no=12, schedule=DEMO_SCHEDULE)
+    assert excinfo.value.status_code == 400
+    assert excinfo.value.code == "PLAYER_TRADING_SUSPENDED"
+    assert "Vitality vs Spirit 比赛中，暂停交易" in excinfo.value.message
+
+    ensure_tradable_now("trading", "FaZe Clan", round_no=12, schedule=DEMO_SCHEDULE)
+
+
+def test_tradable_now_manual_status_wins_and_keeps_contract_message() -> None:
+    """手动冻结优先：文案沿用契约 §4.7 原句，不掺赛程信息。"""
+    with pytest.raises(ApiError) as excinfo:
+        ensure_tradable_now("suspended", "FaZe Clan", round_no=12, schedule=DEMO_SCHEDULE)
+    assert excinfo.value.message == "该选手比赛进行中，暂停交易，请等结算完成后重试"
+
+
+def test_tradable_now_outside_season_does_not_block_by_schedule() -> None:
+    """round_no=None 且今天不是比赛日：只有手动 status 能拦单。"""
+    ensure_tradable_now("trading", "Vitality", round_no=None, schedule={"matches": []})
+
+    with pytest.raises(ApiError):
+        ensure_tradable_now("halted", "Vitality", round_no=None, schedule={"matches": []})
+
+
+def test_tradable_now_tolerates_unknown_team() -> None:
+    """名单里有赛程外的队伍时不能把所有人拦在门外（自定义名单/旧数据）。"""
+    ensure_tradable_now("trading", "不存在的队", round_no=12, schedule=DEMO_SCHEDULE)

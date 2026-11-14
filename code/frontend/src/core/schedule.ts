@@ -544,6 +544,22 @@ export function phaseOf(match: ScheduleMatch, today: string = todayIso()): Round
 }
 
 /**
+ * 比赛日（`played_at`）对应第几轮；不是比赛日返回 null。
+ *
+ * 为什么要 null 这一档：赛季外没有"本轮"，此时只有手动冻结能拦交易。
+ * 不能把循环回落（`roundMatch` 用来保证回测永远有对手）当成"今天谁在打比赛"。
+ */
+export function roundOnDate(isoDate: string, sched: Schedule = schedule): number | null {
+  const index = sched.matches.findIndex((match) => match.played_at === isoDate)
+  return index === -1 ? null : index + 1
+}
+
+/** 今天（**UTC 日期**，与后端 `current_round()` 同口径）是第几轮；不是比赛日返回 null */
+export function liveRound(now: Date = new Date()): number | null {
+  return roundOnDate(now.toISOString().slice(0, 10))
+}
+
+/**
  * 比赛日 → 第几轮：开赛前回到第 1 轮，超过赛程长度就按循环回落。
  * UI 用它决定"默认选中哪一轮"，不用人从第 1 轮翻起。
  */

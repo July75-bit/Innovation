@@ -48,7 +48,9 @@ const sortBy = ref<'default' | 'price' | 'change' | 'rating'>('default')
 const round = currentRound()
 const listed = computed(() => withRoundStatusAll(players.value, round))
 const haltedCount = computed(() => listed.value.filter((p) => p.status !== TRADING).length)
-const matchText = computed(() => matchLabel(roundMatch(round)))
+/** 今天是不是比赛日：不是就没有“本轮停牌”，横幅换成“休赛日”而不是硬指一场比赛 */
+const liveMatch = computed(() => (round === null ? null : roundMatch(round)))
+const matchText = computed(() => (liveMatch.value ? matchLabel(liveMatch.value) : ''))
 
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
@@ -114,8 +116,11 @@ onMounted(load)
 
     <!-- 本轮停牌提示：让玩家一眼知道"这几个人现在买不了"，并能直接去看赛程 -->
     <p class="round-note num">
-      <span class="rn-tag">第 {{ round }} 轮</span>
-      <strong>{{ matchText }}</strong> 比赛中， <b class="halt">{{ haltedCount }}</b> 人暂停交易
+      <template v-if="liveMatch">
+        <span class="rn-tag">第 {{ round }} 轮</span>
+        <strong>{{ matchText }}</strong> 比赛中，<b class="halt">{{ haltedCount }}</b> 人暂停交易
+      </template>
+      <template v-else> <span class="rn-tag">休赛日</span>今天没有比赛，全部选手照常交易 </template>
       <RouterLink class="rn-link" to="/schedule">看赛程 →</RouterLink>
     </p>
 

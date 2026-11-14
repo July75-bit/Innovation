@@ -40,6 +40,7 @@ from .pricing import (
 )
 from .schedule import (
     DEFAULT_SCHEDULE_PATH,
+    current_round,
     expected_points,
     load_schedule,
     match_of_team,
@@ -47,6 +48,7 @@ from .schedule import (
     playing_teams,
     resolve_team_id,
     round_match,
+    round_on_date,
     rounds,
     status_for,
     suspension_reason,
@@ -76,6 +78,7 @@ __all__ = [
     "to_demand_signal",
     "MatchResult",
     "DEFAULT_SCHEDULE_PATH",
+    "current_round",
     "expected_points",
     "load_schedule",
     "match_of_team",
@@ -83,6 +86,7 @@ __all__ = [
     "playing_teams",
     "resolve_team_id",
     "round_match",
+    "round_on_date",
     "rounds",
     "status_for",
     "suspension_reason",

@@ -35,7 +35,7 @@
 | 400 | `INSUFFICIENT_BALANCE` | 余额不足 |
 | 400 | `INSUFFICIENT_POSITION` | 持仓不足 |
 | 400 | `POSITION_LIMIT_EXCEEDED` | 超过单选手 50 股上限 |
-| 400 | `PLAYER_TRADING_SUSPENDED` | 选手比赛暂停交易 |
+| 400 | `PLAYER_TRADING_SUSPENDED` | 选手暂停交易（运维手动冻结，或**本队这一轮有比赛**：按赛程派生） |
 | 400 | `INVALID_QUANTITY` | 数量非正整数 |
 | 404 | `PLAYER_NOT_FOUND` | 选手不存在 |
 | 422 | `VALIDATION_ERROR` | Pydantic 校验失败 |
@@ -175,6 +175,12 @@
 持仓为 0 的选手不出现在列表中；无持仓返回 `[]`。
 
 ### 4.7 `POST /api/trades/buy`
+> **暂停交易的判定（2026-11-14 第 8 轮补）**：两层，顺序固定 ——
+> 1. `players.status != trading`（运维手动冻结）**优先**，文案沿用原句；
+> 2. 否则看**本队这一轮是否在比赛**：轮次按 UTC 比赛日查 `data/match_schedule.json`（与 `POST /api/prices/recalc` 的停牌口径同源），命中则整队 4 人拦单。
+>
+> 今天不是比赛日时只有第 1 层生效。命中任一层的响应仍是 `400 PLAYER_TRADING_SUSPENDED`，**字段与错误码不变**，只是 `message` 会写出具体对阵（如“G2 vs Astralis 比赛中，暂停交易，请等本轮结算完成后再下单”）。
+> 前端市场页 / 详情页 / 交易面板按同一规则展示与禁用，界面结论与接口一致。
 
 请求：
 
@@ -222,6 +228,8 @@
   按 §6 流程提字段变更后再改，禁止前后端各自先实现。
 
 ### 4.8 `POST /api/trades/sell`
+
+> 卖出走与 §4.7 完全相同的状态闸门（含本轮赛程派生），因此“正在打比赛的选手”连持仓也卖不掉，需等本轮结算。
 
 请求同买入。成功：
 
@@ -504,6 +512,7 @@
 | 2026-10-23 | 第 10 项 `GET /api/analysis/{player_id}` 实现并生效：固定 6 字段（去掉 `suggested_price_band` 输出）、AI 故障一律 200 + `rule_fallback`、404 仅用于选手不存在 | D | A/B |
 | 2026-10-23（第 2 天） | 补 §4.7"并发与重复提交的语义"说明；买入的校验顺序在代码侧对齐本文（余额先于持仓上限，此前实现把上限提到了前面）。**字段与错误码均无变更** | B | 无（A 按 `code` 提示即可；D 的 AI 只读，不受影响） |
 | 2026-10-25（第 4 天） | **新增运维接口** `POST /api/prices/recalc`（赛后结算）：请求 `{round_no, played_at, items:[{player_id, score, signal}]}`，响应区分 `applied` / `skipped`；幂等去重键 `(player_id, round)`（用 `played_at` 写入 `price_history.ts` 定位轮次）；算价只用 C 的 `update_price`（reason 带"本轮得分"），落库复用 B 的 `app/core/price_update.py`。**已有 10 个对外接口的字段与错误码均无变更**，前端无需改动 | C | B（落库服务被复用，无改动）、D（验收清单 +1 条） |
+| 2026-11-14（第 8 轮） | §4.7/§4.8 的 `PLAYER_TRADING_SUSPENDED` 补上**本轮赛程派生**这一层：本队在打的 4 人买/卖都会被拦（`core_engine.current_round` 按 UTC 比赛日取轮次）。**字段与错误码均无变更**，message 更具体；前端同步按同一规则显示与禁用 | A + C | 无（A 按 `code` 提示即可，message 可直接展示） |
 
 ## 7. 契约验收（第 1 天）
 

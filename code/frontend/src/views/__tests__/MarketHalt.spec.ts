@@ -5,7 +5,7 @@
  * 如果市场页还按老字段显示，就会出现"比赛中的选手看起来照样能买"——这正是要守住的回归点。
  * 名单用 8 队 × 2 人，所以**无论今天轮到第几轮，被停的都是 4 人**，断言不依赖具体日期。
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
 const TEAMS = [
@@ -72,10 +72,17 @@ function mountView() {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers()
+  // 钉在赛季内的比赛日（UTC）：第 14 轮 G2 vs Astralis，避免用例跟着真实日期变红
+  vi.setSystemTime(new Date('2026-11-14T04:00:00Z'))
   h.listPlayers.mockReset()
   h.health.mockReset()
   h.listPlayers.mockResolvedValue(roster())
   h.health.mockResolvedValue({ status: 'ok', service: 'playerstock-backend' })
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('市场页 · 本轮停牌可见性', () => {

@@ -19,6 +19,7 @@ import pytest
 # 与 tests/conftest.py 的固定演示数据对应：ZywOo 126.00，demo 余额 5000.00
 SEED_ZYWOO = 1
 SEED_SH1RO = 7  # status = suspended
+SEED_ROPZ = 2  # FaZe Clan：第 4 轮上场，用来验证"本轮停牌"确实拦单
 
 BUY_KEYS = {
     "success",
@@ -192,3 +193,40 @@ def test_error_body_matches_contract(client) -> None:
         assert re.search(r"[\u4e00-\u9fff]", body["message"]), (
             f"{name} 的 message 不是中文：{body['message']}"
         )
+
+
+def test_buy_blocked_when_team_playing_this_round(client, monkeypatch) -> None:
+    """本轮（第 12 轮 Vitality vs Spirit）打比赛的选手：买入直接 400。
+
+    界面已经按同一套规则显示"暂停交易"，接口必须给同样的答案，
+    否则就是"看得见买不了、但绕过界面还能买"。
+    """
+    from app.core import rules
+
+    monkeypatch.setattr(rules, "current_round", lambda schedule, today=None: 12)
+
+    response = client.post("/api/trades/buy", json={"player_id": SEED_ZYWOO, "quantity": 1})
+    assert response.status_code == 400
+    body = response.json()
+    assert body["code"] == "PLAYER_TRADING_SUSPENDED"
+    assert "Vitality vs Spirit 比赛中，暂停交易" in body["message"]
+
+    # 同一轮没打比赛的 ropz 不受影响
+    assert client.post("/api/trades/buy", json={"player_id": SEED_ROPZ, "quantity": 1}).status_code == 200
+
+
+def test_sell_blocked_when_team_playing_this_round(client, monkeypatch) -> None:
+    """卖出同样受本轮赛程约束（先买一笔没比赛的 ropz，再切到停牌轮次卖不掉）。"""
+    from app.core import rules
+
+    assert client.post("/api/trades/buy", json={"player_id": SEED_ROPZ, "quantity": 2}).status_code == 200
+
+    # 第 2 轮是 Spirit vs Astralis，FaZe Clan 没上场 → 卖得掉
+    monkeypatch.setattr(rules, "current_round", lambda schedule, today=None: 2)
+    assert client.post("/api/trades/sell", json={"player_id": SEED_ROPZ, "quantity": 1}).status_code == 200
+
+    # 换到第 4 轮（FaZe Clan vs G2）就轮到 ropz 被拦
+    monkeypatch.setattr(rules, "current_round", lambda schedule, today=None: 4)
+    response = client.post("/api/trades/sell", json={"player_id": SEED_ROPZ, "quantity": 1})
+    assert response.status_code == 400
+    assert response.json()["code"] == "PLAYER_TRADING_SUSPENDED"

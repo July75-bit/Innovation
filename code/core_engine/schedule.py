@@ -21,7 +21,9 @@
 
 用法::
 
-    from core_engine import load_schedule, status_for, tradable_players
+    from core_engine import current_round, load_schedule, status_for, tradable_players
+
+    current_round(schedule)                  # 今天是比赛日 -> 第几轮；否则 None
 
     schedule = load_schedule()
     status_for(player, 12, schedule)          # "trading" / "suspended"
@@ -31,6 +33,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -86,6 +89,31 @@ def _team_id(player: Mapping[str, Any], schedule: Mapping[str, Any]) -> int:
     if team not in by_name:
         raise ValueError(f"选手 {player.get('name')} 的队伍 {team!r} 不在赛程里")
     return by_name[team]
+
+
+# ---------------------------------------------------------------- 当前轮次
+def round_on_date(schedule: Mapping[str, Any], day: date | str) -> int | None:
+    """比赛日（`played_at`）对应第几轮；不是比赛日返回 None。
+
+    为什么需要"None"这一档：赛季外的日子没有"本轮"，此时**只有手动冻结能拦交易**，
+    不能把循环回落（`round_match` 用来保证回测永远有对手）当成"今天谁在打比赛"。
+    """
+    target = day.isoformat() if isinstance(day, date) else str(day)
+    for index, match in enumerate(schedule["matches"], start=1):
+        if str(match["played_at"]) == target:
+            return index
+    return None
+
+
+def current_round(schedule: Mapping[str, Any], today: date | None = None) -> int | None:
+    """现在是不是比赛日、是第几轮。
+
+    口径与 `price_history.ts` 一致：**UTC 日期**（每轮一个比赛日，零点起算），
+    这样后端交易闸门、赛后结算、前端展示三方对"本轮"的理解不会分叉。
+    """
+    if today is None:
+        today = datetime.now(timezone.utc).date()
+    return round_on_date(schedule, today)
 
 
 # ---------------------------------------------------------------- 状态派生
@@ -245,7 +273,9 @@ __all__ = [
     "matches_of_team",
     "playing_teams",
     "resolve_team_id",
+    "current_round",
     "round_match",
+    "round_on_date",
     "rounds",
     "status_for",
     "suspension_reason",

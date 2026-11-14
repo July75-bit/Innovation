@@ -108,7 +108,7 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 界面入口：前端 `/schedule`（赛程）页把这套派生规则做成了可点开的可视化——
 `code/frontend/src/core/schedule.ts` 是 `core_engine/schedule.py` 的逐函数移植，
 数据镜像 `code/frontend/src/data/demoSchedule.ts` 与后端 `app/core/demo_schedule.py`、
-`data/match_schedule.json` 三份同源，都由 `scripts/build_schedule.py` 一次生成。
+`data/match_schedule.json` 三份同源，都由 `scripts/build_schedule.py` 一次生成。交易侧也走同一口径：买/卖前先用 `core_engine.current_round`（UTC 比赛日）取本轮，本队在打的选手由 `app.core.rules.ensure_tradable_now` 拦单（`400 PLAYER_TRADING_SUSPENDED`，见契约 §4.7/§4.8）。
 
 ### 7.1 主回测（seed=42）
 

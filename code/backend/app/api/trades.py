@@ -11,7 +11,7 @@
 校验顺序（契约 §4.7，前端依赖这个顺序给提示）：
 1. player_id 存在 → 否则 404 PLAYER_NOT_FOUND
 2. quantity 为正整数 → 由 Pydantic 拦截 → 422 VALIDATION_ERROR
-3. 选手 status == trading → 否则 400 PLAYER_TRADING_SUSPENDED
+3. 选手可交易（手动 status 优先，其次本轮赛程：本队在打比赛就整队停牌） → 否则 400 PLAYER_TRADING_SUSPENDED
 4. 余额充足 → 否则 400 INSUFFICIENT_BALANCE
 5. 买入后持仓 ≤ 50 → 否则 400 POSITION_LIMIT_EXCEEDED
 6. 事务内扣款 + 加持仓 + 写流水 → COMMIT
@@ -55,7 +55,7 @@ from app.core.rules import (
     ensure_available_position,
     ensure_position_limit,
     ensure_sufficient_balance,
-    ensure_tradable,
+    ensure_tradable_now,
 )
 from app.models import Player, Position, Trade, User
 from app.schemas.trade import TradeItem, TradeRequest, TradeResponse
@@ -108,7 +108,7 @@ def buy(
     user: User = Depends(get_current_user),
 ) -> TradeResponse:
     player = _get_player(db, payload.player_id)
-    ensure_tradable(player.status)
+    ensure_tradable_now(player.status, player.team)
 
     quantity = payload.quantity
     price = Decimal(player.current_price).quantize(CENT)
@@ -231,7 +231,7 @@ def sell(
     user: User = Depends(get_current_user),
 ) -> TradeResponse:
     player = _get_player(db, payload.player_id)
-    ensure_tradable(player.status)
+    ensure_tradable_now(player.status, player.team)
 
     quantity = payload.quantity
     price = Decimal(player.current_price).quantize(CENT)
