@@ -239,6 +239,7 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 - [x] C 第 5 天：答辩定价口径整理（公式/参数/稳定性/下行风险/预设问答），见 §11
 - [x] C 第 7 天：暂停交易改为**队伍级派生**（`data/match_schedule.json` + `core_engine/schedule.py`），
       接入模拟器 / 落库脚本 / 自查 / 回测 / `POST /api/prices/recalc`；测试 230 条全绿
+- [x] C 第 7 天：线上复验（B 执行 2026-11-14）：16 人 / 175 条价格历史 / 第 12 轮整队停牌 recalc 正确，见 §12.3
 - [ ] C 第 6 天：配合答辩讲解"哪部分来自比赛数据、哪部分来自需求"
 
 ## 10. 第 3 天验收证据（2026-10-24）
@@ -311,10 +312,10 @@ z(t)   = ( 本轮得分 - 近 N 场均分 ) / 标准差 ,  N = 5
 | 价格能被人为操纵吗？ | 本版 β=0，买卖不影响价格；接盘口时需要加流动性上限（已列为后续项） |
 | 一条原因能追溯吗？ | 能，`reason` 带"本轮得分 + S + 涨跌幅"，`price_history` 每条都有（§5） |
 
-## 12. 第 5 天上线核对记录（2026-10-25）
+## 12. 上线核对记录（本地等价 + Render 线上实测）
 
-**环境**：本地 SQLite 等价环境（`DATABASE_URL` 指向临时库），配方与 Render 上完全一致；
-上线后在 Render Shell 里跑同样的两条命令即可复现本表。
+**两个环境都留了证据**：§12.1 / §12.2 是本地 SQLite 等价环境（配方与 Render 完全一致）；
+§12.3 是 **Render 线上实测**（2026-11-14，B 执行、C 复核）。
 
 ### 12.1 数据与自查
 
@@ -348,3 +349,20 @@ python scripts/check_price_history.py
 
 去重键实现：把 `played_at` 写进 `price_history.ts`，按"比赛日"定位轮次（不改表结构）。
 接口定义与契约变更记录见 `api_contract.md` §6；集成测试 `tests/integration/test_prices_recalc.py`（6 条）。
+
+### 12.3 Render 线上实测（2026-11-14）
+
+部署 + 重灌（`POST /api/debug/reseed?rounds=12&seed=42`）后由 B 实测、C 复核：
+
+| 验收项 | 线上结果 |
+| --- | --- |
+| `/api/health` | **200** `{"status":"ok","service":"playerstock-backend"}` |
+| `/api/players` / `price_history` | **16 名**选手；**175 条**价格历史（15 人 11 点 + ropz 10 点） |
+| ZywOo `/api/players/1/prices` | **11 点**、`ts` 升序、末点价 **89.13 == current_price 89.13** |
+| 末点 reason 原文 | `本场表现下滑（本轮得分 78.1，S=-0.68），价格下跌 10.12%` |
+| 首点时间戳 | `2026-10-31T12:00:00Z`（固定开赛前时间，证明 §12.1 的时间戳修复已上线） |
+| `POST /api/prices/recalc` 第 12 轮（player 1） | `applied=0`；`skipped=「Vitality vs Spirit 比赛中，暂停交易」` |
+| demo 余额 | **5000.00**（重灌只清业务数据，保留注册账号） |
+
+> 结论：线上行为与本地等价环境逐项一致，**队伍级暂停已在生产中生效**；
+> 第 12 轮 Vitality（ZywOo/flameZ）与 Spirit（donk/sh1ro）四人整队置灰、不可买入。
