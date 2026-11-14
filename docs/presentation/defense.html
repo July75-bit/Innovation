@@ -1,4 +1,4 @@
-﻿<!doctype html><html lang='zh-CN'><head><meta charset='utf-8'><title>PlayerStock 答辩</title><style>
+<!doctype html><html lang='zh-CN'><head><meta charset='utf-8'><title>PlayerStock 答辩</title><style>
 @page { size: 1280px 720px; margin: 0; }
 * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 body { margin: 0; background: #0b0c0e; color: #ececef;
@@ -154,7 +154,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
         <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
         <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
         <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
-        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>232 条测试、97% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>265 条测试、96% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
         <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
       </table>
       <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
@@ -173,7 +173,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
           </ul>
           <p class="small">截图全部来自真实浏览器验收（1280×900），共 16 张。</p>
         </div>
-        <div><img class="shot" src="file:///C:/Users/LIUHONG/Desktop/Git%20project/Innovation/docs/acceptance/evidence/01-market.png" alt="01-market.png"/></div>
+        <div><img class="shot" src="file:///D:/projects/innovation/Innovation/docs/acceptance/evidence/01-market.png" alt="01-market.png"/></div>
       </div>
     </section>
     
@@ -186,7 +186,7 @@ table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
         <tr><td>交易闭环：买入 / 卖出 / 持仓 / 流水</td><td>充值 / 提现 / 兑换：<b>合规红线</b>，一律不做</td></tr>
         <tr><td>AI 只给建议，不自动交易</td><td>多用户 / 撮合盘口：6 天做不完，且不影响核心机制</td></tr>
       </table>
-      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>97%</b>）</p>
+      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>96%</b>）</p>
     </section>
     
     <section class="slide">
@@ -366,8 +366,8 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
         <div>
           <h3>测试</h3>
           <ul>
-            <li><b>231</b> 条用例（单元 211 / 集成 21），CI + 本机全绿</li>
-            <li>核心逻辑覆盖率 <b>97%</b>（1289 语句 / 43 未覆盖，要求 ≥60%）</li>
+            <li><b>231</b> 条用例（单元 211 / 集成 21 / 评测 33），CI + 本机全绿</li>
+            <li>核心逻辑覆盖率 <b>97%</b>（1543 语句 / 61 未覆盖，要求 ≥60%）</li>
             <li>已修 <b>15</b> 条真实缺陷（含 3 个 P0）</li>
           </ul>
         </div>

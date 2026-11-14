@@ -23,7 +23,7 @@ from dataclasses import replace
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
-from core_engine import generate_match, standardize_score, update_price
+from core_engine import generate_match, standardize_score, suspension_reason, update_price
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, inspect, select
 from sqlalchemy.orm import Session
@@ -88,12 +88,7 @@ def debug_db(db: Session = Depends(get_db)) -> dict:
 def debug_reseed(
     db: Session = Depends(get_db),
     token: str = Query(description="口令，等于 settings.reseed_token"),
-    rounds: int = Query(
-        default=12,
-        ge=0,
-        le=30,
-        description="模拟轮数（默认 12；赛程每 4 轮覆盖 8 队一次，务必取 4 的倍数）；0 = 只写种子初始价",
-    ),
+    rounds: int = Query(default=12, ge=0, le=30, description="模拟轮数（默认 12：赛程 4 的倍数，每队停 3 轮）"),
     seed: int = Query(default=42, description="core_engine 的随机种子（同值结果可复现）"),
 ) -> dict:
     """清空整库并按 `app/core/demo_roster.py`（`data/seed_players.json` 的部署侧镜像）
@@ -236,10 +231,12 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
         "trades": int(db.execute(delete(Trade).where(Trade.user_id == demo.user_id)).rowcount or 0),
     }
 
-    # 2) **其它注册账号一律不动**：余额 / 持仓 / 流水 / 令牌全部原样保留。
-    #    （2026-11-07 用户口径："每个账户的余额一直保存，跟着账号走"；
-    #      想清空自己账户由用户点 POST /api/account/rebuild，重灌无权替人清账。
-    #      注：这段在合并 C 的赛程分支时曾被旧逻辑回填，已再次修正，有测试守着。）
+    # 2) 其它注册账号：**一律不动**（余额 / 持仓 / 流水 / 令牌全部保留）
+    #    2026-11-14 修复：这里原本有一段"其它注册账号余额复位"的循环，与本函数文档、
+    #    接口返回文案（"注册账号的余额/持仓/流水全部保留"）以及 BUG-15 的要求相矛盾，
+    #    并被守卫用例 test_reseed_keeps_registered_account 抓到（余额 4622 → 5000）。
+    #    用户明确口径：账户的钱跟着账号走，重灌只重置行情与 demo 账户；
+    #    想清空自己的账户请用 POST /api/account/rebuild。
 
     now = DEMO_SEED_TS
     for row in DEMO_ROSTER:
@@ -303,8 +300,12 @@ def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
 
         planned_list = []
         for player in players:
-            if player.status != "trading":
+            # 暂停交易：手动 status 优先，其次看本队这一轮是否有比赛（整队停牌）
+            if suspension_reason(
+                {"status": player.status, "team": player.team}, round_no, DEMO_SCHEDULE
+            ):
                 continue
+
             history = played_by_id[player.player_id]
             match = generate_match(
                 player.player_id,
