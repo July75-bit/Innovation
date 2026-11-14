@@ -221,14 +221,14 @@ onMounted(load)
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-3);
-  margin-top: var(--space-4);
+  gap: var(--space-4);
+  margin-top: var(--space-5);
 }
 .stat {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -254,7 +254,7 @@ onMounted(load)
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

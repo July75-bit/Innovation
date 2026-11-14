@@ -580,7 +580,7 @@ watch(playerId, () => loadCore())
   margin-top: var(--space-3);
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5);
 }
 .head h2 {
   margin: 0;
@@ -636,7 +636,7 @@ watch(playerId, () => loadCore())
 .cols {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
-  gap: var(--space-5);
+  gap: var(--space-6); /* P1：列间距 24→32 */
   align-items: start;
   margin-top: var(--space-2);
 }
@@ -1035,8 +1035,8 @@ h3 {
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .ai-expand:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  color: var(--accent-text);
+  border-color: var(--accent-text);
 }
 .ai-expand:focus-visible {
   outline: 2px solid var(--accent);

@@ -102,20 +102,10 @@ function pick(key: string): void {
   outline-offset: 2px;
 }
 .ui-tab.is-active {
-  color: var(--color-text-strong);
-  background: var(--color-surface-raised);
+  /* P1：与侧栏统一——淡主色底 pill + 主色文字，不再用顶部竖条 */
+  color: var(--color-selection-text);
+  background: var(--color-selection-bg);
   font-weight: var(--font-weight-semibold);
-}
-.ui-tab.is-active::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 18px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--color-primary-500);
 }
 .ui-tab__icon svg {
   width: var(--icon-size-sm);

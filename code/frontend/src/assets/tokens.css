@@ -75,6 +75,9 @@
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-300); /* 焦点环（6.06:1） */
   --color-overlay: rgba(9, 10, 14, 0.58); /* 遮罩：压暗但不把玻璃后面的内容压没 */
+  --color-selection-bg: rgba(229, 72, 77, 0.16); /* P1：选中态淡主色底（侧栏/Tab/筛选统一） */
+  --color-selection-text: #ef7377; /* 选中态文字：在淡红底上仍 ≥4.5:1 */
+  --color-table-head: #262b34; /* 表头底色（浅色模式为 #fafafa） */
 
   /* 业务语义：涨 = 主色，跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);
@@ -89,8 +92,8 @@
   --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --font-size-h1: 28px;
-  --font-size-h2: 22px;
+  --font-size-h1: 24px; /* P1 审美对齐：标题降噪（原 28） */
+  --font-size-h2: 20px; /* 区块标题（原 22） */
   --font-size-h3: 18px;
   --font-size-body: 16px;
   --font-size-aux: 14px;
@@ -193,7 +196,7 @@
   --color-neutral-100: #1a1d23;
   --color-neutral-200: #2e333c;
   --color-neutral-300: #454b56;
-  --color-neutral-400: #5d6470;
+  --color-neutral-400: #667085; /* P1：辅助灰更柔和（对白 4.8:1 仍 AA） */
   --color-neutral-500: #8b919d; /* 仅禁用/占位（非正文） */
   --color-neutral-600: #c3c8d2;
   --color-neutral-700: #e8ebf0;
@@ -236,10 +239,13 @@
   --color-text-muted: var(--color-neutral-300);
   --color-text-faint: var(--color-neutral-400);
   --color-text-disabled: var(--color-neutral-500);
-  --color-border: #d7dbe3;
+  --color-border: #e5e8ee; /* P1：边框更轻，接近白卡分割线 */
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-500);
   --color-overlay: rgba(15, 18, 24, 0.26);
+  --color-selection-bg: rgba(229, 72, 77, 0.10);
+  --color-selection-text: #b02a2e;
+  --color-table-head: #fafafa;
 
   /* 业务语义：涨 = 品牌红、跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);

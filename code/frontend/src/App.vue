@@ -389,8 +389,7 @@ onMounted(() => {
   text-decoration: none;
   font-size: var(--fs-body);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border-left: 2px solid transparent;
+  border-radius: var(--radius-md);
 }
 .nav-item:hover {
   background: var(--neutral-bg);
@@ -405,10 +404,10 @@ onMounted(() => {
   stroke-linecap: round;
 }
 .nav-item.router-link-active {
-  color: var(--text);
+  /* P1：选中态 = 淡主色底 pill + 主色文字 */
+  color: var(--color-selection-text);
   font-weight: 600;
-  background: var(--surface-3);
-  border-left-color: var(--accent-text);
+  background: var(--color-selection-bg);
 }
 
 /* 账户概览卡片 */
@@ -611,14 +610,20 @@ onMounted(() => {
   }
   .topbar__crumb {
     font-size: var(--fs-cap);
-    color: var(--muted);
+    color: var(--faint);
     white-space: nowrap;
   }
+  .topbar__crumb::after {
+    content: '/';
+    margin-left: var(--space-2);
+    color: var(--border-strong);
+  }
   .topbar__h {
+    /* P1：顶栏标题降为"面包屑"级，页面大标题仍由页面自身负责，避免同屏重复两个大标题 */
     margin: 0;
-    font-size: var(--fs-h3);
-    font-weight: 600;
-    color: var(--text);
+    font-size: var(--fs-cap);
+    font-weight: var(--font-weight-medium);
+    color: var(--muted);
     white-space: nowrap;
   }
   .topbar__right .balance {

@@ -115,7 +115,7 @@
     },
     "--color-neutral-400": {
       "group": "color.neutral",
-      "light": "#5d6470",
+      "light": "#667085",
       "dark": "#8f949f",
       "purpose": "弱辅助（时间戳、占位提示）",
       "contrast": {
@@ -482,7 +482,7 @@
     },
     "--color-border": {
       "group": "color.border",
-      "light": "#d7dbe3",
+      "light": "#e5e8ee",
       "dark": "#2c313b",
       "purpose": "常规 1px 边框",
       "requirement": "非文字；对表面 ≥3:1 属建议值（本值偏装饰，允许）"
@@ -698,14 +698,14 @@
     "--font-size-h1": {
       "group": "typography",
       "light": "28px",
-      "dark": "28px",
+      "dark": "24px",
       "purpose": "一级标题",
       "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
     },
     "--font-size-h2": {
       "group": "typography",
       "light": "22px",
-      "dark": "22px",
+      "dark": "20px",
       "purpose": "二级标题",
       "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
     },
@@ -869,6 +869,27 @@
       "requirement": "非颜色；移动端顶栏另算",
       "light": "",
       "dark": "56px"
+    },
+    "--color-selection-bg": {
+      "group": "color.surface",
+      "purpose": "选中态淡主色底（侧栏/Tab/筛选统一）",
+      "requirement": "仅背景块；文字用 --accent-text 保证 AA",
+      "light": "rgba(229, 72, 77, 0.10)",
+      "dark": "rgba(229, 72, 77, 0.16)"
+    },
+    "--color-table-head": {
+      "group": "color.surface",
+      "purpose": "表头底色（浅色 #fafafa / 深色抬起面）",
+      "requirement": "非文字；与行底需可辨色差",
+      "light": "#fafafa",
+      "dark": "#262b34"
+    },
+    "--color-selection-text": {
+      "group": "color.surface",
+      "light": "#b02a2e",
+      "dark": "#ef7377",
+      "purpose": "选中态文字（淡主色底上）",
+      "requirement": "对 --color-selection-bg 叠白/叠画布 ≥4.5:1"
     }
   },
   "typography": {

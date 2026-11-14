@@ -439,8 +439,8 @@ onMounted(load)
   cursor: pointer;
 }
 .seg-btn.active {
-  background: var(--up-bg);
-  color: var(--accent-text);
+  background: var(--color-selection-bg);
+  color: var(--color-selection-text);
   font-weight: 700;
 }
 .sort {
@@ -472,22 +472,18 @@ onMounted(load)
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  transition:
-    box-shadow 0.15s ease,
-    transform 0.15s ease,
-    border-color 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 .card:hover {
-  box-shadow: var(--shadow-2);
-  transform: translateY(-2px);
-  border-color: #3a3e46;
+  /* P1：内容卡片不位移、不加阴影，只提亮边框（参考站的做法） */
+  border-color: var(--border-strong);
 }
 .card.suspended {
   opacity: 0.65;
 }
 .card-link {
   display: block;
-  padding: var(--space-4);
+  padding: var(--space-5); /* P1：卡片留白 16→24 */
   text-decoration: none;
   color: inherit;
 }

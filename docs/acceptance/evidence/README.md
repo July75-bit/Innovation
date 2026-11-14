@@ -138,6 +138,12 @@
 | `82-desktop-modal-light.png` | **玻璃弹窗 · 浅色** | 遮罩 .32→.26、面板 .72→.66：blur 贡献 **2.41 → 4.42（25.4% 像素）** |
 | `83-select-popover-light-v2.png` | **下拉弹层 · 浅色（popover 档 .56）** | 弹层比面板更浅（`--glass-bg-popover`），blur 贡献 0.01→1.26（3.2%）；文字仍 AA |
 | `84-pointer-glow.png` | **指针跟随高光（B 项）** | 鼠标移动到工具条 30%→70% 处，`--glow-x` 同步变化、`::after` 高光淡入；reduced-motion 下变量不写入、高光 opacity 恒 0 |
+| `85-p1-light-market.png` | **P1 审美对齐 · 浅色市场页**（2026-11-14 18:25） | 参考 KPL 小助手：卡片留白 16→24、网格 4 列、边框更轻（#e5e8ee）、标题降噪（H1 28→24 / 区块 22→20 / 卡片 16）；侧栏选中 = 淡主色底 pill + 主色文字 |
+| `86-p1-dark-market.png` | **P1 审美对齐 · 深色市场页** | 同一套改动在深色模式生效；内容卡 hover 只提亮边框（去掉位移 + 阴影） |
+| `87-p1-light-positions.png` | **P1 · 持仓页** | 总览卡 padding 12/16→16、卡片间距 12→16、表格行高 44→56+ |
+| `88-p1-light-kit-table.png` | **P1 · 表格实测** | `UiTable` 实测：行高 **59px**（原 ~44）、表头 **49px**、浅色表头 `#fafafa`、深色 `#262b34` |
+| `89-p1-light-detail.png` | **P1 · 选手详情** | 列间距 24→32、卡片留白 24；可点文字统一 `--accent-text`（不再用纯红填充色当文字） |
+| `90-p1-mobile-light-positions.png` | **P1 · 移动端持仓 375px** | 移动端同步生效，无横向溢出；标题/表格在 375 下仍按卡片降级 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
