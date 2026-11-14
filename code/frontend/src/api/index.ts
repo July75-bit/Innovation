@@ -25,6 +25,9 @@ import type {
   AgentBriefResponse,
   AgentDecisionLogResponse,
   AgentDecisionResponse,
+  AgentNarrativeResponse,
+  AgentPanelResponse,
+  AgentToolsResponse,
   AnalysisResponse,
   AuthResponse,
   DeleteAccountResponse,
@@ -237,4 +240,44 @@ export const api = {
           method: 'POST',
           body: JSON.stringify(payload),
         }),
+
+  /** §4.22 多角色协作纪要（分析师→风控→交易员），用户点开卡片才请求 */
+  getAgentPanel: (playerId: number): Promise<AgentPanelResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          trace_id: 0,
+          latency_ms: 0,
+          source: 'rule_fallback' as const,
+          minutes: [{ role: 'system', content: 'mock 纪要' }],
+          final: { action: 'HOLD', risk_level: 'MEDIUM', reason: 'mock' },
+          note: 'mock',
+        }))
+      : request<AgentPanelResponse>(`/api/agent/panel/${playerId}`),
+
+  /** §4.23 叙事归因（把规则 reason 扩写成因果解释） */
+  getAgentNarrative: (playerId: number): Promise<AgentNarrativeResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          ts: new Date().toISOString(),
+          narrative: 'mock 归因',
+          source: 'rule_fallback' as const,
+          change_pct: 0,
+          big_move: false,
+          cached: false,
+        }))
+      : request<AgentNarrativeResponse>(`/api/agent/narrative/${playerId}`),
+
+  /** §4.24 工具调用演示：模型自己调只读工具取数 */
+  getAgentTools: (playerId: number): Promise<AgentToolsResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          answer: 'mock',
+          rounds: 0,
+          source: 'rule_fallback' as const,
+          tool_calls: [],
+        }))
+      : request<AgentToolsResponse>(`/api/agent/tools/${playerId}`),
 }

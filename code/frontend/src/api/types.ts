@@ -219,6 +219,46 @@ export interface AgentDecisionLogResponse {
   message: string
 }
 
+/** §4.22：多角色协作纪要（分析师 → 风控 → 交易员） */
+export interface AgentPanelResponse {
+  player_id: number
+  trace_id: number
+  latency_ms: number
+  source: 'llm' | 'rule_fallback'
+  minutes: Array<{ role: string; content: string }>
+  final: {
+    action: string
+    risk_level: string
+    reason: string
+    disclaimer?: string
+  }
+  note: string
+}
+
+/** §4.23：叙事归因 */
+export interface AgentNarrativeResponse {
+  player_id: number
+  ts: string
+  narrative: string
+  source: 'llm' | 'rule_fallback'
+  model?: string
+  change_pct: number
+  big_move: boolean
+  cached: boolean
+}
+
+/** §4.24：工具调用演示 */
+export interface AgentToolsResponse {
+  player_id: number
+  answer: string
+  rounds: number
+  source: 'llm' | 'rule_fallback'
+  latency_ms?: number
+  fallback_reason?: string
+  trace_id?: number
+  tool_calls: Array<{ round: number; name: string; args: Record<string, unknown>; result?: unknown }>
+}
+
 /**
  * §4.16：删除账号的结果。
  * 三个 deleted_* 是后端回报的真实行数——"级联删干净了"这件事要能在响应里看见，
