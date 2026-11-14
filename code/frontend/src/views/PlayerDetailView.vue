@@ -42,11 +42,7 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import StatusBadge from '../components/StatusBadge.vue'
-<<<<<<< HEAD
-=======
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
-import CollapsibleCard from '../components/CollapsibleCard.vue'
->>>>>>> 816a17c438dfd00fb40e56e2c78d4fc74c066802
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import ErrorState from '../components/ErrorState.vue'
