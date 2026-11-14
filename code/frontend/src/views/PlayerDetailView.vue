@@ -78,6 +78,8 @@ const snapshot = ref<AgentDecisionResponse['snapshot'] | null>(null)
 const traceId = ref(0)
 const decisionSent = ref(false)
 const decisionNotice = ref('')
+/** 主卡理由是否已展开（默认显示"完整句子组成的简介"，展开后显示全文） */
+const reasonExpanded = ref(false)
 
 /* ---- 第二梯度：叙事归因 / 多角色纪要 / 工具取数（都按需加载，拿不到就隐藏） ---- */
 const narrative = ref<string | null>(null)
@@ -182,6 +184,7 @@ async function loadCore(silent = false) {
   plan.value = null
   decisionSent.value = false
   decisionNotice.value = ''
+  reasonExpanded.value = false // 换选手时收起，避免上一个选手的展开状态带过来
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a
@@ -264,6 +267,47 @@ function cleanReason(text: string): string {
   return text.replace(/（规则版建议）/g, "").replace(/\(规则版建议\)/g, "").trim()
 }
 
+/**
+ * 主卡"简介"（2026-11-14 用户要求：**不能说话说一半**）。
+ *
+ * 规则：只在**句末标点**处断开，把完整句子拼到不超过 ~46 字；
+ * 如果第一句本身就比这长，就原样返回那一整句（宁可多一行，也不切半句）。
+ * 剩下的内容由「展开全文」按钮与下方「为什么这么建议」承载。
+ */
+function summaryReason(text: string): string {
+  const clean = cleanReason(text)
+  if (!clean) return ''
+  // 按句末标点切句，保留标点（"当前价 89.13 已连续三日下跌（…），较买" 这种半句不会出现）
+  const sentences = clean.match(/[^。！？；]+[。！？；]?/g) || [clean]
+  let out = ''
+  for (const sentence of sentences) {
+    const next = `${out}${sentence}`
+    if (!out) {
+      out = next
+      continue
+    }
+    if (next.length > 46) break
+    out = next
+  }
+  return out.trim()
+}
+
+/** 是否还有没显示的内容（决定要不要出现「展开全文」） */
+function hasMoreReason(text: string): boolean {
+  const clean = cleanReason(text)
+  return clean.length > summaryReason(text).length
+}
+
+/** 防御：模型/缓存里万一把 JSON 漏到页面上，这里取其中的 reason/summary 展示 */
+function humanizeText(text: string | null | undefined): string {
+  const raw = (text || '').trim()
+  if (!raw) return ''
+  if (!raw.startsWith('{')) return raw
+  const m = raw.match(/"(?:reason|summary|text|narrative)"\s*:\s*"((?:[^"\\]|\\.)*)/)
+  if (m) return (m[1] ?? '').replace(/\\"/g, '"').replace(/\\n/g, ' ').trim()
+  return raw.replace(/[{}"]/g, '').replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, '')
+}
+
 /** 把握档位：把 48% 这种精确数字翻成"较高/一般/较低"（用户不需要两位小数的置信度） */
 function confidenceLabel(value: number): string {
   if (value >= 0.75) return '较高'
@@ -328,7 +372,22 @@ watch(playerId, () => loadCore())
                   <span :class="['advice-pill', analysis.action.toLowerCase()]">{{
                     ACTION_LABEL[analysis.action] ?? analysis.action
                   }}</span>
-                  <p class="ai-line">{{ cleanReason(analysis.reason) }}</p>
+                  <!-- 文字与「展开」竖排：按钮永远在正文下方左侧，不会被挤成竖排字 -->
+                  <div class="ai-text">
+                    <p :class="['ai-line', { 'is-expanded': reasonExpanded }]">
+                      {{ reasonExpanded ? cleanReason(analysis.reason) : summaryReason(analysis.reason) }}
+                    </p>
+                    <button
+                      v-if="hasMoreReason(analysis.reason)"
+                      type="button"
+                      class="ai-expand"
+                      :aria-expanded="reasonExpanded"
+                      @click="reasonExpanded = !reasonExpanded"
+                    >
+                      <span aria-hidden="true">{{ reasonExpanded ? '▴' : '▾' }}</span>
+                      {{ reasonExpanded ? '收起' : '展开全文' }}
+                    </button>
+                  </div>
                 </template>
                 <template v-else-if="analysisLoading">
                   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -374,7 +433,11 @@ watch(playerId, () => loadCore())
               <details class="ai-more">
                 <summary>为什么这么建议</summary>
                 <div class="ai-more-body">
-                  <p v-if="narrative" class="ai-quote">{{ narrative }}</p>
+                  <!-- 主卡只显示前 3 行（CSS 裁切），这里给**完整理由**，避免"截断感" -->
+                  <p v-if="analysis" class="ai-full">
+                    <strong>完整理由：</strong>{{ cleanReason(analysis.reason) }}
+                  </p>
+                  <p v-if="narrative" class="ai-quote">{{ humanizeText(narrative) }}</p>
                   <ul v-if="plan && plan.rationale.length" class="ai-why">
                     <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
                   </ul>
@@ -895,6 +958,15 @@ h3 {
   gap: var(--space-3);
   min-width: 0;
 }
+/* 正文 + 「展开全文」：竖向排列，按钮在正文左下角（不再被 flex 挤成竖排字） */
+.ai-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .advice-pill {
   flex: none;
   padding: 2px 12px;
@@ -920,6 +992,47 @@ h3 {
   font-size: var(--fs-body);
   line-height: 1.65;
   color: var(--text);
+  /* 简介默认最多 2 行；点「展开全文」后取消限制（.is-expanded） */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ai-line.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+/*
+ * 「展开全文 / 收起」：安静的胶囊按钮（不是强调色大字，也不抢"卖出/持有"的视觉）。
+ * 关键：white-space: nowrap —— 上一版就是被 flex 挤到只剩一个字宽，变成竖排"展开全文"。
+ */
+.ai-expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-cap);
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.ai-expand:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.ai-expand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .ai-line.muted {
   color: var(--muted);
@@ -1017,6 +1130,17 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-aux);
   line-height: 1.7;
+}
+/* 折叠区里的「完整理由」：不裁切，主卡 3 行之外的文字在这里能看全 */
+.ai-full {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--text);
+  line-height: 1.7;
+}
+.ai-full strong {
+  color: var(--muted);
+  font-weight: 600;
 }
 .ai-why {
   margin: 0;

@@ -1,21 +1,28 @@
 <script setup lang="ts">
 /**
- * 白话导读：赛程页（/schedule）——给交易者看的"这一轮谁在打比赛、谁因此不能买"。
+ * 白话导读：赛程页（/schedule）——给交易者看的"这一轮谁在打比赛"。
  *
  * 页面只有三块，从上到下就是你要做的三个决定：
- *   1. 选轮次（默认停在今天这一轮，也能左右翻）；
- *   2. 看本轮：对阵 + 暂停名单（点不进交易的那些人）+ 还能交易的名单；
- *   3. 看全季：28 轮一张表，点任意一行就切到那一轮。
+ *   1. 选轮次（默认停在今天这一轮，也能左右翻）；选中的那个 chip 会自动滚到条带正中间，
+ *      于是“轮次 + 日期”始终在屏幕中央——翻到列表最底下点一行也不会丢掉当前定位；
+ *   2. 看本轮：轮次卡底部那一行对阵——哪两队在场上（这两队整队停牌，页头那行字已经把
+ *      结论说完了；名单两块按需求下线，具体是谁不能买去市场页看）；
+ *   3. 看全季：一张“比赛列表”——**没比的按时间顺序在上面，比过的按时间逆序在下面**，
+ *      打开先看到“接下来打谁”，往下翻才是历史；点任意一行就切到那一轮。
  *
  * 算法不在这里写：派生规则来自 `src/core/schedule.ts`（`core_engine/schedule.py` 的移植），
  * 赛程数据来自 `src/data/demoSchedule.ts`（`scripts/build_schedule.py` 生成的镜像）。
- * 选手名单走 GET /api/players（契约 §4.2）；后端没起时只降级名单，赛程照常能看。
+ *
+ * 这页**不查选手名单**：原来那两块"N 人暂停交易 / M 人可交易"按需求删掉了，
+ * 具体是谁不能买去市场页看（横幅 + 卡片状态），拦单规则在接口侧 `rules.ensure_tradable_now`。
+ * 好处是赛程页变成纯静态派生：后端起没起都一个样，也不会出现"名单加载中"。
+ *
+ * 8 支队伍的队标（对阵大字与比赛列表里的小图标）来自 `src/data/teamLogos.ts`，
+ * 图片文件在 `src/assets/teams/`（离线本地文件，来源与授权见该目录 SOURCES.md），
+ * 渲染统一走 `src/components/TeamLogo.vue`：认不到队伍或图加载失败就退成队名首字母。
  */
-import { computed, onMounted, ref } from 'vue'
-import { api } from '../api'
-import { ApiError } from '../api/client'
-import LoadingState from '../components/LoadingState.vue'
-import StatusBadge from '../components/StatusBadge.vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import TeamLogo from '../components/TeamLogo.vue'
 import {
   DEFAULT_BLOCK,
   blocksOf,
@@ -26,16 +33,13 @@ import {
   roundOfDate,
   rounds,
   schedule,
-  suspendedPlayers,
   teamNames,
   todayIso,
-  tradablePlayers,
   weekdayCn,
   type ScheduleMatch,
-  type SchedulePlayer,
 } from '../core/schedule'
 
-/* ------------------------------------------------------------------ 数据装载 */
+/* ------------------------------------------------------------------ 轮次定位 */
 
 const today = todayIso()
 const totalRounds = rounds()
@@ -50,33 +54,11 @@ const lastPlayedAt = schedule.matches[totalRounds - 1]?.played_at ?? ''
 const todayRound = liveRoundNo ?? (today > lastPlayedAt ? totalRounds : roundOfDate(today))
 
 const selected = ref(todayRound)
-const players = ref<SchedulePlayer[]>([])
-const rosterLoading = ref(true)
-const rosterError = ref<string | null>(null)
-
-async function loadRoster(): Promise<void> {
-  rosterLoading.value = true
-  rosterError.value = null
-  try {
-    players.value = await api.listPlayers()
-  } catch (err) {
-    rosterError.value = err instanceof ApiError ? err.message : '选手名单加载失败（后端未连接）'
-    players.value = []
-  } finally {
-    rosterLoading.value = false
-  }
-}
-
-onMounted(loadRoster)
 
 /* -------------------------------------------------------------- 选中轮次派生 */
 
 const names = teamNames()
 const featuredRound = schedule.featured_round ? Number(schedule.featured_round) : null
-const playersPerTeam = Number((schedule.rules ?? {}).suspended_players_per_round ?? 4) / 2
-/** 完整种子名单规模（后端没连上时按规则给结论用）：8 队 × 每队 2 人，不写死数字 */
-const seedRosterSize = names.size * playersPerTeam
-
 const selectedMatch = computed(() => roundMatch(selected.value))
 const selectedPhase = computed(() => phaseOf(selectedMatch.value, today))
 const phaseText: Record<string, string> = {
@@ -89,42 +71,66 @@ const playingLabel = computed(() =>
   playingIds.value.map((id) => names.get(id) ?? String(id)).join(' / '),
 )
 
-const suspended = computed(() => suspendedPlayers(players.value, selected.value))
-/** 可交易 = 赛程没停牌 且 没被运维手动冻结（后者后端结算时也会跳过） */
-const tradable = computed(() =>
-  tradablePlayers(players.value, selected.value).filter((player) => !isManual(player)),
-)
-
-/** 名单没加载时按规则给结论：每轮 2 队 × 每队 playersPerTeam 人 */
-const suspendedCount = computed(() =>
-  players.value.length ? suspended.value.length : 2 * playersPerTeam,
-)
-const tradableCount = computed(() =>
-  players.value.length ? tradable.value.length : Math.max(seedRosterSize - 2 * playersPerTeam, 0),
-)
-
-function isManual(player: SchedulePlayer): boolean {
-  return String(player.status ?? 'trading') !== 'trading'
-}
-
-/** 手动冻结但本轮没有比赛的选手：他不能买的原因不是赛程，得单独说一句 */
-const manualHalted = computed(() => {
-  const haltedIds = new Set(suspended.value.map((player) => player.player_id))
-  return players.value.filter((player) => isManual(player) && !haltedIds.has(player.player_id))
-})
-
 function teamOf(match: ScheduleMatch, side: 'team_a' | 'team_b'): string {
   const id = Number(match[side])
   return names.get(id) ?? String(id)
 }
 
-function displayName(player: SchedulePlayer): string {
-  return player.display_name || player.name || `#${String(player.player_id ?? '?')}`
-}
-
 /* ----------------------------------------------------------------- 赛程表 */
 
-const blocks = computed(() => blocksOf(DEFAULT_BLOCK))
+/* ---------------- 比赛列表：未比的按时间顺序在上，比过的按时间逆序在下 ---------------- */
+
+/**
+ * 排布口径参考 KPL 小助手的“比赛列表”：没比的（含今天开打）按时间升序放上面，
+ * 比过的按时间降序放下面——打开页面第一眼是“接下来打谁”，往下翻才是历史。
+ *
+ * 分组仍跟着赛程算法的“每 4 轮一组”走（`blocksOf`），这样“每 4 轮 8 队各出场一次”
+ * 在列表里依旧看得见；正好跨在“今天”的那一组会被拆成两截（比过的 1 轮 / 没比的 3 轮），
+ * 各自归到对应区块，组头按实际轮次范围写，不会假装整组都打完了。
+ */
+function groupLabel(matches: ScheduleMatch[]): string {
+  const numbers = matches.map((match) => match.round)
+  const lo = Math.min(...numbers)
+  const hi = Math.max(...numbers)
+  return lo === hi ? `第 ${lo} 轮` : `第 ${lo}–${hi} 轮`
+}
+
+/** 一个区块 = 一组轮次 + 它在该区块里的比赛 */
+interface ScheduleSection {
+  key: string
+  label: string
+  tone: 'up' | 'down'
+  matches: ScheduleMatch[]
+}
+
+function sectionOf(group: ScheduleMatch[], tone: 'up' | 'down'): ScheduleSection {
+  const label = groupLabel(group)
+  return {
+    key: `${tone}-${label}`,
+    label: `${label} · ${tone === 'up' ? '未开始' : '已结束'}`,
+    tone,
+    matches: group,
+  }
+}
+
+const blocks = blocksOf(DEFAULT_BLOCK)
+
+/** 未开始（含今天开打）：组内升序、组间升序 */
+const upcomingSections: ScheduleSection[] = blocks
+  .map((group) => group.filter((match) => phaseOf(match, today) !== 'played'))
+  .filter((group) => group.length > 0)
+  .map((group) => sectionOf(group, 'up'))
+
+/** 已结束：组内降序（最近一场排最前），组间也降序 */
+const playedSections: ScheduleSection[] = blocks
+  .map((group) => group.filter((match) => phaseOf(match, today) === 'played').reverse())
+  .filter((group) => group.length > 0)
+  .reverse()
+  .map((group) => sectionOf(group, 'down'))
+
+const sections: ScheduleSection[] = [...upcomingSections, ...playedSections]
+const upcomingCount = upcomingSections.reduce((sum, item) => sum + item.matches.length, 0)
+const playedCount = playedSections.reduce((sum, item) => sum + item.matches.length, 0)
 const strip = computed(() =>
   schedule.matches.map((match) => ({
     round: match.round,
@@ -133,6 +139,51 @@ const strip = computed(() =>
     featured: match.round === featuredRound,
   })),
 )
+
+const stripEl = ref<HTMLElement | null>(null)
+
+/** 滚动动效跟着系统的“减少动效”偏好走，录屏 / 答辩时不会晃眼 */
+function scrollBehavior(): ScrollBehavior {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
+}
+
+/**
+ * 把选中的那一轮滚到条带正中间（chip 上同时写着轮次和日期，居中一次就都稳住了）。
+ *
+ * 两个实现细节：
+ * 1. 用 `getBoundingClientRect` 而不是 `offsetLeft`——后者相对 `offsetParent` 算，
+ *    外层卡片有没有 `position` 会改变参照系，rect 不受这个影响；
+ * 2. 整条都不在视野里时（点了比赛列表最底下那一行），先 `scrollIntoView` 把它带回来，
+ *    否则“居中”是居在屏幕外的中间，没人看得见。
+ */
+async function centerSelectedRound(behavior: ScrollBehavior = scrollBehavior()): Promise<void> {
+  await nextTick()
+  const bar = stripEl.value
+  if (!bar) return
+  const chip = bar.querySelector<HTMLElement>('.chip.on')
+  if (!chip) return
+
+  const before = bar.getBoundingClientRect()
+  const offscreen = before.bottom <= 0 || before.top >= window.innerHeight
+  if (offscreen && typeof bar.scrollIntoView === 'function') {
+    bar.scrollIntoView({ block: 'center', behavior })
+  }
+
+  const barBox = bar.getBoundingClientRect()
+  const chipBox = chip.getBoundingClientRect()
+  const left = bar.scrollLeft + (chipBox.left - barBox.left) - (bar.clientWidth - chipBox.width) / 2
+  const next = Math.max(0, left)
+  if (typeof bar.scrollTo === 'function') {
+    bar.scrollTo({ left: next, behavior })
+  } else {
+    // jsdom / 老浏览器没有 Element.scrollTo，退回直接写 scrollLeft
+    bar.scrollLeft = next
+  }
+}
+
+/** 换轮次就重新居中：左右翻页、点 chip、点列表行、回到今日，全走同一个 `selected` */
+watch(selected, () => void centerSelectedRound())
+onMounted(() => void centerSelectedRound('auto'))
 
 function prevRound(): void {
   selected.value = Math.max(1, selected.value - 1)
@@ -187,7 +238,7 @@ function shortDate(iso: string): string {
         >
           ‹
         </button>
-        <div class="strip" role="group" aria-label="轮次选择">
+        <div ref="stripEl" class="strip" role="group" aria-label="轮次选择">
           <button
             v-for="item in strip"
             :key="item.round"
@@ -215,17 +266,27 @@ function shortDate(iso: string): string {
       <p class="legend">
         <span class="dot played"></span>已结束 <span class="dot today"></span>今天
         <span class="dot upcoming"></span>未开始
-        <span class="mini">★ 焦点局 · 点一轮，下面的名单立刻重算</span>
+        <span class="mini">★ 焦点局 · 点一轮，对阵与列表高亮跟着切换</span>
       </p>
-    </section>
-
-    <!-- ============ 本轮 ============ -->
-    <section class="card">
       <div class="match">
         <div class="match-main num">
-          <strong>{{ names.get(Number(selectedMatch.team_a)) }}</strong>
+          <span class="side">
+            <TeamLogo
+              :team="Number(selectedMatch.team_a)"
+              :name="teamOf(selectedMatch, 'team_a')"
+              size="md"
+            />
+            <strong>{{ teamOf(selectedMatch, 'team_a') }}</strong>
+          </span>
           <span class="vs">vs</span>
-          <strong>{{ names.get(Number(selectedMatch.team_b)) }}</strong>
+          <span class="side">
+            <TeamLogo
+              :team="Number(selectedMatch.team_b)"
+              :name="teamOf(selectedMatch, 'team_b')"
+              size="md"
+            />
+            <strong>{{ teamOf(selectedMatch, 'team_b') }}</strong>
+          </span>
         </div>
         <div class="match-meta">
           <span :class="['phase', selectedPhase]">{{ phaseText[selectedPhase] }}</span>
@@ -234,54 +295,18 @@ function shortDate(iso: string): string {
           <span v-if="selected === featuredRound" class="star">★ 焦点局</span>
         </div>
       </div>
-
-      <div class="roster">
-        <div class="col halt">
-          <h4>
-            <em class="num">{{ suspendedCount }}</em> 人暂停交易
-          </h4>
-          <LoadingState v-if="rosterLoading">读取选手名单…</LoadingState>
-          <ul v-else-if="players.length" class="list">
-            <li v-for="p in suspended" :key="p.player_id">
-              <RouterLink :to="`/players/${p.player_id}`">{{ displayName(p) }}</RouterLink>
-              <span class="team">{{ p.team }}</span>
-              <StatusBadge status="suspended" />
-            </li>
-          </ul>
-          <p v-else class="mini">
-            {{ rosterError }}：按赛程给结论——本轮 {{ playingLabel }} 两队整队停牌（每队
-            {{ playersPerTeam }} 人，共 {{ suspendedCount }} 人）。
-          </p>
-          <p v-if="manualHalted.length" class="mini">
-            另有 {{ manualHalted.length }} 人暂停（非赛程原因）：{{
-              manualHalted.map(displayName).join('、')
-            }}
-          </p>
-        </div>
-
-        <div class="col">
-          <h4>
-            <em class="num">{{ tradableCount }}</em> 人可交易
-          </h4>
-          <LoadingState v-if="rosterLoading">读取选手名单…</LoadingState>
-          <div v-else-if="players.length" class="chips">
-            <RouterLink
-              v-for="p in tradable"
-              :key="p.player_id"
-              class="pchip"
-              :to="`/players/${p.player_id}`"
-            >
-              {{ displayName(p) }}<small>{{ p.team }}</small>
-            </RouterLink>
-          </div>
-          <p v-else class="mini">{{ rosterError }}：其余选手照常交易，价格照常重算。</p>
-        </div>
-      </div>
     </section>
 
-    <!-- ============ 全季 ============ -->
+    <!-- ====== 比赛列表：未比的在上（时间顺序）· 比过的在下（时间逆序） ====== -->
     <section class="card">
-      <h3 class="card-title">全季赛程</h3>
+      <div class="list-head">
+        <h3 class="card-title">比赛列表</h3>
+        <p class="legend">
+          <span class="dot upcoming"></span>未开始 {{ upcomingCount }} 场 · 按时间顺序在上
+          <span class="dot played"></span>已结束 {{ playedCount }} 场 · 按时间逆序在下
+          <span class="mini">点任意一行，上面就切到那一轮</span>
+        </p>
+      </div>
       <table>
         <thead>
           <tr>
@@ -292,12 +317,12 @@ function shortDate(iso: string): string {
           </tr>
         </thead>
         <tbody>
-          <template v-for="(group, index) in blocks" :key="index">
-            <tr class="group-row">
-              <td colspan="4">第 {{ group[0]?.round }}–{{ group[group.length - 1]?.round }} 轮</td>
+          <template v-for="section in sections" :key="section.key">
+            <tr :class="['group-row', section.tone]">
+              <td colspan="4">{{ section.label }}</td>
             </tr>
             <tr
-              v-for="match in group"
+              v-for="match in section.matches"
               :key="match.round"
               :class="['row', { on: match.round === selected }]"
               @click="selected = match.round"
@@ -306,11 +331,16 @@ function shortDate(iso: string): string {
                 {{ match.round }}<i v-if="match.round === featuredRound" class="star">★</i>
               </td>
               <td data-label="对阵" class="vs-cell num">
+                <TeamLogo :team="Number(match.team_a)" :name="teamOf(match, 'team_a')" size="xs" />
                 <b>{{ teamOf(match, 'team_a') }}</b>
                 <span class="vs-mini">vs</span>
                 <b>{{ teamOf(match, 'team_b') }}</b>
+                <TeamLogo :team="Number(match.team_b)" :name="teamOf(match, 'team_b')" size="xs" />
               </td>
-              <td data-label="比赛日" class="num">{{ shortDate(match.played_at) }}</td>
+              <td data-label="比赛日" class="num">
+                {{ shortDate(match.played_at)
+                }}<small class="weekday">{{ weekdayCn(match.played_at) }}</small>
+              </td>
               <td data-label="状态">
                 <span :class="['tag', phaseOf(match, today)]">{{
                   phaseText[phaseOf(match, today)]
@@ -505,10 +535,17 @@ function shortDate(iso: string): string {
 }
 .match-main {
   display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
+  align-items: center;
+  gap: var(--space-4);
   font-size: var(--fs-h1);
   font-weight: 800;
+}
+/* 一队一行内横排：队标贴着队名，整块对阵只占一行高（名单下线后没必要再竖着摆） */
+.match-main .side {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 220px;
 }
 .match-main .vs {
   color: var(--accent-text);
@@ -544,87 +581,7 @@ function shortDate(iso: string): string {
   color: var(--down);
 }
 
-/* ===== 名单 ===== */
-.roster {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: var(--space-3);
-}
-.col {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  min-width: 0;
-}
-.col.halt {
-  background: var(--warn-bg);
-  border-color: transparent;
-}
-.col h4 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-body);
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.col h4 em {
-  font-style: normal;
-  font-size: var(--fs-h2);
-  color: var(--accent-text);
-  font-variant-numeric: tabular-nums;
-}
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.list li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-aux);
-  flex-wrap: wrap;
-}
-.list a {
-  font-weight: 700;
-  text-decoration: none;
-}
-.list a:hover {
-  text-decoration: underline;
-}
-.list .team {
-  color: var(--muted);
-  font-size: var(--fs-cap);
-}
-.list .badge {
-  margin-left: auto;
-}
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.pchip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 4px;
-  padding: 4px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--surface-2);
-  font-size: var(--fs-cap);
-  text-decoration: none;
-  color: var(--text);
-}
-.pchip small {
-  color: var(--muted);
-}
-.pchip:hover {
-  border-color: var(--down);
-}
+/* ===== 注脚文字（图例、列表说明共用） ===== */
 .mini {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-cap);
@@ -674,6 +631,29 @@ tr.row.on td {
   font-size: var(--fs-cap);
   padding: 5px var(--space-3);
 }
+/* 区块底色区分两个口径：未开始（暖色，往前看）/ 已结束（冷灰，历史） */
+.group-row.up td {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+.group-row.down td {
+  background: var(--neutral-bg);
+  color: var(--muted);
+}
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+/* 列表头的两个圆点跟着区块底色走：未开始=暖色，已结束=冷灰 */
+.list-head .dot.upcoming {
+  background: var(--warn);
+}
+.list-head .dot.played {
+  background: var(--muted);
+}
 td .star {
   font-style: normal;
   color: var(--warn);
@@ -687,6 +667,20 @@ td .star {
 }
 .vs-cell b {
   font-weight: 600;
+}
+/* 参考页的镜像排布：左边“标+名”、右边“名+标”，队标永远贴在外侧 */
+.vs-cell .team-logo:first-child {
+  margin-right: 4px;
+}
+.vs-cell .team-logo:last-child {
+  margin-left: 4px;
+}
+/* 比赛日后面的星期，弱化成注脚 */
+td .weekday {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: var(--fs-cap);
 }
 .vs-mini {
   color: var(--muted);
