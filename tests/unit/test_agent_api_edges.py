@@ -250,3 +250,60 @@ def test_decision_body_rejects_bad_literals(client) -> None:
 @pytest.mark.parametrize("limit", [0, 101])
 def test_traces_limit_is_bounded(client, limit: int) -> None:
     assert client.get(f"/api/agent/traces?limit={limit}").status_code == 422
+
+# ---------------------------------------------------------------- 简报总述清洗
+# 背景：模型偶尔不按"只输出一句话"来，返回 `{"action": "HOLD", "reason": "..."}`
+# 甚至被截断成半个 JSON。旧实现只做 [:80] 截断，前端会直接显示代码片段。
+def test_clean_brief_summary_extracts_reason_from_truncated_json() -> None:
+    """线上真实坏样本：被截断的 JSON 也要取出人话 reason。"""
+    raw = '{"action": "HOLD", "reason": "sh1ro 现价 136.43，单日上涨 13.96%；bLitz 现价 48.48'
+
+    clean = agent_api._clean_brief_summary(raw)
+
+    assert "{" not in clean and "action" not in clean
+    assert clean.startswith("sh1ro 现价 136.43")
+
+
+def test_clean_brief_summary_extracts_reason_from_valid_json() -> None:
+    raw = '{"action": "HOLD", "reason": "今日涨跌分化。", "risk_level": "LOW"}'
+
+    assert agent_api._clean_brief_summary(raw) == "今日涨跌分化。"
+
+
+def test_clean_brief_summary_strips_markdown_fence() -> None:
+    raw = "```json\n{\"reason\": \"测试一下\"}\n```"
+
+    assert agent_api._clean_brief_summary(raw) == "测试一下"
+
+
+def test_clean_brief_summary_keeps_plain_sentence() -> None:
+    """本来就是一句话时原样返回（保留句末句号）。"""
+    raw = "今日行情由比赛表现驱动，请关注停牌与大幅波动标的。"
+
+    assert agent_api._clean_brief_summary(raw) == raw
+
+
+def test_clean_brief_summary_handles_empty() -> None:
+    assert agent_api._clean_brief_summary("") == ""
+    assert agent_api._clean_brief_summary(None) == ""
+
+
+def test_brief_endpoint_never_leaks_json(client, monkeypatch) -> None:
+    """端到端：即便模型返回 JSON，接口的 summary 也不能含花括号/字段名。"""
+    _clear_brief_cache()
+    monkeypatch.setattr(settings, "llm_api_key", "sk-test")
+
+    import ai.llm_agent as llm
+
+    monkeypatch.setattr(
+        llm,
+        "_default_chat",
+        lambda *_a, **_k: '{"action": "HOLD", "reason": "今日涨跌分化，注意停牌标的。"}',
+    )
+
+    body = client.get("/api/agent/brief?refresh=true").json()
+
+    assert "{" not in body["summary"] and '"reason"' not in body["summary"]
+    assert "今日涨跌分化" in body["summary"]
+    assert body["source"] == "llm"
+    _clear_brief_cache()

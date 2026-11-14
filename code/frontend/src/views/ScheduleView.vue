@@ -475,7 +475,7 @@ function shortDate(iso: string): string {
   color: var(--text);
 }
 .chip .chip-d {
-  font-size: 11px;
+  font-size: var(--fs-cap);
 }
 .chip.played {
   opacity: 0.6;

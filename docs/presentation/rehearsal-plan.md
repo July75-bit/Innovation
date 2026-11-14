@@ -70,7 +70,7 @@
 | --- | --- | --- |
 | 1 | 把上表"实际"列填完，算出总时长与偏差 | D |
 | 2 | 超时段落**删句不删页**（页号一变，所有引用全废） | 对应讲者 |
-| 3 | 数字与代码核对：308 条 / 97% / 15 条缺陷 / 8 个路由 / Vue 3.5.42·TS 6.0·Vite 8.2.2·FastAPI 0.161.1·SQLAlchemy 2.1.6 | B + D |
+| 3 | 数字与代码核对：320 条 / 97% / 15 条缺陷 / 8 个路由 / Vue 3.5.42·TS 6.0·Vite 8.2.2·FastAPI 0.161.1·SQLAlchemy 2.1.6 | B + D |
 | 4 | 改完**重新导出** `defense.pdf`（`python docs/presentation/build_deck.py` + Edge 打印） | D |
 | 5 | 问题记进 `docs/presentation/README.md`（彩排记录，含两次计时） | D |
 

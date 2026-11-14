@@ -1,7 +1,7 @@
 ﻿# PlayerStock —— 数据驱动的虚拟选手股交易与智能体市场模拟系统
 
 [![CI](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml)
-[![后端](https://img.shields.io/badge/pytest-308%20passed-brightgreen)](docs/acceptance/test_report.md)
+[![后端](https://img.shields.io/badge/pytest-320%20passed-brightgreen)](docs/acceptance/test_report.md)
 [![覆盖率](https://img.shields.io/badge/coverage-98%25-brightgreen)](docs/acceptance/test_report.md)
 [![许可](https://img.shields.io/badge/license-see%20LICENSE-blue)](LICENSE)
 
@@ -33,7 +33,7 @@
 | Web 前端框架 | Vue | 3.5.42 | 组合式 API（A） |
 | 前端构建 | Vite | 8.2.2 | — |
 | 前端路由 | vue-router | 5.3.1 | 含 `/auth` 登录注册页与守卫、`/market` 重定向与兜底路由（BUG-11） |
-| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 308 条、前端 62 条 |
+| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 320 条、前端 108 条 |
 | 代码质量 | ruff / ESLint / oxlint / Pylint / complexipy | 0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0 | 配置与结果见 `docs/software/CodeReview.md` |
 | 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | 同 Python 运行时 | 无第三方依赖（C） |
 | 智能体 | Python + LLM API（可降级为规则版） | 标准库 urllib，超时 20s | 无密钥/超时/脏输出一律回落 `rule_fallback`（D） |
@@ -244,7 +244,7 @@ python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率�
 | --- | --- | --- |
 | [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)）、**代码质量报告**（[`code_quality.md`](docs/software/code_quality.md)）、**代码评审记录**（[`code_review.md`](docs/software/code_review.md)） | B + D |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)）、**代码质量报告**（[`code_quality.md`](docs/software/code_quality.md)）、**代码评审记录**（[`code_review.md`](docs/software/code_review.md)）、**UI 设计规范 v2**（[`ui_design_system.md`](docs/software/ui_design_system.md)）、**设计系统 Token**（[`design_tokens.md`](docs/software/design_tokens.md)）、**UI 组件库**（[`ui_components.md`](docs/software/ui_components.md)） | B + D |
 | [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单（含第 6 天 [`day6.md`](docs/mgmt/day6.md)）、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)、**14 条缺陷 Issue 准备稿**（[`bug-issues.md`](docs/mgmt/bug-issues.md)） ，**课程要求 → 落点对照表** [`requirements-map.md`](docs/mgmt/requirements-map.md) | D |
 | [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告、**生命周期问题汇总**（[`lifecycle_issues.md`](docs/acceptance/lifecycle_issues.md)，汇报 3.4）、**智能体测试分层自查**（[`agent_test_layers.md`](docs/acceptance/agent_test_layers.md)）、**L4 评测报告**（[`agent_eval_report.md`](docs/acceptance/agent_eval_report.md)）、**L5 红队报告**（[`agent_redteam.md`](docs/acceptance/agent_redteam.md)）、验收证据 [`evidence/`](docs/acceptance/evidence/README.md) | D |
 | [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |

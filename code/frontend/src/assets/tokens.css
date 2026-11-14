@@ -1,0 +1,155 @@
+/* ============================================================
+ * PlayerStock · Design Tokens v1
+ * 深色主题 · 扁平化 / 产品化 / 高可读性
+ *
+ * 约定：
+ *  - 中性色 9 阶（n-0 … n-800）+ 1 个画布色；
+ *  - 主色 5 阶（p-50/100/300/500/700），另设 action 别名用于实心按钮；
+ *  - 语义色各 3 阶（subtle / base / strong）；
+ *  - 阴影只允许 none 或弹层的 0 1px 2px；层级靠 1px 边框 + 背景色差；
+ *  - 圆角只用 4 / 6 / 8；间距 8pt 体系。
+ *
+ * 对比度（WCAG 2.1，相对 #181b22 表面）标注见每条注释。
+ * ============================================================ */
+:root {
+  /* ---------- 中性色 9 阶 ---------- */
+  --color-neutral-0: #f7f8fa; /* 最高亮文字 | on surface 16.2:1 */
+  --color-neutral-100: #e9eaee; /* 主文字     | 14.3:1 */
+  --color-neutral-200: #c6c9d1; /* 强调正文   | 10.4:1 */
+  --color-neutral-300: #b6bac4; /* 次要文字   | 8.9:1 */
+  --color-neutral-400: #8f949f; /* 辅助文字   | 5.7:1 */
+  --color-neutral-500: #5c626e; /* 占位符/禁用 | 2.9:1（仅装饰） */
+  --color-neutral-600: #3a404c; /* 强边框     | 非文字 */
+  --color-neutral-700: #262b34; /* 抬起面/悬停底 */
+  --color-neutral-800: #181b22; /* 卡片/表面   */
+
+  /* 画布（页面底色，不属于 9 阶；比 n-800 再深一档） */
+  --color-canvas: #12141a;
+
+  /* ---------- 主色 5 阶（品牌红） ---------- */
+  --color-primary-50: #fdecec; /* 浅底/标签底色 */
+  --color-primary-100: #f8c9ca; /* 浅底悬停 */
+  --color-primary-300: #ef7377; /* 深色底上的主色文字 | 6.06:1 ✅ */
+  --color-primary-500: #e5484d; /* 品牌红：涨跌、图表、强调块（填充） */
+  --color-primary-700: #c23438; /* 实心按钮底（白字 5.47:1 ✅） */
+
+  /* 交互别名（不是新色阶，只是语义指向） */
+  --color-action: var(--color-primary-700); /* 主按钮底 */
+  --color-action-hover: #a82a2e; /* 主按钮悬停（白字 6.5:1） */
+  --color-action-text: #ffffff; /* 主按钮文字 */
+
+  /* ---------- 语义色（各 3 阶） ---------- */
+  /* 成功 / 跌（绿） */
+  --color-success-subtle: #e8f8ef;
+  --color-success-base: #5fd394; /* 深色底文字 9.22:1 ✅ */
+  --color-success-strong: #1a7f4b; /* 实心底 白字 5.02:1 ✅ */
+
+  /* 警告 / 暂停（琥珀） */
+  --color-warning-subtle: #fdf3e3;
+  --color-warning-base: #e8b45c; /* 深色底文字 9.12:1 ✅ */
+  --color-warning-strong: #a86f17; /* 实心底白字 4.24:1 ⚠️ 建议改用深字或 base 底 */
+
+  /* 错误 / 危险（红） */
+  --color-error-subtle: #fdeaea;
+  --color-error-base: #f07171; /* 深色底文字 5.99:1 ✅ */
+  --color-error-strong: #b41c1c; /* 实心底 白字 6.72:1 ✅ */
+
+  /* 信息（蓝） */
+  --color-info-subtle: #e8f1fd;
+  --color-info-base: #6b9bf5; /* 深色底文字 6.26:1 ✅ */
+  --color-info-strong: #1d4ed8; /* 实心底 白字 6.70:1 ✅ */
+
+  /* ---------- 语义映射（组件只用这些，不直接引用色阶） ---------- */
+  --color-bg: var(--color-canvas);
+  --color-surface: var(--color-neutral-800);
+  --color-surface-raised: var(--color-neutral-700); /* 悬停/嵌套 */
+  --color-surface-sunken: #14161c; /* 更深的输入底 */
+  --color-text: var(--color-neutral-100);
+  --color-text-strong: var(--color-neutral-0);
+  --color-text-muted: var(--color-neutral-300);
+  --color-text-faint: var(--color-neutral-400);
+  --color-text-disabled: var(--color-neutral-500);
+  --color-border: #2c313b; /* 1px 常规边框（非文字，无对比度要求） */
+  --color-border-strong: var(--color-neutral-600);
+  --color-focus: var(--color-primary-300); /* 焦点环（6.06:1） */
+  --color-overlay: rgba(9, 10, 14, 0.72);
+
+  /* 业务语义：涨 = 主色，跌 = 成功绿（国内行情习惯） */
+  --color-up: var(--color-primary-500);
+  --color-up-text: var(--color-primary-300); /* 文字档，满足 AA */
+  --color-up-subtle: rgba(229, 72, 77, 0.14);
+  --color-down: var(--color-success-base);
+  --color-down-subtle: rgba(95, 211, 148, 0.14);
+  --color-halt: var(--color-warning-base);
+  --color-halt-subtle: rgba(232, 180, 92, 0.16);
+
+  /* ---------- 字体 ---------- */
+  --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --font-size-h1: 28px;
+  --font-size-h2: 22px;
+  --font-size-h3: 18px;
+  --font-size-body: 16px;
+  --font-size-aux: 14px;
+  --font-size-cap: 13px;
+  --font-size-min: 12px; /* 仅用于非关键标注，不再更小 */
+
+  --line-height-tight: 1.35; /* 标题 */
+  --line-height-body: 1.6; /* 正文 16px */
+  --line-height-aux: 1.5; /* 辅助 13px */
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* ---------- 间距（8pt 体系） ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---------- 圆角（只允许 4/6/8） ---------- */
+  --radius-xs: 4px; /* 标签、徽章 */
+  --radius-sm: 6px; /* 按钮、输入框 */
+  --radius-md: 8px; /* 卡片、弹层 */
+  --radius-lg: 8px; /* 大容器与卡片统一，不引入 12/16 */
+
+  /* ---------- 边框与阴影 ---------- */
+  --border-width: 1px;
+  --border: var(--border-width) solid var(--color-border);
+  --border-strong: var(--border-width) solid var(--color-border-strong);
+  --shadow-none: none;
+  --shadow-overlay: 0 1px 2px rgba(0, 0, 0, 0.3); /* 仅弹层/抽屉 */
+
+  /* ---------- 控件尺寸 ---------- */
+  --control-height-sm: 36px;
+  --control-height-md: 40px;
+  --control-height-lg: 44px;
+  --control-padding-x: 16px;
+  --icon-size-sm: 16px;
+  --icon-size-md: 20px;
+  --icon-size-lg: 24px;
+
+  /* ---------- 布局 ---------- */
+  --layout-max-width: 1280px;
+  --layout-sidebar-width: 232px;
+  --layout-content-max: 1200px;
+
+  /* ---------- 动效（克制；尊重 reduced-motion） ---------- */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0.2, 1);
+
+  /* ---------- 层级 ---------- */
+  --z-nav: 10;
+  --z-dropdown: 100;
+  --z-overlay: 900;
+  --z-modal: 1000;
+  --z-toast: 1100;
+}

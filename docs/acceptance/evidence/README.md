@@ -77,7 +77,7 @@
 | 文件 | 内容 | 关键断言 |
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
-| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **308 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1782 语句 / 35 未覆盖 / 98%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
+| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **320 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1823 语句 / 45 未覆盖 / 98%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
 | `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
@@ -97,6 +97,18 @@
 | `41-ui-redesign-after-market.png` | **界面改版后 · 市场页**（2026-11-14 15:01） | 今日简报改两列对齐（标题列 96px）；技术标签「规则兜底」隐藏；侧栏徽章改「服务正常」 |
 | `42-ui-redesign-after-375.png` | **界面改版后 · 375px 移动端**（2026-11-14 15:01） | 结论/风险/数字/折叠自上而下堆叠；`scrollWidth/innerWidth = 375/375` 无横向滚动 |
 | `43-ui-redesign-panel.png` | **改版后 · 协作纪要展开态**（2026-11-14 15:01） | 模型不可用时不显示 `LLMOutputError` 等技术信息，改为「三个角色本次未能给出纪要（不影响行情与交易）」 |
+| `44-brief-before-json-leak.png` | **简报 bug 现场**（用户 2026-11-14 截图） | 首页「今日简报」摘要直接显示 `{"action": "HOLD", "reason": "sh1ro 现价 136.43…`——模型返回 JSON，后端只截断就透传 |
+| `45-brief-after-clean.png` | **修复后 · 首页简报**（2026-11-14 15:30） | 标题「今日简报」+ 大号一句话总述 + 三列要点卡（今日最该看一眼 / 低价区标的 / 停牌提醒），无花括号与字段名 |
+| `46-ui-v2-before.png` | **UI v2 改版前**（2026-11-14 15:40 前） | 背景带径向渐变 + 40px 网格纹理；状态点发光；圆角 8/12/16/999 混用；正文 14px、辅助 11–12px；导航选中整块主色红 |
+| `47-ui-v2-after-market.png` | **UI v2 · 市场页**（2026-11-14 15:42） | 纯扁平：无渐变/发光；圆角 4/6/8；正文 16px；导航选中改中性高亮 + 主色竖条（红色只留给 CTA 与涨跌） |
+| `48-ui-v2-after-detail.png` | **UI v2 · 详情页** | 结论卡三层结构 + 交易面板常驻；主按钮 44px；AI 卡无红框、无四格数字噪音 |
+| `49-ui-v2-after-375.png` | **UI v2 · 375px** | 无横向滚动（375/375），点击区 ≥44px |
+| `50-ui-v2-after-login.png` | **UI v2 · 登录页** | 渐变背景与发光全部清除，改为扁平底色 + 1px 边框 |
+| `51-design-tokens-after-detail.png` | **设计 Token 接入后 · 详情页**（2026-11-14 15:58） | 买入/卖出改用 AA 合规底色（`#c23438` 白字 5.47:1、`#1a7f4b` 白字 5.02:1）；间距/圆角/字号全部走 `tokens.css`，组件零改动（兼容层映射） |
+| `52-design-tokens-after-market.png` | **设计 Token 接入后 · 市场页** | 简报与卡片沿用统一样式令牌；4/6/8 圆角、1px 边框、无阴影 |
+| `53-ui-kit-full.png` | **UI 组件库预览页**（`/ui-kit`，2026-11-14 16:10） | 按钮 4 变体 × 3 尺寸 × loading/disabled；输入框含 hint/error/后缀/禁用；下拉；5 种标签；卡片 3 态；表格（排序）；分页 96 条；导航选中态 |
+| `54-ui-kit-modal.png` | **危险确认弹窗** | 无 ✕（dismissible=false）、取消在左、红色确认在右、遮罩 72% |
+| `55-ui-kit-375.png` | **组件库 375px** | 无横向滚动（375/375），按钮/输入框/表格均可用 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

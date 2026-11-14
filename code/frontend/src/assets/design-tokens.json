@@ -1,0 +1,141 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "name": "PlayerStock Design Tokens",
+  "version": "1.0.0",
+  "theme": "dark",
+  "meta": {
+    "product": "PlayerStock（虚拟选手股交易模拟）",
+    "principles": ["扁平化：无渐变/无发光/无重阴影", "产品化：一屏一主任务", "高可读性：正文 16px/1.6，AA 对比度"],
+    "wcag": "标注为文字/图标与 #181b22 表面的对比度；AA 正文需 ≥4.5，大号文字 ≥3.0"
+  },
+  "color": {
+    "neutral": {
+      "0": { "value": "#f7f8fa", "usage": "最高亮文字", "contrastOnSurface": 16.22 },
+      "100": { "value": "#e9eaee", "usage": "主文字", "contrastOnSurface": 14.33 },
+      "200": { "value": "#c6c9d1", "usage": "强调正文", "contrastOnSurface": 10.4 },
+      "300": { "value": "#b6bac4", "usage": "次要文字", "contrastOnSurface": 8.87 },
+      "400": { "value": "#8f949f", "usage": "辅助文字", "contrastOnSurface": 5.67 },
+      "500": { "value": "#5c626e", "usage": "占位符/禁用态（仅装饰）", "contrastOnSurface": 2.9 },
+      "600": { "value": "#3a404c", "usage": "强边框/分割线", "contrastOnSurface": null },
+      "700": { "value": "#262b34", "usage": "抬起面 / 悬停底", "contrastOnSurface": null },
+      "800": { "value": "#181b22", "usage": "卡片/表面", "contrastOnSurface": null }
+    },
+    "canvas": { "value": "#12141a", "usage": "页面底色（不属于 9 阶）" },
+    "primary": {
+      "50": { "value": "#fdecec", "usage": "浅底 / 标签底" },
+      "100": { "value": "#f8c9ca", "usage": "浅底悬停" },
+      "300": { "value": "#ef7377", "usage": "深色底上的主色文字/图标", "contrastOnSurface": 6.06 },
+      "500": { "value": "#e5484d", "usage": "品牌红：涨跌、图表、强调填充", "contrastOnSurface": 4.4, "note": "作 16px 正文文字略低于 AA（4.40），文字请用 300 档" },
+      "700": { "value": "#c23438", "usage": "实心按钮底（白字 5.47:1 ✅）", "contrastWhiteOnIt": 5.47 }
+    },
+    "action": { "value": "#c23438", "usage": "主按钮底色", "hover": "#a82a2e", "text": "#ffffff", "contrastWhiteOnIt": 5.47 },
+    "semantic": {
+      "success": {
+        "subtle": { "value": "#e8f8ef", "usage": "浅底" },
+        "base": { "value": "#5fd394", "usage": "深色底文字/图标（跌、交易中）", "contrastOnSurface": 9.22 },
+        "strong": { "value": "#1a7f4b", "usage": "实心底（白字 5.02:1 ✅）", "contrastWhiteOnIt": 5.02 }
+      },
+      "warning": {
+        "subtle": { "value": "#fdf3e3", "usage": "浅底" },
+        "base": { "value": "#e8b45c", "usage": "深色底文字/图标（暂停）", "contrastOnSurface": 9.12 },
+        "strong": { "value": "#a86f17", "usage": "描边/浅底文字", "contrastWhiteOnIt": 4.24, "note": "白字未达 AA；实心头像/标签请配深色文字" }
+      },
+      "error": {
+        "subtle": { "value": "#fdeaea", "usage": "浅底" },
+        "base": { "value": "#f07171", "usage": "深色底文字/图标", "contrastOnSurface": 5.99 },
+        "strong": { "value": "#b41c1c", "usage": "实心底（白字 6.72:1 ✅）/ 危险按钮", "contrastWhiteOnIt": 6.72 }
+      },
+      "info": {
+        "subtle": { "value": "#e8f1fd", "usage": "浅底" },
+        "base": { "value": "#6b9bf5", "usage": "深色底文字/图标", "contrastOnSurface": 6.26 },
+        "strong": { "value": "#1d4ed8", "usage": "实心底（白字 6.70:1 ✅）", "contrastWhiteOnIt": 6.7 }
+      }
+    },
+    "text": {
+      "default": { "value": "{color.neutral.100}", "usage": "正文" },
+      "strong": { "value": "{color.neutral.0}", "usage": "标题/数字" },
+      "muted": { "value": "{color.neutral.300}", "usage": "辅助说明" },
+      "faint": { "value": "{color.neutral.400}", "usage": "占位/时间戳" },
+      "disabled": { "value": "{color.neutral.500}", "usage": "禁用文字" }
+    },
+    "border": {
+      "default": { "value": "#2c313b", "usage": "卡片/输入框 1px 边框" },
+      "strong": { "value": "{color.neutral.600}", "usage": "分割线/强调边框" },
+      "focus": { "value": "{color.primary.300}", "usage": "焦点环（2px）" }
+    },
+    "business": {
+      "up": { "value": "{color.primary.500}", "textValue": "{color.primary.300}", "usage": "涨（填充 p-500，文字 p-300）" },
+      "down": { "value": "{color.success.base}", "usage": "跌" },
+      "halt": { "value": "{color.warning.base}", "usage": "暂停交易" }
+    }
+  },
+  "typography": {
+    "fontFamily": {
+      "sans": "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif",
+      "mono": "ui-monospace, 'Cascadia Mono', Consolas, monospace"
+    },
+    "fontSize": { "h1": 28, "h2": 22, "h3": 18, "body": 16, "aux": 14, "cap": 13, "min": 12 },
+    "lineHeight": { "tight": 1.35, "body": 1.6, "aux": 1.5 },
+    "fontWeight": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 },
+    "rules": [
+      "正文固定 16px / 1.6；辅助 13–14px / 1.5；不得小于 12px",
+      "标题只用 H1–H3 三级：28 / 22 / 18",
+      "金额与价格使用等宽数字（font-variant-numeric: tabular-nums）"
+    ]
+  },
+  "spacing": { "1": 4, "2": 8, "3": 12, "4": 16, "5": 24, "6": 32, "7": 48, "8": 64 },
+  "radius": { "xs": 4, "sm": 6, "md": 8, "lg": 8, "rule": "只允许 4/6/8；禁止 12/16/999 混用" },
+  "border": { "width": 1, "style": "solid", "rule": "层级用 1px 边框 + 背景色差表达，不用阴影" },
+  "shadow": {
+    "none": "none",
+    "overlay": "0 1px 2px rgba(0,0,0,0.3)",
+    "rule": "仅弹层/抽屉允许极轻投影；卡片一律无阴影"
+  },
+  "components": {
+    "button": {
+      "primary": { "background": "{color.action}", "color": "#fff", "height": 44, "radius": 6, "hover": "{color.action.hover}", "disabled": "opacity .55" },
+      "secondary": { "background": "transparent", "border": "1px solid {color.border.default}", "color": "{color.text.muted}", "height": 40, "radius": 6 },
+      "danger": { "background": "{color.semantic.error.strong}", "color": "#fff", "height": 40, "radius": 6 },
+      "sizes": { "sm": 36, "md": 40, "lg": 44 }
+    },
+    "input": {
+      "height": 40,
+      "radius": 6,
+      "background": "{color.surface.sunken}",
+      "border": "1px solid {color.border.default}",
+      "focus": "2px 主色焦点环 + 边框变主色",
+      "error": "边框 error.base + 13px 错误提示（原因 + 下一步）",
+      "states": ["default", "hover", "focus", "filled", "disabled", "error"]
+    },
+    "card": {
+      "background": "{color.surface}",
+      "border": "1px solid {color.border.default}",
+      "radius": 8,
+      "padding": 16,
+      "shadow": "none",
+      "states": ["default", "hover(边框提亮)", "selected(左侧 2px 主色)"]
+    },
+    "table": {
+      "headerBackground": "{color.surface.raised}",
+      "rowHover": "{color.surface.raised}",
+      "divider": "1px solid {color.border.default}",
+      "cellPadding": "12px 16px",
+      "numericAlign": "right + tabular-nums",
+      "empty": "居中空态 + 一句引导",
+      "states": ["default", "row-hover", "selected", "loading(skeleton)", "empty", "error"]
+    },
+    "nav": {
+      "width": 232,
+      "itemHeight": 40,
+      "itemRadius": 6,
+      "defaultColor": "{color.text.muted}",
+      "hoverBackground": "{color.surface.raised}",
+      "activeBackground": "{color.surface.raised}",
+      "activeIndicator": "left 2px {color.primary.500}",
+      "focus": "2px 焦点环"
+    }
+  },
+  "layout": { "maxWidth": 1280, "contentMax": 1200, "sidebarWidth": 232, "grid": 12 },
+  "motion": { "fast": 120, "base": 180, "easing": "cubic-bezier(0.2,0,0.2,1)", "rule": "禁止复杂动画；尊重 prefers-reduced-motion" },
+  "zIndex": { "nav": 10, "dropdown": 100, "overlay": 900, "modal": 1000, "toast": 1100 }
+}

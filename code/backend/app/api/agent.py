@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -179,6 +180,73 @@ def agent_decision(
 
 
 # ---------------------------------------------------------------- 今日简报
+def _round_halt_detail(players: list[Player], round_no: int | None) -> str:
+    """本轮"停牌"说明：**由赛程派生**，不是看 `players.status`。
+
+    两个概念的差别（2026-11-14 修，原先这里用错了字段）：
+    - `players.status`：**手动冻结**（运维把某人长期停牌），现在是 16 人全 trading；
+    - **本轮停牌**：赛程里这一轮有 2 支队伍在比赛 → 这 2 队共 4 人本轮不能交易，
+      由 `core_engine.schedule.status_for()` 派生，每轮变化，不写库。
+
+    所以简报若只看 `status`，就永远显示"无选手停牌"——与实际（每轮 4 人停牌）矛盾。
+    """
+    manual = [p.name for p in players if p.status != "trading"]
+    manual_note = f"（另有手动冻结：{'、'.join(manual)}）" if manual else ""
+
+    if round_no is None:
+        return "今天不是比赛日，没有本轮停牌" + manual_note
+
+    from core_engine.schedule import playing_teams, resolve_team_id, team_names
+
+    from app.core.demo_schedule import DEMO_SCHEDULE
+
+    try:
+        team_ids = playing_teams(DEMO_SCHEDULE, round_no)
+        names = team_names(DEMO_SCHEDULE)
+        halted = [
+            p.name for p in players if resolve_team_id(p.team or "", DEMO_SCHEDULE) in team_ids
+        ]
+        matchup = " vs ".join(names.get(t, f"#{t}") for t in sorted(team_ids))
+    except Exception:  # noqa: BLE001 —— 赛程镜像异常不该影响简报
+        return "赛程数据不可用，无法判断本轮停牌" + manual_note
+
+    if not halted:
+        return f"第 {round_no} 轮 {matchup} 比赛中，但没有选手匹配到这两支队伍" + manual_note
+    return f"第 {round_no} 轮 {matchup} 比赛中，{len(halted)} 人停牌：{'、'.join(halted)}" + manual_note
+
+
+def _clean_brief_summary(raw: str | None) -> str:
+    """把模型输出清洗成「一句中文总述」（简报是给人看的，绝不能透出 JSON/字段名）。
+
+    模型偶尔不听话，返回的是 `{"action": "HOLD", "reason": "..."}` 这类 JSON
+    （甚至被截断成半个 JSON）。这里统一兜底：
+    1. 去掉 markdown 代码围栏；
+    2. 若是 JSON：优先取 reason / summary / text 字段（截断的 JSON 也能救）；
+    3. 取不到就当纯文本，剥掉花括号、引号与常见字段名；
+    4. 合并空白并限长 80 字（前端一行放得下），保留句末标点。
+    """
+    text = (raw or "").strip()
+    if not text:
+        return ""
+
+    # 1) markdown 代码围栏（```json ... ```）
+    text = re.sub(r"^```\w*\s*", "", text)
+    text = re.sub(r"\s*```$", "", text).strip()
+
+    # 2) 模型返回 JSON：优先取人话字段
+    if text.startswith("{"):
+        match = re.search(r'"(?:reason|summary|text)"\s*:\s*"((?:[^"\\]|\\.)*)', text)
+        if match:
+            text = match.group(1).replace('\\"', '"').replace("\\n", " ")
+        else:
+            text = re.sub(r'[{}"]', "", text)
+            text = re.sub(r"\b(action|risk_level|reason|summary|text)\s*[:：]\s*", "", text)
+
+    # 3) 合并空白（保留句末标点，只去首尾空格）
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:80]
+
+
 def _brief_items(db: Session) -> list[dict[str, Any]]:
     players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
     if not players:
@@ -186,7 +254,12 @@ def _brief_items(db: Session) -> list[dict[str, Any]]:
     changes = [(p, float(pct_change(float(p.prev_price or 0), float(p.current_price or 0)))) for p in players]
     hottest = max(changes, key=lambda x: abs(x[1]))
     cheapest = min(players, key=lambda p: float(p.current_price or 0))
-    suspended = [p.name for p in players if p.status != "trading"]
+
+    from core_engine.schedule import current_round
+
+    from app.core.demo_schedule import DEMO_SCHEDULE
+
+    round_no = current_round(DEMO_SCHEDULE)
 
     items = [
         {
@@ -200,8 +273,9 @@ def _brief_items(db: Session) -> list[dict[str, Any]]:
             "player_id": cheapest.player_id,
         },
         {
-            "title": "停牌提醒",
-            "detail": ("本场比赛中暂停交易：" + "、".join(suspended)) if suspended else "当前无选手停牌",
+            # 标题点明口径：这是"本轮赛程停牌"，不是"手动冻结"
+            "title": f"本轮停牌（第 {round_no} 轮）" if round_no else "本轮停牌",
+            "detail": _round_halt_detail(players, round_no),
             "player_id": None,
         },
     ]
@@ -223,11 +297,14 @@ def agent_brief(
         from ai.llm_agent import _default_chat
 
         digest = "\n".join(f"- {i['title']}：{i['detail']}" for i in items)
-        summary = _default_chat(
-            "你是市场简报编辑。根据下面三条要点写一句不超过 40 字的中文总述，"
-            f"不要给投资建议、不要编造数据。\n{digest}",
-            settings=settings,
-        ).strip()[:80]
+        summary = _clean_brief_summary(
+            _default_chat(
+                "你是市场简报编辑。根据下面三条要点写一句不超过 40 字的中文总述，"
+                "只输出这一句话本身（不要 JSON、不要字段名、不要代码块），"
+                f"不要给投资建议、不要编造数据。\n{digest}",
+                settings=settings,
+            )
+        )
         source = "llm" if summary else "rule_fallback"
     except Exception as exc:  # noqa: BLE001
         logger.info("简报总述回落规则版：%s: %s", type(exc).__name__, exc)

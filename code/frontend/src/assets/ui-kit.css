@@ -1,0 +1,278 @@
+/* ============================================================
+ * PlayerStock · 基础组件样式（参考实现）
+ *
+ * 只使用 tokens.css 里的语义变量；类名统一 ui- 前缀，避免与页面 scoped 样式冲突。
+ * 这些类是"设计系统落地"的示例：新页面直接用，不要再各自写一套。
+ * ============================================================ */
+
+/* ---------------- 按钮 ---------------- */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: var(--control-height-md);
+  padding: 0 var(--control-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease);
+}
+.ui-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.ui-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* 主按钮：唯一实色主操作（高度 44） */
+.ui-btn--primary {
+  height: var(--control-height-lg);
+  background: var(--color-action);
+  color: var(--color-action-text);
+}
+.ui-btn--primary:hover:not(:disabled) {
+  background: var(--color-action-hover);
+}
+
+/* 次按钮：描边 */
+.ui-btn--secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+.ui-btn--secondary:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-raised);
+}
+
+/* 危险操作 */
+.ui-btn--danger {
+  background: var(--color-error-strong);
+  color: #fff;
+}
+.ui-btn--danger:hover:not(:disabled) {
+  background: #9c1818;
+}
+
+/* 文字按钮 */
+.ui-btn--ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  padding: 0 var(--space-2);
+}
+.ui-btn--ghost:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--color-surface-raised);
+}
+
+.ui-btn--sm {
+  height: var(--control-height-sm);
+  font-size: var(--font-size-aux);
+  padding: 0 var(--space-3);
+}
+.ui-btn--lg {
+  height: var(--control-height-lg);
+}
+.ui-table .is-center {
+  text-align: center;
+}
+
+/* ---------------- 输入框 ---------------- */
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ui-label {
+  font-size: var(--font-size-aux);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+.ui-input {
+  height: var(--control-height-md);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-sunken);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--font-size-body);
+}
+.ui-input::placeholder {
+  color: var(--color-text-disabled);
+}
+.ui-input:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+.ui-input:focus {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+  border-color: var(--color-primary-500);
+}
+.ui-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ui-input[aria-invalid='true'] {
+  border-color: var(--color-error-base);
+}
+.ui-hint {
+  font-size: var(--font-size-cap);
+  line-height: var(--line-height-aux);
+  color: var(--color-text-faint);
+}
+.ui-error {
+  font-size: var(--font-size-cap);
+  line-height: var(--line-height-aux);
+  color: var(--color-error-base);
+}
+
+/* ---------------- 卡片 ---------------- */
+.ui-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-none);
+}
+.ui-card--interactive {
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--motion-ease);
+}
+.ui-card--interactive:hover {
+  border-color: var(--color-border-strong);
+}
+.ui-card--interactive:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.ui-card--selected {
+  border-left: 2px solid var(--color-primary-500);
+}
+.ui-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-strong);
+}
+.ui-card__meta {
+  font-size: var(--font-size-cap);
+  color: var(--color-text-faint);
+}
+
+/* ---------------- 表格 ---------------- */
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-body);
+}
+.ui-table th {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-raised);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-cap);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  white-space: nowrap;
+}
+.ui-table td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+.ui-table tbody tr:hover {
+  background: var(--color-surface-raised);
+}
+.ui-table .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ui-table .is-up {
+  color: var(--color-up-text);
+}
+.ui-table .is-down {
+  color: var(--color-down);
+}
+.ui-table__empty {
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* ---------------- 导航 ---------------- */
+.ui-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: var(--layout-sidebar-width);
+}
+.ui-nav__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--control-height-md);
+  padding: 0 var(--space-3);
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+  text-decoration: none;
+}
+.ui-nav__item:hover {
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+}
+.ui-nav__item.is-active {
+  background: var(--color-surface-raised);
+  border-left-color: var(--color-primary-500);
+  color: var(--color-text-strong);
+  font-weight: var(--font-weight-semibold);
+}
+.ui-nav__item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.ui-nav__icon {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  flex: none;
+}
+
+/* ---------------- 徽章 / 标签 ---------------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  font-size: var(--font-size-cap);
+  font-weight: var(--font-weight-medium);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+}
+.ui-badge--success {
+  background: var(--color-down-subtle);
+  color: var(--color-success-base);
+}
+.ui-badge--warning {
+  background: var(--color-halt-subtle);
+  color: var(--color-halt);
+}
+.ui-badge--error {
+  background: rgba(240, 113, 113, 0.14);
+  color: var(--color-error-base);
+}
+.ui-badge--info {
+  background: rgba(107, 155, 245, 0.14);
+  color: var(--color-info-base);
+}

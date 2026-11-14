@@ -306,7 +306,7 @@ input {
   padding: var(--space-2) 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 15px;
+  font-size: var(--fs-body);
   background: var(--bg);
   color: var(--text);
 }
@@ -322,7 +322,7 @@ input[aria-invalid='true'] {
   min-width: 36px;
   padding: 6px 10px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
   font-size: var(--fs-aux);
@@ -398,7 +398,7 @@ button.sell {
   padding: 10px 0;
   border: none;
   border-radius: var(--radius-sm);
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   cursor: pointer;
   color: #fff;
@@ -409,10 +409,10 @@ button.sell:disabled {
   cursor: not-allowed;
 }
 .buy {
-  background: var(--up);
+  background: var(--color-action);
 }
 .sell {
-  background: var(--down);
+  background: var(--color-success-strong);
 }
 .feedback {
   padding: var(--space-2) var(--space-3);
