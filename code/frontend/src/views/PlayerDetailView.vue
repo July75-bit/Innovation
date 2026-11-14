@@ -387,6 +387,19 @@ watch(playerId, () => loadCore())
                       <span aria-hidden="true">{{ reasonExpanded ? '▴' : '▾' }}</span>
                       {{ reasonExpanded ? '收起' : '展开全文' }}
                     </button>
+                    <!-- 风险/把握是**只读指标**：用文字 + 彩色圆点，不用胶囊（避免被当成按钮） -->
+                    <p class="ai-meta">
+                      <span class="meta-item">
+                        <i :class="['meta-dot', analysis.risk_level.toLowerCase()]" aria-hidden="true"></i>
+                        风险<b :class="['meta-strong', analysis.risk_level.toLowerCase()]">{{
+                          RISK_LABEL[analysis.risk_level] ?? analysis.risk_level
+                        }}</b>
+                      </span>
+                      <template v-if="plan">
+                        <span class="meta-sep" aria-hidden="true">·</span>
+                        <span class="meta-item">把握<b class="meta-strong">{{ confidenceLabel(plan.confidence) }}</b></span>
+                      </template>
+                    </p>
                   </div>
                 </template>
                 <template v-else-if="analysisLoading">
@@ -395,23 +408,17 @@ watch(playerId, () => loadCore())
                 </template>
                 <p v-else class="ai-line muted">AI 建议暂不可用（不影响交易）。</p>
               </div>
-              <div class="ai-side">
-                <template v-if="analysis">
-                  <span :class="['chip', 'risk', analysis.risk_level.toLowerCase()]"
-                    >风险 {{ RISK_LABEL[analysis.risk_level] ?? analysis.risk_level }}</span
-                  >
-                  <span v-if="plan" class="chip">把握 {{ confidenceLabel(plan.confidence) }}</span>
-                </template>
-                <button
-                  v-if="analysis || analysisLoading"
-                  type="button"
-                  class="ghost-btn"
-                  :disabled="analysisLoading"
-                  @click="refreshAnalysis"
-                >
-                  {{ analysisLoading ? '分析中…' : '重新分析' }}
-                </button>
-              </div>
+              <!-- 右侧只放**唯一可点的操作**；带 ↻ 图标，和下面的「展开全文」拉开视觉层级 -->
+              <button
+                v-if="analysis || analysisLoading"
+                type="button"
+                class="ai-action"
+                :disabled="analysisLoading"
+                @click="refreshAnalysis"
+              >
+                <span :class="['ai-action-ico', { spinning: analysisLoading }]" aria-hidden="true">↻</span>
+                {{ analysisLoading ? '分析中…' : '重新分析' }}
+              </button>
             </div>
 
             <!-- 第二层：只留两个下单真正用得上的数字 -->
@@ -423,9 +430,6 @@ watch(playerId, () => loadCore())
                 ><em>参考止损</em
                 ><b>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</b></span
               >
-              <span class="ai-mode">{{
-                analysis.source === 'llm' ? 'AI 生成' : '简化模式（模型未连接）'
-              }}</span>
             </div>
 
             <!-- 第三层：三块折叠，默认全收起 -->
@@ -442,6 +446,10 @@ watch(playerId, () => loadCore())
                     <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
                   </ul>
                   <p v-if="plan" class="ai-note">{{ plan.note }}</p>
+                  <!-- 依据来源从主卡移到这里：不影响主卡信息密度，但需要时查得到 -->
+                  <p class="ai-source">
+                    依据来源：{{ analysis.source === 'llm' ? 'AI 模型' : '简化模式（模型未连接）' }}
+                  </p>
                 </div>
               </details>
 
@@ -1038,11 +1046,102 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-aux);
 }
-.ai-side {
-  flex: none;
+/* 只读指标（风险/把握）：文字 + 彩色圆点，**刻意不用胶囊**，免得看起来像能点 */
+.ai-meta {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+  cursor: default;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.meta-dot.low {
+  background: #4cc38a;
+}
+.meta-dot.medium {
+  background: #e0b341;
+}
+.meta-dot.high {
+  background: #e5534b;
+}
+.meta-strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.meta-strong.low {
+  color: #4cc38a;
+}
+.meta-strong.medium {
+  color: #e0b341;
+}
+.meta-strong.high {
+  color: #e5534b;
+}
+.meta-sep {
+  color: var(--border);
+}
+/* 右上角唯一操作：次级按钮（带 ↻ 图标），比下面的「展开全文」更"实"，但不抢结论 */
+.ai-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  align-self: flex-start;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  /* 比「展开全文」（透明底）再多一点"实"的感觉，但远不到主按钮的强度 */
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: var(--fs-cap);
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.ai-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.ai-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ai-action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ai-action-ico {
+  font-size: 13px;
+  line-height: 1;
+}
+.ai-action-ico.spinning {
+  display: inline-block;
+  animation: ai-spin 0.9s linear infinite;
+}
+@keyframes ai-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* 折叠区里的"依据来源"：低优先级信息 */
+.ai-source {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
 }
 .chip {
   padding: 2px 10px;
@@ -1082,11 +1181,6 @@ h3 {
 .ai-facts em {
   font-style: normal;
   margin-right: 6px;
-}
-.ai-mode {
-  margin-left: auto;
-  font-size: var(--fs-cap);
-  opacity: 0.85;
 }
 .ai-more {
   border-top: 1px solid var(--border);
@@ -1240,16 +1334,13 @@ h3 {
   .ai-verdict {
     flex-wrap: wrap;
   }
-  .ai-side {
-    width: 100%;
-    flex-wrap: wrap;
+  /* 窄屏：操作按钮单独一行、左对齐（不与结论抢位） */
+  .ai-action {
+    align-self: flex-start;
   }
   .ai-facts {
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
-  }
-  .ai-mode {
-    margin-left: 0;
   }
   .ai-foot {
     flex-direction: column;
