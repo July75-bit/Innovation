@@ -167,7 +167,8 @@
 AI 部分的测试分层、五条原则对照、CI 门禁与 4 项缺口，单独写在：
 
 - **分层与门禁自查**：[`agent_test_layers.md`](agent_test_layers.md)（L1–L5、五原则、p.189 门禁、xfail 与 eval 目录缺口）
-- **33 项用户测试检查表**：[`../../tests/agent_demo_user_test.md`](../../tests/agent_demo_user_test.md)（课件 p.209 指定路径；P/I/V/H/A 共 33 项，29 通过 / 4 部分通过）
+- **33 项用户测试检查表**：[`../../tests/playerstock_agent_demo_user_test.md`](../../tests/playerstock_agent_demo_user_test.md)（**正式提交版**，按课件「用户测试表-学生版」格式填满 33 题 + 测试准备 + 实测记录 + 统计结论 + 自评；26 通过 / 7 部分通过 / 0 不通过）
+- 内部自查版（结论 + 证据索引）：[`../../tests/agent_demo_user_test.md`](../../tests/agent_demo_user_test.md)
 
 > 一句话：**确定性壳用 216 条离线测试钉死，概率性核用注入式替身隔离**；L4 评测集与 L5 红队未做，已如实列入已知限制。
 

@@ -2,7 +2,8 @@
 
 > **对应课件**：SWIEP.pdf（297 页版）第 4 天第 3 部分「用户测试」p.200–209，检查清单共 **33 项**：
 > 产品价值 **P1–P5（5）** + 界面设计 **I1–I4（4）** + 视觉设计 **V1–V4（4）** + Nielsen 通用可用性 **H1–H9（9）** + 智能体专项 **A1–A11（11）**。
-> **本文件路径**：`tests/agent_demo_user_test.md`（按课件 p.209「完成下表 … tests/XXXagent_demo_user_test.md」命名）
+> **本文件路径**：`tests/agent_demo_user_test.md`（内部自查版：结论 + 证据索引）
+> **正式提交版（课件「用户测试表-学生版」格式，逐格填满）**：[`playerstock_agent_demo_user_test.md`](playerstock_agent_demo_user_test.md)
 > **自查方式**：逐项到代码/截图里找证据，不凭印象打勾；**结论只有三种**：✅ 通过 / 🟡 部分通过 / ❌ 未做。
 > **自查人**：D 王泽棠 ｜ **日期**：2026-11-14 ｜ **被测对象**：线上 https://playerstock-frontend-mdlk.onrender.com（16 名选手）
 
