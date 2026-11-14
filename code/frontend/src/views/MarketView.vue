@@ -293,8 +293,8 @@ onMounted(load)
   cursor: pointer;
 }
 .refresh:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .refresh:disabled {
   opacity: 0.5;
@@ -396,7 +396,7 @@ onMounted(load)
 }
 .rn-link {
   margin-left: auto;
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
   font-size: var(--fs-aux);
 }
@@ -440,7 +440,7 @@ onMounted(load)
 }
 .seg-btn.active {
   background: var(--up-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 700;
 }
 .sort {
@@ -530,7 +530,7 @@ onMounted(load)
   font-variant-numeric: tabular-nums;
 }
 .change.up {
-  color: var(--up);
+  color: var(--up-text);
 }
 .change.down {
   color: var(--down);
@@ -554,7 +554,7 @@ onMounted(load)
 .link-btn {
   background: none;
   border: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: inherit;
   cursor: pointer;
   padding: 0;

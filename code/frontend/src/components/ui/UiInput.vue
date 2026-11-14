@@ -26,8 +26,10 @@ const props = withDefaults(
     step?: number
     /** 后缀单位（如「股」） */
     suffix?: string
+    /** 加载中（如"正在校验数量"）：禁用输入 + 右侧转圈 + aria-busy */
+    loading?: boolean
   }>(),
-  { type: 'text', disabled: false, required: false, size: 'md' },
+  { type: 'text', disabled: false, required: false, size: 'md', loading: false },
 )
 
 const emit = defineEmits<{
@@ -60,8 +62,9 @@ function onInput(event: Event) {
         :type="type"
         :value="modelValue ?? ''"
         :placeholder="placeholder"
-        :disabled="disabled"
+        :disabled="disabled || loading"
         :required="required"
+        :aria-busy="loading || undefined"
         :inputmode="inputmode"
         :min="min"
         :max="max"
@@ -71,7 +74,8 @@ function onInput(event: Event) {
         @input="onInput"
         @blur="emit('blur')"
       />
-      <span v-if="suffix" class="ui-input__suffix" aria-hidden="true">{{ suffix }}</span>
+      <span v-if="loading" class="ui-input__spinner" aria-hidden="true" />
+      <span v-else-if="suffix" class="ui-input__suffix" aria-hidden="true">{{ suffix }}</span>
     </div>
     <p v-if="message" :id="descId" :class="invalid ? 'ui-error' : 'ui-hint'">{{ message }}</p>
   </div>
@@ -91,6 +95,26 @@ function onInput(event: Event) {
 }
 .ui-input.has-suffix {
   padding-right: 32px;
+}
+.ui-input__spinner {
+  position: absolute;
+  right: var(--space-3);
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ui-input-spin 0.7s linear infinite;
+}
+@keyframes ui-input-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ui-input__spinner {
+    animation: none;
+  }
 }
 .ui-input__suffix {
   position: absolute;

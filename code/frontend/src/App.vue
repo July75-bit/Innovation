@@ -26,9 +26,39 @@ import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
 import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
+import UiBottomTab from './components/ui/UiBottomTab.vue'
+import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
+import { useTheme } from './composables/useTheme'
 
 const { account } = useAccount()
+
+/** 主题：浅色/深色双模式（令牌在 tokens.css；选择记在 localStorage） */
+const { theme, toggleTheme } = useTheme()
+const themeActionLabel = computed(() => (theme.value === 'light' ? '切到深色模式' : '切到浅色模式'))
+
+/** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
+const TAB_ROUTES: Record<string, string> = {
+  market: '/',
+  schedule: '/schedule',
+  positions: '/positions',
+  trades: '/trades',
+}
+const tabItems: UiTabItem[] = [
+  { key: 'market', label: '市场', icon: 'M2 13h12M4 13V8m4 5V4m4 9v-6' },
+  { key: 'schedule', label: '赛程', icon: 'M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5V5M10.5 2.5V5' },
+  { key: 'positions', label: '持仓', icon: 'M2 5.5 8 3l6 2.5L8 8 2 5.5Zm0 3L8 11l6-2.5M2 11 8 13.5 14 11' },
+  { key: 'trades', label: '流水', icon: 'M3 4h10M3 8h10M3 12h6' },
+]
+const activeTab = computed(() => {
+  if (route.path.startsWith('/players')) return 'market' // 详情页属于"市场"这条线
+  const hit = Object.entries(TAB_ROUTES).find(([, path]) => path === route.path)
+  return hit ? hit[0] : 'market'
+})
+function onTabSelect(key: string): void {
+  const path = TAB_ROUTES[key]
+  if (path) void router.push(path)
+}
 
 /** 响应式：≤960px 时导航收进汉堡按钮，路由切换后自动收起 */
 const navOpen = ref(false)
@@ -178,6 +208,24 @@ onMounted(() => {
           <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
         </div>
 
+        <!-- 主题切换：浅色/深色双模式（材质层之外的普通控件，44px 点击区） -->
+        <button
+          type="button"
+          class="theme-toggle"
+          :aria-label="themeActionLabel"
+          :title="themeActionLabel"
+          @click="toggleTheme"
+        >
+          <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+          </svg>
+          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+          </svg>
+          <span>{{ theme === 'light' ? '深色' : '浅色' }}</span>
+        </button>
+
         <p class="side-note">
           本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
           Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
@@ -193,6 +241,21 @@ onMounted(() => {
           余额 <strong>{{ money(account.balance) }}</strong>
         </div>
         <button
+          class="theme-toggle topbar-theme"
+          type="button"
+          :aria-label="themeActionLabel"
+          :title="themeActionLabel"
+          @click="toggleTheme"
+        >
+          <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+          </svg>
+          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+          </svg>
+        </button>
+        <button
           class="menu-toggle"
           type="button"
           :aria-expanded="navOpen"
@@ -206,6 +269,9 @@ onMounted(() => {
       <main class="content">
         <RouterView />
       </main>
+
+      <!-- 移动端底部 Tab（材质层：玻璃；≤960px 显示） -->
+      <UiBottomTab :model-value="activeTab" :items="tabItems" @select="onTabSelect" />
     </div>
 
     <!-- 抽屉遮罩（移动端） -->
@@ -280,7 +346,9 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-nav {
+/* 只作用于侧栏里的主导航；全局 `nav { }` 会串到子组件的 <nav> 根节点上
+   （Vue 会把父组件的 scoped 属性加到子组件根元素，导致底部 Tab 被排成竖列——2026-11-14 实测踩过） */
+.sidebar nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -312,7 +380,7 @@ nav {
   color: var(--text);
   font-weight: 600;
   background: var(--surface-3);
-  border-left-color: var(--accent);
+  border-left-color: var(--accent-text);
 }
 
 /* 账户概览卡片 */
@@ -339,7 +407,7 @@ nav {
   font-variant-numeric: tabular-nums;
 }
 .acct-row strong.up {
-  color: var(--up);
+  color: var(--up-text);
 }
 .acct-row strong.down {
   color: var(--down);
@@ -389,7 +457,7 @@ nav {
   background: var(--down-bg);
 }
 .health.bad {
-  color: var(--up);
+  color: var(--up-text);
   background: var(--up-bg);
 }
 .health.checking {
@@ -403,6 +471,49 @@ nav {
   color: var(--muted);
   border-top: 1px solid var(--border);
   line-height: 1.5;
+}
+
+/* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: var(--fs-cap);
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+  background: var(--neutral-bg);
+}
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.theme-toggle svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.topbar-theme {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+}
+@media (max-width: 960px) {
+  .topbar-theme span {
+    display: none; /* 窄屏只留图标，省空间 */
+  }
 }
 
 /* ===== 移动端顶栏（桌面隐藏；材质层：玻璃，内容从它下面滚过） ===== */
@@ -507,6 +618,8 @@ nav {
   }
   .content {
     padding: var(--space-4) var(--space-4) var(--space-5);
+    /* 给底部玻璃 Tab 栏留出空间（12px 底距 + 56 高度 + 安全区） */
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -573,8 +686,8 @@ nav {
   flex-shrink: 0;
 }
 .acct-action:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 
 /* 删除账号入口：刻意做成不起眼的文字链——低频高危操作，不该长得像主按钮 */
@@ -591,6 +704,6 @@ nav {
   cursor: pointer;
 }
 .danger-link:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 </style>

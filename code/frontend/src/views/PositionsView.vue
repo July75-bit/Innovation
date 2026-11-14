@@ -176,8 +176,8 @@ onMounted(load)
   cursor: pointer;
 }
 .refresh:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .refresh:disabled {
   opacity: 0.5;
@@ -242,7 +242,7 @@ onMounted(load)
   font-variant-numeric: tabular-nums;
 }
 .stat strong.up {
-  color: var(--up);
+  color: var(--up-text);
 }
 .stat strong.down {
   color: var(--down);
@@ -284,7 +284,7 @@ th {
   font-variant-numeric: tabular-nums;
 }
 .up {
-  color: var(--up);
+  color: var(--up-text);
 }
 .down {
   color: var(--down);
@@ -293,7 +293,7 @@ th {
   color: var(--muted);
 }
 .go {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
   font-size: var(--fs-aux);
   font-weight: 600;

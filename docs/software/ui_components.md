@@ -185,6 +185,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 | `evidence/54-ui-kit-modal.png` | 危险确认弹窗打开态（无 ✕、取消在左、红色确认） |
 | `evidence/55-ui-kit-375.png` | 375px 移动端无横向滚动（375/375） |
 | `evidence/56~65-liquid-glass-*.png` | **液态玻璃材质层**（导航壳/顶栏/tooltip/弹窗/降级/焦点环），规范见 [`liquid_glass_design.md`](./liquid_glass_design.md) |
+| `evidence/69~78-*.png` | **双模式 + 本轮新增组件**（浅/深市场页、移动玻璃底部 Tab、玻璃下拉、浅色弹窗、悬浮工具栏） |
 | `ui-kit.spec.ts` + `liquid-glass.spec.ts` | 15 条组件状态测试 + 7 条材质层守卫测试（Vitest） |
 
 ## 6. 材质层（液态玻璃）与内容层的分工
@@ -195,3 +196,82 @@ import UiButton from '@/components/ui/UiButton.vue'
 - **阅读与输入一律扁平实色**：卡片、表格、表单、AI 正文、长文、合规声明。抽屉与 ≤600px 弹窗也是实色（配额 + 文字密度）。
 - 新增 UI 时先问一句：**这块是"壳/浮层"还是"内容"**？内容永远不要加 `.glass`。
 - 玻璃令牌只在 `liquid-glass.css`；组件里写 `var(--glass-*)`，不要硬编码 blur/alpha。
+
+## 7. 本轮新增：底部 Tab / 悬浮工具栏 / 玻璃下拉 / 主题切换
+
+### 7.1 分层结论（先看这张表再写组件）
+
+| 组件 | 层 | 材质 | 为什么 |
+| --- | --- | --- | --- |
+| `UiBottomTab`（底部 Tab） | 材质层 | **玻璃**：scrim `.72` + 圆角 20 + 极轻阴影 | 悬浮主导航，面积小（≈6% 屏），文字少且坐在 scrim 上 |
+| `UiToolbar`（悬浮工具栏） | 材质层 | **玻璃**：圆角 12 + 极轻阴影 | 悬浮操作条；内部按钮必须实色 |
+| `UiModal`（弹窗） | 材质层 | **玻璃**：圆角 20 | 浮层；≤600px 变实色底部 sheet |
+| `UiSelect` 弹层（下拉） | 材质层 | **玻璃**：圆角 20 | 弹层悬浮在内容上；触发框仍是内容层实色 |
+| `UiSelect` 触发框 | 内容层 | 实色输入框 + 1px 边框 + 圆角 6 | 输入控件不放玻璃 |
+| `UiCard` / `UiTable` / `UiInput` / `UiButton` | 内容层 | **扁平实色**：1px 边框、零阴影、无模糊 | 阅读/输入/数据区，玻璃会直接毁掉可读性 |
+| 桌面侧栏 / 移动顶栏 / 抽屉 | 壳 | 侧栏/顶栏玻璃；抽屉实色 | 抽屉占屏 78% 且是文字密集区 |
+
+### 7.2 使用示例
+
+```vue
+<!-- 底部 Tab（业务页已经在 App.vue 接入；≤960px 显示、悬浮吸底） -->
+<UiBottomTab :model-value="activeTab" :items="tabItems" @select="onTabSelect" />
+
+<!-- 悬浮工具栏：内部按钮一律实色/描边，禁止放玻璃按钮 -->
+<UiToolbar label="行情操作">
+  <span>ZywOo · 108.75 · +2.1%</span>
+  <template #end>
+    <UiButton variant="primary" size="sm">买入 2 股</UiButton>
+    <UiButton variant="secondary" size="sm">重新分析</UiButton>
+  </template>
+</UiToolbar>
+
+<!-- 下拉：自绘 listbox（原生 select 的弹层无法套玻璃） -->
+<UiSelect v-model="role" label="位置筛选" :options="options" hint="选择后立即生效" />
+```
+
+### 7.3 状态覆盖（本轮补全）
+
+| 组件 | 默认 | hover | focus | active | disabled | loading | error |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `UiBottomTab` | ✅ | ✅ 底提亮 | ✅ 2px 焦点环 | ✅ 选中态（高亮 + 2px 主色条） | — | — | — |
+| `UiToolbar` | ✅ | ✅ 轻微斜向高光（仅鼠标 + 允许动效） | 内部控件画环 | — | — | — | — |
+| `UiModal` | ✅ | — | 焦点陷阱（Tab 循环）+ 初始聚焦 | — | — | — | — |
+| `UiSelect` | ✅ | ✅ 边框加强 | ✅ 2px 环 + 主色边框；弹层内 ↑↓ 高亮 | ✅ 打开态箭头翻转 | ✅ 不可展开 | ✅ 转圈 + `aria-busy` | ✅ 红边框 + `aria-invalid` + 13px 说明 |
+| `UiInput` | ✅ | ✅ 边框加强 | ✅ 2px 环 | — | ✅ | ✅ 转圈 + `aria-busy` | ✅ |
+| `UiCard` | ✅ | ✅ 仅提亮边框 | ✅ 焦点环 | — | ✅ 置灰不可点 | — | — |
+| `UiTable` | ✅ | ✅ 行 hover | 排序按钮画环 | ✅ 排序方向 | — | ✅ 骨架行 | ✅ 错误 + 重试 |
+
+### 7.4 禁止用法（本轮新增/重申）
+
+1. **玻璃叠玻璃**：`UiToolbar` / `UiModal` / `UiBottomTab` 内部再放 `.glass` 元素（例如工具条里放玻璃按钮）——一律违规。
+2. **表格主体玻璃**：`UiTable` 表头/表体/长列表禁止半透明底，表头吸顶也用实色。
+3. **低对比文字放玻璃上**：玻璃上文字必须坐在 `--glass-scrim` / `--glass-bg-strong` 上；品牌红文字用 `--accent-text`/`--up-text`（`#e5484d` 作 16px 文字只有 4.40:1）。
+4. **重阴影 / 装饰渐变**：内容卡零阴影；玻璃只用 `--glass-shadow`；禁止霓虹发光、彩色渐变、3D 图标。
+5. **大面积玻璃**：抽屉/整页/长文不做玻璃；同屏玻璃 >30% 判违规（`/ui-kit` 有实时读数）。
+
+### 7.5 降级与无障碍
+
+```css
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass { background-color: var(--glass-solid); backdrop-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass { background-color: var(--glass-solid); backdrop-filter: none; }
+  .glass--interactive::after { display: none; }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .glass--interactive:hover::after { opacity: 1; }   /* 移动端 / 减少动效：自动关闭 */
+}
+```
+
+- 键盘：下拉支持 ↑↓ / Home / End / Enter / Esc；弹窗 Tab 循环 + Esc；底部 Tab 可 Tab 遍历、Enter 触发。
+- 点击区：底部 Tab 48px、下拉选项 44px、按钮 36/40/44。
+- 焦点环：2px `--color-focus`，不覆盖元素自身圆角。
+
+### 7.6 主题切换（浅色/深色）
+
+- 入口：侧栏底部「浅色/深色」按钮 + 移动端顶栏图标按钮（都带 `aria-label`）。
+- 实现：`composables/useTheme.ts` 写 `<html data-theme>` + `localStorage`；`index.html` 有一段同 key 内联脚本，**CSS 之前**就把主题定好（防闪）。
+- 默认：已保存选择 > 系统 `prefers-color-scheme` > 深色。
+- 令牌：只在 `tokens.css` 里整块覆盖，组件零模式判断。

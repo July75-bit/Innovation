@@ -20,7 +20,11 @@
     },
     "glassRule": "玻璃令牌只作用于\"会盖住其他内容的壳/浮层\"；内容卡片、表格、表单、长文一律实色",
     "fallback": "@supports not (backdrop-filter) → --glass-solid；prefers-reduced-transparency: reduce → --glass-solid 且去高光",
-    "source": "tokens.css（CSS 变量）+ 本文件（JSON），两份同源同值，由 design-tokens.spec.ts 守护"
+    "source": "tokens.css（CSS 变量）+ 本文件（JSON），两份同源同值，由 design-tokens.spec.ts 守护",
+    "contrastFixes": [
+      "品牌红作文字统一走 --accent-text / --up-text（#e5484d 作 16px 文字仅 4.40:1）",
+      "浅色模式 success-base 由 #127a45 加深到 #0f6b3d；warning-base 由 #8a5a0f 加深到 #7a4d0a"
+    ]
   },
   "groups": [
     "color.neutral",
@@ -258,7 +262,7 @@
     },
     "--color-success-base": {
       "group": "color.semantic",
-      "light": "#127a45",
+      "light": "#0f6b3d",
       "dark": "#5fd394",
       "purpose": "成功 / 跌（国内行情习惯） · 深色底上的文字/图标（浅色模式自动变深）",
       "contrast": {
@@ -289,7 +293,7 @@
     },
     "--color-warning-base": {
       "group": "color.semantic",
-      "light": "#8a5a0f",
+      "light": "#7a4d0a",
       "dark": "#e8b45c",
       "purpose": "警告 / 停牌 · 深色底上的文字/图标（浅色模式自动变深）",
       "contrast": {
@@ -564,7 +568,7 @@
     },
     "--color-down-subtle": {
       "group": "color.business",
-      "light": "rgba(18,122,69,0.12)",
+      "light": "rgba(15,107,61,0.12)",
       "dark": "rgba(95,211,148,0.14)",
       "purpose": "跌的浅底块",
       "requirement": "仅背景块"
@@ -588,7 +592,7 @@
     },
     "--color-halt-subtle": {
       "group": "color.business",
-      "light": "rgba(138,90,15,0.14)",
+      "light": "rgba(122,77,10,0.14)",
       "dark": "rgba(232,180,92,0.16)",
       "purpose": "停牌浅底块",
       "requirement": "仅背景块"
@@ -823,6 +827,20 @@
       "dark": "none",
       "purpose": "内容卡片/表格的默认阴影",
       "requirement": "内容层禁止阴影"
+    },
+    "--color-surface-3": {
+      "group": "color.surface",
+      "light": "#eef1f6",
+      "dark": "#2b3039",
+      "purpose": "导航选中/第三层表面（比 raised 再亮/再深一档）",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差表达"
+    },
+    "--color-neutral-bg": {
+      "group": "color.surface",
+      "light": "rgba(15,20,30,0.05)",
+      "dark": "rgba(255,255,255,0.06)",
+      "purpose": "中性弱底（徽章/按钮 hover）",
+      "requirement": "仅背景块，与文字搭配时对比度按文字令牌计算"
     }
   },
   "typography": {

@@ -373,8 +373,8 @@ function shortDate(iso: string): string {
   cursor: pointer;
 }
 .ghost:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .ghost:disabled {
   opacity: 0.45;
@@ -454,15 +454,15 @@ function shortDate(iso: string): string {
   color: var(--warn);
 }
 .chip:hover {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 .chip.on {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: var(--up-bg);
 }
 .chip.on .chip-r,
 .chip.on .chip-d {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .chip-d i {
   font-style: normal;
@@ -511,7 +511,7 @@ function shortDate(iso: string): string {
   font-weight: 800;
 }
 .match-main .vs {
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--fs-h3);
   font-weight: 700;
 }
@@ -570,7 +570,7 @@ function shortDate(iso: string): string {
 .col h4 em {
   font-style: normal;
   font-size: var(--fs-h2);
-  color: var(--accent);
+  color: var(--accent-text);
   font-variant-numeric: tabular-nums;
 }
 .list {

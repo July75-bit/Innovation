@@ -63,7 +63,9 @@
   --color-bg: var(--color-canvas);
   --color-surface: var(--color-neutral-800);
   --color-surface-raised: var(--color-neutral-700); /* 悬停/嵌套 */
+  --color-surface-3: #2b3039; /* 导航选中/第三层，比 raised 再亮一档 */
   --color-surface-sunken: #14161c; /* 更深的输入底 */
+  --color-neutral-bg: rgba(255, 255, 255, 0.06); /* 中性弱底（徽章/按钮 hover） */
   --color-text: var(--color-neutral-100);
   --color-text-strong: var(--color-neutral-0);
   --color-text-muted: var(--color-neutral-300);
@@ -206,10 +208,10 @@
 
   /* 语义色各 3 阶（浅底文字档更深、实心底更深保白字 AA） */
   --color-success-subtle: #e8f8ef;
-  --color-success-base: #127a45;
+  --color-success-base: #0f6b3d;
   --color-success-strong: #15703f;
   --color-warning-subtle: #fdf3e3;
-  --color-warning-base: #8a5a0f;
+  --color-warning-base: #7a4d0a;
   --color-warning-strong: #8a5a0f;
   --color-error-subtle: #fdeaea;
   --color-error-base: #b41c1c;
@@ -222,6 +224,8 @@
   --color-bg: var(--color-canvas);
   --color-surface: var(--color-neutral-800);
   --color-surface-raised: var(--color-neutral-700);
+  --color-surface-3: #eef1f6;
+  --color-neutral-bg: rgba(15, 20, 30, 0.05);
   --color-surface-sunken: #f7f8fb;
   --color-text: var(--color-neutral-100);
   --color-text-strong: var(--color-neutral-0);
@@ -238,9 +242,9 @@
   --color-up-text: var(--color-primary-300);
   --color-up-subtle: rgba(229, 72, 77, 0.12);
   --color-down: var(--color-success-base);
-  --color-down-subtle: rgba(18, 122, 69, 0.12);
+  --color-down-subtle: rgba(15, 107, 61, 0.12);
   --color-halt: var(--color-warning-base);
-  --color-halt-subtle: rgba(138, 90, 15, 0.14);
+  --color-halt-subtle: rgba(122, 77, 10, 0.14);
 
   /* 浮层阴影（浅色更轻） */
   --shadow-overlay: 0 8px 24px rgba(16, 24, 40, 0.12);

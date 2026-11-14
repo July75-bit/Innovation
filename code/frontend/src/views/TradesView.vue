@@ -118,8 +118,8 @@ onMounted(load)
   cursor: pointer;
 }
 .refresh:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .refresh:disabled {
   opacity: 0.5;
@@ -165,14 +165,14 @@ th {
 }
 .side.buy {
   background: var(--up-bg);
-  color: var(--up);
+  color: var(--up-text);
 }
 .side.sell {
   background: var(--down-bg);
   color: var(--down);
 }
 .go {
-  color: var(--accent);
+  color: var(--accent-text);
   text-decoration: none;
 }
 .go:hover {
