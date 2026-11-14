@@ -318,7 +318,7 @@ SAME balance=True total=True qty=True trades=True points=True
 ## 9. 缺陷清单
 
 > 只登记**真实发现并修掉**的缺陷；每条都给了能复跑的用例或实测记录。当前 P0/P1 全部清零。
-> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug)**（14 条，与下表 BUG-01~14 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
+> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug) + [#37](https://github.com/July75-bit/Innovation/issues/37)**（共 15 条，与下表 BUG-01~15 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -336,6 +336,7 @@ SAME balance=True total=True qty=True trades=True points=True
 | BUG-12 | **线上前端被跨域拦掉**：后端的 CORS 已改成"按 `CORS_ORIGINS` 白名单"，但 Render 上没填这个变量 → 按 `config.py` 默认值只放行 `localhost:5173`，浏览器请求 `*-backend.onrender.com` 拿不到 `access-control-allow-origin`，页面显示"连接失败" | P0（线上可用性） | 配置 `core/config.py` + `app/main.py` + `render.yaml` | B | 已修（**线上已复验**） | 三处一起补：① `render.yaml` 把 `CORS_ORIGINS` 写成前端公网地址（部署配置进仓库）；② `resolve_cors_origins()` 增加"线上却还是本地默认值 → 退化 `*` 并 WARNING"；③ `cors_origin_list` 去掉尾部斜杠。`test_cors_config.py` 8 条。**线上实测**：`Origin: 前端域名` → 回显该域名；`Origin: evil.example.com` → 无该头（白名单生效，不是 `*`），见 `evidence/online/backend-debug-db.md` §2 |
 | BUG-13 | **测试里的"日期炸弹"**：`test_prices_recalc.py` 把 `PLAYED_AT` 写死成 `2026-11-07`，而 `conftest` 用 `now-2h` / `now-1h` 造种子历史——当机器时间正好是 2026-11-07 时，那两条历史落进本轮去重窗口 `[played_at, played_at+1d)`，接口把两名选手都判成"该轮已计价"，2 条用例整片红；换一天跑又全绿 | P2 | 测试代码 `test_prices_recalc.py` | C（B 代改） | 已修 | 改为"**未来 30 天**"的相对日期（`datetime.now(UTC).date() + 30d`），并同步断言里的日期。教训：**测试里不要写死"今天附近的日期"**，它会和时间耦合 |
 | BUG-14 | **答辩稿生成脚本写死绝对路径**：`build_deck.py` 里 `ROOT = Path(r"D:\projects\innovation\Innovation")`，换台机器/换个 clone 目录就 `FileNotFoundError`，PDF 无法重新生成；且稿内数字停留在"120 条用例 / 10 条缺陷" | P2 | 脚本 `docs/presentation/build_deck.py` + 稿件 | D（B 代改） | 已修 | `ROOT` 改为按 `__file__` 反推仓库根；稿内数字同步为 **137 条 / 13 条缺陷 / 8 个路由模块 / Vue 3.5·TS 6.0·Vite 8.2**，并用 Edge headless 重新导出 `defense.pdf` |
+| BUG-15 | **重灌/重置会删掉注册账号（数据丢失）**：用户实测"注册的账户第二天就消失，登录提示账号不存在"。根因：`scripts/seed_db.py --reset` 与 `POST /api/debug/reseed` 都用 `Base.metadata.drop_all()`，把 `users` 表连同账号、口令散列、令牌一起删了——只要有人跑一次"重置演示数据"，所有私人账号归零 | P1（数据丢失） | 脚本 `scripts/seed_db.py` + 接口 `app/api/debug.py` | B | 已修 | 两处都改成**只清业务数据**（positions/trades/price_history/players，先子后父），`users` 原样保留（用户名/`password_hash`/`salt`/令牌行不动）；余额统一复位到 `initial_balance`（行情回种子价、钱也回起点才自洽）。新增回归 `test_reseed_keeps_registered_account`：注册→买 3 股→重灌→**原密码仍能登录**、余额 5000、流水清空。端到端另验：`seed_db --reset` 后手工插入的账号仍在、余额被复位 |
 
 ## 10. 未覆盖与已知限制
 
@@ -351,11 +352,11 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **216** 条，CI 与本机全绿；浏览器证据见 §2.5）
-- P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验）
-- **结论：可交付** —— M3/M4/M5 均已达成；**219** 条自动化（单元 199 / 集成 20；auth 22+7、重灌端点 3 随合并入账，2026-11-07）+ 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖，auth 模块新增所致） +
+- P0 缺陷：**0** 个（自动化层 **220** 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
+- **结论：可交付** —— M3/M4/M5 均已达成；**220** 条自动化（单元 200 / 集成 20；auth 22+7、重灌端点 4 随合并入账，2026-11-07）+ 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖，auth 模块新增所致） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
-  缺陷清单 **14 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS）+
+  缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
 - 答辩当天仍需执行（非交付物缺口）：**彩排 ≥2 次并计时**（8+2+5 ≤15 分钟）、演示前 15 分钟跑 `prewarm.py` 预热、
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。

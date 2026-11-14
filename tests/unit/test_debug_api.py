@@ -51,7 +51,7 @@ def test_reseed_rebuilds_16_players_and_clean_demo(client) -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["点数自检"] == "OK"  # 15 名 trading 每人 ≥10 点
-    assert body["清理并重建"]["players"] == 16
+    assert body["重建"]["players"] == 16
 
     # 通过业务接口二次复核（不信任端点自己的返回）
     players = client.get("/api/players").json()
@@ -66,6 +66,39 @@ def test_reseed_rebuilds_16_players_and_clean_demo(client) -> None:
     account = client.get("/api/account").json()
     assert float(account["balance"]) == 5000.0  # demo 账户干净重置
     assert len(client.get("/api/trades").json()) == 0
+
+
+def test_reseed_keeps_registered_account(client) -> None:
+    """BUG-15 回归：重灌**不能删注册账号**（原先 drop_all 连 users 表一起删）。
+
+    用户实测"注册的账户第二天就消失"，根因是重灌把 users 表删了。
+    这里：注册 → 买 3 股造脏数据 → 重灌 → 原密码仍能登录，且余额/流水复位。
+    """
+    reg = client.post(
+        "/api/auth/register", json={"username": "keep_me", "password": "Passw0rd123"}
+    )
+    assert reg.status_code == 201, reg.text
+    token = reg.json()["token"]
+    auth = {"Authorization": f"Bearer {token}"}
+
+    assert client.post("/api/trades/buy", json={"player_id": 1, "quantity": 3}, headers=auth).status_code == 200
+    assert len(client.get("/api/trades", headers=auth).json()) == 1
+
+    resp = client.post(f"/api/debug/reseed?token={settings.reseed_token}&rounds=2&seed=42")
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["重建"]["注册账号（已复位余额、保留凭据）"] >= 1
+
+    # 账号还在、原密码可用（用户真正关心的"账号别消失"）
+    relogin = client.post(
+        "/api/auth/login", json={"username": "keep_me", "password": "Passw0rd123"}
+    )
+    assert relogin.status_code == 200, relogin.text
+    new_auth = {"Authorization": f"Bearer {relogin.json()['token']}"}
+
+    # 余额与流水一起复位（行情回种子价，钱也回起点才自洽）
+    account = client.get("/api/account", headers=new_auth).json()
+    assert float(account["balance"]) == 5000.0
+    assert client.get("/api/trades", headers=new_auth).json() == []
 
 
 def test_reseed_rejects_wrong_token(client) -> None:
