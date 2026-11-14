@@ -253,23 +253,27 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-weight: 800;
-  font-size: var(--fs-h3);
+  font-weight: 700;
+  font-size: var(--fs-body);
   color: var(--text);
   text-decoration: none;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-2);
+  white-space: nowrap;
+  overflow: hidden;
 }
 .brand .sub {
   font-weight: 400;
   font-size: var(--fs-cap);
   color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .brand-mark {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 10px var(--accent);
+  border: 1px solid var(--accent);
   flex-shrink: 0;
 }
 
@@ -303,8 +307,8 @@ nav {
 }
 .nav-item.router-link-active {
   color: var(--text);
-  font-weight: 700;
-  background: var(--up-bg);
+  font-weight: 600;
+  background: var(--surface-3);
   border-left-color: var(--accent);
 }
 
@@ -480,7 +484,7 @@ nav {
     transform: translateX(-105%);
     transition: transform 0.2s ease;
     border-right: 1px solid var(--border);
-    box-shadow: var(--shadow-2);
+    border: 1px solid var(--border);
   }
   .sidebar.open {
     transform: translateX(0);
@@ -504,10 +508,7 @@ nav {
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background:
-    radial-gradient(55% 42% at 50% 0%, rgba(229, 72, 77, 0.09), transparent 70%),
-    repeating-linear-gradient(0deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px),
-    repeating-linear-gradient(90deg, transparent 0 39px, rgba(255, 255, 255, 0.025) 39px 40px);
+  background: transparent;
 }
 
 /* ===== 本地账号卡片（会话来自 useAuth，只存浏览器） ===== */
@@ -544,7 +545,7 @@ nav {
   text-overflow: ellipsis;
 }
 .who small {
-  font-size: 11px;
+  font-size: var(--fs-cap);
   color: var(--muted);
   white-space: nowrap;
   overflow: hidden;
@@ -557,7 +558,7 @@ nav {
   border-radius: var(--radius-sm);
   background: none;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-cap);
   cursor: pointer;
   flex-shrink: 0;
 }

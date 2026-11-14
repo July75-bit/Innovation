@@ -99,6 +99,11 @@
 | `43-ui-redesign-panel.png` | **改版后 · 协作纪要展开态**（2026-11-14 15:01） | 模型不可用时不显示 `LLMOutputError` 等技术信息，改为「三个角色本次未能给出纪要（不影响行情与交易）」 |
 | `44-brief-before-json-leak.png` | **简报 bug 现场**（用户 2026-11-14 截图） | 首页「今日简报」摘要直接显示 `{"action": "HOLD", "reason": "sh1ro 现价 136.43…`——模型返回 JSON，后端只截断就透传 |
 | `45-brief-after-clean.png` | **修复后 · 首页简报**（2026-11-14 15:30） | 标题「今日简报」+ 大号一句话总述 + 三列要点卡（今日最该看一眼 / 低价区标的 / 停牌提醒），无花括号与字段名 |
+| `46-ui-v2-before.png` | **UI v2 改版前**（2026-11-14 15:40 前） | 背景带径向渐变 + 40px 网格纹理；状态点发光；圆角 8/12/16/999 混用；正文 14px、辅助 11–12px；导航选中整块主色红 |
+| `47-ui-v2-after-market.png` | **UI v2 · 市场页**（2026-11-14 15:42） | 纯扁平：无渐变/发光；圆角 4/6/8；正文 16px；导航选中改中性高亮 + 主色竖条（红色只留给 CTA 与涨跌） |
+| `48-ui-v2-after-detail.png` | **UI v2 · 详情页** | 结论卡三层结构 + 交易面板常驻；主按钮 44px；AI 卡无红框、无四格数字噪音 |
+| `49-ui-v2-after-375.png` | **UI v2 · 375px** | 无横向滚动（375/375），点击区 ≥44px |
+| `50-ui-v2-after-login.png` | **UI v2 · 登录页** | 渐变背景与发光全部清除，改为扁平底色 + 1px 边框 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

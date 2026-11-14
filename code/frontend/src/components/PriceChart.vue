@@ -250,7 +250,7 @@ svg {
 }
 .tick {
   fill: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-cap);
 }
 .line.up {
   stroke: var(--up);
@@ -298,10 +298,10 @@ svg {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: var(--fs-cap);
   max-width: 260px;
   pointer-events: none;
-  box-shadow: 0 4px 12px var(--shadow-2);
+  border: 1px solid var(--border);
   z-index: 2;
 }
 .tip.tip-near-left {
@@ -322,10 +322,10 @@ svg {
 .detail-toggle {
   background: none;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-xs);
   color: var(--muted);
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--fs-cap);
   cursor: pointer;
 }
 .detail-toggle:hover {
@@ -334,7 +334,7 @@ svg {
 .detail-list {
   margin: 8px 0 0;
   padding: 0 4px 0 22px;
-  font-size: 12px;
+  font-size: var(--fs-cap);
   color: var(--muted);
 }
 .detail-list li {

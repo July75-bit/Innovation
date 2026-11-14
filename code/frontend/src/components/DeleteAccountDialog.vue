@@ -142,7 +142,7 @@ async function submit(): Promise<void> {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border);
   outline: none;
 }
 .dialog h3 {
@@ -173,7 +173,7 @@ async function submit(): Promise<void> {
   border-radius: 4px;
   background: var(--neutral-bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--fs-cap);
 }
 .field input {
   width: 100%;

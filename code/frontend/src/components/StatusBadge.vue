@@ -29,7 +29,7 @@ const trading = computed(() => props.status === 'trading')
   gap: 6px;
   font-size: var(--fs-cap);
   padding: 2px 10px;
-  border-radius: var(--radius-pill, 999px);
+  border-radius: var(--radius-xs);
   white-space: nowrap;
 }
 .dot {

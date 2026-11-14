@@ -319,7 +319,7 @@ onMounted(load)
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 160%);
+  background: var(--surface);
 }
 .brief-head {
   display: flex;

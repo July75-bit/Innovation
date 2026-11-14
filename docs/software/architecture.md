@@ -110,6 +110,8 @@ sequenceDiagram
 
 ### 3.5 前端设计（汇报 3.5.6）
 
+> **视觉与交互规范（v2，扁平化）**：见 [`ui_design_system.md`](ui_design_system.md)（令牌 / 组件状态 / 验收清单；正文 16px、圆角 4/6/8、无渐变与重阴影）。
+
 | 决策 | 选择 | 理由 |
 | --- | --- | --- |
 | 框架 | Vue 3.5（组合式 API）+ TypeScript 6.0 | A 有 Vue 基础；官方脚手架自带 Router/Vitest/ESLint，6 天里配置成本最低 |
