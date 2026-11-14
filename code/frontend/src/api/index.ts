@@ -22,6 +22,9 @@ import { mockAuth } from '../mock/auth'
 import type {
   Account,
   AccountRebuildResponse,
+  AgentBriefResponse,
+  AgentDecisionLogResponse,
+  AgentDecisionResponse,
   AnalysisResponse,
   AuthResponse,
   DeleteAccountResponse,
@@ -168,4 +171,70 @@ export const api = {
           note: 'mock',
         }))
       : request<AccountRebuildResponse>('/api/account/rebuild?confirm=true', { method: 'POST' }),
+
+  /** §4.18 智能体决策卡：建议 + 仓位 + 止损 + 置信度（只读，不下单） */
+  getAgentDecision: (playerId: number): Promise<AgentDecisionResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          advice: {
+            player_id: playerId,
+            action: 'HOLD',
+            reason: 'mock 建议',
+            risk_level: 'MEDIUM',
+            source: 'rule_fallback',
+            disclaimer: 'mock',
+          },
+          plan: {
+            suggested_quantity: 0,
+            stop_loss_price: null,
+            confidence: 0.55,
+            risk_budget_ratio: 0.06,
+            rationale: ['mock'],
+            note: 'mock',
+          },
+          trace_id: 0,
+          snapshot: {
+            balance: 5000,
+            held_quantity: 0,
+            current_price: 100,
+            change_pct: 0,
+            rating: 80,
+          },
+          latency_ms: 0,
+          disclaimer: 'mock',
+        }))
+      : request<AgentDecisionResponse>(`/api/agent/decision/${playerId}`),
+
+  /** §4.19 今日智能体简报（后端缓存 10 分钟） */
+  getAgentBrief: (): Promise<AgentBriefResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          generated_at: new Date().toISOString(),
+          ttl_seconds: 600,
+          items: [
+            { title: '今日最该看一眼', detail: 'mock 标的' },
+            { title: '低价区标的', detail: 'mock' },
+            { title: '停牌提醒', detail: '无' },
+          ],
+          summary: 'mock 简报',
+          source: 'rule_fallback' as const,
+          latency_ms: 0,
+          cached: false,
+        }))
+      : request<AgentBriefResponse>('/api/agent/brief'),
+
+  /** §4.20 人在环：记录采纳/忽略（不触发交易） */
+  recordAgentDecision: (payload: {
+    player_id: number
+    advice_action: string
+    advice_source: string
+    decision: 'accept' | 'ignore'
+    trace_id?: number | null
+  }): Promise<AgentDecisionLogResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({ success: true, decision_id: 0, message: 'mock' }))
+      : request<AgentDecisionLogResponse>('/api/agent/decisions', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
 }

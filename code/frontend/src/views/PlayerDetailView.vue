@@ -28,7 +28,14 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import { ApiError } from '../api/client'
-import type { AnalysisResponse, PlayerDetail, PricePoint, PositionItem } from '../api/types'
+import type {
+  AgentDecisionResponse,
+  AgentPlan,
+  AnalysisResponse,
+  PlayerDetail,
+  PricePoint,
+  PositionItem,
+} from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
@@ -55,6 +62,13 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 /** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
 const analysisLoading = ref(false)
+
+/* ---- 决策卡（第 8 轮）：建议之外的"可执行计划"与"人在环"记录 ---- */
+const plan = ref<AgentPlan | null>(null)
+const snapshot = ref<AgentDecisionResponse['snapshot'] | null>(null)
+const traceId = ref(0)
+const decisionSent = ref(false)
+const decisionNotice = ref('')
 
 const ACTION_LABEL: Record<string, string> = { BUY: '买入', SELL: '卖出', HOLD: '持有' }
 const RISK_LABEL: Record<string, string> = { LOW: '低', MEDIUM: '中', HIGH: '高' }
@@ -104,6 +118,9 @@ async function loadCore(silent = false) {
   }
   // AI 分析单独加载：慢/降级都不阻塞行情展示
   analysisLoading.value = true
+  plan.value = null
+  decisionSent.value = false
+  decisionNotice.value = ''
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a
@@ -113,7 +130,38 @@ async function loadCore(silent = false) {
     // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
     if (token === requestToken) analysisLoading.value = false
   }
+  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
+  try {
+    const d = await api.getAgentDecision(playerId.value)
+    if (token === requestToken) {
+      plan.value = d.plan
+      snapshot.value = d.snapshot
+      traceId.value = d.trace_id
+    }
+  } catch {
+    if (token === requestToken) plan.value = null
+  }
 }
+
+/** 采纳/忽略这条建议：只写"人在环"记录，不触发交易（下单仍要用户自己点买卖） */
+async function recordChoice(decision: 'accept' | 'ignore') {
+  if (!analysis.value || decisionSent.value) return
+  decisionSent.value = true
+  try {
+    await api.recordAgentDecision({
+      player_id: analysis.value.player_id,
+      advice_action: analysis.value.action,
+      advice_source: analysis.value.source,
+      decision,
+      trace_id: traceId.value || null,
+    })
+    decisionNotice.value = decision === 'accept' ? '已记录：你采纳了这条建议' : '已记录：本次不采纳'
+  } catch {
+    decisionNotice.value = '记录失败（不影响交易）'
+  }
+}
+const acceptAdvice = () => recordChoice('accept')
+const ignoreAdvice = () => recordChoice('ignore')
 
 /**
  * 重新分析（用户可控）：只重发 AI 请求，不动行情、不碰账户。
@@ -208,6 +256,47 @@ watch(playerId, () => loadCore())
                 ⚠ 高风险建议：{{ analysis.disclaimer }}
               </p>
               <p class="ai-reason">{{ analysis.reason }}</p>
+
+              <!-- 决策卡：把"一句建议"落成"可执行的计划"（仓位/止损/置信度），仍不下单 -->
+              <div v-if="plan" class="plan">
+                <div class="plan-grid num">
+                  <div>
+                    <span>建议仓位</span>
+                    <strong>{{ plan.suggested_quantity }} 股</strong>
+                  </div>
+                  <div>
+                    <span>参考止损</span>
+                    <strong>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</strong>
+                  </div>
+                  <div>
+                    <span>置信度</span>
+                    <strong>{{ Math.round(plan.confidence * 100) }}%</strong>
+                  </div>
+                  <div>
+                    <span>可用余额</span>
+                    <strong>{{ money(snapshot?.balance ?? 0) }}</strong>
+                  </div>
+                </div>
+                <ul class="plan-why">
+                  <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
+                </ul>
+                <p class="plan-note">{{ plan.note }}</p>
+                <div class="plan-actions">
+                  <button
+                    type="button"
+                    class="plan-accept"
+                    :disabled="decisionSent"
+                    @click="acceptAdvice"
+                  >
+                    {{ decisionSent ? '已记录采纳' : '采纳这条建议' }}
+                  </button>
+                  <button type="button" class="plan-ignore" :disabled="decisionSent" @click="ignoreAdvice">
+                    忽略
+                  </button>
+                  <span v-if="decisionNotice" class="plan-notice">{{ decisionNotice }}</span>
+                </div>
+              </div>
+
               <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">{{ analysis.disclaimer }}</p>
             </section>
             <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>

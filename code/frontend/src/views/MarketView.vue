@@ -33,6 +33,20 @@ const error = ref<string | null>(null)
 /** 系统状态可见：告诉用户"这批行情是什么时候拉的" */
 const updatedAt = ref('')
 
+/* ---- 今日智能体简报（第 8 轮：让智能体出现在首屏，而不是只藏在详情页） ---- */
+type BriefItem = { title: string; detail: string; player_id?: number | null }
+const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)
+
+async function loadBrief() {
+  try {
+    const data = await api.getAgentBrief()
+    brief.value = { summary: data.summary, items: data.items, source: data.source }
+  } catch {
+    // 简报是"锦上添花"：拿不到就整块隐藏，绝不影响行情列表
+    brief.value = null
+  }
+}
+
 /* ---- 筛选 / 排序（纯前端展示逻辑，不改后端数据） ---- */
 const keyword = ref('')
 const statusFilter = ref<'all' | 'trading' | 'halted'>('all')
@@ -69,6 +83,7 @@ async function load() {
   loading.value = true
   error.value = null
   checkBackendHealth()
+  void loadBrief() // 简报与行情并发，互不阻塞
   try {
     players.value = await api.listPlayers()
     updatedAt.value = new Date().toLocaleTimeString()
@@ -99,6 +114,21 @@ onMounted(load)
         <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span> 刷新
       </button>
     </div>
+
+    <!-- 今日智能体简报：一进首页就能看到智能体的判断，而不只是行情表 -->
+    <section v-if="brief" class="brief" aria-label="今日智能体简报">
+      <div class="brief-head">
+        <span class="brief-tag">智能体简报</span>
+        <span class="brief-src">{{ brief.source === 'llm' ? '模型生成' : '规则兜底' }}</span>
+      </div>
+      <p class="brief-summary">{{ brief.summary }}</p>
+      <ul class="brief-items">
+        <li v-for="(item, i) in brief.items" :key="i">
+          <strong>{{ item.title }}</strong>
+          <span>{{ item.detail }}</span>
+        </li>
+      </ul>
+    </section>
 
     <!-- 工具条：搜索 + 筛选 + 排序（任务流最短化） -->
     <div class="toolbar">
@@ -223,6 +253,49 @@ onMounted(load)
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ---- 今日智能体简报 ---- */
+.brief {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.brief-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.brief-tag {
+  font-size: var(--fs-cap);
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim, rgba(122, 162, 255, 0.16));
+  color: var(--accent);
+}
+.brief-src {
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.brief-summary {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-body);
+}
+.brief-items {
+  margin: 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: 4px;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.brief-items strong {
+  color: var(--text);
+  margin-right: 6px;
 }
 
 /* ---- 工具条 ---- */

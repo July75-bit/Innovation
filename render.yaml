@@ -49,6 +49,25 @@ services:
     #   mountPath: /var/data
     #   sizeGB: 1
 
+  # ---------------- 智能体定时巡检（第 8 轮） ----------------
+  # 每小时让智能体"自己上班"：拉行情 → 标出需要关注的标的 → 刷新今日简报（写审计表）。
+  # 只调用只读接口 + 简报刷新，不下单、不碰余额。
+  # 注意：这里**不设 rootDir**（构建上下文=仓库根），因为脚本在 scripts/ 下；
+  # 脚本只用标准库 urllib，所以 buildCommand 不需要装依赖。
+  - type: cron
+    name: playerstock-agent-patrol
+    runtime: python
+    plan: free
+    region: singapore
+    schedule: "0 * * * *" # 每小时整点（UTC）
+    buildCommand: echo "patrol 脚本只用标准库，无需构建"
+    startCommand: python scripts/agent_patrol.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: BACKEND_BASE_URL
+        value: https://playerstock-backend-mdlk.onrender.com
+
   # ---------------- 前端 Static Site ----------------
   - type: web
     name: playerstock-frontend

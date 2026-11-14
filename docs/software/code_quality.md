@@ -56,7 +56,7 @@ coverage run --source=app,core_engine -m pytest && coverage report -m      # 97%
 - `docs/acceptance/evidence/17-code-quality-scan.png`：静态扫描 + 测试 + CI 门禁
 - `docs/acceptance/evidence/18-quality-pylint-pep8.png`：Pylint 评分 / PEP8（仅 25 条 E501）/ 格式化体检
 - `docs/acceptance/evidence/19-complexity-stats.png`：认知复杂度 + 代码统计
-- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（265 条 / 96%）
+- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（276 条 / 96%）
 
 ## 6. 已知不足（如实交代）
 
