@@ -23,7 +23,7 @@ from dataclasses import replace
 from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
-from core_engine import generate_match, standardize_score, update_price
+from core_engine import generate_match, standardize_score, suspension_reason, update_price
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, inspect, select
 from sqlalchemy.orm import Session
@@ -88,7 +88,7 @@ def debug_db(db: Session = Depends(get_db)) -> dict:
 def debug_reseed(
     db: Session = Depends(get_db),
     token: str = Query(description="口令，等于 settings.reseed_token"),
-    rounds: int = Query(default=9, ge=0, le=30, description="模拟轮数；0 = 只写入种子初始价"),
+    rounds: int = Query(default=12, ge=0, le=30, description="模拟轮数（默认 12：赛程 4 的倍数，每队停 3 轮）"),
     seed: int = Query(default=42, description="core_engine 的随机种子（同值结果可复现）"),
 ) -> dict:
     """清空整库并按 `app/core/demo_roster.py`（`data/seed_players.json` 的部署侧镜像）
@@ -281,8 +281,12 @@ def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
 
         planned_list = []
         for player in players:
-            if player.status != "trading":
+            # 暂停交易：手动 status 优先，其次看本队这一轮是否有比赛（整队停牌）
+            if suspension_reason(
+                {"status": player.status, "team": player.team}, round_no, DEMO_SCHEDULE
+            ):
                 continue
+
             history = played_by_id[player.player_id]
             match = generate_match(
                 player.player_id,

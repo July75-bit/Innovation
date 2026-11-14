@@ -1,4 +1,4 @@
-"""只读运维自检接口的测试（`GET /api/debug/db`，第 5 天 B）。
+﻿"""只读运维自检接口的测试（`GET /api/debug/db`，第 5 天 B）。
 
 这个接口是"验收时截个图"用的探针，最容易踩的两类问题都要有测试兜住：
 1. **别把敏感信息带出去**——只允许方言/表名/行数，不能有连接串；
@@ -46,7 +46,7 @@ def test_debug_db_can_be_disabled(client, monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_reseed_rebuilds_16_players_and_clean_demo(client) -> None:
-    resp = client.post(f"/api/debug/reseed?token={settings.reseed_token}&rounds=9&seed=42")
+    resp = client.post(f"/api/debug/reseed?token={settings.reseed_token}&rounds=12&seed=42")
 
     assert resp.status_code == 200
     body = resp.json()
@@ -61,7 +61,7 @@ def test_reseed_rebuilds_16_players_and_clean_demo(client) -> None:
     assert m0nesy["team"] == "Falcons"  # 转会生效
 
     points3 = client.get("/api/players/3/prices").json()["points"]
-    assert len(points3) >= 10  # 初始行 + 9 轮
+    assert len(points3) >= 10  # 初始行 + 12 轮（其中 3 轮本队比赛暂停）
 
     account = client.get("/api/account").json()
     assert float(account["balance"]) == 5000.0  # demo 账户干净重置
