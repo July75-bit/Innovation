@@ -101,7 +101,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('resize', measureGlass)
   document.documentElement.classList.remove('no-backdrop-filter')
+  delete document.documentElement.dataset.theme
 })
+
+/** 浅色模式开关：只改 <html data-theme>，令牌全量切换（离开本页恢复深色） */
+const themeLight = ref(false)
+function toggleTheme(): void {
+  themeLight.value = !themeLight.value
+  if (themeLight.value) document.documentElement.dataset.theme = 'light'
+  else delete document.documentElement.dataset.theme
+}
 </script>
 
 <template>
@@ -258,6 +267,9 @@ onBeforeUnmount(() => {
           {{ fallbackOn ? '恢复玻璃（backdrop-filter）' : '模拟降级（不支持 backdrop-filter）' }}
         </UiButton>
         <UiButton variant="secondary" @click="measureGlass">重新测量玻璃面积</UiButton>
+        <UiButton variant="secondary" @click="toggleTheme">
+          {{ themeLight ? '切回深色模式' : '切浅色模式（验收用）' }}
+        </UiButton>
       </div>
 
       <!-- ① 导航壳（玻璃，文字坐在 scrim 上） -->
@@ -286,12 +298,13 @@ onBeforeUnmount(() => {
         <p class="glass-popover__hint">现价 136.43 · 评分 88</p>
       </div>
 
-      <!-- ④ 浅色模式玻璃（作用域 .theme-light；业务页默认深色，这里做材质对照） -->
-      <div class="theme-light light-island" data-testid="glass-light">
+      <!-- ④ 浅色模式玻璃（data-theme="light" 是全局令牌开关；业务页默认深色，这里做材质对照） -->
+      <div class="light-island" data-theme="light" data-testid="glass-light">
         <div class="glass glass--panel glass--interactive light-island__panel">
           <p class="light-island__title">浅色玻璃 · 同一套令牌</p>
           <p class="light-island__body">
-            玻璃底 rgba(255,255,255,0.72)，模糊 22px；正文 16px / 1.6，对比度按 AA 校验。
+            玻璃底 rgba(255,255,255,.62)，边框 .72，可读性 scrim .72，模糊 22px；正文 16px /
+            1.6，对比度按 AA 校验。
           </p>
           <!-- 玻璃下面再放内容一律实色：这里是最多"玻璃 + 实色"两层，禁止玻璃叠玻璃 -->
           <div class="light-island__card">

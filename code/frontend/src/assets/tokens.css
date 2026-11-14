@@ -152,4 +152,105 @@
   --z-overlay: 900;
   --z-modal: 1000;
   --z-toast: 1100;
+
+  /* ---------- 材质层（液态玻璃）圆角：
+   * 与内容层 4/6/8 分开的两套刻度；材质层只用 12/16/20/24，不混用 ---------- */
+  --radius-material-sm: 12px; /* 悬浮控件、工具条、胶囊壳 */
+  --radius-material-md: 16px; /* 小浮层、popover 内块 */
+  --radius-material-lg: 20px; /* 模态框、Popover、tooltip */
+  --radius-material-xl: 24px; /* 抽屉 / 底部 sheet */
+
+  /* ---------- 液态玻璃令牌（深色默认） ----------
+   * 配套实现与降级规则见 liquid-glass.css；设计规范见 docs/software/design_tokens.md §1.6 */
+  --glass-bg: rgba(20, 20, 20, 0.6); /* 导航壳/控件底（文字较少） */
+  --glass-bg-strong: rgba(20, 20, 20, 0.72); /* 浮层面板底 */
+  --glass-border: rgba(255, 255, 255, 0.16); /* 1px 描边 */
+  --glass-blur: 22px; /* 规格 18–28px；≤600px 降到 18px */
+  --glass-saturate: 180%; /* 规格 160–200% */
+  --glass-radius: var(--radius-material-lg); /* 浮层默认 20px */
+  --glass-scrim: rgba(20, 20, 20, 0.72); /* 文字直接坐在玻璃上时的可读性底 */
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.32); /* 仅浮层；内容卡禁止阴影 */
+  --glass-highlight: rgba(255, 255, 255, 0.14); /* 顶部 1px 内高光 */
+  --glass-solid: #171a21; /* @supports / reduced-transparency 的不透明回退底 */
+}
+
+/* ============================================================
+ * 浅色模式（[data-theme='light']）
+ *   规则：色阶索引 = 对比强度（0 最强），不随明暗翻转顺序——
+ *   所以 --color-neutral-0 在深色是"最亮文字"、在浅色是"最深文字"，
+ *   而 --color-text 等语义映射保持不变，组件不需要任何模式判断。
+ *   当前业务页默认深色；切浅色：document.documentElement.dataset.theme = 'light'
+ * ============================================================ */
+[data-theme='light'] {
+  /* 中性 9 阶（0 = 最强对比 → 800 = 表面） */
+  --color-neutral-0: #0b0d11;
+  --color-neutral-100: #1a1d23;
+  --color-neutral-200: #2e333c;
+  --color-neutral-300: #454b56;
+  --color-neutral-400: #5d6470;
+  --color-neutral-500: #8b919d; /* 仅禁用/占位（非正文） */
+  --color-neutral-600: #c3c8d2;
+  --color-neutral-700: #e8ebf0;
+  --color-neutral-800: #ffffff;
+  --color-canvas: #f4f6f9;
+
+  /* 主色 5 阶（品牌红在浅底上的文字档要更深才达 AA） */
+  --color-primary-50: #fdecec;
+  --color-primary-100: #f8d3d4;
+  --color-primary-300: #c23539; /* 浅底上的主色文字 ≈5.6:1 */
+  --color-primary-500: #e5484d; /* 品牌红填充 */
+  --color-primary-700: #b02a2e; /* 实心按钮底（白字 ≈6.0:1） */
+  --color-action: var(--color-primary-700);
+  --color-action-hover: #942327;
+  --color-action-text: #ffffff;
+
+  /* 语义色各 3 阶（浅底文字档更深、实心底更深保白字 AA） */
+  --color-success-subtle: #e8f8ef;
+  --color-success-base: #127a45;
+  --color-success-strong: #15703f;
+  --color-warning-subtle: #fdf3e3;
+  --color-warning-base: #8a5a0f;
+  --color-warning-strong: #8a5a0f;
+  --color-error-subtle: #fdeaea;
+  --color-error-base: #b41c1c;
+  --color-error-strong: #b41c1c;
+  --color-info-subtle: #e8f1fd;
+  --color-info-base: #1d4ed8;
+  --color-info-strong: #1d4ed8;
+
+  /* 语义映射（组件只引用这些） */
+  --color-bg: var(--color-canvas);
+  --color-surface: var(--color-neutral-800);
+  --color-surface-raised: var(--color-neutral-700);
+  --color-surface-sunken: #f7f8fb;
+  --color-text: var(--color-neutral-100);
+  --color-text-strong: var(--color-neutral-0);
+  --color-text-muted: var(--color-neutral-300);
+  --color-text-faint: var(--color-neutral-400);
+  --color-text-disabled: var(--color-neutral-500);
+  --color-border: #d7dbe3;
+  --color-border-strong: var(--color-neutral-600);
+  --color-focus: var(--color-primary-500);
+  --color-overlay: rgba(15, 18, 24, 0.32);
+
+  /* 业务语义：涨 = 品牌红、跌 = 成功绿（国内行情习惯） */
+  --color-up: var(--color-primary-500);
+  --color-up-text: var(--color-primary-300);
+  --color-up-subtle: rgba(229, 72, 77, 0.12);
+  --color-down: var(--color-success-base);
+  --color-down-subtle: rgba(18, 122, 69, 0.12);
+  --color-halt: var(--color-warning-base);
+  --color-halt-subtle: rgba(138, 90, 15, 0.14);
+
+  /* 浮层阴影（浅色更轻） */
+  --shadow-overlay: 0 8px 24px rgba(16, 24, 40, 0.12);
+
+  /* 液态玻璃（浅色） */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-scrim: rgba(255, 255, 255, 0.72);
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-solid: #ffffff;
 }

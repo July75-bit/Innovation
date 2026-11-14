@@ -1,34 +1,35 @@
 # PlayerStock 设计系统 Token 规范
 
 > **产品**：PlayerStock —— 虚拟 CS2 选手股交易模拟
-> **主题**：深色（金融/电竞场景），扁平化 · 产品化 · 高可读性
-> **交付文件**：
-> - CSS：[`code/frontend/src/assets/tokens.css`](../../code/frontend/src/assets/tokens.css)（变量定义）
-> - JSON：[`code/frontend/src/assets/design-tokens.json`](../../code/frontend/src/assets/design-tokens.json)（含用途与对比度）
-> - 组件实现（Vue，9 个组件 + 状态矩阵 + 禁止用法）：[ui_components.md](ui_components.md)
-> - 组件样式：[`code/frontend/src/assets/ui-kit.css`](../../code/frontend/src/assets/ui-kit.css)（`ui-` 前缀参考实现）
-> - 兼容层：[`code/frontend/src/assets/main.css`](../../code/frontend/src/assets/main.css)（旧变量名 → 新令牌，组件零改动）
-> **对比度口径**：WCAG 2.1，文字/图标相对表面色 `#181b22`；AA 正文 ≥4.5:1、大号文字 ≥3.0:1。
+> **版本**：**v2.0**（2026-11-14）——在 v1「深色扁平」基础上补齐 **浅色/深色双模式** 与 **液态玻璃材质层令牌**
+> **交付文件（两份同源同值，由 `design-tokens.spec.ts` 守护）**：
+> - CSS（变量定义）：[`code/frontend/src/assets/tokens.css`](../../code/frontend/src/assets/tokens.css)
+> - JSON（含用途与对比度标注）：[`code/frontend/src/assets/design-tokens.json`](../../code/frontend/src/assets/design-tokens.json)
+> - 玻璃材质实现与降级：[`liquid-glass.css`](../../code/frontend/src/assets/liquid-glass.css) + 规范 [liquid_glass_design.md](liquid_glass_design.md)
+> - 组件实现（Vue 9 组件 + 状态矩阵）：[ui_components.md](ui_components.md)；兼容层：[`main.css`](../../code/frontend/src/assets/main.css)
+> **分层原则**：内容层（正文/表格/表单/长文）= 扁平实色 + 1px 边框；材质层（导航壳/浮层）= 液态玻璃，同屏面积 ≤30%。
+> **对比度口径**：WCAG 2.1；深色相对表面 `#181b22`、浅色相对表面 `#ffffff`；AA 正文 ≥4.5:1、大号文字 ≥3:1。
 
 ---
 
 ## 1. 色彩
 
-### 1.1 中性色 9 阶
+### 1.1 中性色 9 阶（双模式；**索引 = 对比强度，不随明暗翻转**）
 
-| Token | 色值 | 用途 | 相对表面对比度 |
-| --- | --- | --- | --- |
-| `--color-neutral-0` | `#f7f8fa` | 最高亮文字（大数字、标题强调） | 16.22:1 ✅ |
-| `--color-neutral-100` | `#e9eaee` | 正文主文字 | 14.33:1 ✅ |
-| `--color-neutral-200` | `#c6c9d1` | 强调正文 | 10.40:1 ✅ |
-| `--color-neutral-300` | `#b6bac4` | 次要文字、辅助说明 | 8.87:1 ✅ |
-| `--color-neutral-400` | `#8f949f` | 弱辅助（时间戳、占位） | 5.67:1 ✅ |
-| `--color-neutral-500` | `#5c626e` | 禁用文字、占位符（仅装饰） | 2.90:1（非正文，允许） |
-| `--color-neutral-600` | `#3a404c` | 强边框、分割线 | 非文字 |
-| `--color-neutral-700` | `#262b34` | 抬起面、悬停底色 | 非文字 |
-| `--color-neutral-800` | `#181b22` | 卡片/表面 | — |
+| Token | 深色 | 浅色 | 用途 | 对比度（深/浅，相对表面） |
+| --- | --- | --- | --- | --- |
+| `--color-neutral-0` | `#f7f8fa` | `#0b0d11` | 最高对比文字（标题强调、大数字） | 16.22:1 / 19.45:1 |
+| `--color-neutral-100` | `#e9eaee` | `#1a1d23` | 正文主文字 | 14.33:1 / 16.88:1 |
+| `--color-neutral-200` | `#c6c9d1` | `#2e333c` | 强调正文 | 10.40:1 / 12.69:1 |
+| `--color-neutral-300` | `#b6bac4` | `#454b56` | 次要文字 / 辅助说明 | 8.87:1 / 8.77:1 |
+| `--color-neutral-400` | `#8f949f` | `#5d6470` | 弱辅助（时间戳、占位提示） | 5.67:1 / 5.96:1 |
+| `--color-neutral-500` | `#5c626e` | `#8b919d` | 禁用文字、占位符（仅装饰，不作正文） | 非文字（禁用态例外） |
+| `--color-neutral-600` | `#3a404c` | `#c3c8d2` | 强边框 / 分割线 | 非文字 |
+| `--color-neutral-700` | `#262b34` | `#e8ebf0` | 抬起面 / 悬停底色 | 非文字 |
+| `--color-neutral-800` | `#181b22` | `#ffffff` | 卡片 / 表面 | 非文字 |
 
-**画布**：`--color-canvas: #12141a`（页面底色，比 n-800 再深一档；**不使用纯黑**）。
+**画布**：深色 `--color-canvas: #12141a` / 浅色 `#f4f6f9`（页面底色，不属于 9 阶；不用纯黑/纯白）。
+> 切换模式：`document.documentElement.dataset.theme = 'light'`（默认深色；<html> 不加属性即深色）。
 
 ### 1.2 主色 5 阶（品牌红）
 
@@ -75,6 +76,47 @@
 > 中性 9 阶 + 主色 5 阶 + 4 组语义 × 3 阶 = 固定调色板，**不新增颜色**；
 > 需要透明度时用 `rgba()` 派生（如 `--color-up-subtle`），不再造新色值。
 
+### 1.6 材质层：液态玻璃令牌（7 个必需 + 2 个辅助）
+
+> 只给"会盖住其他内容的壳/浮层"用：导航壳、移动顶栏、模态框、Popover、tooltip、悬浮工具条。
+> **内容层（卡片/表格/表单/长文）永远不用玻璃**。玻璃面积 ≤30%（实测桌面 18.13% / 移动 8.25%）。
+
+| Token | 浅色 | 深色 | 用途 | 要求 |
+| --- | --- | --- | --- | --- |
+| `--glass-bg` | `rgba(255,255,255,.62)` | `rgba(20,20,20,.60)` | 玻璃底（导航壳/控件） | 玻璃上文字 ≥4.5:1 |
+| `--glass-bg-strong` | `rgba(255,255,255,.72)` | `rgba(20,20,20,.72)` | 浮层面板底（弹窗/Popover） | 面板内正文 ≥4.5:1 |
+| `--glass-scrim` | `rgba(255,255,255,.72)` | `rgba(20,20,20,.72)` | 可读性 scrim：文字直接坐玻璃时用 | 正文 ≥4.5:1（v2 实测最低 8.55:1） |
+| `--glass-border` | `rgba(255,255,255,.72)` | `rgba(255,255,255,.16)` | 1px 描边（材质边界） | 非文字 |
+| `--glass-blur` | `22px` | `22px` | 背景模糊（规格 18–28px；≤600px 降 18px） | 性能：窄屏降档 |
+| `--glass-saturate` | `180%` | `180%` | 背景饱和度（规格 160–200%） | 性能：移动端注意帧率 |
+| `--glass-radius` | `20px` | `20px` | 浮层圆角（= `--radius-material-lg`） | 与内容层 4/6/8 分开 |
+| `--glass-shadow` | `0 8px 24px rgba(0,0,0,.08)` | `0 8px 24px rgba(0,0,0,.32)` | **仅浮层**极轻阴影 | 内容卡禁止阴影 |
+| `--glass-highlight` | `rgba(255,255,255,.90)` | `rgba(255,255,255,.14)` | 顶部 1px 内高光（材质边界） | 1px 以内，禁止大范围高光/渐变 |
+| `--glass-solid` | `#ffffff` | `#171a21` | 不支持 backdrop-filter / 降低透明时的回退底 | 回退后对比度不得下降 |
+
+**配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--nav` / `.glass--panel` / `.glass--control` / `.glass--scrim`
+（旧类名 `--glass-tint-*`、`--glass-radius-*` 保留为别名，组件无需改）。
+
+### 1.7 浅色模式覆盖（除中性 9 阶外的差异）
+
+```css
+[data-theme='light'] {
+  /* 主色：浅底上的文字档必须更深才达 AA */
+  --color-primary-300: #c23539;   /* 主色文字 5.6:1（深色模式是 #ef7377） */
+  --color-primary-700: #b02a2e;   /* 实心按钮底，白字 ≈6.0:1 */
+  /* 语义色：base 档用于浅底文字，strong 档用于实心底 */
+  --color-success-base: #127a45;  --color-success-strong: #15703f;
+  --color-warning-base: #8a5a0f;  --color-warning-strong: #8a5a0f;
+  --color-error-base:   #b41c1c;  --color-error-strong:   #b41c1c;
+  --color-info-base:    #1d4ed8;  --color-info-strong:    #1d4ed8;
+  --color-border: #d7dbe3;  --color-focus: #e5484d;
+  --shadow-overlay: 0 8px 24px rgba(16,24,40,.12);
+}
+```
+
+> 业务页**默认深色**（金融/电竞场景）；`/ui-kit` 提供「切浅色模式（验收用）」按钮，
+> 离开页面自动恢复深色。全站切浅色尚需逐页回归对比度（见 §7 已知限制）。
+
 ---
 
 ## 2. 字体
@@ -99,15 +141,17 @@
 
 | 类别 | Token | 值 |
 | --- | --- | --- |
-| 间距 | `--space-1…8` | 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64（8pt 体系） |
-| 圆角 | `--radius-xs/sm/md/lg` | **4 / 6 / 8 / 8**（标签 4、控件 6、卡片 8；禁止 12/16/999） |
-| 边框 | `--border-width` | 1px（层级靠边框 + 背景色差） |
-| 阴影 | `--shadow-none` / `--shadow-overlay` | `none` / 仅弹层 `0 1px 2px rgba(0,0,0,.3)` |
+| 间距 | `--space-1…8` | 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64（8pt 体系，只允许这 8 档） |
+| 圆角·内容层 | `--radius-xs/sm/md/lg` | **4 / 6 / 8 / 8**（标签 4、控件 6、卡片 8） |
+| 圆角·材质层 | `--radius-material-sm/md/lg/xl` | **12 / 16 / 20 / 24**（工具条 12、小浮层 16、弹窗 20、sheet 24） |
+| 边框 | `--border-width` | 1px（内容层靠边框 + 背景色差表达层级） |
+| 阴影 | `--shadow-none` / `--shadow-overlay` / `--glass-shadow` | `none` / 仅弹层 `0 8px 24px rgba(16,24,40,.12)`（浅）或 `0 1px 2px rgba(0,0,0,.3)`（深）/ 玻璃浮层见 §1.6 |
 | 控件高 | `--control-height-sm/md/lg` | 36 / 40 / 44 |
 | 图标 | `--icon-size-sm/md/lg` | 16 / 20 / 24 |
 | 布局 | `--layout-max-width` / `--layout-sidebar-width` | 1280 / 232 |
 
-> **层级规则**：卡片一律 `1px 边框 + 背景色差`，不用阴影；只有弹层/抽屉允许极轻投影。
+> **层级规则**：内容卡片一律 `1px 边框 + 背景色差`、**零阴影**；只有浮层（弹窗/Popover/tooltip）允许极轻投影。
+> **两套圆角不混用**：内容层 4/6/8、材质层 12/16/20/24；跨层混用会被 `design-tokens.spec.ts` 拦下。
 
 ---
 
@@ -176,82 +220,130 @@
 
 ## 5. 两版交付
 
-### 5.1 CSS（节选，完整见 `tokens.css`）
+### 5.1 CSS（节选，完整见 `tokens.css`；深色为 `:root` 默认，浅色为 `[data-theme='light']` 覆盖）
 
 ```css
 :root {
-  /* 中性 9 阶 */
-  --color-neutral-0: #f7f8fa;
-  --color-neutral-100: #e9eaee;
-  --color-neutral-200: #c6c9d1;
-  --color-neutral-300: #b6bac4;
-  --color-neutral-400: #8f949f;
-  --color-neutral-500: #5c626e;
-  --color-neutral-600: #3a404c;
-  --color-neutral-700: #262b34;
-  --color-neutral-800: #181b22;
+  /* 中性 9 阶（深色） */
+  --color-neutral-0: #f7f8fa;  --color-neutral-100: #e9eaee; --color-neutral-200: #c6c9d1;
+  --color-neutral-300: #b6bac4; --color-neutral-400: #8f949f; --color-neutral-500: #5c626e;
+  --color-neutral-600: #3a404c; --color-neutral-700: #262b34; --color-neutral-800: #181b22;
   --color-canvas: #12141a;
 
-  /* 主色 5 阶 + 交互别名 */
-  --color-primary-50: #fdecec;
-  --color-primary-100: #f8c9ca;
-  --color-primary-300: #ef7377;
-  --color-primary-500: #e5484d;
-  --color-primary-700: #c23438;
-  --color-action: var(--color-primary-700);
-  --color-action-hover: #a82a2e;
-
-  /* 语义色各 3 阶 */
-  --color-success-subtle: #e8f8ef;
-  --color-success-base: #5fd394;
-  --color-success-strong: #1a7f4b;
-  --color-warning-subtle: #fdf3e3;
-  --color-warning-base: #e8b45c;
-  --color-warning-strong: #a86f17;
-  --color-error-subtle: #fdeaea;
-  --color-error-base: #f07171;
-  --color-error-strong: #b41c1c;
-  --color-info-subtle: #e8f1fd;
-  --color-info-base: #6b9bf5;
-  --color-info-strong: #1d4ed8;
+  /* 主色 5 阶 + 语义（各 3 阶）—— 详见文件，这里只列关键 */
+  --color-primary-500: #e5484d; --color-primary-300: #ef7377; --color-primary-700: #c23438;
+  --color-success-base: #5fd394; --color-warning-base: #e8b45c; --color-error-base: #f07171;
 
   /* 字体 / 间距 / 圆角 / 阴影 */
-  --font-size-body: 16px;
-  --line-height-body: 1.6;
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --font-size-body: 16px; --line-height-body: 1.6;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
   --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px;
-  --radius-xs: 4px; --radius-sm: 6px; --radius-md: 8px; --radius-lg: 8px;
-  --shadow-none: none;
-  --shadow-overlay: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --radius-xs: 4px; --radius-sm: 6px; --radius-md: 8px; --radius-lg: 8px;      /* 内容层 */
+  --radius-material-sm: 12px; --radius-material-md: 16px;
+  --radius-material-lg: 20px; --radius-material-xl: 24px;                       /* 材质层 */
+  --shadow-none: none; --shadow-overlay: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  /* 材质层：液态玻璃（深色） */
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-bg-strong: rgba(20, 20, 20, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-blur: 22px;
+  --glass-saturate: 180%;
+  --glass-radius: var(--radius-material-lg);
+  --glass-scrim: rgba(20, 20, 20, 0.72);
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --glass-solid: #171a21;              /* 降级回退底 */
+}
+
+/* 浅色模式：只覆盖差异项（中性 9 阶、主色 300/700、语义 base/strong、玻璃、阴影） */
+[data-theme='light'] {
+  --color-neutral-0: #0b0d11; --color-neutral-100: #1a1d23; --color-neutral-800: #ffffff;
+  --color-canvas: #f4f6f9;
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.72);
+  --glass-scrim: rgba(255, 255, 255, 0.72);
+  --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --glass-solid: #ffffff;
 }
 ```
 
-### 5.2 JSON（节选，完整见 `design-tokens.json`）
+### 5.2 JSON（节选，完整见 `design-tokens.json`；v2 用 `tokens` 平铺表，每个令牌带双模式值与用途）
 
 ```json
 {
-  "color": {
-    "neutral": {
-      "100": { "value": "#e9eaee", "usage": "主文字", "contrastOnSurface": 14.33 },
-      "400": { "value": "#8f949f", "usage": "辅助文字", "contrastOnSurface": 5.67 }
-    },
-    "primary": {
-      "500": { "value": "#e5484d", "usage": "品牌红：涨跌/图表", "contrastOnSurface": 4.4 },
-      "700": { "value": "#c23438", "usage": "实心按钮底", "contrastWhiteOnIt": 5.47 }
-    },
-    "semantic": {
-      "error": {
-        "subtle": { "value": "#fdeaea", "usage": "浅底" },
-        "base": { "value": "#f07171", "usage": "深色底文字", "contrastOnSurface": 5.99 },
-        "strong": { "value": "#b41c1c", "usage": "实心底", "contrastWhiteOnIt": 6.72 }
+  "version": "2.0.0",
+  "modes": { "default": "dark", "switch": "document.documentElement.dataset.theme = 'light' | 'dark'" },
+  "tokens": {
+    "--color-neutral-100": {
+      "group": "color.neutral",
+      "light": "#1a1d23",
+      "dark": "#e9eaee",
+      "purpose": "正文主文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "light": { "on": "#ffffff", "ratio": 16.88 },
+        "dark": { "on": "#181b22", "ratio": 14.33 }
       }
+    },
+    "--glass-bg": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.62)",
+      "dark": "rgba(20,20,20,0.6)",
+      "purpose": "玻璃底（导航壳/控件，文字较少）",
+      "requirement": "玻璃上的文字必须 ≥4.5:1；同屏玻璃面积 ≤30%"
+    },
+    "--glass-scrim": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.72)",
+      "dark": "rgba(20,20,20,0.72)",
+      "purpose": "可读性 scrim：文字直接坐玻璃时用这档",
+      "requirement": "玻璃上正文 ≥4.5:1（v2 实测最低 8.55:1）"
     }
   },
-  "typography": { "fontSize": { "body": 16, "aux": 14, "cap": 13 }, "lineHeight": { "body": 1.6 } },
-  "spacing": { "1": 4, "2": 8, "3": 12, "4": 16, "5": 24, "6": 32, "7": 48, "8": 64 },
-  "radius": { "xs": 4, "sm": 6, "md": 8, "lg": 8 }
+  "radius": { "content": { "xs": 4, "sm": 6, "md": 8 }, "material": { "sm": 12, "md": 16, "lg": 20, "xl": 24 } },
+  "spacing": { "1": 4, "2": 8, "3": 12, "4": 16, "5": 24, "6": 32, "7": 48, "8": 64 }
 }
 ```
+
+### 5.3 降级规则（`liquid-glass.css`，可直接抄）
+
+```css
+/* ① 浏览器不支持 backdrop-filter：回退不透明底，保留圆角/描边/内高光 */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ② 用户要求减少透明：同样回退，并关掉半透明高光 */
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass--interactive::after { display: none; }
+}
+
+/* ③ 手动降级开关（/ui-kit「模拟降级」按钮 / 现场演示用） */
+html.no-backdrop-filter .glass {
+  background-color: var(--glass-solid) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* ④ 动态高光只在「有鼠标 + 允许动效」时启用；移动端与 reduced-motion 自动关闭 */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .glass--interactive:hover::after { opacity: 1; }
+}
+```
+
+> 实测：模拟不支持 backdrop-filter 时玻璃面积 0%、底为 `rgb(23,26,33)`；
+> 模拟 `prefers-reduced-transparency: reduce` 时 `backdrop-filter: none`（Edge 157 生效）。
 
 ---
 
@@ -285,15 +377,26 @@
 
 | 要求 | 结果 |
 | --- | --- |
-| 中性 9 阶 | ✅ n-0…n-800 + 画布色 |
-| 主色 5 阶 | ✅ 50/100/300/500/700 |
-| 语义色各 3 阶 | ✅ success/warning/error/info × subtle/base/strong |
+| 中性 9 阶 | ✅ n-0…n-800（双模式）+ 画布色 |
+| 主色 5 阶 | ✅ 50/100/300/500/700（浅色模式 300/700 加深以达 AA） |
+| 语义色各 3 阶 | ✅ success/warning/error/info × subtle/base/strong（双模式） |
 | 正文 16px/1.6、辅助 13px/1.5 | ✅ 令牌固定，页面无硬编码小字 |
 | H1–H3 层级 | ✅ 28/22/18 |
-| 间距 4…64 | ✅ 8 档 |
-| 圆角 4/6/8 | ✅ `--radius-lg` 也映射 8，无 12/16/999 |
-| 阴影只允许 0/极轻 | ✅ 卡片 none，弹层仅 0 1px 2px |
-| CSS + JSON 双版本 | ✅ 两个文件同源同值 |
-| 颜色用途 + 对比度标注 | ✅ 本文件 + JSON 内联 `contrastOnSurface` |
+| 间距 4…64 | ✅ 8 档（4/8/12/16/24/32/48/64） |
+| 圆角 | ✅ 内容层 4/6/8；材质层 12/16/20/24（两套不混用） |
+| 阴影只允许 0/极轻 | ✅ 内容卡 none；遮罩层极轻；玻璃浮层 `--glass-shadow` |
+| **浅色 / 深色双模式** | ✅ `:root`（深色默认）+ `[data-theme='light']`；业务页实测两种模式截图见证据 66–68 |
+| **玻璃令牌 7 个必需项** | ✅ `--glass-bg/border/blur/saturate/radius/scrim/shadow`（+ 内高光/回退底） |
+| **玻璃降级** | ✅ `@supports not (backdrop-filter)` → `--glass-solid`；`prefers-reduced-transparency: reduce` 同回退并去高光；另有手动开关 |
+| 玻璃配额 ≤30% | ✅ 桌面 18.13%、移动 8.25%（同屏可见玻璃面积，CDP 量算） |
+| 玻璃上文字 AA | ✅ 6 处直接坐在玻璃上的文字实测最低 **8.55:1**；坐在实色卡片/头像上的文字按实色对算 |
+| CSS + JSON 双版本 | ✅ 83 个令牌同源同值，`design-tokens.spec.ts` 12 条断言守护（含 9/5/3 阶、玻璃、降级、半径、正文） |
+| 令牌用途 + 对比度标注 | ✅ CSS 注释 + JSON 每个令牌带 `purpose` / `contrast` / `requirement` |
 | 组件规则（按钮/输入/卡片/表格/导航） | ✅ §4 + `ui-kit.css` |
-| AA 合规 | ✅ 正文 14.33:1；语义文字 5.99–9.22；按钮白字 5.02–6.72；⚠️ 唯一例外：`primary-500` 作 16px 文字 4.40:1，已在规范中要求改用 `primary-300` |
+| AA 合规 | ✅ 正文 14.33:1（深）/16.88:1（浅）；语义文字 5.99–9.22；按钮白字 5.02–6.72；⚠️ 唯一例外：`primary-500` 作 16px 文字 4.40:1，已在规范中要求改用 `primary-300` |
+
+**已知限制（如实记录）**
+
+1. 业务页**默认深色**；浅色模式已完整定义令牌并通过 `/ui-kit` 与市场页实拍验证，但**全站逐页浅色回归尚未做**（个别页面可能有硬编码色残留）。
+2. 玻璃"液态流动感"只做 hover 轻微斜向高光，没有跟随鼠标的折射/位移（性能与规范双重限制）。
+3. 配额统计口径：只算"真实生效的 backdrop-filter 元素"；被遮罩压暗的背景玻璃不计（`/ui-kit` 材质展厅例外，页面已标注）。
