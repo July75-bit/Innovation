@@ -288,8 +288,8 @@ nav {
   color: var(--text);
 }
 .nav-item svg {
-  width: 16px;
-  height: 16px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.6;
@@ -386,7 +386,7 @@ nav {
 .side-note {
   margin: auto 0 0;
   padding: var(--space-3);
-  font-size: var(--fs-cap);
+  font-size: var(--fs-aux);
   color: var(--muted);
   border-top: 1px solid var(--border);
   line-height: 1.5;
@@ -418,6 +418,14 @@ nav {
   color: var(--text);
   font-size: var(--fs-h3);
   font-variant-numeric: tabular-nums;
+}
+@media (max-width: 420px) {
+  .balance {
+    font-size: var(--fs-cap);
+  }
+  .balance strong {
+    font-size: var(--fs-body);
+  }
 }
 .menu-toggle {
   background: none;

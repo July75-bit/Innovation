@@ -115,6 +115,24 @@ async function loadCore(silent = false) {
   }
 }
 
+/**
+ * 重新分析（用户可控）：只重发 AI 请求，不动行情、不碰账户。
+ * H3「用户对结果的控制权」：没有这个入口，用户想换个建议只能刷新整页。
+ */
+async function refreshAnalysis() {
+  if (analysisLoading.value || invalidId.value) return
+  const token = requestToken // 沿用当前页面的令牌：切走选手后丢弃本次响应
+  analysisLoading.value = true
+  try {
+    const a = await api.getAnalysis(playerId.value)
+    if (token === requestToken) analysis.value = a
+  } catch {
+    if (token === requestToken) analysis.value = null
+  } finally {
+    if (token === requestToken) analysisLoading.value = false
+  }
+}
+
 onMounted(() => loadCore())
 watch(playerId, () => loadCore())
 </script>
@@ -163,6 +181,16 @@ watch(playerId, () => loadCore())
                 >
               </template>
               <span v-else-if="!analysisLoading" class="src">暂不可用</span>
+              <button
+                v-if="analysis || analysisLoading"
+                type="button"
+                class="ai-refresh"
+                :disabled="analysisLoading"
+                title="重新请求一次 AI 建议（不影响行情与账户）"
+                @click="refreshAnalysis"
+              >
+                {{ analysisLoading ? '分析中…' : '重新分析' }}
+              </button>
             </template>
 
             <!-- AI 请求中的占位：不空白、不跳动，告知"正在分析" -->
@@ -173,9 +201,14 @@ watch(playerId, () => loadCore())
             <section v-else-if="analysis">
               <p class="ai-src-line">
                 依据来源：{{ analysis.source === 'llm' ? 'AI 模型' : '规则兜底（AI 暂不可用）' }}
+                <span class="ai-scope">· 仅基于本站 16 名选手的模拟数据</span>
+              </p>
+              <!-- 高风险时把免责声明提到理由之前：用户先看到边界，再看结论 -->
+              <p v-if="analysis.risk_level === 'HIGH'" class="disclaimer disclaimer-strong">
+                ⚠ 高风险建议：{{ analysis.disclaimer }}
               </p>
               <p class="ai-reason">{{ analysis.reason }}</p>
-              <p class="disclaimer">{{ analysis.disclaimer }}</p>
+              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">{{ analysis.disclaimer }}</p>
             </section>
             <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
           </CollapsibleCard>
@@ -371,6 +404,37 @@ h3 {
   font-size: var(--fs-cap);
   color: var(--muted);
 }
+/* 高风险时把免责声明提到理由之前，并用警示色强调（A4 风险分级） */
+.disclaimer-strong {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+  color: var(--text);
+}
+/* 「仅基于本站模拟数据」的边界说明（A1 边界声明） */
+.ai-scope {
+  opacity: 0.85;
+}
+/* 「重新分析」按钮：轻量次级按钮，不抢交易面板主操作（H3 用户可控） */
+.ai-refresh {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-cap);
+  cursor: pointer;
+}
+.ai-refresh:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--muted);
+}
+.ai-refresh:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
 
 /* 交易列在长页面中保持可见 */
 @media (min-width: 961px) {
@@ -381,6 +445,13 @@ h3 {
 }
 
 /* ===== 窄屏：双列转单列，标题与价格上下排 ===== */
+/* 窄屏：AI 卡头部（建议/风险/重新分析）允许换行，避免挤成一行溢出 */
+@media (max-width: 720px) {
+  :deep(.meta) {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+}
 @media (max-width: 960px) {
   .cols {
     grid-template-columns: minmax(0, 1fr);
