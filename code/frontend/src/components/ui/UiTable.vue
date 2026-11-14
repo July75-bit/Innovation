@@ -26,8 +26,10 @@ const props = withDefaults(
     sortDir?: 'asc' | 'desc'
     /** 加载时骨架行数 */
     skeletonRows?: number
+    /** 表头吸顶（长表格用；滚动容器内生效） */
+    stickyHeader?: boolean
   }>(),
-  { rowKey: 'id', loading: false, emptyText: '暂无数据', skeletonRows: 5 },
+  { rowKey: 'id', loading: false, emptyText: '暂无数据', skeletonRows: 5, stickyHeader: false },
 )
 
 const emit = defineEmits<{
@@ -49,7 +51,7 @@ function cellValue(row: Record<string, unknown>, key: string): string {
 </script>
 
 <template>
-  <div class="ui-table-wrap">
+  <div :class="['ui-table-wrap', { 'is-sticky-head': stickyHeader }]">
     <table class="ui-table">
       <thead>
         <tr>
@@ -178,5 +180,16 @@ function cellValue(row: Record<string, unknown>, key: string): string {
 }
 .is-skeleton td {
   padding: var(--space-3) var(--space-4);
+}
+
+/* 表头吸顶：表头实色（内容层，绝不用玻璃，避免长表格大面积透明） */
+.ui-table-wrap.is-sticky-head {
+  max-height: 520px;
+  overflow: auto;
+}
+.ui-table-wrap.is-sticky-head thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 </style>

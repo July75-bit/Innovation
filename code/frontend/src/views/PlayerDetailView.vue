@@ -607,7 +607,7 @@ watch(playerId, () => loadCore())
   font-variant-numeric: tabular-nums;
 }
 .change.up {
-  color: var(--up);
+  color: var(--up-text);
 }
 .change.down {
   color: var(--down);
@@ -714,7 +714,7 @@ h3 {
   color: var(--warn);
 }
 .risk.high {
-  color: var(--up);
+  color: var(--up-text);
 }
 .src {
   font-size: var(--fs-cap);
@@ -789,8 +789,8 @@ h3 {
   cursor: pointer;
 }
 .plan-accept {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .plan-accept:disabled,
 .plan-ignore:disabled,
@@ -816,7 +816,7 @@ h3 {
 .ai-narrative-tag {
   display: inline-block;
   margin-right: 6px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -863,7 +863,7 @@ h3 {
   gap: 2px;
 }
 .tools-list code {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 .tools-args {
   margin-left: 6px;
@@ -985,7 +985,7 @@ h3 {
 }
 .advice-pill.buy {
   background: var(--up-bg);
-  color: var(--up);
+  color: var(--up-text);
 }
 .advice-pill.sell {
   background: var(--down-bg);
@@ -1160,7 +1160,7 @@ h3 {
   background: var(--warn-bg);
 }
 .chip.risk.high {
-  color: var(--up);
+  color: var(--up-text);
   background: var(--up-bg);
 }
 .ai-facts {

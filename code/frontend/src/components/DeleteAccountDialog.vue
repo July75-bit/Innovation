@@ -206,7 +206,7 @@ async function submit(): Promise<void> {
   font-size: var(--fs-body);
 }
 .field input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
 }
 .err {
   margin: 0 0 var(--space-3);

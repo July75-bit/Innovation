@@ -1,72 +1,846 @@
 {
   "$schema": "https://design-tokens.github.io/community-group/format/",
   "name": "PlayerStock Design Tokens",
-  "version": "1.0.0",
-  "theme": "dark",
+  "version": "2.0.0",
+  "modes": {
+    "default": "dark",
+    "switch": "document.documentElement.dataset.theme = 'light' | 'dark'"
+  },
   "meta": {
     "product": "PlayerStock（虚拟选手股交易模拟）",
-    "principles": ["扁平化：无渐变/无发光/无重阴影", "产品化：一屏一主任务", "高可读性：正文 16px/1.6，AA 对比度"],
-    "wcag": "标注为文字/图标与 #181b22 表面的对比度；AA 正文需 ≥4.5，大号文字 ≥3.0"
+    "principles": [
+      "内容扁平：实色表面 + 1px 边框，禁止玻璃/阴影",
+      "控件液态玻璃：只有导航壳与浮层用玻璃，面积 ≤30%",
+      "高可读性：正文 16px/1.6，AA 对比度"
+    ],
+    "wcag": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+    "contrastBasis": {
+      "dark": "#181b22（表面）",
+      "light": "#ffffff（表面）"
+    },
+    "glassRule": "玻璃令牌只作用于\"会盖住其他内容的壳/浮层\"；内容卡片、表格、表单、长文一律实色",
+    "fallback": "@supports not (backdrop-filter) → --glass-solid；prefers-reduced-transparency: reduce → --glass-solid 且去高光",
+    "source": "tokens.css（CSS 变量）+ 本文件（JSON），两份同源同值，由 design-tokens.spec.ts 守护",
+    "contrastFixes": [
+      "品牌红作文字统一走 --accent-text / --up-text（#e5484d 作 16px 文字仅 4.40:1）",
+      "浅色模式 success-base 由 #127a45 加深到 #0f6b3d；warning-base 由 #8a5a0f 加深到 #7a4d0a"
+    ]
   },
-  "color": {
-    "neutral": {
-      "0": { "value": "#f7f8fa", "usage": "最高亮文字", "contrastOnSurface": 16.22 },
-      "100": { "value": "#e9eaee", "usage": "主文字", "contrastOnSurface": 14.33 },
-      "200": { "value": "#c6c9d1", "usage": "强调正文", "contrastOnSurface": 10.4 },
-      "300": { "value": "#b6bac4", "usage": "次要文字", "contrastOnSurface": 8.87 },
-      "400": { "value": "#8f949f", "usage": "辅助文字", "contrastOnSurface": 5.67 },
-      "500": { "value": "#5c626e", "usage": "占位符/禁用态（仅装饰）", "contrastOnSurface": 2.9 },
-      "600": { "value": "#3a404c", "usage": "强边框/分割线", "contrastOnSurface": null },
-      "700": { "value": "#262b34", "usage": "抬起面 / 悬停底", "contrastOnSurface": null },
-      "800": { "value": "#181b22", "usage": "卡片/表面", "contrastOnSurface": null }
-    },
-    "canvas": { "value": "#12141a", "usage": "页面底色（不属于 9 阶）" },
-    "primary": {
-      "50": { "value": "#fdecec", "usage": "浅底 / 标签底" },
-      "100": { "value": "#f8c9ca", "usage": "浅底悬停" },
-      "300": { "value": "#ef7377", "usage": "深色底上的主色文字/图标", "contrastOnSurface": 6.06 },
-      "500": { "value": "#e5484d", "usage": "品牌红：涨跌、图表、强调填充", "contrastOnSurface": 4.4, "note": "作 16px 正文文字略低于 AA（4.40），文字请用 300 档" },
-      "700": { "value": "#c23438", "usage": "实心按钮底（白字 5.47:1 ✅）", "contrastWhiteOnIt": 5.47 }
-    },
-    "action": { "value": "#c23438", "usage": "主按钮底色", "hover": "#a82a2e", "text": "#ffffff", "contrastWhiteOnIt": 5.47 },
-    "semantic": {
-      "success": {
-        "subtle": { "value": "#e8f8ef", "usage": "浅底" },
-        "base": { "value": "#5fd394", "usage": "深色底文字/图标（跌、交易中）", "contrastOnSurface": 9.22 },
-        "strong": { "value": "#1a7f4b", "usage": "实心底（白字 5.02:1 ✅）", "contrastWhiteOnIt": 5.02 }
-      },
-      "warning": {
-        "subtle": { "value": "#fdf3e3", "usage": "浅底" },
-        "base": { "value": "#e8b45c", "usage": "深色底文字/图标（暂停）", "contrastOnSurface": 9.12 },
-        "strong": { "value": "#a86f17", "usage": "描边/浅底文字", "contrastWhiteOnIt": 4.24, "note": "白字未达 AA；实心头像/标签请配深色文字" }
-      },
-      "error": {
-        "subtle": { "value": "#fdeaea", "usage": "浅底" },
-        "base": { "value": "#f07171", "usage": "深色底文字/图标", "contrastOnSurface": 5.99 },
-        "strong": { "value": "#b41c1c", "usage": "实心底（白字 6.72:1 ✅）/ 危险按钮", "contrastWhiteOnIt": 6.72 }
-      },
-      "info": {
-        "subtle": { "value": "#e8f1fd", "usage": "浅底" },
-        "base": { "value": "#6b9bf5", "usage": "深色底文字/图标", "contrastOnSurface": 6.26 },
-        "strong": { "value": "#1d4ed8", "usage": "实心底（白字 6.70:1 ✅）", "contrastWhiteOnIt": 6.7 }
+  "groups": [
+    "color.neutral",
+    "color.canvas",
+    "color.primary",
+    "color.action",
+    "color.semantic",
+    "color.surface",
+    "color.text",
+    "color.border",
+    "color.focus",
+    "color.overlay",
+    "color.business",
+    "material.glass",
+    "radius.material",
+    "typography",
+    "spacing",
+    "shadow"
+  ],
+  "tokens": {
+    "--color-neutral-0": {
+      "group": "color.neutral",
+      "light": "#0b0d11",
+      "dark": "#f7f8fa",
+      "purpose": "最高对比文字（标题强调、大数字）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 16.22
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 19.45
+        }
       }
     },
-    "text": {
-      "default": { "value": "{color.neutral.100}", "usage": "正文" },
-      "strong": { "value": "{color.neutral.0}", "usage": "标题/数字" },
-      "muted": { "value": "{color.neutral.300}", "usage": "辅助说明" },
-      "faint": { "value": "{color.neutral.400}", "usage": "占位/时间戳" },
-      "disabled": { "value": "{color.neutral.500}", "usage": "禁用文字" }
+    "--color-neutral-100": {
+      "group": "color.neutral",
+      "light": "#1a1d23",
+      "dark": "#e9eaee",
+      "purpose": "正文主文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 14.33
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 16.88
+        }
+      }
     },
-    "border": {
-      "default": { "value": "#2c313b", "usage": "卡片/输入框 1px 边框" },
-      "strong": { "value": "{color.neutral.600}", "usage": "分割线/强调边框" },
-      "focus": { "value": "{color.primary.300}", "usage": "焦点环（2px）" }
+    "--color-neutral-200": {
+      "group": "color.neutral",
+      "light": "#2e333c",
+      "dark": "#c6c9d1",
+      "purpose": "强调正文",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 10.4
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 12.69
+        }
+      }
     },
-    "business": {
-      "up": { "value": "{color.primary.500}", "textValue": "{color.primary.300}", "usage": "涨（填充 p-500，文字 p-300）" },
-      "down": { "value": "{color.success.base}", "usage": "跌" },
-      "halt": { "value": "{color.warning.base}", "usage": "暂停交易" }
+    "--color-neutral-300": {
+      "group": "color.neutral",
+      "light": "#454b56",
+      "dark": "#b6bac4",
+      "purpose": "次要文字 / 辅助说明",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 8.87
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 8.77
+        }
+      }
+    },
+    "--color-neutral-400": {
+      "group": "color.neutral",
+      "light": "#5d6470",
+      "dark": "#8f949f",
+      "purpose": "弱辅助（时间戳、占位提示）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 5.67
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.96
+        }
+      }
+    },
+    "--color-neutral-500": {
+      "group": "color.neutral",
+      "light": "#8b919d",
+      "dark": "#5c626e",
+      "purpose": "禁用文字、占位符（仅装饰，不作正文）",
+      "requirement": "非文字（描边/表面），无对比度要求；边框对相邻表面建议 ≥3:1 以便辨识"
+    },
+    "--color-neutral-600": {
+      "group": "color.neutral",
+      "light": "#c3c8d2",
+      "dark": "#3a404c",
+      "purpose": "强边框 / 分割线",
+      "requirement": "非文字（描边/表面），无对比度要求；边框对相邻表面建议 ≥3:1 以便辨识"
+    },
+    "--color-neutral-700": {
+      "group": "color.neutral",
+      "light": "#e8ebf0",
+      "dark": "#262b34",
+      "purpose": "抬起面 / 悬停底色",
+      "requirement": "非文字（描边/表面），无对比度要求；边框对相邻表面建议 ≥3:1 以便辨识"
+    },
+    "--color-neutral-800": {
+      "group": "color.neutral",
+      "light": "#ffffff",
+      "dark": "#181b22",
+      "purpose": "卡片 / 表面",
+      "requirement": "非文字（描边/表面），无对比度要求；边框对相邻表面建议 ≥3:1 以便辨识"
+    },
+    "--color-canvas": {
+      "group": "color.canvas",
+      "light": "#f4f6f9",
+      "dark": "#12141a",
+      "purpose": "页面底色（不属于 9 阶）",
+      "requirement": "非文字；与卡片表面需有可辨色差（ΔL 明显），不用纯黑/纯白"
+    },
+    "--color-primary-50": {
+      "group": "color.primary",
+      "light": "#fdecec",
+      "dark": "#fdecec",
+      "purpose": "浅底 / 标签底色",
+      "requirement": "非文字或小面积强调；作 16px 正文会低于 AA，文字请用 300 档"
+    },
+    "--color-primary-100": {
+      "group": "color.primary",
+      "light": "#f8d3d4",
+      "dark": "#f8c9ca",
+      "purpose": "浅底悬停",
+      "requirement": "非文字或小面积强调；作 16px 正文会低于 AA，文字请用 300 档"
+    },
+    "--color-primary-300": {
+      "group": "color.primary",
+      "light": "#c23539",
+      "dark": "#ef7377",
+      "purpose": "主色文字/图标档（必须它，不能用 500 当正文）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 6.06
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.44
+        }
+      }
+    },
+    "--color-primary-500": {
+      "group": "color.primary",
+      "light": "#e5484d",
+      "dark": "#e5484d",
+      "purpose": "品牌红填充：涨跌块、图表、强调块（非小字正文）",
+      "requirement": "非文字或小面积强调；作 16px 正文会低于 AA，文字请用 300 档"
+    },
+    "--color-primary-700": {
+      "group": "color.primary",
+      "light": "#b02a2e",
+      "dark": "#c23438",
+      "purpose": "实心按钮底（白字 ≥4.5:1）",
+      "requirement": "填充色：白字对比需 ≥4.5:1"
+    },
+    "--color-action": {
+      "group": "color.action",
+      "light": "#b02a2e",
+      "dark": "#c23438",
+      "purpose": "主按钮底色（实心）",
+      "contrast": {
+        "requirement": "白字需 ≥4.5:1",
+        "light": {
+          "on": "#ffffff",
+          "ratio": 6.53
+        },
+        "dark": {
+          "on": "#ffffff",
+          "ratio": 5.47
+        }
+      }
+    },
+    "--color-action-hover": {
+      "group": "color.action",
+      "light": "#942327",
+      "dark": "#a82a2e",
+      "purpose": "主按钮悬停底色",
+      "contrast": {
+        "requirement": "白字需 ≥4.5:1",
+        "light": {
+          "on": "#ffffff",
+          "ratio": 8.3
+        },
+        "dark": {
+          "on": "#ffffff",
+          "ratio": 6.92
+        }
+      }
+    },
+    "--color-action-text": {
+      "group": "color.action",
+      "light": "#ffffff",
+      "dark": "#ffffff",
+      "purpose": "主按钮文字",
+      "contrast": {
+        "requirement": "对按钮底 ≥4.5:1（与上两行的数值互为倒数）"
+      }
+    },
+    "--color-success-subtle": {
+      "group": "color.semantic",
+      "light": "#e8f8ef",
+      "dark": "#e8f8ef",
+      "purpose": "成功 / 跌（国内行情习惯） · 浅底/背景块",
+      "requirement": "仅作背景块，必然与文字搭配"
+    },
+    "--color-success-base": {
+      "group": "color.semantic",
+      "light": "#0f6b3d",
+      "dark": "#5fd394",
+      "purpose": "成功 / 跌（国内行情习惯） · 深色底上的文字/图标（浅色模式自动变深）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 9.22
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.39
+        }
+      }
+    },
+    "--color-success-strong": {
+      "group": "color.semantic",
+      "light": "#15703f",
+      "dark": "#1a7f4b",
+      "purpose": "成功 / 跌（国内行情习惯） · 实心底（白字需 ≥4.5:1）",
+      "requirement": "实心底：白字 ≥4.5:1"
+    },
+    "--color-warning-subtle": {
+      "group": "color.semantic",
+      "light": "#fdf3e3",
+      "dark": "#fdf3e3",
+      "purpose": "警告 / 停牌 · 浅底/背景块",
+      "requirement": "仅作背景块，必然与文字搭配"
+    },
+    "--color-warning-base": {
+      "group": "color.semantic",
+      "light": "#7a4d0a",
+      "dark": "#e8b45c",
+      "purpose": "警告 / 停牌 · 深色底上的文字/图标（浅色模式自动变深）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 9.12
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.92
+        }
+      }
+    },
+    "--color-warning-strong": {
+      "group": "color.semantic",
+      "light": "#8a5a0f",
+      "dark": "#a86f17",
+      "purpose": "警告 / 停牌 · 实心底（白字需 ≥4.5:1）",
+      "requirement": "实心底：白字 ≥4.5:1"
+    },
+    "--color-error-subtle": {
+      "group": "color.semantic",
+      "light": "#fdeaea",
+      "dark": "#fdeaea",
+      "purpose": "错误 / 危险操作 · 浅底/背景块",
+      "requirement": "仅作背景块，必然与文字搭配"
+    },
+    "--color-error-base": {
+      "group": "color.semantic",
+      "light": "#b41c1c",
+      "dark": "#f07171",
+      "purpose": "错误 / 危险操作 · 深色底上的文字/图标（浅色模式自动变深）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 5.99
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 6.72
+        }
+      }
+    },
+    "--color-error-strong": {
+      "group": "color.semantic",
+      "light": "#b41c1c",
+      "dark": "#b41c1c",
+      "purpose": "错误 / 危险操作 · 实心底（白字需 ≥4.5:1）",
+      "requirement": "实心底：白字 ≥4.5:1"
+    },
+    "--color-info-subtle": {
+      "group": "color.semantic",
+      "light": "#e8f1fd",
+      "dark": "#e8f1fd",
+      "purpose": "信息提示 · 浅底/背景块",
+      "requirement": "仅作背景块，必然与文字搭配"
+    },
+    "--color-info-base": {
+      "group": "color.semantic",
+      "light": "#1d4ed8",
+      "dark": "#6b9bf5",
+      "purpose": "信息提示 · 深色底上的文字/图标（浅色模式自动变深）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 6.26
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 6.7
+        }
+      }
+    },
+    "--color-info-strong": {
+      "group": "color.semantic",
+      "light": "#1d4ed8",
+      "dark": "#1d4ed8",
+      "purpose": "信息提示 · 实心底（白字需 ≥4.5:1）",
+      "requirement": "实心底：白字 ≥4.5:1"
+    },
+    "--color-bg": {
+      "group": "color.surface",
+      "light": "#f4f6f9",
+      "dark": "#12141a",
+      "purpose": "页面底色",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差"
+    },
+    "--color-surface": {
+      "group": "color.surface",
+      "light": "#ffffff",
+      "dark": "#181b22",
+      "purpose": "卡片/表面",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差"
+    },
+    "--color-surface-raised": {
+      "group": "color.surface",
+      "light": "#e8ebf0",
+      "dark": "#262b34",
+      "purpose": "悬停/嵌套表面",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差"
+    },
+    "--color-surface-sunken": {
+      "group": "color.surface",
+      "light": "#f7f8fb",
+      "dark": "#14161c",
+      "purpose": "输入框底",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差"
+    },
+    "--color-text": {
+      "group": "color.text",
+      "light": "#1a1d23",
+      "dark": "#e9eaee",
+      "purpose": "正文主文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 14.33
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 16.88
+        }
+      }
+    },
+    "--color-text-strong": {
+      "group": "color.text",
+      "light": "#0b0d11",
+      "dark": "#f7f8fa",
+      "purpose": "强调文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 16.22
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 19.45
+        }
+      }
+    },
+    "--color-text-muted": {
+      "group": "color.text",
+      "light": "#454b56",
+      "dark": "#b6bac4",
+      "purpose": "次要文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 8.87
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 8.77
+        }
+      }
+    },
+    "--color-text-faint": {
+      "group": "color.text",
+      "light": "#5d6470",
+      "dark": "#8f949f",
+      "purpose": "弱辅助文字",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 5.67
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.96
+        }
+      }
+    },
+    "--color-text-disabled": {
+      "group": "color.text",
+      "light": "#8b919d",
+      "dark": "#5c626e",
+      "purpose": "禁用文字（不作正文）",
+      "requirement": "低于 AA 允许（禁用态 + WCAG 1.4.3 例外），但必须同时有 opacity/禁用语义"
+    },
+    "--color-border": {
+      "group": "color.border",
+      "light": "#d7dbe3",
+      "dark": "#2c313b",
+      "purpose": "常规 1px 边框",
+      "requirement": "非文字；对表面 ≥3:1 属建议值（本值偏装饰，允许）"
+    },
+    "--color-border-strong": {
+      "group": "color.border",
+      "light": "#c3c8d2",
+      "dark": "#3a404c",
+      "purpose": "强边框（悬停/聚焦前）",
+      "requirement": "非文字；≥3:1 建议"
+    },
+    "--color-focus": {
+      "group": "color.focus",
+      "light": "#e5484d",
+      "dark": "#ef7377",
+      "purpose": "焦点环（2px）",
+      "contrast": {
+        "requirement": "焦点指示需 ≥3:1（WCAG 2.4.11）",
+        "light": {
+          "on": "#ffffff",
+          "ratio": 3.91
+        },
+        "dark": {
+          "on": "#12141a",
+          "ratio": 6.48
+        }
+      }
+    },
+    "--color-overlay": {
+      "group": "color.overlay",
+      "light": "rgba(15,18,24,0.32)",
+      "dark": "rgba(9,10,14,0.72)",
+      "purpose": "模态遮罩（纯压暗、不做 blur）",
+      "requirement": "非文字；透出内容不应再被阅读"
+    },
+    "--color-up": {
+      "group": "color.business",
+      "light": "#e5484d",
+      "dark": "#e5484d",
+      "purpose": "涨（填充/曲线）",
+      "requirement": "填充色，不单独承担文字语义"
+    },
+    "--color-up-text": {
+      "group": "color.business",
+      "light": "#c23539",
+      "dark": "#ef7377",
+      "purpose": "涨（文字档，必须用它）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 6.06
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.44
+        }
+      }
+    },
+    "--color-up-subtle": {
+      "group": "color.business",
+      "light": "rgba(229,72,77,0.12)",
+      "dark": "rgba(229,72,77,0.14)",
+      "purpose": "涨的浅底块",
+      "requirement": "仅背景块"
+    },
+    "--color-down": {
+      "group": "color.business",
+      "light": "#127a45",
+      "dark": "#5fd394",
+      "purpose": "跌（文字 + 填充；国内红涨绿跌）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 9.22
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.39
+        }
+      }
+    },
+    "--color-down-subtle": {
+      "group": "color.business",
+      "light": "rgba(15,107,61,0.12)",
+      "dark": "rgba(95,211,148,0.14)",
+      "purpose": "跌的浅底块",
+      "requirement": "仅背景块"
+    },
+    "--color-halt": {
+      "group": "color.business",
+      "light": "#8a5a0f",
+      "dark": "#e8b45c",
+      "purpose": "停牌/暂停（文字 + 图标）",
+      "contrast": {
+        "requirement": "AA：正文/辅助 ≥4.5:1，≥18.66px 粗体或 ≥24px 大号 ≥3:1",
+        "dark": {
+          "on": "#181b22",
+          "ratio": 9.12
+        },
+        "light": {
+          "on": "#ffffff",
+          "ratio": 5.92
+        }
+      }
+    },
+    "--color-halt-subtle": {
+      "group": "color.business",
+      "light": "rgba(122,77,10,0.14)",
+      "dark": "rgba(232,180,92,0.16)",
+      "purpose": "停牌浅底块",
+      "requirement": "仅背景块"
+    },
+    "--glass-bg": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.62)",
+      "dark": "rgba(20,20,20,0.6)",
+      "purpose": "玻璃底（导航壳/控件，文字较少）",
+      "requirement": "玻璃上的文字必须 ≥4.5:1；同屏玻璃面积 ≤30%"
+    },
+    "--glass-bg-strong": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.72)",
+      "dark": "rgba(20,20,20,0.72)",
+      "purpose": "浮层面板底（弹窗/Popover）",
+      "requirement": "同上；面板内正文 ≥4.5:1"
+    },
+    "--glass-border": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.72)",
+      "dark": "rgba(255,255,255,0.16)",
+      "purpose": "1px 描边（内高光外的边界）",
+      "requirement": "非文字；用于界定材质边界"
+    },
+    "--glass-blur": {
+      "group": "material.glass",
+      "light": "22px",
+      "dark": "22px",
+      "purpose": "背景模糊半径（规格 18–28px；≤600px 降为 18px）",
+      "requirement": "性能：窄屏降档，禁止持续动画模糊"
+    },
+    "--glass-saturate": {
+      "group": "material.glass",
+      "light": "180%",
+      "dark": "180%",
+      "purpose": "背景饱和度增强（规格 160–200%）",
+      "requirement": "性能：与 blur 同开时注意移动端帧率"
+    },
+    "--glass-radius": {
+      "group": "material.glass",
+      "light": "20px",
+      "dark": "20px",
+      "purpose": "浮层默认圆角（= --radius-material-lg）",
+      "requirement": "与内容层 4/6/8 分开，按层统一"
+    },
+    "--glass-scrim": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.72)",
+      "dark": "rgba(20,20,20,0.72)",
+      "purpose": "可读性 scrim：文字直接坐玻璃时用这档",
+      "requirement": "玻璃上正文 ≥4.5:1（v2 实测最低 8.55:1）"
+    },
+    "--glass-shadow": {
+      "group": "material.glass",
+      "light": "0 8px 24px rgba(0,0,0,0.08)",
+      "dark": "0 8px 24px rgba(0,0,0,0.32)",
+      "purpose": "仅浮层极轻阴影",
+      "requirement": "非文字；禁止内容卡片使用阴影"
+    },
+    "--glass-highlight": {
+      "group": "material.glass",
+      "light": "rgba(255,255,255,0.9)",
+      "dark": "rgba(255,255,255,0.14)",
+      "purpose": "顶部 1px 内高光（材质边界）",
+      "requirement": "非文字；1px 以内，禁止用大范围高光/渐变替代"
+    },
+    "--glass-solid": {
+      "group": "material.glass",
+      "light": "#ffffff",
+      "dark": "#171a21",
+      "purpose": "@supports / reduced-transparency 的不透明回退底",
+      "requirement": "回退后必须保证原文字对比度不下降"
+    },
+    "--radius-material-sm": {
+      "group": "radius.material",
+      "light": "12px",
+      "dark": "12px",
+      "purpose": "悬浮控件 / 工具条 / 胶囊壳",
+      "requirement": "材质层专用；与内容层 4/6/8 互不混用"
+    },
+    "--radius-material-md": {
+      "group": "radius.material",
+      "light": "16px",
+      "dark": "16px",
+      "purpose": "小浮层 / Popover 内块",
+      "requirement": "材质层专用；与内容层 4/6/8 互不混用"
+    },
+    "--radius-material-lg": {
+      "group": "radius.material",
+      "light": "20px",
+      "dark": "20px",
+      "purpose": "模态框 / Popover / tooltip（= --glass-radius）",
+      "requirement": "材质层专用；与内容层 4/6/8 互不混用"
+    },
+    "--radius-material-xl": {
+      "group": "radius.material",
+      "light": "24px",
+      "dark": "24px",
+      "purpose": "抽屉 / 底部 sheet",
+      "requirement": "材质层专用；与内容层 4/6/8 互不混用"
+    },
+    "--font-size-h1": {
+      "group": "typography",
+      "light": "28px",
+      "dark": "28px",
+      "purpose": "一级标题",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--font-size-h2": {
+      "group": "typography",
+      "light": "22px",
+      "dark": "22px",
+      "purpose": "二级标题",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--font-size-h3": {
+      "group": "typography",
+      "light": "18px",
+      "dark": "18px",
+      "purpose": "三级标题",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--font-size-body": {
+      "group": "typography",
+      "light": "16px",
+      "dark": "16px",
+      "purpose": "正文（固定 ≥16px，行高 1.6）",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--font-size-aux": {
+      "group": "typography",
+      "light": "14px",
+      "dark": "14px",
+      "purpose": "辅助文字",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--font-size-cap": {
+      "group": "typography",
+      "light": "13px",
+      "dark": "13px",
+      "purpose": "最小标注（≥13px，不再更小）",
+      "requirement": "手机端正文不得小于 16px；辅助 ≥13px"
+    },
+    "--line-height-body": {
+      "group": "typography",
+      "light": "1.6",
+      "dark": "1.6",
+      "purpose": "正文行高（1.5–1.7）",
+      "requirement": "行高过密会直接降低可读性，禁止 <1.3"
+    },
+    "--line-height-tight": {
+      "group": "typography",
+      "light": "1.35",
+      "dark": "1.35",
+      "purpose": "标题行高",
+      "requirement": "行高过密会直接降低可读性，禁止 <1.3"
+    },
+    "--line-height-aux": {
+      "group": "typography",
+      "light": "1.5",
+      "dark": "1.5",
+      "purpose": "辅助文字行高",
+      "requirement": "行高过密会直接降低可读性，禁止 <1.3"
+    },
+    "--space-1": {
+      "group": "spacing",
+      "light": "4px",
+      "dark": "4px",
+      "purpose": "8pt 间距体系的第 1 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-2": {
+      "group": "spacing",
+      "light": "8px",
+      "dark": "8px",
+      "purpose": "8pt 间距体系的第 2 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-3": {
+      "group": "spacing",
+      "light": "12px",
+      "dark": "12px",
+      "purpose": "8pt 间距体系的第 3 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-4": {
+      "group": "spacing",
+      "light": "16px",
+      "dark": "16px",
+      "purpose": "8pt 间距体系的第 4 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-5": {
+      "group": "spacing",
+      "light": "24px",
+      "dark": "24px",
+      "purpose": "8pt 间距体系的第 5 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-6": {
+      "group": "spacing",
+      "light": "32px",
+      "dark": "32px",
+      "purpose": "8pt 间距体系的第 6 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-7": {
+      "group": "spacing",
+      "light": "48px",
+      "dark": "48px",
+      "purpose": "8pt 间距体系的第 7 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--space-8": {
+      "group": "spacing",
+      "light": "64px",
+      "dark": "64px",
+      "purpose": "8pt 间距体系的第 8 档",
+      "requirement": "只允许这 8 档，禁止 5/10/18 这类手工值"
+    },
+    "--shadow-overlay": {
+      "group": "shadow",
+      "light": "0 8px 24px rgba(16,24,40,0.12)",
+      "dark": "0 1px 2px rgba(0,0,0,0.3)",
+      "purpose": "仅弹层/抽屉的极轻投影",
+      "requirement": "非文字；内容卡片必须用 1px 边框，不用阴影"
+    },
+    "--shadow-none": {
+      "group": "shadow",
+      "light": "none",
+      "dark": "none",
+      "purpose": "内容卡片/表格的默认阴影",
+      "requirement": "内容层禁止阴影"
+    },
+    "--color-surface-3": {
+      "group": "color.surface",
+      "light": "#eef1f6",
+      "dark": "#2b3039",
+      "purpose": "导航选中/第三层表面（比 raised 再亮/再深一档）",
+      "requirement": "非文字；层级靠 1px 边框 + 背景色差表达"
+    },
+    "--color-neutral-bg": {
+      "group": "color.surface",
+      "light": "rgba(15,20,30,0.05)",
+      "dark": "rgba(255,255,255,0.06)",
+      "purpose": "中性弱底（徽章/按钮 hover）",
+      "requirement": "仅背景块，与文字搭配时对比度按文字令牌计算"
     }
   },
   "typography": {
@@ -74,29 +848,60 @@
       "sans": "'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif",
       "mono": "ui-monospace, 'Cascadia Mono', Consolas, monospace"
     },
-    "fontSize": { "h1": 28, "h2": 22, "h3": 18, "body": 16, "aux": 14, "cap": 13, "min": 12 },
-    "lineHeight": { "tight": 1.35, "body": 1.6, "aux": 1.5 },
-    "fontWeight": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 },
+    "fontSize": {
+      "h1": 28,
+      "h2": 22,
+      "h3": 18,
+      "body": 16,
+      "aux": 14,
+      "cap": 13,
+      "min": 12
+    },
+    "lineHeight": {
+      "tight": 1.35,
+      "body": 1.6,
+      "aux": 1.5
+    },
+    "fontWeight": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    },
     "rules": [
       "正文固定 16px / 1.6；辅助 13–14px / 1.5；不得小于 12px",
       "标题只用 H1–H3 三级：28 / 22 / 18",
       "金额与价格使用等宽数字（font-variant-numeric: tabular-nums）"
     ]
   },
-  "spacing": { "1": 4, "2": 8, "3": 12, "4": 16, "5": 24, "6": 32, "7": 48, "8": 64 },
-  "radius": { "xs": 4, "sm": 6, "md": 8, "lg": 8, "rule": "只允许 4/6/8；禁止 12/16/999 混用" },
-  "border": { "width": 1, "style": "solid", "rule": "层级用 1px 边框 + 背景色差表达，不用阴影" },
-  "shadow": {
-    "none": "none",
-    "overlay": "0 1px 2px rgba(0,0,0,0.3)",
-    "rule": "仅弹层/抽屉允许极轻投影；卡片一律无阴影"
-  },
   "components": {
     "button": {
-      "primary": { "background": "{color.action}", "color": "#fff", "height": 44, "radius": 6, "hover": "{color.action.hover}", "disabled": "opacity .55" },
-      "secondary": { "background": "transparent", "border": "1px solid {color.border.default}", "color": "{color.text.muted}", "height": 40, "radius": 6 },
-      "danger": { "background": "{color.semantic.error.strong}", "color": "#fff", "height": 40, "radius": 6 },
-      "sizes": { "sm": 36, "md": 40, "lg": 44 }
+      "primary": {
+        "background": "{color.action}",
+        "color": "#fff",
+        "height": 44,
+        "radius": 6,
+        "hover": "{color.action.hover}",
+        "disabled": "opacity .55"
+      },
+      "secondary": {
+        "background": "transparent",
+        "border": "1px solid {color.border.default}",
+        "color": "{color.text.muted}",
+        "height": 40,
+        "radius": 6
+      },
+      "danger": {
+        "background": "{color.semantic.error.strong}",
+        "color": "#fff",
+        "height": 40,
+        "radius": 6
+      },
+      "sizes": {
+        "sm": 36,
+        "md": 40,
+        "lg": 44
+      }
     },
     "input": {
       "height": 40,
@@ -105,7 +910,14 @@
       "border": "1px solid {color.border.default}",
       "focus": "2px 主色焦点环 + 边框变主色",
       "error": "边框 error.base + 13px 错误提示（原因 + 下一步）",
-      "states": ["default", "hover", "focus", "filled", "disabled", "error"]
+      "states": [
+        "default",
+        "hover",
+        "focus",
+        "filled",
+        "disabled",
+        "error"
+      ]
     },
     "card": {
       "background": "{color.surface}",
@@ -113,7 +925,11 @@
       "radius": 8,
       "padding": 16,
       "shadow": "none",
-      "states": ["default", "hover(边框提亮)", "selected(左侧 2px 主色)"]
+      "states": [
+        "default",
+        "hover(边框提亮)",
+        "selected(左侧 2px 主色)"
+      ]
     },
     "table": {
       "headerBackground": "{color.surface.raised}",
@@ -122,7 +938,14 @@
       "cellPadding": "12px 16px",
       "numericAlign": "right + tabular-nums",
       "empty": "居中空态 + 一句引导",
-      "states": ["default", "row-hover", "selected", "loading(skeleton)", "empty", "error"]
+      "states": [
+        "default",
+        "row-hover",
+        "selected",
+        "loading(skeleton)",
+        "empty",
+        "error"
+      ]
     },
     "nav": {
       "width": 232,
@@ -135,7 +958,102 @@
       "focus": "2px 焦点环"
     }
   },
-  "layout": { "maxWidth": 1280, "contentMax": 1200, "sidebarWidth": 232, "grid": 12 },
-  "motion": { "fast": 120, "base": 180, "easing": "cubic-bezier(0.2,0,0.2,1)", "rule": "禁止复杂动画；尊重 prefers-reduced-motion" },
-  "zIndex": { "nav": 10, "dropdown": 100, "overlay": 900, "modal": 1000, "toast": 1100 }
+  "layout": {
+    "maxWidth": 1280,
+    "contentMax": 1200,
+    "sidebarWidth": 232,
+    "grid": 12
+  },
+  "motion": {
+    "fast": 120,
+    "base": 180,
+    "easing": "cubic-bezier(0.2,0,0.2,1)",
+    "rule": "禁止复杂动画；尊重 prefers-reduced-motion"
+  },
+  "zIndex": {
+    "nav": 10,
+    "dropdown": 100,
+    "overlay": 900,
+    "modal": 1000,
+    "toast": 1100
+  },
+  "radius": {
+    "content": {
+      "content": {
+        "content": {
+          "content": {
+            "content": {
+              "xs": 4,
+              "sm": 6,
+              "md": 8,
+              "lg": 8,
+              "rule": "只允许 4/6/8；禁止 12/16/999 混用"
+            },
+            "material": {
+              "sm": 12,
+              "md": 16,
+              "lg": 20,
+              "xl": 24,
+              "rule": "材质层（玻璃壳/浮层）用 12/16/20/24；内容层继续 4/6/8，两套不混用"
+            }
+          },
+          "material": {
+            "sm": 12,
+            "md": 16,
+            "lg": 20,
+            "xl": 24,
+            "rule": "材质层（玻璃壳/浮层）用 12/16/20/24；内容层继续 4/6/8，两套不混用"
+          }
+        },
+        "material": {
+          "sm": 12,
+          "md": 16,
+          "lg": 20,
+          "xl": 24,
+          "rule": "材质层（玻璃壳/浮层）用 12/16/20/24；内容层继续 4/6/8，两套不混用"
+        }
+      },
+      "material": {
+        "sm": 12,
+        "md": 16,
+        "lg": 20,
+        "xl": 24,
+        "rule": "材质层（玻璃壳/浮层）用 12/16/20/24；内容层继续 4/6/8，两套不混用"
+      }
+    },
+    "material": {
+      "sm": 12,
+      "md": 16,
+      "lg": 20,
+      "xl": 24,
+      "rule": "材质层（玻璃壳/浮层）用 12/16/20/24；内容层继续 4/6/8，两套不混用"
+    }
+  },
+  "spacing": {
+    "1": 4,
+    "2": 8,
+    "3": 12,
+    "4": 16,
+    "5": 24,
+    "6": 32,
+    "7": 48,
+    "8": 64
+  },
+  "border": {
+    "width": 1,
+    "style": "solid",
+    "rule": "层级用 1px 边框 + 背景色差表达，不用阴影"
+  },
+  "shadow": {
+    "none": "none",
+    "overlay": {
+      "light": "0 8px 24px rgba(16,24,40,0.12)",
+      "dark": "0 1px 2px rgba(0,0,0,0.3)"
+    },
+    "glass": {
+      "light": "0 8px 24px rgba(0,0,0,0.08)",
+      "dark": "0 8px 24px rgba(0,0,0,0.32)"
+    },
+    "rule": "仅浮层允许极轻投影；内容卡片用 1px 边框"
+  }
 }

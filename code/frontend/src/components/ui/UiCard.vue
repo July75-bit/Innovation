@@ -11,8 +11,10 @@ withDefaults(
     meta?: string
     interactive?: boolean
     selected?: boolean
+    /** 禁用（仅外观置灰 + 不可点）：用于"当前不可选"的卡片 */
+    disabled?: boolean
   }>(),
-  { interactive: false, selected: false },
+  { interactive: false, selected: false, disabled: false },
 )
 </script>
 
@@ -20,7 +22,16 @@ withDefaults(
   <component
     :is="interactive ? 'button' : 'div'"
     :type="interactive ? 'button' : undefined"
-    :class="['ui-card', { 'ui-card--interactive': interactive, 'ui-card--selected': selected }]"
+    :class="[
+      'ui-card',
+      {
+        'ui-card--interactive': interactive && !disabled,
+        'ui-card--selected': selected,
+        'ui-card--disabled': disabled,
+      },
+    ]"
+    :disabled="interactive && disabled ? true : undefined"
+    :aria-disabled="disabled || undefined"
   >
     <header v-if="title || $slots.header" class="ui-card__head">
       <slot name="header">
@@ -46,6 +57,10 @@ withDefaults(
   display: flex;
   justify-content: flex-end;
   gap: var(--space-2);
+}
+.ui-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 /* 可点击卡片：button 复位 */
 button.ui-card {
