@@ -1,9 +1,11 @@
 /**
  * 白话导读：赛程页的组件测试——不连后端，把 src/api 换成可控假货（16 人 / 8 队名单），
- * 然后验证"点一轮 → 页面按赛程算法重算"这件事真的发生了。
+ * 然后验证"换一轮 → 名单跟着重算"这件事真的发生了。
  *
- * 为什么值得测：这页把算法结论（谁暂停 / 几点可交易 / 第 29 轮循环回哪一轮）直接摆给用户看，
- * 一旦移植或改动让它和 core/schedule.ts 的结论不一致，答辩现场就是硬伤。
+ * 为什么值得测：这页把算法结论（谁停牌 / 谁能买）直接摆给用户看，
+ * 一旦页面和 core/schedule.ts 的结论不一致，答辩现场就是硬伤。
+ * 算法本身的六条契约（结构 / 均衡 / 派生 / 循环 / 生成 / 校验）在
+ * `src/core/__tests__/schedule.spec.ts` 里逐条守着，这里只测界面。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
@@ -26,16 +28,8 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('../../api', () => ({ api: { listPlayers: () => h.listPlayers() } }))
+
 import ScheduleView from '../ScheduleView.vue'
-
-/** 页面里有跳往选手详情的链接，测试里不需要真的路由，给个 <a> 替身即可 */
-const stubs = {
-  RouterLink: { name: 'RouterLink', props: ['to'], template: '<a><slot /></a>' },
-}
-
-function mountView() {
-  return mount(ScheduleView, { global: { components: stubs } })
-}
 
 function roster() {
   return TEAMS.flatMap((team, index) => [
@@ -66,6 +60,21 @@ function roster() {
   ])
 }
 
+/** 页面里有跳往选手详情的链接，测试里不需要真的路由，给个 <a> 替身即可 */
+function mountView() {
+  return mount(ScheduleView, {
+    global: {
+      components: {
+        RouterLink: { name: 'RouterLink', props: ['to'], template: '<a><slot /></a>' },
+      },
+    },
+  })
+}
+
+async function pickRound(w: ReturnType<typeof mountView>, round: number) {
+  await w.findAll('.strip .chip')[round - 1]!.trigger('click')
+}
+
 beforeEach(() => {
   h.listPlayers.mockReset()
   h.listPlayers.mockResolvedValue(roster())
@@ -83,30 +92,34 @@ describe('ScheduleView', () => {
     expect(w.find('.chip-d i').exists()).toBe(true) // 焦点局标了 ★
   })
 
-  it('点第 12 轮：焦点局两队整队暂停，其余 12 人可交易', async () => {
+  it('点第 12 轮：焦点局两队整队停牌 4 人，其余 12 人可交易', async () => {
     const w = mountView()
     await flushPromises()
 
-    const chips = w.findAll('.strip .chip')
-    await chips[11]!.trigger('click')
+    await pickRound(w, 12)
 
     expect(w.text()).toContain('第 12 轮')
-    expect(w.findAll('.list.halt li')).toHaveLength(4)
+    expect(w.text()).toContain('Vitality / Spirit')
+    expect(w.findAll('.list li')).toHaveLength(4)
     expect(w.findAll('.chips .pchip')).toHaveLength(12)
-    expect(w.text()).toContain('Vitality vs Spirit 比赛中，暂停交易')
-    // 点数公式：第 12 轮 = 2 种子点 + 9 个可交易轮
-    expect(w.text()).toContain('11')
+    // 焦点局那轮的对阵与"暂停"提示同时出现，说明结论来自赛程而不是写死的文案
+    expect(w.find('.match').text()).toContain('Vitality')
+    expect(w.find('.match').text()).toContain('Spirit')
   })
 
-  it('轮次换算器：第 29 轮按 (29 − 1) % 28 + 1 回落到第 1 轮', async () => {
+  it('左右翻页按钮按轮次移动，边界处禁用', async () => {
     const w = mountView()
     await flushPromises()
 
-    const input = w.get('#probe-round')
-    await input.setValue('29')
+    await pickRound(w, 2)
+    await w.get('button[aria-label="下一轮"]').trigger('click')
+    expect(w.find('.match-meta').text()).toContain('第 3 轮')
 
-    expect((input.element as HTMLInputElement).value).toBe('29')
-    expect(w.text()).toContain('29 − 1) % 28 + 1 = 1')
+    await pickRound(w, 1)
+    expect(w.get('button[aria-label="上一轮"]').attributes('disabled')).toBeDefined()
+
+    await pickRound(w, 28)
+    expect(w.get('button[aria-label="下一轮"]').attributes('disabled')).toBeDefined()
   })
 
   it('手动冻结的选手不会出现在"可交易"列表里', async () => {
@@ -118,30 +131,20 @@ describe('ScheduleView', () => {
     const w = mountView()
     await flushPromises()
 
-    // 第 12 轮暂停的是 Vitality / Spirit；NAVI 本该可交易，但被手动冻结的那位不算
-    await w.findAll('.strip .chip')[11]!.trigger('click')
+    // 第 12 轮停牌的是 Vitality / Spirit；NAVI 本该可交易，但被手动冻结的那位不算
+    await pickRound(w, 12)
     expect(w.findAll('.chips .pchip')).toHaveLength(11)
-    expect(w.text()).toContain('另有 1 人是手动冻结')
+    expect(w.text()).toContain('另有 1 人暂停（非赛程原因）')
   })
 
-  it('后端没连上时降级：仍给出暂停结论，不整页报错', async () => {
+  it('后端没连上时降级：仍按赛程给出暂停结论，不整页报错', async () => {
     h.listPlayers.mockRejectedValue(new Error('network down'))
 
     const w = mountView()
     await flushPromises()
 
     expect(w.findAll('tr.row')).toHaveLength(28)
-    expect(w.text()).toContain('按规则给结论')
-  })
-
-  it('自检卡：注入"自己打自己"后 validate() 会报错', async () => {
-    const w = mountView()
-    await flushPromises()
-
-    const box = w.get('.inject input[type=checkbox]')
-    expect(w.text()).toContain('当前赛程通过全部')
-
-    await box.setValue(true)
-    expect(w.text()).toContain('打自己')
+    expect(w.text()).toContain('按赛程给结论')
+    expect(w.text()).toContain('整队停牌')
   })
 })
