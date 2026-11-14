@@ -84,9 +84,9 @@
 | TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ✅ `test_trade_uses_latest_price` |
 | TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ✅ `test_transaction_rollback_on_failure` |
 | TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
-| TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **97%**（1289 语句 / 43 未覆盖，2026-11-07 复测；第 4 天时为 839/79 → 91%） |
+| TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **96%**（1515 语句 / 60 未覆盖，2026-11-07 复测；第 4 天时为 839/79 → 91%） |
 
-> **执行记录（2026-10-24 第 4 天末，D 核对）**：A 的浏览器证据（14 张）、C 的 recalc 5 条用例、B 的部署预检/一键灌数 8 条用例合入后全仓 → **120 passed / 0 skipped**（CI ubuntu：单元 107 + 集成 13；本机 Windows 因 BUG-03 为 118 passed + 1 failed + 1 error，见 `test_report.md` §9）；覆盖率 **91%**，课程 p.177 ≥60% 检查点达标。
+> **执行记录（2026-10-24 第 4 天末，D 核对）**：A 的浏览器证据（14 张）、C 的 recalc 5 条用例、B 的部署预检/一键灌数 8 条用例合入后全仓 → **120 passed / 0 skipped**（CI ubuntu：单元 107 + 集成 21；本机 Windows 因 BUG-03 为 118 passed + 1 failed + 1 error，见 `test_report.md` §9）；覆盖率 **91%**，课程 p.177 ≥60% 检查点达标。
 
 > **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
 > 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
@@ -169,8 +169,10 @@ AI 部分的测试分层、五条原则对照、CI 门禁与 4 项缺口，单�
 - **分层与门禁自查**：[`agent_test_layers.md`](agent_test_layers.md)（L1–L5、五原则、p.189 门禁、xfail 与 eval 目录缺口）
 - **33 项用户测试检查表**：[`../../tests/playerstock_agent_demo_user_test.md`](../../tests/playerstock_agent_demo_user_test.md)（**正式提交版**，按课件「用户测试表-学生版」格式填满 33 题 + 测试准备 + 实测记录 + 统计结论 + 自评；26 通过 / 7 部分通过 / 0 不通过）
 - 内部自查版（结论 + 证据索引）：[`../../tests/agent_demo_user_test.md`](../../tests/agent_demo_user_test.md)
+- **L4 评测报告**：[`agent_eval_report.md`](agent_eval_report.md)（黄金集 20 例；线上 16/16 走真模型、契约 100%、P95 3.4s）
+- **L5 红队报告**：[`agent_redteam.md`](agent_redteam.md)（11 条注入/越权/隐私/输出越界，全过）
 
-> 一句话：**确定性壳用 216 条离线测试钉死，概率性核用注入式替身隔离**；L4 评测集与 L5 红队未做，已如实列入已知限制。
+> 一句话：**确定性壳用 264 条离线测试钉死，概率性核用注入式替身隔离**；L4 评测集（黄金集 20 例）与 L5 红队（11 条）均已补齐并出报告。
 
 ## 5. 手工系统测试流程（浏览器）
 
@@ -219,8 +221,8 @@ AI 部分的测试分层、五条原则对照、CI 门禁与 4 项缺口，单�
 | **Mock 与 Stub** | `analyze(ctx, chat=假client)` 注入，无网络无密钥覆盖 合法输出 / 脏输出 / 超时 三态 | `test_llm_agent.py` 13 条、`test_api_ai.py` 7 条 |
 | **状态迁移** | 选手 trading↔suspended：暂停拒买卖、recalc 跳过暂停选手 | `test_suspended_players_are_skipped`、`test_core_exceptions.py` |
 
-**金字塔配比**（课件 p.163：单元多、集成适量、E2E 少量）：自动化 **219** 条中单元 199 / 集成 20（≈91/9，auth 套件合入后口径），另前端 Vitest 12 条、浏览器 E2E 以 `evidence/01~16` 人工验收。单元层为毫秒级、不依赖外部服务——符合"倒金字塔"反例的规避。
+**金字塔配比**（课件 p.163：单元多、集成适量、E2E 少量）：自动化 **219** 条中单元 210 / 集成 21（≈91/9，auth 套件合入后口径），另前端 Vitest 12 条、浏览器 E2E 以 `evidence/01~16` 人工验收。单元层为毫秒级、不依赖外部服务——符合"倒金字塔"反例的规避。
 
-**覆盖率**（课件 p.177 任务 4：核心逻辑 ≥60%）：实测 **97%**（1289 语句 / 43 未覆盖，2026-11-07 复测；第 4 天时 91%），复跑命令见 `CodeReview.md` §5。
+**覆盖率**（课件 p.177 任务 4：核心逻辑 ≥60%）：实测 **96%**（1515 语句 / 60 未覆盖，2026-11-07 复测；第 4 天时 91%），复跑命令见 `CodeReview.md` §5。
 
 **质量门禁对照**（课件 p.138 十条）：构建 ✅ / 单元测试 ✅ / 关键集成 ✅ / 静态分析 ✅（ruff 分档）/ 代码评审 ✅（模板+记录）/ 无敏感信息 ✅（CI 地址检查+仓库卫生）/ 变更说明 ✅（commit 规范）/ 文档更新 ✅（deliverables job）；**依赖漏洞扫描（pip-audit）未接**——如实列入已知限制（6 天课程版，冻结期不加门禁）。

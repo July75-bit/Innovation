@@ -186,3 +186,52 @@ def client(session_factory):
         yield test_client
     finally:
         app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------- 智能体测试替身
+
+@pytest.fixture()
+def fake_llm():
+    """统一的「假模型」夹具：给 analyze(chat=...) 注入，永不出网。
+
+    用法：
+        def test_x(fake_llm):
+            advice = analyze(ctx, chat=fake_llm.returning({...}))
+            # 或者用预设：fake_llm.buy() / fake_llm.hold() / fake_llm.raw("脏文本")
+
+    设计要点（课件「依赖可替换」原则）：
+    - 记录被调用次数（fake_llm.calls），可断言"不该调模型时一次都没调"；
+    - 可以返回任意原始文本（含脏输出），用于验证清洗与降级；
+    - 不含任何网络/密钥，CI 上永远离线。
+    """
+
+    class _FakeLLM:
+        def __init__(self) -> None:
+            self.calls: list[str] = []
+            self._payload: str = ""
+
+        # -- 构造返回值 --
+        def returning(self, payload: dict) -> "_FakeLLM":
+            import json as _json
+            self._payload = _json.dumps(payload, ensure_ascii=False)
+            return self
+
+        def raw(self, text: str) -> "_FakeLLM":
+            self._payload = text
+            return self
+
+        def buyer(self) -> "_FakeLLM":
+            return self.returning(
+                {"action": "BUY", "reason": "近 5 个价格点累计上涨 8.2%（本轮得分 85.0）", "risk_level": "LOW"}
+            )
+
+        def holder(self) -> "_FakeLLM":
+            return self.returning(
+                {"action": "HOLD", "reason": "价格横盘，累计变动 0.0%（本轮得分 50.0）", "risk_level": "MEDIUM"}
+            )
+
+        def __call__(self, prompt: str) -> str:
+            self.calls.append(prompt)
+            return self._payload or "{}"
+
+    return _FakeLLM()
