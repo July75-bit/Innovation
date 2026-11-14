@@ -66,6 +66,7 @@
 | 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
 | 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
 
+> 📄 **已备好可直接粘贴的 Issue 标题 + 正文**：[`bug-issues.md`](bug-issues.md)（14 条，含两种建法）。
 > 🟡 **Issues 说明**：仓库现有 Issue 以「day1 / day3 / check frontend」等任务类为主，
 > 14 条缺陷（BUG-01~14）记录在 `test_report.md` §9。若要把缺陷也纳进 BugTracker，需要逐条建 Issue（见交付说明）。
 
