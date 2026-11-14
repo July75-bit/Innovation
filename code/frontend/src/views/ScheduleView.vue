@@ -21,7 +21,7 @@
  * 图片文件在 `src/assets/teams/`（离线本地文件，来源与授权见该目录 SOURCES.md），
  * 渲染统一走 `src/components/TeamLogo.vue`：认不到队伍或图加载失败就退成队名首字母。
  */
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import TeamLogo from '../components/TeamLogo.vue'
 import {
   DEFAULT_BLOCK,
@@ -181,9 +181,24 @@ async function centerSelectedRound(behavior: ScrollBehavior = scrollBehavior()):
   }
 }
 
+/* 视口一变（转屏、改窗口大小、手机地址栏收起）条带宽度就变了，原来算好的居中会偏，
+   所以 resize 之后按当前宽度重算一次；用 rAF 合并连续 resize，别一帧里滚十几回。 */
+let resizeRaf = 0
+function onViewportChange(): void {
+  cancelAnimationFrame(resizeRaf)
+  resizeRaf = requestAnimationFrame(() => void centerSelectedRound('auto'))
+}
+
 /** 换轮次就重新居中：左右翻页、点 chip、点列表行、回到今日，全走同一个 `selected` */
 watch(selected, () => void centerSelectedRound())
-onMounted(() => void centerSelectedRound('auto'))
+onMounted(() => {
+  void centerSelectedRound('auto')
+  window.addEventListener('resize', onViewportChange)
+})
+onBeforeUnmount(() => {
+  cancelAnimationFrame(resizeRaf)
+  window.removeEventListener('resize', onViewportChange)
+})
 
 function prevRound(): void {
   selected.value = Math.max(1, selected.value - 1)
@@ -204,9 +219,14 @@ function shortDate(iso: string): string {
       <div>
         <h2>赛程</h2>
         <p class="sub">
-          {{ schedule.season }} · 8 队单循环 · 共 {{ totalRounds }} 轮 · 每轮 1 场。
-          <strong>第 {{ selected }} 轮打比赛的两队（{{ playingLabel }}）暂停交易</strong
-          >，其余选手照常买卖。
+          <span class="sub-meta"
+            >{{ schedule.season }} · 8 队单循环 · 共 {{ totalRounds }} 轮 · 每轮 1 场</span
+          >
+          <span class="sub-note"
+            ><strong class="sub-halt"
+              >第 {{ selected }} 轮打比赛的两队（{{ playingLabel }}）暂停交易</strong
+            >，其余选手照常买卖。</span
+          >
         </p>
       </div>
       <div class="head-right">
@@ -264,8 +284,9 @@ function shortDate(iso: string): string {
         </button>
       </div>
       <p class="legend">
-        <span class="dot played"></span>已结束 <span class="dot today"></span>今天
-        <span class="dot upcoming"></span>未开始
+        <span class="lg"><span class="dot played"></span>已结束</span>
+        <span class="lg"><span class="dot today"></span>今天</span>
+        <span class="lg"><span class="dot upcoming"></span>未开始</span>
         <span class="mini">★ 焦点局 · 点一轮，对阵与列表高亮跟着切换</span>
       </p>
       <div class="match">
@@ -302,8 +323,12 @@ function shortDate(iso: string): string {
       <div class="list-head">
         <h3 class="card-title">比赛列表</h3>
         <p class="legend">
-          <span class="dot upcoming"></span>未开始 {{ upcomingCount }} 场 · 按时间顺序在上
-          <span class="dot played"></span>已结束 {{ playedCount }} 场 · 按时间逆序在下
+          <span class="lg"
+            ><span class="dot upcoming"></span>未开始 {{ upcomingCount }} 场 · 时间顺序在上</span
+          >
+          <span class="lg"
+            ><span class="dot played"></span>已结束 {{ playedCount }} 场 · 时间逆序在下</span
+          >
           <span class="mini">点任意一行，上面就切到那一轮</span>
         </p>
       </div>
@@ -327,21 +352,33 @@ function shortDate(iso: string): string {
               :class="['row', { on: match.round === selected }]"
               @click="selected = match.round"
             >
-              <td data-label="轮次" class="num">
+              <td data-label="轮次" class="num c-round">
                 {{ match.round }}<i v-if="match.round === featuredRound" class="star">★</i>
               </td>
-              <td data-label="对阵" class="vs-cell num">
-                <TeamLogo :team="Number(match.team_a)" :name="teamOf(match, 'team_a')" size="xs" />
-                <b>{{ teamOf(match, 'team_a') }}</b>
+              <td data-label="对阵" class="vs-cell num c-teams">
+                <span class="side">
+                  <TeamLogo
+                    :team="Number(match.team_a)"
+                    :name="teamOf(match, 'team_a')"
+                    size="xs"
+                  />
+                  <b>{{ teamOf(match, 'team_a') }}</b>
+                </span>
                 <span class="vs-mini">vs</span>
-                <b>{{ teamOf(match, 'team_b') }}</b>
-                <TeamLogo :team="Number(match.team_b)" :name="teamOf(match, 'team_b')" size="xs" />
+                <span class="side">
+                  <b>{{ teamOf(match, 'team_b') }}</b>
+                  <TeamLogo
+                    :team="Number(match.team_b)"
+                    :name="teamOf(match, 'team_b')"
+                    size="xs"
+                  />
+                </span>
               </td>
-              <td data-label="比赛日" class="num">
+              <td data-label="比赛日" class="num c-date">
                 {{ shortDate(match.played_at)
                 }}<small class="weekday">{{ weekdayCn(match.played_at) }}</small>
               </td>
-              <td data-label="状态">
+              <td data-label="状态" class="c-status">
                 <span :class="['tag', phaseOf(match, today)]">{{
                   phaseText[phaseOf(match, today)]
                 }}</span>
@@ -379,7 +416,20 @@ function shortDate(iso: string): string {
   font-size: var(--fs-aux);
   max-width: 60ch;
 }
-.sub strong {
+.sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+.sub-meta {
+  white-space: nowrap;
+}
+.sub-note {
+  /* 允许内部折行，但整句和"，其余…"不会被拆成两个 flex 单位 */
+  min-width: 0;
+}
+.sub-halt {
   color: var(--warn);
   font-weight: 600;
 }
@@ -510,6 +560,13 @@ function shortDate(iso: string): string {
 }
 .legend .mini {
   margin-left: auto;
+}
+/* 一个圆点 + 一个词 = 一个不换行的整体，窄屏不会把"● 未开"和"始"分到两行 */
+.lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
 }
 .dot {
   width: 7px;
@@ -668,12 +725,13 @@ td .star {
 .vs-cell b {
   font-weight: 600;
 }
-/* 参考页的镜像排布：左边“标+名”、右边“名+标”，队标永远贴在外侧 */
-.vs-cell .team-logo:first-child {
-  margin-right: 4px;
-}
-.vs-cell .team-logo:last-child {
-  margin-left: 4px;
+/* 参考页的镜像排布：左边“标+名”、右边“名+标”，队标永远贴在外侧。
+   一队包成一个 .side，窄屏换行时只会"整队换行"，不会把队名劈成两半 */
+.vs-cell .side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 /* 比赛日后面的星期，弱化成注脚 */
 td .weekday {
@@ -703,14 +761,68 @@ td .weekday {
   color: var(--warn);
 }
 
-/* ===== 响应式：表格转卡片 ===== */
+/* ===== 响应式（≤720px：手机）=====
+   这一段的思路：桌面上是"表格"，窄屏不做"表格硬缩"，而是换成三行一卡的清单——
+   第一行轮次 + 状态、第二行整条对阵、第三行日期；图例与页头按语义单位换行。 */
 @media (max-width: 720px) {
   .card {
     padding: var(--space-3);
   }
-  .match-main {
-    font-size: var(--fs-h2);
+  /* 页头第一句（赛季 · 赛制 · 轮数）在 320px 上放不进一行，允许它自己折行，
+     否则 .sub-meta 的 nowrap 会把整块页头撑出横向溢出 */
+  .sub-meta {
+    white-space: normal;
   }
+
+  /* --- 轮次条：少占宽度，滚动条交给 ‹ › 按钮 --- */
+  .strip {
+    gap: 5px;
+    scrollbar-width: none; /* Firefox */
+  }
+  .strip::-webkit-scrollbar {
+    display: none;
+  }
+  .chip {
+    min-width: 46px;
+    padding: 4px 6px;
+  }
+  .step {
+    width: 26px;
+  }
+
+  /* --- 本轮对阵：一行放得下（队标降到 30px、字号降一档） --- */
+  .match {
+    gap: var(--space-2);
+  }
+  .match-main {
+    font-size: var(--fs-h3);
+    gap: var(--space-2);
+  }
+  .match-main :deep(.team-logo.md) {
+    width: 30px;
+    height: 30px;
+    padding: 2px;
+  }
+  .match-meta {
+    gap: 6px 10px;
+    font-size: var(--fs-cap);
+  }
+
+  /* --- 图例：按语义单位换行，说明文字单独一行 --- */
+  .legend {
+    gap: 6px 12px;
+  }
+  .legend .mini {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+  .list-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* --- 比赛列表：表格 → 三行卡片 --- */
   table {
     display: block;
   }
@@ -724,29 +836,50 @@ td .weekday {
   }
   tr.row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px var(--space-3);
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'round  status'
+      'teams  teams'
+      'date   date';
+    gap: 6px var(--space-2);
     background: var(--surface-2);
     border-radius: var(--radius-md);
     padding: var(--space-2) var(--space-3);
   }
   tr.row td {
     border: none;
-    padding: 2px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 10px;
+    padding: 0;
+    display: block;
   }
+  /* 卡片里不再需要"轮次/对阵/比赛日"这类字段名前缀：位置本身就说明了一切 */
   tr.row td::before {
-    content: attr(data-label);
+    content: none;
+  }
+  tr.row td.c-round {
+    grid-area: round;
+    font-weight: 700;
+    font-size: var(--fs-aux);
+    color: var(--muted);
+  }
+  tr.row td.c-status {
+    grid-area: status;
+    justify-self: end;
+  }
+  tr.row td.c-teams {
+    grid-area: teams;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+    font-size: var(--fs-body);
+  }
+  tr.row td.c-date {
+    grid-area: date;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
     color: var(--muted);
     font-size: var(--fs-cap);
-    flex-shrink: 0;
-  }
-  tr.row td:first-child {
-    grid-column: 1 / -1;
-    font-weight: 700;
   }
   .group-row td {
     border-radius: var(--radius-sm);

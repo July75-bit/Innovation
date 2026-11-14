@@ -119,6 +119,30 @@ describe('ScheduleView', () => {
     expect(scrollTo).toHaveBeenCalledWith({ left: 1176, behavior: 'smooth' })
   })
 
+  it('视口一变（转屏 / 缩放窗口）就按新宽度重新居中', async () => {
+    const w = mountView()
+    const bar = w.get('.strip').element
+    const scrollTo = vi.fn<(options?: ScrollToOptions) => void>()
+
+    Object.defineProperty(bar, 'scrollTo', { value: scrollTo, configurable: true })
+    Object.defineProperty(bar, 'clientWidth', { value: 600, configurable: true })
+    bar.getBoundingClientRect = () =>
+      ({ left: 40, top: 100, bottom: 160, right: 640, width: 600 }) as DOMRect
+    w.findAll('.chip').forEach((chip, index) => {
+      chip.element.getBoundingClientRect = () => ({ left: 40 + index * 58, width: 52 }) as DOMRect
+    })
+    // 先让挂载时那一次居中跑完，否则它和 resize 这一次会混在一起数
+    await vi.advanceTimersByTimeAsync(50)
+    scrollTo.mockClear()
+
+    window.dispatchEvent(new Event('resize'))
+    await vi.advanceTimersByTimeAsync(50) // rAF 合并连续 resize
+
+    // 选中的是第 14 轮（索引 13）：754 − (600 − 52)/2 = 480
+    expect(scrollTo).toHaveBeenCalledTimes(1)
+    expect(scrollTo).toHaveBeenLastCalledWith({ left: 480, behavior: 'auto' })
+  })
+
   it('条带整条滚出视野时（点了列表最底下那行），先把它带回屏幕再居中', async () => {
     const w = mountView()
     const bar = w.get('.strip').element
