@@ -209,7 +209,7 @@ import UiButton from '@/components/ui/UiButton.vue'
 | `UiSelect` 弹层（下拉） | 材质层 | **玻璃**：圆角 20 | 弹层悬浮在内容上；触发框仍是内容层实色 |
 | `UiSelect` 触发框 | 内容层 | 实色输入框 + 1px 边框 + 圆角 6 | 输入控件不放玻璃 |
 | `UiCard` / `UiTable` / `UiInput` / `UiButton` | 内容层 | **扁平实色**：1px 边框、零阴影、无模糊 | 阅读/输入/数据区，玻璃会直接毁掉可读性 |
-| 桌面侧栏 / 移动顶栏 / 抽屉 | 壳 | 侧栏/顶栏玻璃；抽屉实色 | 抽屉占屏 78% 且是文字密集区 |
+| 桌面侧栏 / **桌面顶栏** / 移动顶栏 / 抽屉 | 壳 | 侧栏与顶栏玻璃；抽屉实色 | 桌面顶栏 fixed、内容从下滚过（桌面唯一"有东西可糊"的常驻玻璃）；抽屉占屏 78% 且文字密集 |
 
 ### 7.2 使用示例
 
@@ -266,6 +266,9 @@ import UiButton from '@/components/ui/UiButton.vue'
 ```
 
 - 键盘：下拉支持 ↑↓ / Home / End / Enter / Esc；弹窗 Tab 循环 + Esc；底部 Tab 可 Tab 遍历、Enter 触发。
+- 动态高光：桌面指针在玻璃上移动时，`--glow-x/--glow-y` 跟随（`composables/useGlassGlow.ts`），移动端与
+  `prefers-reduced-motion: reduce` 自动不启用；hover 时整块轻微提亮（`--glass-hover-tint`）。
+- 桌面顶栏：Fixed 56px 玻璃条（页面标题来自路由 `meta.title`），内容从它下面滚过；小浮层（下拉/tooltip）用更浅的 `--glass-bg-popover`。
 - 点击区：底部 Tab 48px、下拉选项 44px、按钮 36/40/44。
 - 焦点环：2px `--color-focus`，不覆盖元素自身圆角。
 
@@ -275,3 +278,20 @@ import UiButton from '@/components/ui/UiButton.vue'
 - 实现：`composables/useTheme.ts` 写 `<html data-theme>` + `localStorage`；`index.html` 有一段同 key 内联脚本，**CSS 之前**就把主题定好（防闪）。
 - 默认：已保存选择 > 系统 `prefers-color-scheme` > 深色。
 - 令牌：只在 `tokens.css` 里整块覆盖，组件零模式判断。
+
+### 7.7 P1 审美对齐（参考 KPL 小助手，2026-11-14）
+
+参考站（kplll.online）的审美关键词：**浅色、留白大、灰度分层、单一强调色、零阴影零玻璃**。P1 只借"秩序"，不改产品气质：
+
+| 改动 | 之前 | 现在 |
+| --- | --- | --- |
+| 表格行高 / 表头 | 约 44 / 44 | **59 / 49**；浅色表头 `#fafafa`（深色 `#262b34`） |
+| 卡片留白 | 16 | **24**；区块间距 16→24、详情列间距 24→32 |
+| 选中态 | 中性底 + 左侧 2px 主色竖条 | **淡主色底 pill + 主色文字 + 圆角 8**（侧栏 / 底部 Tab / 筛选统一） |
+| 标题层级 | H1 28 / H2 22 / 卡片 18 | **H1 24 / H2 20 / 卡片标题 16**（顶栏标题降为面包屑级，避免同屏两个大标题） |
+| 浅色边框 / 辅助灰 | `#d7dbe3` / `#5d6470` | **`#e5e8ee` / `#667085`**（辅助灰对白 4.8:1，仍 AA） |
+| 内容卡 hover | 位移 + 阴影 | **只提亮边框**（参考站做法，也符合"内容层不用阴影"） |
+| 可点文字 | 部分用纯红填充色 | 统一 `--accent-text`（文字档） |
+
+新增令牌：`--color-selection-bg` / `--color-selection-text` / `--color-table-head`（深浅两套值，JSON 同步）。
+验收：12 个「路由 × 主题」组合自动审计 **违规 0**；无横向溢出；证据 `85~90`。

@@ -185,7 +185,7 @@ function tipStyle(d: { x: number; y: number }) {
         <!-- 悬停 tooltip：每点 reason（M4 验收第 3 项）；材质层=玻璃浮层，浮在图表之上 -->
         <div
           v-if="hovered"
-          class="tip glass glass--panel"
+          class="tip glass glass--popover"
           :class="{
             'tip-near-left': hovered.x < 150,
             'tip-near-right': hovered.x > W - 150,

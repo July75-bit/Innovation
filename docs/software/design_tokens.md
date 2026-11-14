@@ -84,14 +84,20 @@
 | Token | 浅色 | 深色 | 用途 | 要求 |
 | --- | --- | --- | --- | --- |
 | `--glass-bg` | `rgba(255,255,255,.62)` | `rgba(20,20,20,.60)` | 玻璃底（导航壳/控件） | 玻璃上文字 ≥4.5:1 |
-| `--glass-bg-strong` | `rgba(255,255,255,.72)` | `rgba(20,20,20,.72)` | 浮层面板底（弹窗/Popover） | 面板内正文 ≥4.5:1 |
+| `--glass-bg-strong` | `rgba(255,255,255,.66)` | `rgba(20,20,20,.66)` | 浮层面板底（弹窗） | 面板内正文 ≥4.5:1 |
+| `--glass-bg-popover` | `rgba(255,255,255,.56)` | `rgba(20,20,20,.56)` | 小浮层（下拉/tooltip）更浅 | 玻璃上正文 ≥4.5:1 |
 | `--glass-scrim` | `rgba(255,255,255,.72)` | `rgba(20,20,20,.72)` | 可读性 scrim：文字直接坐玻璃时用 | 正文 ≥4.5:1（v2 实测最低 8.55:1） |
+| `--color-selection-bg` | `rgba(229,72,77,.10)` | `rgba(229,72,77,.16)` | 选中态淡主色底（侧栏/Tab/筛选统一，P1） | 非文字；配 `--color-selection-text` |
+| `--color-selection-text` | `#b02a2e` | `#ef7377` | 选中态文字（淡红底上） | 对选中底 ≥4.5:1 |
+| `--color-table-head` | `#fafafa` | `#262b34` | 表头底色（P1） | 非文字；与行底需可辨色差 |
 | `--glass-border` | `rgba(255,255,255,.72)` | `rgba(255,255,255,.16)` | 1px 描边（材质边界） | 非文字 |
 | `--glass-blur` | `22px` | `22px` | 背景模糊（规格 18–28px；≤600px 降 18px） | 性能：窄屏降档 |
 | `--glass-saturate` | `180%` | `180%` | 背景饱和度（规格 160–200%） | 性能：移动端注意帧率 |
 | `--glass-radius` | `20px` | `20px` | 浮层圆角（= `--radius-material-lg`） | 与内容层 4/6/8 分开 |
 | `--glass-shadow` | `0 8px 24px rgba(0,0,0,.08)` | `0 8px 24px rgba(0,0,0,.32)` | **仅浮层**极轻阴影 | 内容卡禁止阴影 |
 | `--glass-highlight` | `rgba(255,255,255,.90)` | `rgba(255,255,255,.14)` | 顶部 1px 内高光（材质边界） | 1px 以内，禁止大范围高光/渐变 |
+| `--glass-edge` | `rgba(255,255,255,.60)` | `rgba(255,255,255,.06)` | 左右 1px 边缘光（液态边缘感） | 非文字；严格 1px |
+| `--glass-hover-tint` | `rgba(255,255,255,.40)` | `rgba(255,255,255,.05)` | hover 时整块轻微提亮 | 仅桌面 hover；reduced-motion 关闭 |
 | `--glass-solid` | `#ffffff` | `#171a21` | 不支持 backdrop-filter / 降低透明时的回退底 | 回退后对比度不得下降 |
 
 **配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--nav` / `.glass--panel` / `.glass--control` / `.glass--scrim`
@@ -133,9 +139,9 @@
 
 | Token | 值 | 用途 |
 | --- | --- | --- |
-| `--font-size-h1` | 28px / 700 | 页面主标题（每页最多 1 个） |
-| `--font-size-h2` | 22px / 700 | 区块标题 |
-| `--font-size-h3` | 18px / 600 | 卡片标题 |
+| `--font-size-h1` | **24px / 700**（P1：原 28） | 页面主标题（每页最多 1 个） |
+| `--font-size-h2` | **20px / 700**（P1：原 22） | 区块标题 |
+| `--font-size-h3` | 18px / 600 | 三级标题（卡片标题统一 16/600） |
 | `--font-size-body` | **16px / 400–500，行高 1.6** | 正文（≥16 硬性） |
 | `--font-size-aux` | 14px / 400，行高 1.5 | 辅助说明 |
 | `--font-size-cap` | 13px / 400，行高 1.5 | 标签、时间戳 |
@@ -255,7 +261,10 @@
 
   /* 材质层：液态玻璃（深色） */
   --glass-bg: rgba(20, 20, 20, 0.6);
-  --glass-bg-strong: rgba(20, 20, 20, 0.72);
+  --glass-bg-strong: rgba(20, 20, 20, 0.66);
+  --glass-bg-popover: rgba(20, 20, 20, 0.56);
+  --glass-edge: rgba(255, 255, 255, 0.06);
+  --glass-hover-tint: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-blur: 22px;
   --glass-saturate: 180%;
@@ -271,7 +280,10 @@
   --color-neutral-0: #0b0d11; --color-neutral-100: #1a1d23; --color-neutral-800: #ffffff;
   --color-canvas: #f4f6f9;
   --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.66);
+  --glass-bg-popover: rgba(255, 255, 255, 0.56);
+  --glass-edge: rgba(255, 255, 255, 0.6);
+  --glass-hover-tint: rgba(255, 255, 255, 0.4);
   --glass-border: rgba(255, 255, 255, 0.72);
   --glass-scrim: rgba(255, 255, 255, 0.72);
   --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
@@ -405,6 +417,8 @@ html.no-backdrop-filter .glass {
 | 组件规则（按钮/输入/卡片/表格/导航） | ✅ §4 + `ui-kit.css` |
 | AA 合规 | ✅ 正文 14.33:1（深）/16.88:1（浅）；按钮白字 5.02–6.72；品牌红文字统一走 `--accent-text`/`--up-text`（深 `#ef7377` / 浅 `#c23539`） |
 | 双模式全量回归 | ✅ 7 路由 × 深/浅 × 桌面/移动 = **24 组合，自动审计违规 0**；证据 69–78 |
+| P1 审美对齐（参考 KPL 小助手） | ✅ 表格行高 44→59 / 表头 49、卡片留白 16→24、选中态淡底 pill、H1 28→24 / H2 22→20、浅色边框与辅助灰更柔和；双模式审计仍 **违规 0**（证据 85–90） |
+| A+B 玻璃增强 | ✅ 桌面 fixed 玻璃顶栏（blur 贡献 2.55/1.69）+ 弹窗遮罩降到 .58/.26（blur 贡献 0→2.03/4.42）+ 下拉 popover 档（0→1.0/1.26）+ 指针跟随高光（30%→70%）；证据 79–84 |
 
 **已知限制（如实记录）**
 

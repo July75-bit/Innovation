@@ -395,7 +395,7 @@ function shortDate(iso: string): string {
 .page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5); /* P1：区块间距 16→24 */
 }
 
 /* ===== 页头 ===== */
@@ -463,6 +463,7 @@ function shortDate(iso: string): string {
 
 /* ===== 卡片 ===== */
 .card {
+  padding: var(--space-5); /* P1：卡片留白 16→24 */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -766,6 +767,7 @@ td .weekday {
    第一行轮次 + 状态、第二行整条对阵、第三行日期；图例与页头按语义单位换行。 */
 @media (max-width: 720px) {
   .card {
+  padding: var(--space-5); /* P1：卡片留白 16→24 */
     padding: var(--space-3);
   }
   /* 页头第一句（赛季 · 赛制 · 轮数）在 320px 上放不进一行，允许它自己折行，

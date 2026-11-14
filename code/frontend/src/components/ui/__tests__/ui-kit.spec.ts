@@ -77,7 +77,8 @@ describe('UiSelect（自绘玻璃 listbox）', () => {
     await wrapper.find('.ui-select').trigger('click')
     expect(wrapper.find('[role="listbox"]').exists()).toBe(true)
     expect(wrapper.find('.ui-select__pop').classes()).toContain('glass')
-    expect(wrapper.find('.ui-select__pop').classes()).toContain('glass--panel')
+    // 小浮层用 popover 档（比面板更浅，透出更多背景），仍然是材质层
+    expect(wrapper.find('.ui-select__pop').classes()).toContain('glass--popover')
     expect(wrapper.findAll('[role="option"]')).toHaveLength(2)
     wrapper.unmount()
   })

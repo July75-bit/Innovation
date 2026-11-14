@@ -128,7 +128,7 @@ onMounted(load)
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-4);
+  margin-top: var(--space-5);
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -136,7 +136,7 @@ table {
 }
 th,
 td {
-  padding: 11px var(--space-4);
+  padding: var(--space-4); /* P1：行高 44→56+ */
   border-bottom: 1px solid var(--border);
   text-align: left;
   font-size: var(--fs-body);

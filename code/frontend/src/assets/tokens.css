@@ -74,7 +74,10 @@
   --color-border: #2c313b; /* 1px 常规边框（非文字，无对比度要求） */
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-300); /* 焦点环（6.06:1） */
-  --color-overlay: rgba(9, 10, 14, 0.72);
+  --color-overlay: rgba(9, 10, 14, 0.58); /* 遮罩：压暗但不把玻璃后面的内容压没 */
+  --color-selection-bg: rgba(229, 72, 77, 0.16); /* P1：选中态淡主色底（侧栏/Tab/筛选统一） */
+  --color-selection-text: #ef7377; /* 选中态文字：在淡红底上仍 ≥4.5:1 */
+  --color-table-head: #262b34; /* 表头底色（浅色模式为 #fafafa） */
 
   /* 业务语义：涨 = 主色，跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);
@@ -89,8 +92,8 @@
   --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --font-size-h1: 28px;
-  --font-size-h2: 22px;
+  --font-size-h1: 24px; /* P1 审美对齐：标题降噪（原 28） */
+  --font-size-h2: 20px; /* 区块标题（原 22） */
   --font-size-h3: 18px;
   --font-size-body: 16px;
   --font-size-aux: 14px;
@@ -140,6 +143,7 @@
 
   /* ---------- 布局 ---------- */
   --layout-max-width: 1280px;
+  --layout-topbar-height: 56px; /* 桌面玻璃顶栏高度（内容从它下面滚过） */
   --layout-sidebar-width: 232px;
   --layout-content-max: 1200px;
 
@@ -165,7 +169,8 @@
   /* ---------- 液态玻璃令牌（深色默认） ----------
    * 配套实现与降级规则见 liquid-glass.css；设计规范见 docs/software/design_tokens.md §1.6 */
   --glass-bg: rgba(20, 20, 20, 0.6); /* 导航壳/控件底（文字较少） */
-  --glass-bg-strong: rgba(20, 20, 20, 0.72); /* 浮层面板底 */
+  --glass-bg-strong: rgba(20, 20, 20, 0.66); /* 浮层面板底（AA 有余量，略降以透出背后内容） */
+  --glass-bg-popover: rgba(20, 20, 20, 0.56); /* 小浮层（下拉/tooltip）：更浅，透出更多背景 */
   --glass-border: rgba(255, 255, 255, 0.16); /* 1px 描边 */
   --glass-blur: 22px; /* 规格 18–28px；≤600px 降到 18px */
   --glass-saturate: 180%; /* 规格 160–200% */
@@ -173,6 +178,8 @@
   --glass-scrim: rgba(20, 20, 20, 0.72); /* 文字直接坐在玻璃上时的可读性底 */
   --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.32); /* 仅浮层；内容卡禁止阴影 */
   --glass-highlight: rgba(255, 255, 255, 0.14); /* 顶部 1px 内高光 */
+  --glass-edge: rgba(255, 255, 255, 0.06); /* 左右 1px 边缘光（液态边缘感） */
+  --glass-hover-tint: rgba(255, 255, 255, 0.05); /* hover 时整块轻微提亮 */
   --glass-solid: #171a21; /* @supports / reduced-transparency 的不透明回退底 */
 }
 
@@ -189,7 +196,7 @@
   --color-neutral-100: #1a1d23;
   --color-neutral-200: #2e333c;
   --color-neutral-300: #454b56;
-  --color-neutral-400: #5d6470;
+  --color-neutral-400: #667085; /* P1：辅助灰更柔和（对白 4.8:1 仍 AA） */
   --color-neutral-500: #8b919d; /* 仅禁用/占位（非正文） */
   --color-neutral-600: #c3c8d2;
   --color-neutral-700: #e8ebf0;
@@ -232,10 +239,13 @@
   --color-text-muted: var(--color-neutral-300);
   --color-text-faint: var(--color-neutral-400);
   --color-text-disabled: var(--color-neutral-500);
-  --color-border: #d7dbe3;
+  --color-border: #e5e8ee; /* P1：边框更轻，接近白卡分割线 */
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-500);
-  --color-overlay: rgba(15, 18, 24, 0.32);
+  --color-overlay: rgba(15, 18, 24, 0.26);
+  --color-selection-bg: rgba(229, 72, 77, 0.10);
+  --color-selection-text: #b02a2e;
+  --color-table-head: #fafafa;
 
   /* 业务语义：涨 = 品牌红、跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);
@@ -251,10 +261,13 @@
 
   /* 液态玻璃（浅色） */
   --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-bg-strong: rgba(255, 255, 255, 0.66);
+  --glass-bg-popover: rgba(255, 255, 255, 0.56);
   --glass-border: rgba(255, 255, 255, 0.72);
   --glass-scrim: rgba(255, 255, 255, 0.72);
   --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.9);
+  --glass-edge: rgba(255, 255, 255, 0.6);
+  --glass-hover-tint: rgba(255, 255, 255, 0.4);
   --glass-solid: #ffffff;
 }

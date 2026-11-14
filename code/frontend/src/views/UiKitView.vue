@@ -433,7 +433,7 @@ const cardDisabled = ref(false)
 .kit__section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   padding-top: var(--space-5);
   border-top: 1px solid var(--color-border);
 }

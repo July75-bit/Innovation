@@ -194,7 +194,7 @@ onBeforeUnmount(() => {
     </button>
 
     <!-- 弹层：材质层（玻璃）。文字坐在 --glass-bg-strong 上，保证 AA -->
-    <div v-if="open" class="ui-select__pop glass glass--panel">
+    <div v-if="open" class="ui-select__pop glass glass--popover">
       <ul
         :id="listId"
         ref="list"
@@ -288,7 +288,7 @@ onBeforeUnmount(() => {
     transform: rotate(360deg);
   }
 }
-/* 弹层：位置贴住触发框，圆角 20 由 .glass--panel 提供 */
+/* 弹层：位置贴住触发框；玻璃用 popover 档（比面板更浅，透出更多背景），圆角 20 */
 .ui-select__pop {
   position: absolute;
   top: calc(100% + 6px);

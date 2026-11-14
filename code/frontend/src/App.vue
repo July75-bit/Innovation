@@ -78,6 +78,19 @@ watch(
 const { currentUser, accountLabel: accountKind, isLoggedIn, logout } = useAuth()
 const router = useRouter()
 
+/** 桌面玻璃顶栏的页面标题（来自路由 meta.title；必须放在 useRoute/useRouter 之后——
+    immediate watch 会在 setup 阶段立刻执行，早于 const route 声明会报 TDZ） */
+const pageTitle = computed(() => route.meta.title ?? '选手市场')
+watch(
+  () => route.meta.title,
+  (title) => {
+    if (typeof document !== 'undefined') {
+      document.title = title ? `${title} · PlayerStock` : 'PlayerStock · 虚拟选手股交易模拟'
+    }
+  },
+  { immediate: true },
+)
+
 /** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
 const deleteOpen = ref(false)
 
@@ -244,42 +257,57 @@ onMounted(() => {
         </p>
       </aside>
 
-      <!-- ===== 移动端顶栏（材质层：玻璃；内容在它下面滚动，模糊才有东西可糊） ===== -->
+      <!-- ===== 顶栏（材质层：玻璃）=====
+           桌面：fixed 在内容列上方，页面内容从它下面滚过 → 真模糊（这是桌面端唯一"有东西可糊"的位置）
+           移动：sticky 在页面顶部，内容同样从下面滚过 -->
       <header class="topbar glass glass--nav">
-        <RouterLink to="/" class="brand brand-sm">
+        <div class="topbar__title only-desktop">
+          <span class="topbar__crumb">PlayerStock</span>
+          <h1 class="topbar__h">{{ pageTitle }}</h1>
+        </div>
+        <RouterLink to="/" class="brand brand-sm only-mobile">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
-        <div class="balance" v-if="account">
-          余额 <strong>{{ money(account.balance) }}</strong>
+
+        <div class="topbar__right">
+          <span
+            class="topbar__health only-desktop"
+            :class="backend === null ? 'checking' : backend === false ? 'bad' : 'good'"
+          >
+            <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
+          </span>
+          <div class="balance" v-if="account">
+            余额 <strong>{{ money(account.balance) }}</strong>
+          </div>
+          <button
+            class="theme-toggle topbar-theme"
+            type="button"
+            :aria-label="themeActionLabel"
+            :title="themeActionLabel"
+            @click="cycleTheme"
+          >
+            <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="5.5" />
+              <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
+            </svg>
+            <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="3" />
+              <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+            </svg>
+            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+            </svg>
+          </button>
+          <button
+            class="menu-toggle only-mobile"
+            type="button"
+            :aria-expanded="navOpen"
+            aria-label="打开导航菜单"
+            @click="navOpen = !navOpen"
+          >
+            {{ navOpen ? '关闭菜单' : '菜单' }}
+          </button>
         </div>
-        <button
-          class="theme-toggle topbar-theme"
-          type="button"
-          :aria-label="themeActionLabel"
-          :title="themeActionLabel"
-          @click="cycleTheme"
-        >
-          <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="5.5" />
-            <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
-          </svg>
-          <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="3" />
-            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
-          </svg>
-          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
-          </svg>
-        </button>
-        <button
-          class="menu-toggle"
-          type="button"
-          :aria-expanded="navOpen"
-          aria-label="打开导航菜单"
-          @click="navOpen = !navOpen"
-        >
-          {{ navOpen ? '关闭菜单' : '菜单' }}
-        </button>
       </header>
 
       <main class="content">
@@ -377,8 +405,7 @@ onMounted(() => {
   text-decoration: none;
   font-size: var(--fs-body);
   padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border-left: 2px solid transparent;
+  border-radius: var(--radius-md);
 }
 .nav-item:hover {
   background: var(--neutral-bg);
@@ -393,10 +420,10 @@ onMounted(() => {
   stroke-linecap: round;
 }
 .nav-item.router-link-active {
-  color: var(--text);
+  /* P1：选中态 = 淡主色底 pill + 主色文字 */
+  color: var(--color-selection-text);
   font-weight: 600;
-  background: var(--surface-3);
-  border-left-color: var(--accent-text);
+  background: var(--color-selection-bg);
 }
 
 /* 账户概览卡片 */
@@ -532,7 +559,7 @@ onMounted(() => {
   }
 }
 
-/* ===== 移动端顶栏（桌面隐藏；材质层：玻璃，内容从它下面滚过） ===== */
+/* ===== 顶栏（桌面 fixed / 移动 sticky；材质层：玻璃，内容从它下面滚过） ===== */
 .topbar {
   grid-area: topbar;
   display: none;
@@ -577,6 +604,76 @@ onMounted(() => {
   cursor: pointer;
 }
 
+/* ===== 桌面（≥961px）：顶栏 fixed 在内容列上方，内容从它下面滚过 ===== */
+@media (min-width: 961px) {
+  .topbar {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: var(--layout-sidebar-width);
+    right: 0;
+    height: var(--layout-topbar-height);
+    padding: 0 var(--space-5);
+    border: 0;
+    border-bottom: 1px solid var(--glass-border);
+    z-index: var(--z-nav);
+  }
+  .topbar__title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    min-width: 0;
+  }
+  .topbar__crumb {
+    font-size: var(--fs-cap);
+    color: var(--faint);
+    white-space: nowrap;
+  }
+  .topbar__crumb::after {
+    content: '/';
+    margin-left: var(--space-2);
+    color: var(--border-strong);
+  }
+  .topbar__h {
+    /* P1：顶栏标题降为"面包屑"级，页面大标题仍由页面自身负责，避免同屏重复两个大标题 */
+    margin: 0;
+    font-size: var(--fs-cap);
+    font-weight: var(--font-weight-medium);
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .topbar__right .balance {
+    margin-left: 0;
+  }
+  .topbar__right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .topbar__health {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--fs-cap);
+    color: var(--muted);
+  }
+  .topbar__health.good {
+    color: var(--down);
+  }
+  .topbar__health.bad {
+    color: var(--up-text);
+  }
+  /* 桌面内容区给 fixed 顶栏让出高度（内容从顶栏下面滚过）
+     用 .shell .content 提高优先级：基础 .content 规则在文件更后面 */
+  .shell .content {
+    padding-top: calc(var(--layout-topbar-height) + var(--space-5));
+  }
+}
+.only-mobile {
+  display: none;
+}
+
 /* ===== 主区 ===== */
 .content {
   grid-area: content;
@@ -602,6 +699,12 @@ onMounted(() => {
   }
   .topbar {
     display: flex;
+  }
+  .only-desktop {
+    display: none !important;
+  }
+  .only-mobile {
+    display: inline-flex;
   }
   .sidebar {
     position: fixed;
