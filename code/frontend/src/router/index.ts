@@ -2,7 +2,7 @@
  * 白话导读：浏览器地址栏 URL ↔ 页面组件 的对应表，外加"没登录就赶去登录页"的守门逻辑。
  *
  * routes 数组怎么读：path 是地址，component 是页面文件，() => import(...) 是懒加载
- * （第一次访问该页才下载它的代码，首屏更快）。目前 5 个页面：/auth、/、/players/:id、/positions、/trades。
+ * （第一次访问该页才下载它的代码，首屏更快）。目前 6 个页面：/auth、/、/players/:id、/positions、/trades、/schedule。
  *
  * beforeEach = 全局前置守卫：每次换页前跑一遍，看 useAuth 里的登录态决定放行还是跳登录页。
  * 想加新页面：在 routes 里加一条，再去 App.vue 的侧栏导航加个链接。
@@ -22,7 +22,7 @@ declare module 'vue-router' {
   }
 }
 
-/** 路由约定见原 code/frontend/README.md：/ 市场、/players/:id 详情、/positions 持仓、/trades 流水 */
+/** 路由约定见原 code/frontend/README.md：/ 市场、/players/:id 详情、/positions 持仓、/trades 流水、/schedule 赛程 */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -59,6 +59,13 @@ const router = createRouter({
       path: '/trades',
       name: 'trades',
       component: () => import('../views/TradesView.vue'),
+    },
+    // 赛程（第 8 天新增）：展示"赛程 → 队伍级暂停 → 点数"的派生算法本身，
+    // 数据来自 src/data/demoSchedule.ts，规则来自 src/core/schedule.ts
+    {
+      path: '/schedule',
+      name: 'schedule',
+      component: () => import('../views/ScheduleView.vue'),
     },
     // 兜底：任何拼错/过期的路径都回首页。空白页比 404 更像"坏了"，
     // 答辩现场手一抖输错地址不至于看起来像站点挂了。

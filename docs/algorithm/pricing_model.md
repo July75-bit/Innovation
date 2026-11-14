@@ -105,6 +105,11 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 初始历史回填最近 3 场，逐场 `standardize_score → update_price`；参数取默认值
 （α=0.15 / β=0 / floor=1.0 / N=5 / ±20% clamp）。数据源 `data/seed_players.json`（schema v5）。
 
+界面入口：前端 `/schedule`（赛程）页把这套派生规则做成了可点开的可视化——
+`code/frontend/src/core/schedule.ts` 是 `core_engine/schedule.py` 的逐函数移植，
+数据镜像 `code/frontend/src/data/demoSchedule.ts` 与后端 `app/core/demo_schedule.py`、
+`data/match_schedule.json` 三份同源，都由 `scripts/build_schedule.py` 一次生成。
+
 ### 7.1 主回测（seed=42）
 
 | 回测项 | 结果 |

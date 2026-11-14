@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT / "code"))
 SEED_FILE = ROOT / "data" / "seed_players.json"
 SCHEDULE_FILE = ROOT / "data" / "match_schedule.json"
 BACKEND_MIRROR = ROOT / "code" / "backend" / "app" / "core" / "demo_schedule.py"
+FRONTEND_MIRROR = ROOT / "code" / "frontend" / "src" / "data" / "demoSchedule.ts"
 DEFAULT_START = date(2026, 11, 1)
 MATCHES_PER_ROUND = 1
 ROUNDS_PER_BLOCK = 4  # 8 队 / 每轮 2 队 = 4 轮覆盖全部队伍
@@ -91,6 +92,68 @@ __all__ = [
 '''
     BACKEND_MIRROR.parent.mkdir(parents=True, exist_ok=True)
     BACKEND_MIRROR.write_text(source, encoding="utf-8")
+
+
+def _ts_str(value: object) -> str:
+    """Python 值 → TypeScript 字面量（镜像文件里只会出现 str / int / None，够用）。"""
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    return "'" + str(value).replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+FRONTEND_HEADER = '''/**
+ * 白话导读：赛程数据的**前端构建期镜像**（与 `data/match_schedule.json` 同源）。
+ *
+ * ⚠️ 本文件由 `scripts/build_schedule.py` 自动生成，不要手改：
+ *    要改赛程就改生成脚本（圆桌法在 `round_robin()`），然后重跑
+ *    `python scripts/build_schedule.py`（它会同时刷新后端镜像）。
+ *
+ * 为什么需要它：`/schedule`（赛程）页要现场演示"派生状态"这套算法
+ * （`src/core/schedule.ts` 是 `code/core_engine/schedule.py` 的逐函数移植）。
+ * 静态站部署后浏览器读不到仓库根的 `data/`，而后端没启动时赛程页也必须能演示，
+ * 所以把赛程打进前端包里——与后端 `app/core/demo_schedule.py` 同一思路的第三份镜像。
+ */
+
+'''
+
+
+def write_frontend_mirror(payload: dict) -> None:
+    """把赛程写成前端镜像 `src/data/demoSchedule.ts`。
+
+    输出刻意按 Prettier 口径排（单引号、对象键不加引号、一行一项），
+    这样 `npm run format` 之后文件仍然和重新生成的一致，不会出现"生成→格式化"来回打架的 diff。
+    """
+    rules = "\n".join(f"    {key}: {_ts_str(value)}," for key, value in payload["rules"].items())
+    appearances: dict[int, int] = {}
+    for match in payload["matches"]:
+        for team_id in (match["team_a"], match["team_b"]):
+            appearances[team_id] = appearances.get(team_id, 0) + 1
+    teams = "\n".join(
+        f"    {{ team_id: {team['team_id']}, name: {_ts_str(team['name'])} }}, // 全季 {appearances[team['team_id']]} 场"
+        for team in payload["teams"]
+    )
+    matches = "\n".join(
+        f"    {{ round: {match['round']}, played_at: {_ts_str(match['played_at'])}, "
+        f"team_a: {match['team_a']}, team_b: {match['team_b']} }},"
+        for match in payload["matches"]
+    )
+    body = (
+        "export const DEMO_SCHEDULE = {\n"
+        f"  schema_version: {payload['schema_version']},\n"
+        f"  season: {_ts_str(payload['season'])},\n"
+        f"  generated_by: {_ts_str(payload['generated_by'])},\n"
+        f"  rules: {{\n{rules}\n  }},\n"
+        f"  teams: [\n{teams}\n  ],\n"
+        f"  featured_round: {payload['featured_round'] if payload['featured_round'] is not None else 'null'},\n"
+        f"  matches: [\n{matches}\n  ],\n"
+        "}\n"
+    )
+    FRONTEND_MIRROR.parent.mkdir(parents=True, exist_ok=True)
+    FRONTEND_MIRROR.write_text(FRONTEND_HEADER + body, encoding="utf-8", newline="\n")  # 头注释自带一个空行
 
 
 def load_roster() -> tuple[list[dict], int]:
@@ -233,8 +296,10 @@ def main() -> int:
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
     write_backend_mirror(payload)
+    write_frontend_mirror(payload)
     print(
         f"[build] 同步后端镜像 {BACKEND_MIRROR.relative_to(ROOT)}"
+        f" + 前端镜像 {FRONTEND_MIRROR.relative_to(ROOT)}"
         f"（{len(payload['matches'])} 场）",
         flush=True,
     )

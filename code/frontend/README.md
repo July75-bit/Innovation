@@ -63,7 +63,10 @@ src/
 │   ├── MarketView.vue        # /            市场列表
 │   ├── PlayerDetailView.vue  # /players/:id 详情 + 折线图 + AI 建议 + 交易
 │   ├── PositionsView.vue     # /positions   持仓 + 账户汇总
+│   ├── ScheduleView.vue      # /schedule    赛程：轮次 → 暂停/点数 的派生可视化
 │   └── TradesView.vue        # /trades      交易流水（后端已倒序）
+├── core/schedule.ts   # core_engine/schedule.py 的移植：赛程派生 + 校验 + 圆桌法生成
+├── data/demoSchedule.ts # 赛程镜像（由 scripts/build_schedule.py 生成，勿手改）
 └── utils/format.ts    # money / pct / trendClass / dateTime
 ```
 

@@ -113,6 +113,12 @@ onMounted(() => {
             </svg>
             市场
           </RouterLink>
+          <RouterLink to="/schedule" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5V5M10.5 2.5V5M5.5 9.5h2M9 9.5h2" />
+            </svg>
+            赛程
+          </RouterLink>
           <RouterLink to="/positions" class="nav-item">
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="M2 5.5 8 3l6 2.5L8 8 2 5.5Zm0 3L8 11l6-2.5M2 11 8 13.5 14 11" />
