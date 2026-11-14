@@ -1,4 +1,4 @@
-# 代码评审与软件质量（汇报 3.6 / 3.7）
+﻿# 代码评审与软件质量（汇报 3.6 / 3.7）
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
@@ -42,7 +42,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**；③ 故障**没有升级成 5xx**，交易与行情不受影响。
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（264 条中约 50 条是异常/边界路径）。
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（265 条中约 50 条是异常/边界路径）。
 
 **日志不只刷在控制台：同时落盘，出错能自查**
 
@@ -116,7 +116,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | 输出非 JSON / 字段缺失 / 枚举非法 | `ValueError` → 规则版 | 200 + `rule_fallback` |
 | 上下文组装失败 | `_minimal_context` 继续算 | 200 + `rule_fallback` |
 
-> 量化：`try/except` **32 处**、`raise ApiError` **15 处**、`raise ValueError` **9 处**（引擎入参校验）、`logger` 调用 **15 处**；264 条用例里**约 50 条专测异常与边界路径**（暂停交易、超上限、余额不足、脏输出、并发、上下文失败）。
+> 量化：`try/except` **32 处**、`raise ApiError` **15 处**、`raise ValueError` **9 处**（引擎入参校验）、`logger` 调用 **15 处**；265 条用例里**约 50 条专测异常与边界路径**（暂停交易、超上限、余额不足、脏输出、并发、上下文失败）。
 
 ---
 

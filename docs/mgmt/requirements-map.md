@@ -1,4 +1,4 @@
-# 课程要求 → 仓库落点对照表（答辩自查用）
+﻿# 课程要求 → 仓库落点对照表（答辩自查用）
 
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《创新工程实践营项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
@@ -80,7 +80,7 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 264 passed |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 265 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 97% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |

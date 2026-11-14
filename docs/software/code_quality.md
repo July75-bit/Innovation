@@ -1,4 +1,4 @@
-# 代码质量报告（`docs/software/code_quality.md`）
+﻿# 代码质量报告（`docs/software/code_quality.md`）
 
 > **为什么有这个文件**：课程第 3 天第 2 部分代码质量检查点（SWIEP.pdf p.174）要求提交
 > `docs/software/code_quality.md`（扫描报告截图 + 重构前后对比）。本文件是**该路径的正式交付件**，
@@ -56,7 +56,7 @@ coverage run --source=app,core_engine -m pytest && coverage report -m      # 97%
 - `docs/acceptance/evidence/17-code-quality-scan.png`：静态扫描 + 测试 + CI 门禁
 - `docs/acceptance/evidence/18-quality-pylint-pep8.png`：Pylint 评分 / PEP8（仅 25 条 E501）/ 格式化体检
 - `docs/acceptance/evidence/19-complexity-stats.png`：认知复杂度 + 代码统计
-- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（264 条 / 96%）
+- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（265 条 / 96%）
 
 ## 6. 已知不足（如实交代）
 
