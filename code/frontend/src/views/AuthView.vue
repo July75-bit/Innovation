@@ -391,14 +391,7 @@ function asGuest(): void {
 .veil {
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(
-      100deg,
-      rgba(8, 9, 11, 0.8) 0%,
-      rgba(8, 9, 11, 0.52) 42%,
-      rgba(8, 9, 11, 0.72) 100%
-    ),
-    radial-gradient(60% 55% at 78% 50%, rgba(229, 72, 77, 0.14), transparent 70%);
+  background: var(--bg);
   pointer-events: none;
 }
 
@@ -436,7 +429,7 @@ function asGuest(): void {
   height: 10px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 12px var(--accent);
+  border: 1px solid var(--accent);
 }
 .pitch h1 {
   margin: var(--space-5) 0 var(--space-3);
@@ -489,19 +482,19 @@ function asGuest(): void {
   border-radius: var(--radius-lg);
   background: rgba(18, 20, 24, 0.78);
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-2);
+  border: 1px solid var(--border);
 }
 .tabs {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.07);
 }
 .tab {
   padding: 7px 22px;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
   font-size: var(--fs-body);
@@ -511,7 +504,7 @@ function asGuest(): void {
 .tab.active {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 2px 12px rgba(229, 72, 77, 0.45);
+  box-shadow: none;
 }
 .panel h2 {
   margin: var(--space-4) 0 4px;
@@ -593,7 +586,7 @@ function asGuest(): void {
   border-radius: 6px;
   background: var(--neutral-bg);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--fs-cap);
   cursor: pointer;
 }
 .pw-toggle:hover {
@@ -627,7 +620,7 @@ function asGuest(): void {
   background: var(--down);
 }
 .strength-text {
-  font-size: 11px;
+  font-size: var(--fs-cap);
   color: var(--muted);
   min-width: 44px;
   text-align: right;
@@ -683,7 +676,7 @@ function asGuest(): void {
 }
 .note {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--fs-cap);
   line-height: 1.5;
   color: var(--muted);
   text-align: center;
@@ -716,12 +709,7 @@ function asGuest(): void {
     padding: var(--space-4);
   }
   .veil {
-    background: linear-gradient(
-      180deg,
-      rgba(8, 9, 11, 0.82) 0%,
-      rgba(8, 9, 11, 0.72) 55%,
-      rgba(8, 9, 11, 0.9) 100%
-    );
+    background: var(--bg);
   }
   .inner {
     grid-template-columns: minmax(0, 1fr);

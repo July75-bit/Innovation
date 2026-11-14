@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -214,6 +215,38 @@ def _round_halt_detail(players: list[Player], round_no: int | None) -> str:
     return f"第 {round_no} 轮 {matchup} 比赛中，{len(halted)} 人停牌：{'、'.join(halted)}" + manual_note
 
 
+def _clean_brief_summary(raw: str | None) -> str:
+    """把模型输出清洗成「一句中文总述」（简报是给人看的，绝不能透出 JSON/字段名）。
+
+    模型偶尔不听话，返回的是 `{"action": "HOLD", "reason": "..."}` 这类 JSON
+    （甚至被截断成半个 JSON）。这里统一兜底：
+    1. 去掉 markdown 代码围栏；
+    2. 若是 JSON：优先取 reason / summary / text 字段（截断的 JSON 也能救）；
+    3. 取不到就当纯文本，剥掉花括号、引号与常见字段名；
+    4. 合并空白并限长 80 字（前端一行放得下），保留句末标点。
+    """
+    text = (raw or "").strip()
+    if not text:
+        return ""
+
+    # 1) markdown 代码围栏（```json ... ```）
+    text = re.sub(r"^```\w*\s*", "", text)
+    text = re.sub(r"\s*```$", "", text).strip()
+
+    # 2) 模型返回 JSON：优先取人话字段
+    if text.startswith("{"):
+        match = re.search(r'"(?:reason|summary|text)"\s*:\s*"((?:[^"\\]|\\.)*)', text)
+        if match:
+            text = match.group(1).replace('\\"', '"').replace("\\n", " ")
+        else:
+            text = re.sub(r'[{}"]', "", text)
+            text = re.sub(r"\b(action|risk_level|reason|summary|text)\s*[:：]\s*", "", text)
+
+    # 3) 合并空白（保留句末标点，只去首尾空格）
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:80]
+
+
 def _brief_items(db: Session) -> list[dict[str, Any]]:
     players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
     if not players:
@@ -264,11 +297,14 @@ def agent_brief(
         from ai.llm_agent import _default_chat
 
         digest = "\n".join(f"- {i['title']}：{i['detail']}" for i in items)
-        summary = _default_chat(
-            "你是市场简报编辑。根据下面三条要点写一句不超过 40 字的中文总述，"
-            f"不要给投资建议、不要编造数据。\n{digest}",
-            settings=settings,
-        ).strip()[:80]
+        summary = _clean_brief_summary(
+            _default_chat(
+                "你是市场简报编辑。根据下面三条要点写一句不超过 40 字的中文总述，"
+                "只输出这一句话本身（不要 JSON、不要字段名、不要代码块），"
+                f"不要给投资建议、不要编造数据。\n{digest}",
+                settings=settings,
+            )
+        )
         source = "llm" if summary else "rule_fallback"
     except Exception as exc:  # noqa: BLE001
         logger.info("简报总述回落规则版：%s: %s", type(exc).__name__, exc)

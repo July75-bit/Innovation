@@ -19,6 +19,7 @@ import StatusBadge from '../components/StatusBadge.vue'
 import {
   DEFAULT_BLOCK,
   blocksOf,
+  liveRound,
   phaseOf,
   playingTeams,
   roundMatch,
@@ -38,7 +39,15 @@ import {
 
 const today = todayIso()
 const totalRounds = rounds()
-const todayRound = roundOfDate(today)
+/**
+ * 今天是不是比赛日（口径与后端 `core_engine.current_round` 一致：按 UTC 比赛日查赛程）。
+ * 休赛日不该假装"今天是第 1 轮"——市场页已经会显示"休赛日"，这里必须同一个说法。
+ */
+const liveRoundNo = liveRound()
+const isRestDay = liveRoundNo === null
+const lastPlayedAt = schedule.matches[totalRounds - 1]?.played_at ?? ''
+/** 默认停在今天这一轮；休赛日停在"最近可看的一轮"（赛季结束后就停在最后一轮） */
+const todayRound = liveRoundNo ?? (today > lastPlayedAt ? totalRounds : roundOfDate(today))
 
 const selected = ref(todayRound)
 const players = ref<SchedulePlayer[]>([])
@@ -65,6 +74,8 @@ onMounted(loadRoster)
 const names = teamNames()
 const featuredRound = schedule.featured_round ? Number(schedule.featured_round) : null
 const playersPerTeam = Number((schedule.rules ?? {}).suspended_players_per_round ?? 4) / 2
+/** 完整种子名单规模（后端没连上时按规则给结论用）：8 队 × 每队 2 人，不写死数字 */
+const seedRosterSize = names.size * playersPerTeam
 
 const selectedMatch = computed(() => roundMatch(selected.value))
 const selectedPhase = computed(() => phaseOf(selectedMatch.value, today))
@@ -89,7 +100,7 @@ const suspendedCount = computed(() =>
   players.value.length ? suspended.value.length : 2 * playersPerTeam,
 )
 const tradableCount = computed(() =>
-  players.value.length ? tradable.value.length : Math.max(16 - 2 * playersPerTeam, 0),
+  players.value.length ? tradable.value.length : Math.max(seedRosterSize - 2 * playersPerTeam, 0),
 )
 
 function isManual(player: SchedulePlayer): boolean {
@@ -143,11 +154,16 @@ function shortDate(iso: string): string {
         <h2>赛程</h2>
         <p class="sub">
           {{ schedule.season }} · 8 队单循环 · 共 {{ totalRounds }} 轮 · 每轮 1 场。
-          <strong>本轮打比赛的两队（{{ playingLabel }}）暂停交易</strong>，其余选手照常买卖。
+          <strong>第 {{ selected }} 轮打比赛的两队（{{ playingLabel }}）暂停交易</strong
+          >，其余选手照常买卖。
         </p>
       </div>
       <div class="head-right">
-        <span class="today num">今天 {{ shortDate(today) }} · 第 {{ todayRound }} 轮</span>
+        <span class="today num">
+          今天 {{ shortDate(today) }} ·
+          <template v-if="isRestDay">休赛日（浏览第 {{ todayRound }} 轮）</template>
+          <template v-else>第 {{ todayRound }} 轮</template>
+        </span>
         <button
           type="button"
           class="ghost"
@@ -429,7 +445,7 @@ function shortDate(iso: string): string {
   color: var(--text);
 }
 .chip .chip-d {
-  font-size: 11px;
+  font-size: var(--fs-cap);
 }
 .chip.played {
   opacity: 0.6;
