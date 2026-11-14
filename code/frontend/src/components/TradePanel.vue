@@ -409,10 +409,10 @@ button.sell:disabled {
   cursor: not-allowed;
 }
 .buy {
-  background: var(--up);
+  background: var(--color-action);
 }
 .sell {
-  background: var(--down);
+  background: var(--color-success-strong);
 }
 .feedback {
   padding: var(--space-2) var(--space-3);

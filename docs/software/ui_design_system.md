@@ -5,6 +5,7 @@
 > **实施提交**：`code/frontend/src/assets/main.css`（令牌）+ `App.vue` / `MarketView.vue` /
 > `PlayerDetailView.vue` / `AuthView.vue` / `TradePanel.vue` / `PriceChart.vue` / `StatusBadge.vue`
 > **证据**：`evidence/46~50-ui-v2-*.png`
+> **令牌明细（CSS + JSON 双版本、含对比度标注）**：见 [`design_tokens.md`](design_tokens.md)；代码在 `src/assets/{tokens.css,design-tokens.json,ui-kit.css}`。
 
 ---
 

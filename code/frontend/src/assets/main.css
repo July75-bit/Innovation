@@ -1,3 +1,6 @@
+@import './tokens.css';
+@import './ui-kit.css';
+
 /*
    白话导读：全站唯一的"全局样式"文件，由 src/main.ts 引入。
    :root 里那一大堆 --xxx 是 CSS 自定义属性（变量）：颜色、字号、间距、圆角在这里定义一次，
@@ -19,77 +22,54 @@
  *   2) 字体 = 3 级标题 + 正文 16px + 辅助 14/13px
  *   3) 间距 = 8pt 体系；圆角 = 4/6/8；不使用重阴影与渐变
  * ============================================================ */
+/* 兼容层：组件仍用旧的变量名，值统一指向 tokens.css（无需逐个改组件） */
 :root {
-  /* ---- 中性色阶（不用纯黑：最暗为 #12141a） ---- */
-  --bg: #12141a;
-  --surface: #181b22;
-  --surface-2: #1f232b;
-  --surface-3: #262b34;
-  --text: #e9eaee;
-  --muted: #b6bac4;
-  --faint: #8f949f;
-  --border: #2c313b;
-  --border-strong: #3a404c;
+  /* 表面与文字 */
+  --bg: var(--color-canvas);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-raised);
+  --surface-3: #2b3039; /* 导航选中/第三层，比 raised 再亮一档 */
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --faint: var(--color-text-faint);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
 
-  /* ---- 主色 + 语义色（涨=主色红，跌/成功=绿，符合国内行情习惯） ---- */
-  --accent: #e5484d;
-  --accent-hover: #f05a5f;
-  --accent-weak: rgba(229, 72, 77, 0.14);
-  --up: var(--accent);
-  --up-bg: var(--accent-weak);
-  --down: #2fbf71;
-  --down-bg: rgba(47, 191, 113, 0.14);
-  --warn: #d99427;
-  --warn-bg: rgba(217, 148, 39, 0.16);
-  --danger: #dc2626;
+  /* 主色与语义 */
+  --accent: var(--color-primary-500);
+  --accent-hover: var(--color-action-hover);
+  --accent-weak: var(--color-up-subtle);
+  --up: var(--color-up);
+  --up-text: var(--color-up-text);
+  --up-bg: var(--color-up-subtle);
+  --down: var(--color-down);
+  --down-bg: var(--color-down-subtle);
+  --warn: var(--color-halt);
+  --warn-bg: var(--color-halt-subtle);
+  --danger: var(--color-error-strong);
   --neutral-bg: rgba(255, 255, 255, 0.06);
 
-  /* ---- 层级：不靠阴影，靠 1px 边框与背景色差；弹层允许极轻投影 ---- */
-  --shadow-1: none;
-  --shadow-2: 0 1px 2px rgba(0, 0, 0, 0.3);
+  /* 阴影：扁平化——一律无阴影，弹层用极轻投影 */
+  --shadow-1: var(--shadow-none);
+  --shadow-2: var(--shadow-overlay);
 
-  /* ---- 间距：8pt 体系（4 仅用于图标与文字的微调） ---- */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
+  /* 间距 / 圆角 / 字体 / 图标（沿用 tokens） */
+  --radius-pill: var(--radius-sm);
 
-  /* ---- 圆角：只允许 4 / 6 / 8（卡片 8、控件 6、标签 4） ---- */
-  --radius-xs: 4px;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 8px;
-  --radius-pill: 6px;
+  --fs-h1: var(--font-size-h1);
+  --fs-h2: var(--font-size-h2);
+  --fs-h3: var(--font-size-h3);
+  --fs-body: var(--font-size-body);
+  --fs-aux: var(--font-size-aux);
+  --fs-cap: var(--font-size-cap);
+  --lh: var(--line-height-body);
+  --lh-tight: var(--line-height-tight);
 
-  /* ---- 字体层级：正文 16px（≥16 规范），辅助 14/13px ---- */
-  --fs-h1: 28px;
-  --fs-h2: 22px;
-  --fs-h3: 18px;
-  --fs-body: 16px;
-  --fs-aux: 14px;
-  --fs-cap: 13px;
-  --lh: 1.6;
-  --lh-tight: 1.35;
+  --icon-sm: var(--icon-size-sm);
+  --icon-md: var(--icon-size-md);
+  --icon-lg: var(--icon-size-lg);
 
-  /* ---- 图标尺寸：16 / 20 / 24 三档 ---- */
-  --icon-sm: 16px;
-  --icon-md: 20px;
-  --icon-lg: 24px;
-
-  /* ---- 控件高度：36 / 40 / 44 ---- */
-  --control-sm: 36px;
-  --control-md: 40px;
-  --control-lg: 44px;
-
-  /* ---- 布局 ---- */
-  --max-width: 1280px;
-  --sidebar-width: 232px;
-
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-family: var(--font-sans);
 }
 
 * {

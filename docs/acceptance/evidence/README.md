@@ -104,6 +104,8 @@
 | `48-ui-v2-after-detail.png` | **UI v2 · 详情页** | 结论卡三层结构 + 交易面板常驻；主按钮 44px；AI 卡无红框、无四格数字噪音 |
 | `49-ui-v2-after-375.png` | **UI v2 · 375px** | 无横向滚动（375/375），点击区 ≥44px |
 | `50-ui-v2-after-login.png` | **UI v2 · 登录页** | 渐变背景与发光全部清除，改为扁平底色 + 1px 边框 |
+| `51-design-tokens-after-detail.png` | **设计 Token 接入后 · 详情页**（2026-11-14 15:58） | 买入/卖出改用 AA 合规底色（`#c23438` 白字 5.47:1、`#1a7f4b` 白字 5.02:1）；间距/圆角/字号全部走 `tokens.css`，组件零改动（兼容层映射） |
+| `52-design-tokens-after-market.png` | **设计 Token 接入后 · 市场页** | 简报与卡片沿用统一样式令牌；4/6/8 圆角、1px 边框、无阴影 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
