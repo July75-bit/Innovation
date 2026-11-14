@@ -42,10 +42,8 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import StatusBadge from '../components/StatusBadge.vue'
-import CollapsibleCard from '../components/CollapsibleCard.vue'
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
-import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import LoadingState from '../components/LoadingState.vue'
 
@@ -87,8 +85,9 @@ async function loadPanel() {
   panelError.value = ''
   try {
     panel.value = await api.getAgentPanel(playerId.value)
-  } catch (err) {
-    panelError.value = err instanceof ApiError ? err.message : '纪要生成失败'
+  } catch {
+    // 后端可能抛出带类名的技术信息（如 LLMOutputError），界面上只说人话
+    panelError.value = '纪要暂时不可用，不影响行情与交易'
   } finally {
     panelLoading.value = false
   }
@@ -98,6 +97,11 @@ function onPanelToggle(open: boolean) {
   if (open) void loadPanel()
 }
 
+
+/** 原生 <details> 的 toggle 事件给的是 Event，这里取出 open 再转成布尔值 */
+function onDetailsToggle(event: Event) {
+  onPanelToggle((event.target as HTMLDetailsElement).open)
+}
 /** 工具调用：让用户看到"模型自己查了什么"（只有名字与参数，没有账户隐私） */
 async function loadTools() {
   if (tools.value || toolsLoading.value) return
@@ -241,6 +245,35 @@ async function refreshAnalysis() {
   }
 }
 
+/** 技术信息过滤：模型/后端异常类名、堆栈不该出现在用户界面 */
+function isTechLeak(text: string): boolean {
+  return /(Error|Exception|Traceback|不可用（|stack)/.test(text)
+}
+
+/** 理由清洗：去掉"（规则版建议）"这类内部术语，界面上只说人话 */
+function cleanReason(text: string): string {
+  return text.replace(/（规则版建议）/g, "").replace(/\(规则版建议\)/g, "").trim()
+}
+
+/** 把握档位：把 48% 这种精确数字翻成"较高/一般/较低"（用户不需要两位小数的置信度） */
+function confidenceLabel(value: number): string {
+  if (value >= 0.75) return '较高'
+  if (value >= 0.55) return '一般'
+  return '较低'
+}
+
+/** 工具调用翻译：模型调了什么 → 一句人话（不再显示函数名与 JSON 参数） */
+const TOOL_LABELS: Record<string, (args: Record<string, unknown>) => string> = {
+  get_price_history: (args) => `查了最近 ${Math.min(Number(args.limit ?? 6) || 6, 12)} 个价格点`,
+  get_account_snapshot: () => '看了你的余额与持仓',
+  calc_position_size: () => '按风险算了一次可买股数',
+}
+
+function humanizeTool(call: { name: string; args?: Record<string, unknown> }): string {
+  const render = TOOL_LABELS[call.name]
+  return render ? render(call.args ?? {}) : '调用了一次只读数据工具'
+}
+
 onMounted(() => loadCore())
 watch(playerId, () => loadCore())
 </script>
@@ -270,7 +303,6 @@ watch(playerId, () => loadCore())
         </div>
       </header>
 
-      <p v-if="player.latest_reason" class="reason">最近变动：{{ player.latest_reason }}</p>
 
       <div class="cols">
         <!-- 左列：看 —— 走势 + AI 依据（折叠卡片，想细看才展开） -->
@@ -278,138 +310,125 @@ watch(playerId, () => loadCore())
           <h3>价格历史</h3>
           <PriceChart :points="points" />
 
-          <CollapsibleCard title="AI 建议" :open="true">
-            <template #meta>
-              <template v-if="analysis">
-                <span :class="['advice', analysis.action.toLowerCase()]">{{
-                  ACTION_LABEL[analysis.action] ?? analysis.action
-                }}</span>
-                <span :class="['risk', analysis.risk_level.toLowerCase()]"
-                  >风险：{{ RISK_LABEL[analysis.risk_level] ?? analysis.risk_level }}</span
-                >
-              </template>
-              <span v-else-if="!analysisLoading" class="src">暂不可用</span>
-              <button
-                v-if="analysis || analysisLoading"
-                type="button"
-                class="ai-refresh"
-                :disabled="analysisLoading"
-                title="重新请求一次 AI 建议（不影响行情与账户）"
-                @click="refreshAnalysis"
-              >
-                {{ analysisLoading ? '分析中…' : '重新分析' }}
-              </button>
-            </template>
-
-            <!-- AI 请求中的占位：不空白、不跳动，告知"正在分析" -->
-            <section v-if="analysisLoading" class="ai-loading" aria-busy="true" aria-live="polite">
-              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span>AI 分析中…（行情与交易不受影响）</span>
-            </section>
-            <section v-else-if="analysis">
-              <p class="ai-src-line">
-                依据来源：{{ analysis.source === 'llm' ? 'AI 模型' : '规则兜底（AI 暂不可用）' }}
-                <span class="ai-scope">· 仅基于本站 16 名选手的模拟数据</span>
-              </p>
-              <!-- 高风险时把免责声明提到理由之前：用户先看到边界，再看结论 -->
-              <p v-if="analysis.risk_level === 'HIGH'" class="disclaimer disclaimer-strong">
-                ⚠ 高风险建议：{{ analysis.disclaimer }}
-              </p>
-              <p class="ai-reason">{{ analysis.reason }}</p>
-
-              <!-- 叙事归因（第二梯度）：把规则 reason 讲成因果 -->
-              <p v-if="narrative" class="ai-narrative">
-                <span class="ai-narrative-tag">归因解读</span>{{ narrative }}
-              </p>
-
-              <!-- 决策卡：把"一句建议"落成"可执行的计划"（仓位/止损/置信度），仍不下单 -->
-              <div v-if="plan" class="plan">
-                <div class="plan-grid num">
-                  <div>
-                    <span>建议仓位</span>
-                    <strong>{{ plan.suggested_quantity }} 股</strong>
-                  </div>
-                  <div>
-                    <span>参考止损</span>
-                    <strong>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</strong>
-                  </div>
-                  <div>
-                    <span>置信度</span>
-                    <strong>{{ Math.round(plan.confidence * 100) }}%</strong>
-                  </div>
-                  <div>
-                    <span>可用余额</span>
-                    <strong>{{ money(snapshot?.balance ?? 0) }}</strong>
-                  </div>
-                </div>
-                <ul class="plan-why">
-                  <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
-                </ul>
-                <p class="plan-note">{{ plan.note }}</p>
-                <div class="plan-actions">
-                  <button
-                    type="button"
-                    class="plan-accept"
-                    :disabled="decisionSent"
-                    @click="acceptAdvice"
+          <!-- ══ 智能体结论：一眼看结论，细节按需展开 ══ -->
+          <section class="ai-card" aria-label="AI 建议">
+            <!-- 第一层：结论 + 风险/把握 -->
+            <div class="ai-top">
+              <div class="ai-verdict">
+                <template v-if="analysis">
+                  <span :class="['advice-pill', analysis.action.toLowerCase()]">{{
+                    ACTION_LABEL[analysis.action] ?? analysis.action
+                  }}</span>
+                  <p class="ai-line">{{ cleanReason(analysis.reason) }}</p>
+                </template>
+                <template v-else-if="analysisLoading">
+                  <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <p class="ai-line muted">AI 分析中…（行情与交易不受影响）</p>
+                </template>
+                <p v-else class="ai-line muted">AI 建议暂不可用（不影响交易）。</p>
+              </div>
+              <div class="ai-side">
+                <template v-if="analysis">
+                  <span :class="['chip', 'risk', analysis.risk_level.toLowerCase()]"
+                    >风险 {{ RISK_LABEL[analysis.risk_level] ?? analysis.risk_level }}</span
                   >
-                    {{ decisionSent ? '已记录采纳' : '采纳这条建议' }}
-                  </button>
-                  <button type="button" class="plan-ignore" :disabled="decisionSent" @click="ignoreAdvice">
-                    忽略
-                  </button>
-                  <span v-if="decisionNotice" class="plan-notice">{{ decisionNotice }}</span>
-                </div>
+                  <span v-if="plan" class="chip">把握 {{ confidenceLabel(plan.confidence) }}</span>
+                </template>
+                <button
+                  v-if="analysis || analysisLoading"
+                  type="button"
+                  class="ghost-btn"
+                  :disabled="analysisLoading"
+                  @click="refreshAnalysis"
+                >
+                  {{ analysisLoading ? '分析中…' : '重新分析' }}
+                </button>
               </div>
+            </div>
 
-              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">{{ analysis.disclaimer }}</p>
-            </section>
-            <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
-          </CollapsibleCard>
+            <!-- 第二层：只留两个下单真正用得上的数字 -->
+            <div v-if="analysis && plan" class="ai-facts">
+              <span><em>若采纳可买</em><b>{{ plan.suggested_quantity }}</b> 股</span>
+              <span
+                ><em>参考止损</em><b>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</b></span
+              >
+              <span class="ai-mode">{{
+                analysis.source === 'llm' ? 'AI 生成' : '简化模式（模型未连接）'
+              }}</span>
+            </div>
 
-          <!-- 第二梯度：多角色协作纪要（点开才请求，避免一进页面就白烧三次调用） -->
-          <CollapsibleCard title="智能体协作纪要（分析师 → 风控 → 交易员）" :open="false" @toggle="onPanelToggle">
-            <template #meta>
-              <span v-if="panel" class="src">{{ panel.source === 'llm' ? '模型协作' : '规则兜底' }}</span>
-              <span v-else-if="panelLoading" class="src">生成中…</span>
+            <!-- 第三层：三块折叠，默认全收起 -->
+            <template v-if="analysis">
+              <details class="ai-more">
+                <summary>为什么这么建议</summary>
+                <div class="ai-more-body">
+                  <p v-if="narrative" class="ai-quote">{{ narrative }}</p>
+                  <ul v-if="plan && plan.rationale.length" class="ai-why">
+                    <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
+                  </ul>
+                  <p v-if="plan" class="ai-note">{{ plan.note }}</p>
+                </div>
+              </details>
+
+              <details class="ai-more" @toggle="onDetailsToggle">
+                <summary>三个角色怎么看</summary>
+                <div class="ai-more-body">
+                  <p v-if="panelLoading" class="ai-line muted">
+                    <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                    三个角色正在依次思考…
+                  </p>
+                  <p v-else-if="panelError" class="ai-line muted">{{ panelError }}</p>
+                  <template v-else-if="panel">
+                    <ul class="role-list">
+                      <template v-for="(m, i) in panel.minutes" :key="i">
+                        <li v-if="!isTechLeak(m.content)">
+                          <em>{{ ROLE_LABEL[m.role] ?? m.role }}</em>
+                          <span :title="m.content">{{ m.content }}</span>
+                        </li>
+                      </template>
+                    </ul>
+                    <p v-if="panel.minutes.every((m) => isTechLeak(m.content))" class="ai-line muted">
+                      三个角色本次未能给出纪要（不影响行情与交易）。
+                    </p>
+                    <p v-if="panel.minutes.some((m) => !isTechLeak(m.content))" class="role-final">
+                      综合结论：<b>{{ ACTION_LABEL[panel.final.action] ?? panel.final.action }}</b>
+                      · 风险 {{ RISK_LABEL[panel.final.risk_level] ?? panel.final.risk_level }}
+                    </p>
+                  </template>
+                  <p v-else class="ai-line muted">展开后自动生成纪要（需要几秒）。</p>
+                </div>
+              </details>
+
+              <details class="ai-more">
+                <summary>它查了哪些数据</summary>
+                <div class="ai-more-body">
+                  <button type="button" class="ghost-btn" :disabled="toolsLoading" @click="loadTools">
+                    {{ toolsLoading ? '取数中…' : '查看取数过程' }}
+                  </button>
+                  <ul v-if="tools && tools.tool_calls.length" class="tool-list">
+                    <li v-for="(c, i) in tools.tool_calls" :key="i">{{ humanizeTool(c) }}</li>
+                  </ul>
+                  <p v-else-if="tools" class="ai-line muted">
+                    {{ tools.source === 'llm' ? '本次模型直接作答，未调用工具。' : '本次使用简化模式。' }}
+                  </p>
+                </div>
+              </details>
             </template>
 
-            <p v-if="panelLoading" class="ai-loading">
-              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span>三个角色正在依次思考…（行情与交易不受影响）</span>
-            </p>
-            <p v-else-if="panelError" class="disclaimer">{{ panelError }}</p>
-            <section v-else-if="panel">
-              <ol class="minutes">
-                <li v-for="(m, i) in panel.minutes" :key="i">
-                  <strong>{{ ROLE_LABEL[m.role] ?? m.role }}</strong>
-                  <span>{{ m.content }}</span>
-                </li>
-              </ol>
-              <p class="panel-final">
-                最终结论：<strong>{{ ACTION_LABEL[panel.final.action] ?? panel.final.action }}</strong>
-                · 风险 {{ RISK_LABEL[panel.final.risk_level] ?? panel.final.risk_level }}
-                <span class="panel-note">{{ panel.note }}</span>
-              </p>
-
-              <!-- 工具调用：让用户看到"模型自己查了什么"，只有工具名与参数 -->
-              <div class="tools-box">
-                <button type="button" class="tools-btn" :disabled="toolsLoading" @click="loadTools">
-                  {{ toolsLoading ? '取数中…' : '看智能体怎么取数（工具调用）' }}
+            <!-- 底部：免责 + 人在环（次级按钮，不抢「买入」主按钮） -->
+            <footer v-if="analysis" class="ai-foot">
+              <span class="ai-disclaimer">{{ analysis.disclaimer }}</span>
+              <div class="ai-actions">
+                <button type="button" class="ghost-btn" :disabled="decisionSent" @click="acceptAdvice">
+                  {{ decisionSent ? '已记录' : '采纳建议' }}
                 </button>
-                <ul v-if="tools && tools.tool_calls.length" class="tools-list">
-                  <li v-for="(c, i) in tools.tool_calls" :key="i">
-                    第 {{ c.round }} 轮调用 <code>{{ c.name }}</code>
-                    <span class="tools-args">{{ JSON.stringify(c.args) }}</span>
-                  </li>
-                </ul>
-                <p v-else-if="tools" class="disclaimer">
-                  本次未触发工具调用（{{ tools.source === 'llm' ? '模型直接作答' : '已降级为规则版' }}）。
-                </p>
+                <button type="button" class="ghost-btn" :disabled="decisionSent" @click="ignoreAdvice">
+                  忽略
+                </button>
+                <span v-if="decisionNotice" class="ai-note">{{ decisionNotice }}</span>
               </div>
-            </section>
-            <EmptyState v-else>展开后自动生成纪要。</EmptyState>
-          </CollapsibleCard>
+            </footer>
+          </section>
         </div>
 
         <!-- 右列：做 —— 交易面板常驻可见 -->
@@ -809,6 +828,272 @@ h3 {
   }
   .price-box {
     text-align: left;
+  }
+}
+
+/* ══════════ 智能体结论卡（改版：结论优先，细节折叠） ══════════ */
+.ai-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ai-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.ai-verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.advice-pill {
+  flex: none;
+  padding: 2px 12px;
+  border-radius: var(--radius-pill);
+  font-weight: 800;
+  font-size: var(--fs-body);
+  line-height: 22px;
+}
+.advice-pill.buy {
+  background: var(--up-bg);
+  color: var(--up);
+}
+.advice-pill.sell {
+  background: var(--down-bg);
+  color: var(--down);
+}
+.advice-pill.hold {
+  background: var(--neutral-bg);
+  color: var(--text);
+}
+.ai-line {
+  margin: 0;
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  color: var(--text);
+}
+.ai-line.muted {
+  color: var(--muted);
+  font-size: var(--fs-aux);
+}
+.ai-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.chip {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-cap);
+  background: var(--neutral-bg);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.chip.risk.low {
+  color: var(--down);
+  background: var(--down-bg);
+}
+.chip.risk.medium {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+.chip.risk.high {
+  color: var(--up);
+  background: var(--up-bg);
+}
+.ai-facts {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-5);
+  padding: var(--space-2) 0;
+  border-top: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.ai-facts b {
+  color: var(--text);
+  font-size: var(--fs-h3);
+  font-variant-numeric: tabular-nums;
+}
+.ai-facts em {
+  font-style: normal;
+  margin-right: 6px;
+}
+.ai-mode {
+  margin-left: auto;
+  font-size: var(--fs-cap);
+  opacity: 0.85;
+}
+.ai-more {
+  border-top: 1px solid var(--border);
+}
+.ai-more:first-of-type {
+  border-top: 0;
+}
+.ai-more > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 7px 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ai-more > summary::-webkit-details-marker {
+  display: none;
+}
+.ai-more > summary::before {
+  content: '▸';
+  transition: transform 0.15s;
+}
+.ai-more[open] > summary::before {
+  transform: rotate(90deg);
+}
+.ai-more > summary:hover {
+  color: var(--text);
+}
+.ai-more-body {
+  padding: 0 0 var(--space-3) 18px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ai-quote {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+  font-size: var(--fs-aux);
+  line-height: 1.7;
+}
+.ai-why {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-aux);
+  color: var(--text);
+  line-height: 1.7;
+}
+.ai-note {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.role-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.role-list li {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--fs-aux);
+  line-height: 1.6;
+}
+.role-list em {
+  flex: none;
+  font-style: normal;
+  color: var(--muted);
+  min-width: 42px;
+}
+.role-list span {
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.role-final {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+.role-final b {
+  color: var(--text);
+}
+.tool-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--fs-aux);
+  color: var(--text);
+  line-height: 1.8;
+}
+.ai-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-2);
+}
+.ai-disclaimer {
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.ai-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ghost-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-cap);
+  cursor: pointer;
+}
+.ghost-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--muted);
+}
+.ghost-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* 窄屏：AI 卡片从「左右两栏」改为「上下堆叠」，避免理由被挤成窄条 */
+@media (max-width: 720px) {
+  .ai-top {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .ai-verdict {
+    flex-wrap: wrap;
+  }
+  .ai-side {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .ai-facts {
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+  }
+  .ai-mode {
+    margin-left: 0;
+  }
+  .ai-foot {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .ai-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
   }
 }
 </style>

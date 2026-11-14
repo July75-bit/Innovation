@@ -162,7 +162,7 @@ function asGuest(): void {
         <ul class="points">
           <li>
             <span class="dot" aria-hidden="true"></span>
-            50 名选手行情与模拟表现分
+            16 名选手行情与模拟表现分
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
