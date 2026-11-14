@@ -184,4 +184,14 @@ import UiButton from '@/components/ui/UiButton.vue'
 | `evidence/53-ui-kit-full.png` | 组件库整页（按钮/输入/下拉/标签/卡片/表格/分页/导航/弹窗入口） |
 | `evidence/54-ui-kit-modal.png` | 危险确认弹窗打开态（无 ✕、取消在左、红色确认） |
 | `evidence/55-ui-kit-375.png` | 375px 移动端无横向滚动（375/375） |
-| `ui-kit.spec.ts` | 15 条状态测试（Vitest） |
+| `evidence/56~65-liquid-glass-*.png` | **液态玻璃材质层**（导航壳/顶栏/tooltip/弹窗/降级/焦点环），规范见 [`liquid_glass_design.md`](./liquid_glass_design.md) |
+| `ui-kit.spec.ts` + `liquid-glass.spec.ts` | 15 条组件状态测试 + 7 条材质层守卫测试（Vitest） |
+
+## 6. 材质层（液态玻璃）与内容层的分工
+
+> 完整规范见 [`liquid_glass_design.md`](./liquid_glass_design.md)。
+
+- **只有"会盖住别的内容的壳/浮层"用玻璃**：侧栏壳、移动顶栏、模态框/删除确认、图表 tooltip、悬浮工具条。
+- **阅读与输入一律扁平实色**：卡片、表格、表单、AI 正文、长文、合规声明。抽屉与 ≤600px 弹窗也是实色（配额 + 文字密度）。
+- 新增 UI 时先问一句：**这块是"壳/浮层"还是"内容"**？内容永远不要加 `.glass`。
+- 玻璃令牌只在 `liquid-glass.css`；组件里写 `var(--glass-*)`，不要硬编码 blur/alpha。

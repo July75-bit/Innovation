@@ -38,7 +38,12 @@ except ImportError:  # 允许在 ai/ 目录内直接运行脚本
 DEFAULT_BASE_URL = "https://api.openai.com/v1/chat/completions"
 DEFAULT_MODEL = "gpt-4o-mini"
 DEFAULT_TIMEOUT = 20.0
-MAX_REASON_LEN = 120
+# 理由上限：与 `price_history.reason` 的 VARCHAR(200) 对齐（2026-11-14 由 120 放宽）。
+# 放宽原因：3 句中文常常 130–160 字，120 会把句子切断成"短期动量明显偏"这种残句。
+MAX_REASON_LEN = 200
+#: 句末标点：截断时优先在这些字符之后断开，避免把词/句切一半。
+#: **故意不含英文句点 `.`**：价格里有小数点（89.13），按 `.` 断会切出"89."这种残句。
+_SENTENCE_ENDS = "。！？；…!?;"
 
 VALID_ACTIONS = {"BUY", "SELL", "HOLD"}
 VALID_RISKS = {"LOW", "MEDIUM", "HIGH"}
@@ -273,11 +278,30 @@ def _parse_and_validate(raw: str) -> dict[str, str]:
     reason = parsed.get("reason")
     if not isinstance(reason, str) or not reason.strip():
         raise LLMOutputError("reason 缺失或为空")
-    reason = reason.strip()
-    if len(reason) > MAX_REASON_LEN:
-        reason = reason[:MAX_REASON_LEN]
+    reason = _truncate_reason(reason.strip())
 
     return {"action": action, "reason": reason, "risk_level": risk_level}
+
+
+def _truncate_reason(text: str, limit: int = MAX_REASON_LEN) -> str:
+    """超长理由的"智能截断"：优先在句末标点处断开，并补省略号。
+
+    为什么不再直接切片（2026-11-14 用户反馈）：
+    旧实现 `reason[:120]` 会把句子切成"…短期动量明显偏"，看起来像文案出错。
+    现在的策略：
+    1. 不超长 → 原样返回；
+    2. 超长 → 在 limit 内找**最后一个句末标点**（。！？；…），在那里结束并补"…"；
+    3. 找不到标点（模型写了一长串没标点）→ 硬切到 limit-1 再补"…"，保证长度不超限。
+    """
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return text
+
+    head = text[:limit]
+    cut = max(head.rfind(ch) for ch in _SENTENCE_ENDS)
+    if cut >= limit // 2:  # 断点太靠前会丢太多信息，宁可硬切
+        return head[: cut + 1].rstrip() + "…"
+    return head[: limit - 1].rstrip() + "…"
 
 
 # ---------- 对外入口 ----------

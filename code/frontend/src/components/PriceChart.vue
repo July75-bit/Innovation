@@ -182,10 +182,10 @@ function tipStyle(d: { x: number; y: number }) {
           </text>
         </svg>
 
-        <!-- 悬停 tooltip：每点 reason（M4 验收第 3 项） -->
+        <!-- 悬停 tooltip：每点 reason（M4 验收第 3 项）；材质层=玻璃浮层，浮在图表之上 -->
         <div
           v-if="hovered"
-          class="tip"
+          class="tip glass glass--panel"
           :class="{
             'tip-near-left': hovered.x < 150,
             'tip-near-right': hovered.x > W - 150,
@@ -294,14 +294,11 @@ svg {
 .tip {
   position: absolute;
   transform: translate(-50%, calc(-100% - 10px));
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  /* 材质层：玻璃浮层（.glass--panel 提供底色/模糊/高光/极轻投影与 20px 圆角） */
   padding: 8px 10px;
   font-size: var(--fs-cap);
   max-width: 260px;
   pointer-events: none;
-  border: 1px solid var(--border);
   z-index: 2;
 }
 .tip.tip-near-left {

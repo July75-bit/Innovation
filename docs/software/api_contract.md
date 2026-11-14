@@ -294,7 +294,7 @@
 | --- | --- | --- | --- |
 | `player_id` | int | ✅ | 与请求路径一致（实现以路径为准回填） |
 | `action` | enum | ✅ | `BUY` / `SELL` / `HOLD`（大写，不接受中文或小写 `buy`） |
-| `reason` | string | ✅ | 中文 1–3 句，**≤ 120 字**，必须引用具体数值（价格/涨跌幅/表现分） |
+| `reason` | string | ✅ | 中文 1–3 句，**≤ 200 字**（2026-11-14 由 120 放宽，与 `price_history.reason` 的 VARCHAR(200) 对齐；超长时**在句末标点处截断并补 `…`**，不裸切），必须引用具体数值（价格/涨跌幅/表现分） |
 | `risk_level` | enum | ✅ | `LOW` / `MEDIUM` / `HIGH` |
 | `source` | enum | ✅ | `llm`（模型生成）/ `rule_fallback`（规则兜底） |
 | `disclaimer` | string | ✅ | 固定文案，前端**必须**展示 |

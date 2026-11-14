@@ -1,5 +1,7 @@
 @import './tokens.css';
 @import './ui-kit.css';
+/* 液态玻璃材质层：只给导航/浮层用，内容层保持扁平（规范见文件头注释） */
+@import './liquid-glass.css';
 
 /*
    白话导读：全站唯一的"全局样式"文件，由 src/main.ts 引入。
@@ -127,11 +129,11 @@ th.num {
   font-variant-numeric: tabular-nums;
 }
 
-/* 无障碍：键盘操作时显示 2px 主色焦点环（与控件圆角一致） */
+/* 无障碍：键盘操作时显示 2px 主色焦点环（形状跟随元素自身圆角，不再覆写 border-radius——
+   覆写会把玻璃浮层的 20px 圆角打成 6px，2026-11-14 实测踩过） */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--radius-sm);
 }
 
 /* 尊重"减少动效"偏好：关闭过渡与动画（队友无障碍补充） */
