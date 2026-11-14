@@ -7,7 +7,7 @@
  * 算法本身的六条契约（结构 / 均衡 / 派生 / 循环 / 生成 / 校验）在
  * `src/core/__tests__/schedule.spec.ts` 里逐条守着，这里只测界面。
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 
 /** 8 队 × 2 人 = 16 人，队伍名与 data/match_schedule.json 完全一致 */
@@ -76,8 +76,15 @@ async function pickRound(w: ReturnType<typeof mountView>, round: number) {
 }
 
 beforeEach(() => {
+  vi.useFakeTimers()
+  // 钉在赛季内的比赛日（UTC）：第 14 轮 G2 vs Astralis
+  vi.setSystemTime(new Date('2026-11-14T04:00:00Z'))
   h.listPlayers.mockReset()
   h.listPlayers.mockResolvedValue(roster())
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('ScheduleView', () => {
@@ -135,6 +142,27 @@ describe('ScheduleView', () => {
     await pickRound(w, 12)
     expect(w.findAll('.chips .pchip')).toHaveLength(11)
     expect(w.text()).toContain('另有 1 人暂停（非赛程原因）')
+  })
+
+  it('比赛日：页头显示"今天 · 第 14 轮"，默认就停在这一轮', async () => {
+    const w = mountView()
+    await flushPromises()
+
+    expect(w.find('.today').text()).toContain('第 14 轮')
+    expect(w.find('.today').text()).not.toContain('休赛日')
+    expect(w.find('.match-meta').text()).toContain('第 14 轮')
+  })
+
+  it('休赛日：页头改口"休赛日"，并把默认轮次停在最后一轮而不是假装第 1 轮', async () => {
+    vi.setSystemTime(new Date('2026-12-01T04:00:00Z')) // 赛季 11-28 打完
+
+    const w = mountView()
+    await flushPromises()
+
+    expect(w.find('.today').text()).toContain('休赛日')
+    expect(w.find('.today').text()).toContain('第 28 轮')
+    // 休赛日没有"本轮停牌"，市场页与接口都放行；赛程页仍可浏览第 28 轮的对阵
+    expect(w.find('.match-meta').text()).toContain('第 28 轮')
   })
 
   it('后端没连上时降级：仍按赛程给出暂停结论，不整页报错', async () => {
