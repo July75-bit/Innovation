@@ -318,24 +318,25 @@ SAME balance=True total=True qty=True trades=True points=True
 ## 9. 缺陷清单
 
 > 只登记**真实发现并修掉**的缺陷；每条都给了能复跑的用例或实测记录。当前 P0/P1 全部清零。
-> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug)**（14 条，与下表 BUG-01~14 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
+> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug) + [#37](https://github.com/July75-bit/Innovation/issues/37)**（共 15 条，与下表 BUG-01~15 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| BUG-01 | **并发卖出超卖且重复入账**：两条连接各卖 2 股、实际只持 3 股，结果卖出 4 股、余额 5000.00 → 5504.00，还剩 1 股（凭空多卖一股） | P0 | 交易 `api/trades.py` | B | 已修 | 根因是"先 SELECT 判断再 UPDATE"。改为条件更新：减仓 `WHERE quantity > n`、卖光 `DELETE ... AND quantity = n`。`test_trades_concurrency.py` 3 条；修复前后实测对比见 `database_design.md` §3.1  ｜ Issue [#22](https://github.com/July75-bit/Innovation/issues/22) |
-| BUG-02 | 买入校验顺序违反契约 §4.7：先查持仓上限、后查余额，用户没钱却提示"超过持仓上限 50 股" | P1 | 交易 | B | 已修 | 顺序改为 选手→数量→可交易→余额→上限；`test_buy_checks_balance_before_position_limit`  ｜ Issue [#23](https://github.com/July75-bit/Innovation/issues/23) |
-| BUG-03 | 清仓把 `positions.quantity` 更新成 0，触发 `ck_positions_quantity_range`（1–50）CHECK，卖光最后一笔报 500 `INTERNAL_ERROR` | P1 | 交易 | B | 已修 | 卖光分支改走 `DELETE`；`test_sell_normal` 的"卖光后持仓行删除"覆盖  ｜ Issue [#24](https://github.com/July75-bit/Innovation/issues/24) |
-| BUG-04 | 价格 `reason` 的"得分"可能被拼两遍（C 拼一次 + B 再拼一次） | P2 | 价格落库 | B | 已修 | `with_score_in_reason()` 幂等化（以"得分"为标记，命中即透传）；`test_score_is_not_duplicated_when_c_already_added_it` / `test_plan_from_json_passes_through_c_reason`  ｜ Issue [#25](https://github.com/July75-bit/Innovation/issues/25) |
-| BUG-05 | 临时定价规则污染价格历史：`reason` 被写成"（定价引擎由 C 接管后替换）"，会直接展示给前端和 AI | P1 | 价格落库 | B | 已修 | C 引擎落地后改走真实链路，临时规则整段删除；`test_update_prices_script.py` 9 条  ｜ Issue [#26](https://github.com/July75-bit/Innovation/issues/26) |
-| BUG-06 | 暂停交易（`suspended`）的选手仍被改价，与"比赛中暂停交易"规则冲突 | P1 | 价格落库 | B | 已修 | `plan_from_engine` 跳过非 trading 并在输出中说明；`test_suspended_players_are_skipped`  ｜ Issue [#27](https://github.com/July75-bit/Innovation/issues/27) |
-| BUG-07 | `price_history.reason` 超过 `VARCHAR(200)` 会写库失败（长 reason 场景） | P2 | 价格落库 | B | 已修 | 统一截断到 200 并加省略号；`test_reason_is_truncated_to_column_limit`  ｜ Issue [#28](https://github.com/July75-bit/Innovation/issues/28) |
-| BUG-08 | **部署阻断**：SQLAlchemy 2.1 起 `postgresql://` 默认驱动换成 psycopg 3，而项目只装 `psycopg2-binary`；Render 按 `render.yaml` 填连接串会 `ModuleNotFoundError: No module named 'psycopg'`，服务直接起不来 | P0（部署） | 配置 `core/config.py` | B | 已修 | 把裸 `postgres://` / `postgresql://` 归一化为 `postgresql+psycopg2://`（显式驱动不改写）；`test_config_db_url.py` 6 条，含"建引擎必须解析到 psycopg2"  ｜ Issue [#29](https://github.com/July75-bit/Innovation/issues/29) |
-| BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中  ｜ Issue [#30](https://github.com/July75-bit/Innovation/issues/30) |
-| BUG-10 | Windows 中文控制台（GBK）下 `test_bootstrap_demo_data.py` 让 pytest 抛 `UnicodeDecodeError 0xd2`，本机 1 failed + 1 error；CI 的 ubuntu 不暴露 | P1 | 测试代码 / `seed_db.py` | B | 已修 | 根因：`seed_db.py` 没把 stdout 切成 UTF-8，子进程按 GBK 输出、pytest 的 fd 捕获按 UTF-8 解码。修法：① `seed_db.py` 统一 `reconfigure(encoding="utf-8")`；② 测试给子进程显式 `PYTHONIOENCODING=utf-8` + `PYTHONUTF8=1`。已用旧版脚本复现出 `0xd2` 并验证修复后 `PYTHONIOENCODING=gbk` 下也全过  ｜ Issue [#31](https://github.com/July75-bit/Innovation/issues/31) |
-| BUG-11 | **线上 `/market` 直接访问/刷新白屏**：路由表里市场页在 `/`，`/market` 没有任何路由匹配，又没有兜底路由；静态站 rewrite 仍返回 `index.html`，于是"没有 404、也没有页面"，只剩头部——比 404 更像站点挂了 | P2 | 前端路由 `router/index.ts` | B（A 的文件，经 A 授权代改） | 已修 | 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` → `/` 兜底；新增 `src/router/__tests__/router.spec.ts` 4 条用例（`/market` 与未知路径都要落到市场页、正常子路由不受影响）。`vitest` 12 passed、`npm run build` exit 0、oxlint 0/0、eslint exit 0。**需重新部署前端后线上复验**  ｜ Issue [#32](https://github.com/July75-bit/Innovation/issues/32) |
-| BUG-12 | **线上前端被跨域拦掉**：后端的 CORS 已改成"按 `CORS_ORIGINS` 白名单"，但 Render 上没填这个变量 → 按 `config.py` 默认值只放行 `localhost:5173`，浏览器请求 `*-backend.onrender.com` 拿不到 `access-control-allow-origin`，页面显示"连接失败" | P0（线上可用性） | 配置 `core/config.py` + `app/main.py` + `render.yaml` | B | 已修（**线上已复验**） | 三处一起补：① `render.yaml` 把 `CORS_ORIGINS` 写成前端公网地址（部署配置进仓库）；② `resolve_cors_origins()` 增加"线上却还是本地默认值 → 退化 `*` 并 WARNING"；③ `cors_origin_list` 去掉尾部斜杠。`test_cors_config.py` 8 条。**线上实测**：`Origin: 前端域名` → 回显该域名；`Origin: evil.example.com` → 无该头（白名单生效，不是 `*`），见 `evidence/online/backend-debug-db.md` §2  ｜ Issue [#33](https://github.com/July75-bit/Innovation/issues/33) |
-| BUG-13 | **测试里的"日期炸弹"**：`test_prices_recalc.py` 把 `PLAYED_AT` 写死成 `2026-11-07`，而 `conftest` 用 `now-2h` / `now-1h` 造种子历史——当机器时间正好是 2026-11-07 时，那两条历史落进本轮去重窗口 `[played_at, played_at+1d)`，接口把两名选手都判成"该轮已计价"，2 条用例整片红；换一天跑又全绿 | P2 | 测试代码 `test_prices_recalc.py` | C（B 代改） | 已修 | 改为"**未来 30 天**"的相对日期（`datetime.now(UTC).date() + 30d`），并同步断言里的日期。教训：**测试里不要写死"今天附近的日期"**，它会和时间耦合  ｜ Issue [#34](https://github.com/July75-bit/Innovation/issues/34) |
-| BUG-14 | **答辩稿生成脚本写死绝对路径**：`build_deck.py` 里 `ROOT = Path(r"D:\projects\innovation\Innovation")`，换台机器/换个 clone 目录就 `FileNotFoundError`，PDF 无法重新生成；且稿内数字停留在"120 条用例 / 10 条缺陷" | P2 | 脚本 `docs/presentation/build_deck.py` + 稿件 | D（B 代改） | 已修 | `ROOT` 改为按 `__file__` 反推仓库根；稿内数字同步为 **137 条 / 13 条缺陷 / 8 个路由模块 / Vue 3.5·TS 6.0·Vite 8.2**，并用 Edge headless 重新导出 `defense.pdf`  ｜ Issue [#35](https://github.com/July75-bit/Innovation/issues/35) |
+| BUG-01 | **并发卖出超卖且重复入账**：两条连接各卖 2 股、实际只持 3 股，结果卖出 4 股、余额 5000.00 → 5504.00，还剩 1 股（凭空多卖一股） | P0 | 交易 `api/trades.py` | B | 已修 | 根因是"先 SELECT 判断再 UPDATE"。改为条件更新：减仓 `WHERE quantity > n`、卖光 `DELETE ... AND quantity = n`。`test_trades_concurrency.py` 3 条；修复前后实测对比见 `database_design.md` §3.1 |
+| BUG-02 | 买入校验顺序违反契约 §4.7：先查持仓上限、后查余额，用户没钱却提示"超过持仓上限 50 股" | P1 | 交易 | B | 已修 | 顺序改为 选手→数量→可交易→余额→上限；`test_buy_checks_balance_before_position_limit` |
+| BUG-03 | 清仓把 `positions.quantity` 更新成 0，触发 `ck_positions_quantity_range`（1–50）CHECK，卖光最后一笔报 500 `INTERNAL_ERROR` | P1 | 交易 | B | 已修 | 卖光分支改走 `DELETE`；`test_sell_normal` 的"卖光后持仓行删除"覆盖 |
+| BUG-04 | 价格 `reason` 的"得分"可能被拼两遍（C 拼一次 + B 再拼一次） | P2 | 价格落库 | B | 已修 | `with_score_in_reason()` 幂等化（以"得分"为标记，命中即透传）；`test_score_is_not_duplicated_when_c_already_added_it` / `test_plan_from_json_passes_through_c_reason` |
+| BUG-05 | 临时定价规则污染价格历史：`reason` 被写成"（定价引擎由 C 接管后替换）"，会直接展示给前端和 AI | P1 | 价格落库 | B | 已修 | C 引擎落地后改走真实链路，临时规则整段删除；`test_update_prices_script.py` 9 条 |
+| BUG-06 | 暂停交易（`suspended`）的选手仍被改价，与"比赛中暂停交易"规则冲突 | P1 | 价格落库 | B | 已修 | `plan_from_engine` 跳过非 trading 并在输出中说明；`test_suspended_players_are_skipped` |
+| BUG-07 | `price_history.reason` 超过 `VARCHAR(200)` 会写库失败（长 reason 场景） | P2 | 价格落库 | B | 已修 | 统一截断到 200 并加省略号；`test_reason_is_truncated_to_column_limit` |
+| BUG-08 | **部署阻断**：SQLAlchemy 2.1 起 `postgresql://` 默认驱动换成 psycopg 3，而项目只装 `psycopg2-binary`；Render 按 `render.yaml` 填连接串会 `ModuleNotFoundError: No module named 'psycopg'`，服务直接起不来 | P0（部署） | 配置 `core/config.py` | B | 已修 | 把裸 `postgres://` / `postgresql://` 归一化为 `postgresql+psycopg2://`（显式驱动不改写）；`test_config_db_url.py` 6 条，含"建引擎必须解析到 psycopg2" |
+| BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中 |
+| BUG-10 | Windows 中文控制台（GBK）下 `test_bootstrap_demo_data.py` 让 pytest 抛 `UnicodeDecodeError 0xd2`，本机 1 failed + 1 error；CI 的 ubuntu 不暴露 | P1 | 测试代码 / `seed_db.py` | B | 已修 | 根因：`seed_db.py` 没把 stdout 切成 UTF-8，子进程按 GBK 输出、pytest 的 fd 捕获按 UTF-8 解码。修法：① `seed_db.py` 统一 `reconfigure(encoding="utf-8")`；② 测试给子进程显式 `PYTHONIOENCODING=utf-8` + `PYTHONUTF8=1`。已用旧版脚本复现出 `0xd2` 并验证修复后 `PYTHONIOENCODING=gbk` 下也全过 |
+| BUG-11 | **线上 `/market` 直接访问/刷新白屏**：路由表里市场页在 `/`，`/market` 没有任何路由匹配，又没有兜底路由；静态站 rewrite 仍返回 `index.html`，于是"没有 404、也没有页面"，只剩头部——比 404 更像站点挂了 | P2 | 前端路由 `router/index.ts` | B（A 的文件，经 A 授权代改） | 已修 | 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` → `/` 兜底；新增 `src/router/__tests__/router.spec.ts` 4 条用例（`/market` 与未知路径都要落到市场页、正常子路由不受影响）。`vitest` 12 passed、`npm run build` exit 0、oxlint 0/0、eslint exit 0。**需重新部署前端后线上复验** |
+| BUG-12 | **线上前端被跨域拦掉**：后端的 CORS 已改成"按 `CORS_ORIGINS` 白名单"，但 Render 上没填这个变量 → 按 `config.py` 默认值只放行 `localhost:5173`，浏览器请求 `*-backend.onrender.com` 拿不到 `access-control-allow-origin`，页面显示"连接失败" | P0（线上可用性） | 配置 `core/config.py` + `app/main.py` + `render.yaml` | B | 已修（**线上已复验**） | 三处一起补：① `render.yaml` 把 `CORS_ORIGINS` 写成前端公网地址（部署配置进仓库）；② `resolve_cors_origins()` 增加"线上却还是本地默认值 → 退化 `*` 并 WARNING"；③ `cors_origin_list` 去掉尾部斜杠。`test_cors_config.py` 8 条。**线上实测**：`Origin: 前端域名` → 回显该域名；`Origin: evil.example.com` → 无该头（白名单生效，不是 `*`），见 `evidence/online/backend-debug-db.md` §2 |
+| BUG-13 | **测试里的"日期炸弹"**：`test_prices_recalc.py` 把 `PLAYED_AT` 写死成 `2026-11-07`，而 `conftest` 用 `now-2h` / `now-1h` 造种子历史——当机器时间正好是 2026-11-07 时，那两条历史落进本轮去重窗口 `[played_at, played_at+1d)`，接口把两名选手都判成"该轮已计价"，2 条用例整片红；换一天跑又全绿 | P2 | 测试代码 `test_prices_recalc.py` | C（B 代改） | 已修 | 改为"**未来 30 天**"的相对日期（`datetime.now(UTC).date() + 30d`），并同步断言里的日期。教训：**测试里不要写死"今天附近的日期"**，它会和时间耦合 |
+| BUG-14 | **答辩稿生成脚本写死绝对路径**：`build_deck.py` 里 `ROOT = Path(r"D:\projects\innovation\Innovation")`，换台机器/换个 clone 目录就 `FileNotFoundError`，PDF 无法重新生成；且稿内数字停留在"120 条用例 / 10 条缺陷" | P2 | 脚本 `docs/presentation/build_deck.py` + 稿件 | D（B 代改） | 已修 | `ROOT` 改为按 `__file__` 反推仓库根；稿内数字同步为 **137 条 / 13 条缺陷 / 8 个路由模块 / Vue 3.5·TS 6.0·Vite 8.2**，并用 Edge headless 重新导出 `defense.pdf` |
+| BUG-15 | **重灌/重置会删掉注册账号（数据丢失）**：用户实测"注册的账户第二天就消失，登录提示账号不存在"。根因：`scripts/seed_db.py --reset` 与 `POST /api/debug/reseed` 都用 `Base.metadata.drop_all()`，把 `users` 表连同账号、口令散列、令牌一起删了——只要有人跑一次"重置演示数据"，所有私人账号归零 | P1（数据丢失） | 脚本 `scripts/seed_db.py` + 接口 `app/api/debug.py` | B | 已修 | 两处都改成**只清业务数据**（positions/trades/price_history/players，先子后父），`users` 原样保留（用户名/`password_hash`/`salt`/令牌行不动）；余额统一复位到 `initial_balance`（行情回种子价、钱也回起点才自洽）。新增回归 `test_reseed_keeps_registered_account`：注册→买 3 股→重灌→**原密码仍能登录**、余额 5000、流水清空。端到端另验：`seed_db --reset` 后手工插入的账号仍在、余额被复位 |
 
 ## 10. 未覆盖与已知限制
 
@@ -351,11 +352,11 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **216** 条，CI 与本机全绿；浏览器证据见 §2.5）
-- P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验）
-- **结论：可交付** —— M3/M4/M5 均已达成；**219** 条自动化（单元 199 / 集成 20；auth 22+7、重灌端点 3 随合并入账，2026-11-07）+ 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖，auth 模块新增所致） +
+- P0 缺陷：**0** 个（自动化层 **220** 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
+- **结论：可交付** —— M3/M4/M5 均已达成；**220** 条自动化（单元 200 / 集成 20；auth 22+7、重灌端点 4 随合并入账，2026-11-07）+ 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖，auth 模块新增所致） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
-  缺陷清单 **14 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS）+
+  缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
 - 答辩当天仍需执行（非交付物缺口）：**彩排 ≥2 次并计时**（8+2+5 ≤15 分钟）、演示前 15 分钟跑 `prewarm.py` 预热、
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。

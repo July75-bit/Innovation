@@ -48,16 +48,26 @@ def load_seed() -> dict:
 
 
 def seed(reset: bool) -> None:
-    from sqlalchemy import func, select
+    from sqlalchemy import delete, func, select
 
     from app.core.config import settings
-    from app.core.database import Base, SessionLocal, engine, init_db
+    from app.core.database import SessionLocal, init_db
     from app.core.time import utcnow
-    from app.models import Player, PriceHistory, User
+    from app.models import Player, Position, PriceHistory, Trade, User
 
     if reset:
-        Base.metadata.drop_all(bind=engine)
-        print("[seed] 已删除全部表（--reset）")
+        # 2026-11-07 修（BUG-15）：原先 `drop_all()` 会把 `users` 表一起删掉，
+        # 结果是"注册过的私人账号一重置就消失"。账号是用户资产，重置只该复位行情：
+        # 删 持仓/流水/价格历史/选手（先子后父），**保留 users**（凭据与令牌不动），
+        # 余额在下面统一复位到 initial_balance。
+        init_db()  # 先建表：全新库里 DELETE 才不会报 "no such table"
+        with SessionLocal() as reset_db:
+            for model in (Position, Trade, PriceHistory, Player):
+                reset_db.execute(delete(model))
+            for user in reset_db.scalars(select(User)).all():
+                user.balance = Decimal(str(settings.initial_balance))
+            reset_db.commit()
+        print("[seed] 已清空业务数据（--reset；**保留注册账号**，余额已复位）")
 
     init_db()
     print("[seed] 表结构已就绪")
