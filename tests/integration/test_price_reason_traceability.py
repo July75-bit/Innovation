@@ -84,7 +84,8 @@ def test_plan_from_engine_reason_carries_signal_and_score(session_factory) -> No
     with session_factory() as db:
         player = db.get(Player, PLAYER_ID)
 
-    planned, skipped = plan_from_engine([player], seed=42)
+    # 第 1 轮是 Vitality vs The MongolZ（队伍级暂停），这里用第 2 轮避开停牌
+    planned, skipped = plan_from_engine([player], seed=42, rounds=2)
 
     assert not skipped
     assert len(planned) == 1

@@ -42,9 +42,13 @@ def _players(session) -> list[Player]:
 
 
 def test_suspended_players_are_skipped(session_factory) -> None:
-    """比赛中的选手不定价（与暂停交易规则一致）。"""
+    """暂停交易的选手不定价（手动 suspended；第 2 轮不是 Vitality 的比赛）。
+
+    第 2 轮是 Spirit vs Astralis：Vitality / FaZe 的选手可交易，
+    Spirit 的 sh1ro 因为手动 `suspended` 被跳过。
+    """
     with session_factory() as db:
-        planned, skipped = update_prices.plan_from_engine(_players(db), seed=42)
+        planned, skipped = update_prices.plan_from_engine(_players(db), seed=42, rounds=2)
 
     assert [p.player_id for p in skipped] == [SEED_SH1RO]
     assert SEED_SH1RO not in [p.player_id for p in planned]
@@ -71,25 +75,26 @@ def test_same_seed_is_reproducible(session_factory) -> None:
     with session_factory() as db:
         players = _players(db)
 
-    first, _ = update_prices.plan_from_engine(players, seed=42)
-    second, _ = update_prices.plan_from_engine(players, seed=42)
+    first, _ = update_prices.plan_from_engine(players, seed=42, rounds=2)
+    second, _ = update_prices.plan_from_engine(players, seed=42, rounds=2)
 
     signature = lambda items: [  # noqa: E731
         (i.player_id, str(i.new_price), i.change_pct, i.reason) for i in items
     ]
     assert signature(first) == signature(second)
 
-    different, _ = update_prices.plan_from_engine(players, seed=7)
+    different, _ = update_prices.plan_from_engine(players, seed=7, rounds=2)
     assert signature(different) != signature(first), "换 seed 应该算出不同结果"
 
 
 def test_engine_result_writes_history_and_keeps_money(session_factory, client) -> None:
-    """落库：`/prices` 多一个点，余额与持仓股数不受影响。"""
+    """落库：`/prices` 多一个点，余额与持仓股数不受影响（用第 2 轮避开队伍暂停）。"""
     before = client.get(f"/api/players/{SEED_ZYWOO}/prices").json()["points"]
     assert len(before) == 2
 
     with session_factory() as db:
-        planned, _ = update_prices.plan_from_engine(_players(db), seed=42)
+        planned, _ = update_prices.plan_from_engine(_players(db), seed=42, rounds=2)
+        zywoo = next(item for item in planned if item.player_id == SEED_ZYWOO)
         apply_updates(db, planned)
 
     after = client.get(f"/api/players/{SEED_ZYWOO}/prices").json()["points"]
@@ -97,10 +102,10 @@ def test_engine_result_writes_history_and_keeps_money(session_factory, client) -
     assert after[-1]["reason"].startswith("本场表现") or "S=" in after[-1]["reason"]
     # 只断言"带得分"这一语义，措辞留给 C 定（C 接管后这里仍然成立）
     assert "得分" in after[-1]["reason"]
-    # 契约要的是"时间升序"，价格本身当然可以涨也可以跌（这次 ZywOo 是 -15%）
+    # 契约要的是"时间升序"，价格本身当然可以涨也可以跌
     timestamps = [p["ts"] for p in after]
     assert timestamps == sorted(timestamps)
-    assert after[-1]["price"] == pytest.approx(107.10)
+    assert after[-1]["price"] == pytest.approx(float(zywoo.new_price))
 
     account = client.get("/api/account").json()
     assert account["balance"] == pytest.approx(5000.00), "价格更新不许动余额"
