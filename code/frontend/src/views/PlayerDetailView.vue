@@ -78,6 +78,8 @@ const snapshot = ref<AgentDecisionResponse['snapshot'] | null>(null)
 const traceId = ref(0)
 const decisionSent = ref(false)
 const decisionNotice = ref('')
+/** 主卡理由是否已展开（默认显示"完整句子组成的简介"，展开后显示全文） */
+const reasonExpanded = ref(false)
 
 /* ---- 第二梯度：叙事归因 / 多角色纪要 / 工具取数（都按需加载，拿不到就隐藏） ---- */
 const narrative = ref<string | null>(null)
@@ -182,6 +184,7 @@ async function loadCore(silent = false) {
   plan.value = null
   decisionSent.value = false
   decisionNotice.value = ''
+  reasonExpanded.value = false // 换选手时收起，避免上一个选手的展开状态带过来
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a
@@ -265,14 +268,34 @@ function cleanReason(text: string): string {
 }
 
 /**
- * 主卡只显示"一句简介"（2026-11-14 用户要求：大字区域要短，细节放折叠区）。
- * 规则：去掉套话 → 取第一个句子（到 。！？； 为止）→ 仍超过 44 字再截断补省略号。
+ * 主卡"简介"（2026-11-14 用户要求：**不能说话说一半**）。
+ *
+ * 规则：只在**句末标点**处断开，把完整句子拼到不超过 ~46 字；
+ * 如果第一句本身就比这长，就原样返回那一整句（宁可多一行，也不切半句）。
+ * 剩下的内容由「展开全文」按钮与下方「为什么这么建议」承载。
  */
-function shortReason(text: string): string {
+function summaryReason(text: string): string {
   const clean = cleanReason(text)
-  const firstSentence = clean.split(/(?<=[。！？；])/)[0]?.trim() || clean
-  const short = firstSentence.length > 44 ? `${firstSentence.slice(0, 44).trim()}…` : firstSentence
-  return short
+  if (!clean) return ''
+  // 按句末标点切句，保留标点（"当前价 89.13 已连续三日下跌（…），较买" 这种半句不会出现）
+  const sentences = clean.match(/[^。！？；]+[。！？；]?/g) || [clean]
+  let out = ''
+  for (const sentence of sentences) {
+    const next = `${out}${sentence}`
+    if (!out) {
+      out = next
+      continue
+    }
+    if (next.length > 46) break
+    out = next
+  }
+  return out.trim()
+}
+
+/** 是否还有没显示的内容（决定要不要出现「展开全文」） */
+function hasMoreReason(text: string): boolean {
+  const clean = cleanReason(text)
+  return clean.length > summaryReason(text).length
 }
 
 /** 防御：模型/缓存里万一把 JSON 漏到页面上，这里取其中的 reason/summary 展示 */
@@ -349,7 +372,18 @@ watch(playerId, () => loadCore())
                   <span :class="['advice-pill', analysis.action.toLowerCase()]">{{
                     ACTION_LABEL[analysis.action] ?? analysis.action
                   }}</span>
-                  <p class="ai-line">{{ shortReason(analysis.reason) }}</p>
+                  <!-- 主卡：默认完整句子组成的简介；放不下的用「展开全文」就地展开（不出现半句） -->
+                  <p :class="['ai-line', { 'is-expanded': reasonExpanded }]">
+                    {{ reasonExpanded ? cleanReason(analysis.reason) : summaryReason(analysis.reason) }}
+                  </p>
+                  <button
+                    v-if="hasMoreReason(analysis.reason)"
+                    type="button"
+                    class="ai-expand"
+                    @click="reasonExpanded = !reasonExpanded"
+                  >
+                    {{ reasonExpanded ? '收起' : '展开全文' }}
+                  </button>
                 </template>
                 <template v-else-if="analysisLoading">
                   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -945,12 +979,33 @@ h3 {
   font-size: var(--fs-body);
   line-height: 1.65;
   color: var(--text);
-  /* 主卡只给"一句简介"：最多 2 行，完整理由在下方「为什么这么建议」里 */
+  /* 简介默认最多 2 行；点「展开全文」后取消限制（.is-expanded） */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+.ai-line.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+}
+/* 「展开全文 / 收起」：小号文字按钮，不抢主结论的视觉 */
+.ai-expand {
+  margin: 2px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: var(--fs-cap);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ai-expand:hover {
+  opacity: 0.8;
 }
 .ai-line.muted {
   color: var(--muted);
