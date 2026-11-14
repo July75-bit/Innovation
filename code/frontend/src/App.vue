@@ -33,9 +33,16 @@ import { useTheme } from './composables/useTheme'
 
 const { account } = useAccount()
 
-/** 主题：浅色/深色双模式（令牌在 tokens.css；选择记在 localStorage） */
-const { theme, toggleTheme } = useTheme()
-const themeActionLabel = computed(() => (theme.value === 'light' ? '切到深色模式' : '切到浅色模式'))
+/** 主题：自动（跟随系统）/ 浅色 / 深色 三档循环（令牌在 tokens.css；偏好记在 localStorage） */
+const { preference, theme, cycleTheme } = useTheme()
+const THEME_LABEL: Record<string, string> = { auto: '自动', light: '浅色', dark: '深色' }
+const themePreferenceLabel = computed(() => THEME_LABEL[preference.value] ?? '自动')
+const themeActionLabel = computed(() => {
+  const current = themePreferenceLabel.value
+  const next =
+    preference.value === 'auto' ? '浅色' : preference.value === 'light' ? '深色' : '自动'
+  return `主题：${current}${preference.value === 'auto' ? '（跟随系统）' : ''}，点击切换到${next}`
+})
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -221,22 +228,27 @@ onMounted(() => {
           <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
         </div>
 
-        <!-- 主题切换：浅色/深色双模式（材质层之外的普通控件，44px 点击区） -->
+        <!-- 主题：自动（跟随系统）→ 浅色 → 深色 三档循环，44px 点击区 -->
         <button
           type="button"
           class="theme-toggle"
           :aria-label="themeActionLabel"
           :title="themeActionLabel"
-          @click="toggleTheme"
+          @click="cycleTheme"
         >
-          <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+          <!-- 自动：半黑半白圆（跟随系统） -->
+          <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="5.5" />
+            <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
           </svg>
-          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+          <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="8" cy="8" r="3" />
             <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
           </svg>
-          <span>{{ theme === 'light' ? '深色' : '浅色' }}</span>
+          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+          </svg>
+          <span>{{ themePreferenceLabel }}</span>
         </button>
 
         <p class="side-note">
@@ -272,14 +284,18 @@ onMounted(() => {
             type="button"
             :aria-label="themeActionLabel"
             :title="themeActionLabel"
-            @click="toggleTheme"
+            @click="cycleTheme"
           >
-            <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+            <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="5.5" />
+              <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
             </svg>
-            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+            <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
               <circle cx="8" cy="8" r="3" />
               <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+            </svg>
+            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
             </svg>
           </button>
           <button
