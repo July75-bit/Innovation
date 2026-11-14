@@ -13,3 +13,13 @@ class AccountResponse(BaseModel):
     position_value: float
     # balance + position_value
     total_asset: float
+
+
+class AccountRebuildResponse(BaseModel):
+    """余额重建结果（POST /api/account/rebuild）：只影响当前账户。"""
+
+    user_id: int
+    balance: float
+    cleared_positions: int
+    cleared_trades: int
+    note: str
