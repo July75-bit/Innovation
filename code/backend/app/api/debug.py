@@ -1,24 +1,30 @@
-"""只读运维自检接口（B，第 5 天）。
+"""运维自检与一次性重灌（B，第 5/6 天）。
 
 **为什么存在**：验收清单里有一条"Postgres 控制台能看到 `players` / `trades` 等表"。
-Render 免费 Postgres 没有网页数据浏览器，本地又常常连不上 5432（网络被掐），
-所以让**跑在 Render 内网里的后端自己**把"用什么库、有哪些表、各有多少行"报出来——
-浏览器打开一个 URL 就能截图，比跑脚本还省事（脚本见 `scripts/inspect_db.py`，两者互补）。
+Render 免费 Postgres 没有网页数据浏览器，本地/校园网络又常常连不上 5432（TLS 被掐，
+2026-11-07 实测四种环境全灭），所以让**跑在 Render 内网里的后端自己**做两件事：
 
-**安全边界（刻意收窄）**：
-- 只读，且**只回元信息**：方言名、表名、行数、几个业务计数；
-- 不回连接串、不回密码、不回任何选手/账户的具体数据，也不接受任何用户输入（没有 SQL 注入面）；
-- 可用 `DEBUG_ENDPOINTS=0` 一键关掉（关掉后返回 404，见 `config.debug_endpoints`）；
-- 用 SQLAlchemy 的 `inspect()` 而不是 `pg_catalog` 裸 SQL，这样本地 SQLite、线上 Postgres
-  同一套代码都能用，测试也不用伪造驱动。
+1. `GET /api/debug/db`：把"用什么库、有哪些表、各有多少行"报出来——浏览器打开就能截图；
+2. `POST /api/debug/reseed`（第 6 天补）：一次性**清空重建** 16 人演示数据 + N 轮模拟价
+   ——公网连不上库时，重灌走后端内网一次 POST 就完成，演示前还能一键复位。
 
-**答辩时的说法**：这是"上线期验收用的只读探针"，不是业务接口；功能验收完成后
-把 `DEBUG_ENDPOINTS` 设为 `0`（或删掉本文件与路由注册）即可，前端从不调用它。
+**安全边界（刻意收窄，两者同口径）**：
+- 都属 debug 运维面，`DEBUG_ENDPOINTS=0` 时 404（`config.debug_endpoints`）；
+- `/db` 只读、只回元信息，不回连接串、不回密码；
+- `/reseed` 必须携带 token（默认 `playerstock-demo-reseed-2026`，`RESEED_TOKEN` 可覆盖），
+  错误码 `TOKEN_MISMATCH`；且**破坏性**（drop 全表重建，交易/持仓/流水清零），文档已告知；
+- 非业务接口，前端从不调用；功能验收后一起关闭。
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+import threading
+from dataclasses import replace
+from datetime import timedelta
+from decimal import Decimal
+
+from core_engine import generate_match, standardize_score, update_price
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, inspect, select
 from sqlalchemy.orm import Session
 
@@ -28,6 +34,9 @@ from app.core.errors import ApiError
 from app.models import Player, PriceHistory, Position, Trade, User
 
 router = APIRouter(prefix="/debug", tags=["debug"])
+
+# 同一时刻只允许一个重灌流程（避免并发把种子写两份）
+_RESEED_LOCK = threading.Lock()
 
 
 @router.get("/db", summary="只读数据库自检（方言 / 表清单 / 行数）")
@@ -64,4 +73,210 @@ def debug_db(db: Session = Depends(get_db)) -> dict:
             "demo 余额": str(db.scalar(select(User.balance).where(User.nickname == "demo"))),
         },
         "提示": "只读元信息，不含连接串与个人数据；可用 DEBUG_ENDPOINTS=0 关闭本接口",
+    }
+
+
+@router.post(
+    "/reseed",
+    summary="一次性重灌 16 人演示数据（运维用：清空重建 + N 轮模拟价，需 token）",
+)
+def debug_reseed(
+    db: Session = Depends(get_db),
+    token: str = Query(description="口令，等于 settings.reseed_token"),
+    rounds: int = Query(default=9, ge=0, le=30, description="模拟轮数；0 = 只写入种子初始价"),
+    seed: int = Query(default=42, description="core_engine 的随机种子（同值结果可复现）"),
+) -> dict:
+    """清空整库并按 `app/core/demo_roster.py`（`data/seed_players.json` 的部署侧镜像）
+    重建 16 人演示数据 + N 轮模拟价格。
+
+    为什么做成端点而不是让 B 在本地跑脚本：本服务的 Postgres 走 **Render 内网**，
+    而公网直连 5432 常被校园/运营商网络掐断 TLS；让跑在 Render 内网的进程自己灌数，
+    一次 POST 就完成，演示前还能一键复位。
+
+    管线（与 `scripts/bootstrap_demo_data.py` 三步同源，进程内实现）：
+    1. drop 游戏五表 → 重建 → demo 账户 + 16 名选手 + 每人初始价历史（1–2 行）；
+    2. 逐轮 `core_engine.generate_match → standardize_score → update_price`
+       → `app.core.price_update.plan_for_player + apply_updates`（cascades 从 current_price）；
+    3. 自检：trading 选手每人 ≥ 10 点（含负轮回填，与脚本同一约定）。
+    """
+    if not settings.debug_endpoints:
+        raise ApiError(
+            "调试接口已关闭（DEBUG_ENDPOINTS=0）",
+            status_code=404,
+            code="ENDPOINT_DISABLED",
+        )
+    if token != settings.reseed_token:
+        raise ApiError("重灌口令不匹配", status_code=403, code="TOKEN_MISMATCH")
+    if _RESEED_LOCK.locked():
+        raise ApiError("已有一次重灌在进行中", status_code=409, code="RESEED_BUSY")
+
+    with _RESEED_LOCK:
+        from app.core import demo_roster
+
+        _reseed_tables(db)
+        seed_counts = _reseed_demo_rows(db)
+        applied_rounds = _simulate_rounds(db, rounds=rounds, seed=seed)
+        report = _final_selfcheck(db, rounds=rounds)
+
+    return {
+        "状态": "重灌完成" if not report["点数自检"] else "重灌完成（有点数不足项）",
+        "schema_version": demo_roster.DEMO_SCHEMA_VERSION,
+        "rounds": rounds,
+        "seed": seed,
+        "清理并重建": seed_counts,
+        "模拟轮次": applied_rounds,
+        "点数自检": "OK" if not report["点数自检"] else "；".join(report["点数自检"]),
+        "业务核对": {
+            "选手数": report["选手数"],
+            "战队数": report["战队数"],
+            "demo 余额": report["demo 余额"],
+        },
+        "下一步": "GET /api/players 应为 16 名；交易/持仓/流水已随重置清零",
+        "提示": "破坏性操作已完成；可用 DEBUG_ENDPOINTS=0 关闭本接口",
+    }
+
+
+def _reseed_tables(db: Session) -> None:
+    """删掉游戏五表重建（**不含 alembic**，6 天版由 init_db 同款 create_all 重建）。"""
+    bind = db.get_bind()
+    Base.metadata.drop_all(bind=bind)
+    Base.metadata.create_all(bind=bind)
+
+
+def _reseed_demo_rows(db: Session) -> dict[str, int]:
+    """demo 账户 + 16 名选手 + 每人初始价历史（口径与 data/seed_players.json 一致）。"""
+    from app.core.database import init_db
+    from app.core.demo_roster import DEMO_ROSTER
+    from app.core.time import utcnow
+
+    # init_db 里还负责 models 注册与历史补列，保留同一入口只是让建表走当前 bind
+    init_db()
+
+    balance = Decimal(str(settings.initial_balance))
+    db.add(User(nickname="demo", balance=balance, initial_balance=balance))
+
+    now = utcnow()
+    for row in DEMO_ROSTER:
+        player_id = int(row["player_id"])
+        initial_price = Decimal(str(row["initial_price"]))
+        current_price = Decimal(str(row["current_price"]))
+        db.add(
+            Player(
+                player_id=player_id,
+                name=str(row["name"]),
+                display_name=str(row.get("display_name") or row["name"]),
+                team=str(row["team"]),
+                role=str(row["role"]),
+                current_price=current_price,
+                prev_price=initial_price,
+                rating=int(row["rating"]),
+                status=str(row["status"]),
+            )
+        )
+        db.flush()
+        db.add(
+            PriceHistory(player_id=player_id, price=initial_price, reason="初始价格", ts=now)
+        )
+        if current_price != initial_price:
+            db.add(
+                PriceHistory(
+                    player_id=player_id,
+                    price=current_price,
+                    reason="行情初始化（种子数据，无对应比赛）",
+                    ts=now,
+                )
+            )
+
+    db.commit()
+    return {
+        "users": int(db.scalar(select(func.count()).select_from(User)) or 0),
+        "players": int(db.scalar(select(func.count()).select_from(Player)) or 0),
+        "price_history 种子行": int(
+            db.scalar(select(func.count()).select_from(PriceHistory)) or 0
+        ),
+    }
+
+
+def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
+    """逐轮模拟价：本轮开价 = 上轮新价（apply_updates 会 cascade current_price）。"""
+    from app.core.price_update import apply_updates, plan_for_player
+    from app.core.time import utcnow
+
+    players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
+
+    # warmup 与 scripts/update_prices.warmup_history 同约定：负数轮回填最近 3 场（只在内存）
+    warmup_by_id: dict[int, list[float]] = {
+        player.player_id: [
+            generate_match(
+                player.player_id,
+                seed=seed,
+                round_no=-warm,
+                base_rating=float(player.rating),
+            ).score
+            for warm in (3, 2, 1)
+        ]
+        for player in players
+    }
+    played_by_id: dict[int, list[float]] = {
+        player.player_id: list(warmup_by_id[player.player_id]) for player in players
+    }
+
+    applied_rounds: list[dict] = []
+    for round_no in range(1, rounds + 1):
+        round_ts = utcnow() + timedelta(days=round_no)
+
+        planned_list = []
+        for player in players:
+            if player.status != "trading":
+                continue
+            history = played_by_id[player.player_id]
+            match = generate_match(
+                player.player_id,
+                seed=seed,
+                round_no=round_no,
+                base_rating=float(player.rating),
+            )
+            signal = standardize_score(match.score, history, window=5)
+            played_by_id[player.player_id].append(match.score)
+
+            planned = plan_for_player(
+                player,
+                # 显式传 score，让 C 的 reason 里能写出本轮得分（契约要求可追溯）
+                lambda _price, _s=signal, _sc=match.score: update_price(
+                    float(_price), _s, score=_sc
+                ),
+            )
+            planned_list.append(replace(planned, ts=round_ts))
+
+        if planned_list:
+            apply_updates(db, planned_list, ts=round_ts)
+            applied_rounds.append({"round": round_no, "applied": len(planned_list)})
+
+    return applied_rounds
+
+
+def _final_selfcheck(db: Session, *, rounds: int) -> dict:
+    """与 bootstrap 脚本同一标准：trading 选手每人 ≥ 10 点（还有则列出）。"""
+    players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
+    short: list[str] = []
+    for player in players:
+        if player.status != "trading" or rounds <= 0:
+            continue
+        points = int(
+            db.scalar(
+                select(func.count(PriceHistory.price_id)).where(
+                    PriceHistory.player_id == player.player_id
+                )
+            )
+            or 0
+        )
+        if points < 10:
+            short.append(f"#{player.player_id} {player.name} 只有 {points} 点")
+
+    balance = db.scalar(select(User.balance).where(User.nickname == "demo"))
+    return {
+        "点数自检": short,
+        "选手数": len(players),
+        "战队数": len({player.team for player in players}),
+        "demo 余额": str(balance),
     }

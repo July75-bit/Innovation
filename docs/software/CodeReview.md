@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-07 17:00 复测）**：pytest **216 passed / 0 skipped** · 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖）· CI **run #104 三 job 全绿** · 已修复缺陷 **14 条**（P0/P1 清零）。
+> **当前基线（2026-11-07 19:30 复测，auth/重灌合入后）**：pytest **216 passed / 0 skipped** · 核心逻辑覆盖率 **97%**（1289 语句 / 43 未覆盖，auth 模块扩容所致）· push 后最新一轮 CI 三 job · 已修复缺陷 **14 条**（P0/P1 清零）。
 
 ---
 
@@ -151,8 +151,8 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **216 passed / 0 skipped**（CI run #95；截图 17 摄于 134 条的时点，此后补到 216 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1289/43，≥60% 达标） |
+| pytest | 单元+集成测试 | `pyproject.toml` | **216 passed / 0 skipped**（CI run #104→最新；截图 17 摄于 134 条的时点，此后补到 216 条） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **97%**（1289/43，≥60% 达标，auth 扩容后复测） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
@@ -245,4 +245,4 @@ git grep -n "pragma: no cover" -- code/backend                # 刻意不测的�
 python -c "import logging; logging.basicConfig(level=logging.INFO); from ai.llm_agent import analyze; analyze({'player_id':1,'name':'ZywOo','current_price':126.0,'change_pct':5.0,'rating':88,'recent_prices':[{'price':120.0},{'price':126.0}],'position':{'quantity':10,'avg_cost':120.0}}, chat=lambda p: (_ for _ in ()).throw(TimeoutError('model did not respond in 20s')))"
 ```
 
-CI 结果：<https://github.com/July75-bit/Innovation/actions>（最新 run #95 三 job 绿）。
+CI 结果：<https://github.com/July75-bit/Innovation/actions>（push 后复核最新一轮三 job）。

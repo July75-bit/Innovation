@@ -15,7 +15,7 @@
 | 数据库 | Render **PostgreSQL 18**，服务 `playerstock-db`（**2026-11-23 到期**） | `deployment.md` §6 |
 | 线上数据 | 9 轮配方，`/prices` **11 点/人**（sh1ro 暂停 2 点）、末点 = `current_price` | `test_report.md` §6 |
 | 线上验收 | **TC-401~406 全部 ✅**（TC-405 双侧成立：服务端 200 + 前端 bundle 已含 `/market → /` 重定向，BUG-11 修复已上线） | `test_report.md` §6 |
-| 自动化测试 | **178 passed / 0 skipped**（第 5 天当时 137：含 CORS 8 + 只读自检 3 + 错误文案 6；第 6 天再补 39 条守卫用例并合入，现 178 = 单元 165 + 集成 13） | `test_report.md` §1 |
+| 自动化测试 | **178 passed / 0 skipped**（第 5 天当时 137：含 CORS 8 + 只读自检 3 + 错误文案 6）；**现 208 = 单元 188 + 集成 20**（auth 22+7、重灌端点 3 等随合并入账） | `test_report.md` §1 |
 | T5 任务 | **7 完成（T5-01~07）**，只剩 **T5-08 答辩三件套** | `milestones.md` §3 |
 | 优化迭代 | 🟡 按课程「三层模型 + 用户体验检查清单」排查出 8 条缺口（见 §3） | 本文 §3 |
 | 外部交叉原型测试 | 🟡 内部互测已做，**外部组未约**（三层模型的"测试反馈"回环未闭合） | `cross_test.md` §4 |
@@ -187,7 +187,7 @@
 - [x] `prototype_review.md`（三层模型 + 检查清单对照）→ `docs/requirements/prototype_review.md`
 - [x] 外部交叉原型测试：**延期说明 + 补救方案**已写入 `cross_test.md` §4（不伪造记录）
 - [x] `user_manual.md` 终稿（线上地址、本地备用、5 条已知问题）／`compliance.md` §4.2 隐私文案稿
-- [x] CI 三 job 绿（run #80 `1a821f6` success；本机 137 条 → 第 6 天 178 条 + ruff 亦绿）
+- [x] CI 三 job 绿（run #80 `1a821f6` success；本机 137 条 → 现 208 条 + ruff 亦绿）
 
 > **第 5 天关闭条件（Hard Gate）**：P0 三条合入 ✅ + 上述勾选全绿 + CI 绿（push 后复核）→ 才进入第 6 天。
 > 未勾项只剩「CI 三 job 复核」；B 侧运维三项（CORS 口径、日志/Postgres 证据、回滚演练）**均已完成**
