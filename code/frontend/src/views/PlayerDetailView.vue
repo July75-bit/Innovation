@@ -42,6 +42,11 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import StatusBadge from '../components/StatusBadge.vue'
+<<<<<<< HEAD
+=======
+import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
+import CollapsibleCard from '../components/CollapsibleCard.vue'
+>>>>>>> 816a17c438dfd00fb40e56e2c78d4fc74c066802
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import ErrorState from '../components/ErrorState.vue'
@@ -55,6 +60,14 @@ const playerId = computed(() => Number(route.params.id))
 const invalidId = computed(() => !Number.isInteger(playerId.value) || playerId.value <= 0)
 
 const player = ref<PlayerDetail | null>(null)
+
+/**
+ * 本轮停牌是赛程派生的（后端 status 只有初始/手动值），所以详情页要显示派生后的状态，
+ * 并把同一份结论交给 TradePanel——否则会出现"徽章说能买、按钮却该禁用"这种自相矛盾。
+ */
+const round = currentRound()
+const viewPlayer = computed(() => (player.value ? withRoundStatus(player.value, round) : null))
+const halt = computed(() => (player.value ? haltReason(player.value, round) : null))
 const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
@@ -291,7 +304,8 @@ watch(playerId, () => loadCore())
           <h2>{{ player.display_name || player.name }}</h2>
           <p class="meta">
             {{ player.team ?? '—' }} · {{ player.role ?? '—' }}
-            <StatusBadge :status="player.status" />
+            <StatusBadge :status="viewPlayer?.status ?? player.status" />
+            <span v-if="halt" class="halt-note">{{ halt }}</span>
           </p>
           <p class="rating-line">
             模拟表现分 <strong>{{ player.rating }}</strong> / 100
@@ -302,7 +316,6 @@ watch(playerId, () => loadCore())
           <div :class="['change', trendClass(player.change_pct)]">{{ pct(player.change_pct) }}</div>
         </div>
       </header>
-
 
       <div class="cols">
         <!-- 左列：看 —— 走势 + AI 依据（折叠卡片，想细看才展开） -->
@@ -348,9 +361,12 @@ watch(playerId, () => loadCore())
 
             <!-- 第二层：只留两个下单真正用得上的数字 -->
             <div v-if="analysis && plan" class="ai-facts">
-              <span><em>若采纳可买</em><b>{{ plan.suggested_quantity }}</b> 股</span>
               <span
-                ><em>参考止损</em><b>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</b></span
+                ><em>若采纳可买</em><b>{{ plan.suggested_quantity }}</b> 股</span
+              >
+              <span
+                ><em>参考止损</em
+                ><b>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</b></span
               >
               <span class="ai-mode">{{
                 analysis.source === 'llm' ? 'AI 生成' : '简化模式（模型未连接）'
@@ -387,7 +403,10 @@ watch(playerId, () => loadCore())
                         </li>
                       </template>
                     </ul>
-                    <p v-if="panel.minutes.every((m) => isTechLeak(m.content))" class="ai-line muted">
+                    <p
+                      v-if="panel.minutes.every((m) => isTechLeak(m.content))"
+                      class="ai-line muted"
+                    >
                       三个角色本次未能给出纪要（不影响行情与交易）。
                     </p>
                     <p v-if="panel.minutes.some((m) => !isTechLeak(m.content))" class="role-final">
@@ -402,14 +421,23 @@ watch(playerId, () => loadCore())
               <details class="ai-more">
                 <summary>它查了哪些数据</summary>
                 <div class="ai-more-body">
-                  <button type="button" class="ghost-btn" :disabled="toolsLoading" @click="loadTools">
+                  <button
+                    type="button"
+                    class="ghost-btn"
+                    :disabled="toolsLoading"
+                    @click="loadTools"
+                  >
                     {{ toolsLoading ? '取数中…' : '查看取数过程' }}
                   </button>
                   <ul v-if="tools && tools.tool_calls.length" class="tool-list">
                     <li v-for="(c, i) in tools.tool_calls" :key="i">{{ humanizeTool(c) }}</li>
                   </ul>
                   <p v-else-if="tools" class="ai-line muted">
-                    {{ tools.source === 'llm' ? '本次模型直接作答，未调用工具。' : '本次使用简化模式。' }}
+                    {{
+                      tools.source === 'llm'
+                        ? '本次模型直接作答，未调用工具。'
+                        : '本次使用简化模式。'
+                    }}
                   </p>
                 </div>
               </details>
@@ -419,10 +447,20 @@ watch(playerId, () => loadCore())
             <footer v-if="analysis" class="ai-foot">
               <span class="ai-disclaimer">{{ analysis.disclaimer }}</span>
               <div class="ai-actions">
-                <button type="button" class="ghost-btn" :disabled="decisionSent" @click="acceptAdvice">
+                <button
+                  type="button"
+                  class="ghost-btn"
+                  :disabled="decisionSent"
+                  @click="acceptAdvice"
+                >
                   {{ decisionSent ? '已记录' : '采纳建议' }}
                 </button>
-                <button type="button" class="ghost-btn" :disabled="decisionSent" @click="ignoreAdvice">
+                <button
+                  type="button"
+                  class="ghost-btn"
+                  :disabled="decisionSent"
+                  @click="ignoreAdvice"
+                >
                   忽略
                 </button>
                 <span v-if="decisionNotice" class="ai-note">{{ decisionNotice }}</span>
@@ -435,7 +473,9 @@ watch(playerId, () => loadCore())
         <aside class="col-side">
           <h3>交易</h3>
           <TradePanel
-            :player="player"
+            v-if="viewPlayer"
+            :player="viewPlayer"
+            :halt-reason="halt"
             :held="held"
             @traded="
               async () => {
@@ -508,6 +548,12 @@ watch(playerId, () => loadCore())
 .change.flat {
   color: var(--muted);
 }
+.halt-note {
+  margin-left: 8px;
+  font-size: var(--fs-cap);
+  color: var(--warn);
+}
+
 .rating-line {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-aux);

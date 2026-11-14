@@ -2,8 +2,8 @@
 
 负责人：B
 
-GET /api/account —— 当前用户虚拟币余额与总资产：
-- balance：可用虚拟币；
+GET /api/account —— 当前用户信用点余额与总资产：
+- balance：可用信用点；
 - initial_balance：初始 5000，用于算总收益率；
 - position_value：持仓按当前价合计的市值；
 - total_asset：balance + position_value。

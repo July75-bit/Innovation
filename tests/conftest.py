@@ -63,6 +63,20 @@ def pytest_configure(config: pytest.Config) -> None:
         config.option.basetemp = str(PYTEST_BASETMP)
 
 
+@pytest.fixture(autouse=True)
+def _no_live_season_round(monkeypatch) -> None:
+    """默认把"今天是不是比赛日"关掉，交易闸门只认手动 status。
+
+    为什么要 autouse：`ensure_tradable_now` 会按 UTC 比赛日现查赛程，而演示赛季是
+    连续 28 天（2026-11-01 ~ 11-28）——CI 或本地只要落在这段日期里，Vitality / Spirit
+    等队的选手就会被整队停牌，一堆和赛程无关的用例会莫名其妙变红。
+    要测"本轮停牌"的用例自己把轮次 patch 回去（见 tests/unit/test_api_trades.py）。
+    """
+    from app.core import rules
+
+    monkeypatch.setattr(rules, "current_round", lambda schedule, today=None: None)
+
+
 @pytest.fixture()
 def session_factory(tmp_path):
     """临时库 + 固定演示数据（4 名选手，覆盖涨/跌/横盘/暂停交易）。"""

@@ -52,7 +52,7 @@ export const api = {
   health: (): Promise<HealthResponse> =>
     USE_MOCK ? fromMock(mockApi.health) : request<HealthResponse>('/api/health'),
 
-  /** §4.2 市场选手列表（8 名，无分页，按 player_id 升序） */
+  /** §4.2 市场选手列表（16 名，无分页，按 player_id 升序） */
   listPlayers: (): Promise<PlayerSummary[]> =>
     USE_MOCK ? fromMock(mockApi.listPlayers) : request<PlayerSummary[]>('/api/players'),
 

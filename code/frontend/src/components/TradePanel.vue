@@ -33,6 +33,8 @@ const props = defineProps<{
   player: PlayerSummary
   /** 当前持仓（无持仓为 0；未知传 null，不展示提示） */
   held?: number | null
+  /** 停牌原因（赛程派生或手动冻结），由父页按本轮赛程算好传进来 */
+  haltReason?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -48,6 +50,9 @@ const { account } = useAccount()
 
 const suspended = computed(() => props.player.status !== 'trading')
 
+/** 提示优先用父页给的原因（如"Vitality vs Spirit 比赛中，暂停交易"），没传再退回通用说法 */
+const haltHint = computed(() => props.haltReason ?? '该选手比赛进行中，暂停交易')
+
 /** 单选手持仓上限（契约 §4.7：前端只做体验校验，最终以接口返回为准） */
 const MAX_HOLD = 50
 
@@ -58,7 +63,7 @@ const quickQty = [1, 5, 10, 25]
 const heldNow = computed(() => props.held ?? 0)
 
 /**
- * 「最大」档 = min( 剩余虚拟币 ÷ 现价 向下取整 , 50 股仓位上限 − 已持有 )。
+ * 「最大」档 = min( 剩余信用点 ÷ 现价 向下取整 , 50 股仓位上限 − 已持有 )。
  * 两个数取小的那个：既不会花超余额，也不会一点下去就把仓位顶过 50 股。
  * 余额还没拉到时不瞎猜数字：返回 0 并让这颗键不可点，原因写在 maxBlockReason。
  */
@@ -185,7 +190,7 @@ async function submit(side: 'BUY' | 'SELL') {
         step="1"
         :disabled="submitting || suspended"
         :aria-invalid="invalidReason ? 'true' : 'false'"
-        :title="suspended ? '该选手比赛进行中，暂停交易' : '按 Enter 直接买入'"
+        :title="suspended ? haltHint : '按 Enter 直接买入'"
         @keyup.enter="submit('BUY')"
       />
       <span class="qty-unit" aria-hidden="true">股</span>
@@ -240,7 +245,7 @@ async function submit(side: 'BUY' | 'SELL') {
 
     <!-- 拦截态：暂停交易时明确说明原因，而不是只禁用按钮 -->
     <p v-if="suspended" class="suspended-hint" role="status">
-      ⚠ 该选手比赛进行中，暂停交易（恢复后可正常下单）
+      ⚠ {{ haltHint }}（恢复后可正常下单）
     </p>
     <p v-else-if="invalidReason" class="invalid-hint" role="alert">{{ invalidReason }}</p>
 
@@ -260,7 +265,7 @@ async function submit(side: 'BUY' | 'SELL') {
       {{ feedback.text }}
     </div>
 
-    <p class="virtual-note">虚拟币交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
+    <p class="virtual-note">信用点交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
   </section>
 </template>
 

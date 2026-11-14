@@ -5,7 +5,7 @@
 - 金额 = 成交价 × 数量，按分四舍五入；
 - 余额不足不允许买入，持仓不足不允许卖出（不允许卖空）；
 - 单选手持仓上限 settings.max_position_per_player（默认 50 股）；
-- 比赛中的选手（status = suspended）暂停交易。
+- 比赛中的选手暂停交易：先看 `status`（手动冻结优先），再看**本队这一轮是否有比赛**（`data/match_schedule.json` 派生，见 `ensure_tradable_now`）。
 
 数据库写入在 app/api/trades.py，余额/持仓/流水必须同事务提交。
 """
@@ -13,8 +13,12 @@
 from __future__ import annotations
 
 from decimal import ROUND_HALF_UP, Decimal
+from typing import Any
+
+from core_engine import current_round, suspension_reason
 
 from app.core.config import settings
+from app.core.demo_schedule import DEMO_SCHEDULE
 from app.core.errors import ApiError
 
 CENT = Decimal("0.01")
@@ -34,6 +38,44 @@ def ensure_tradable(status: str) -> None:
     if status != "trading":
         raise ApiError(
             "该选手比赛进行中，暂停交易，请等结算完成后重试",
+            status_code=400,
+            code="PLAYER_TRADING_SUSPENDED",
+        )
+
+
+def ensure_tradable_now(
+    status: str,
+    team: str | None,
+    *,
+    round_no: int | None = None,
+    schedule: dict[str, Any] | None = None,
+) -> None:
+    """交易前的状态闸门：**手动 status 优先，其次看本队这一轮有没有比赛**。
+
+    为什么要两层：`players.status` 存的是"初始 / 运维手动"状态，而"本轮停牌"是按
+    赛程派生的（第 7 天 C 的口径）。只查前者就会出现"界面显示暂停交易、接口照样收单"，
+    那是最伤信任的矛盾，所以买/卖两侧都必须走这个函数。
+
+    `round_no=None` 表示"按今天判定"（UTC 比赛日）；今天不是比赛日时**不因赛程拦单**。
+    """
+    # 先走老闸门：手动冻结的文案是契约 §4.7 的原句，不能被新分支改写
+    ensure_tradable(status)
+
+    table = DEMO_SCHEDULE if schedule is None else schedule
+    round_no = current_round(table) if round_no is None else round_no
+    if round_no is None:
+        return
+
+    try:
+        # status 已确认是 trading，这里只问"本队这一轮有没有比赛"
+        blocked = suspension_reason({"status": status, "team": team}, round_no, table)
+    except ValueError:
+        # 队伍不在赛程里（自定义名单 / 旧数据）：不因赛程拦单
+        return
+
+    if blocked:
+        raise ApiError(
+            f"{blocked}，请等本轮结算完成后再下单",
             status_code=400,
             code="PLAYER_TRADING_SUSPENDED",
         )

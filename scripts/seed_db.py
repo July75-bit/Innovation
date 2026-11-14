@@ -12,7 +12,7 @@
 - JSON 里的 initial_price 不是 players 字段，写成 price_history 的第一条
   （reason = 初始价格）；若 current_price 与 initial_price 不同，再补一条当前价，
   让前端折线图与 AI 输入都有据可查；
-- 演示账户 nickname = "demo"，初始 5000 虚拟币。
+- 演示账户 nickname = "demo"，初始 5000 信用点。
 """
 
 from __future__ import annotations

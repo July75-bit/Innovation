@@ -157,6 +157,9 @@ describe('router 兜底', () => {
 
     await router.push('/trades')
     expect(router.currentRoute.value.name).toBe('trades')
+
+    await router.push('/schedule')
+    expect(router.currentRoute.value.name).toBe('schedule')
   })
 
   it('/auth 是公开路由', async () => {

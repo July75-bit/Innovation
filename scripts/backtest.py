@@ -281,7 +281,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="智能体回测初版（可重跑）")
     parser.add_argument("--seed", type=int, default=42, help="随机种子（固定才可复现）")
     parser.add_argument("--rounds", type=int, default=20, help="回测轮次")
-    parser.add_argument("--initial-cash", type=float, default=float(DEFAULT_CASH), help="初始虚拟币")
+    parser.add_argument("--initial-cash", type=float, default=float(DEFAULT_CASH), help="初始信用点")
     parser.add_argument("--start-date", default="2026-11-01", help="第 1 轮日期（ISO）")
     parser.add_argument("--seed-file", default=str(ROOT / "data" / "seed_players.json"))
     parser.add_argument(

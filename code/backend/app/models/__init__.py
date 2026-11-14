@@ -4,7 +4,7 @@
 
 | 模型 | 表 | 说明 |
 | --- | --- | --- |
-| User | users | 虚拟账户（初始 5000 虚拟币） |
+| User | users | 虚拟账户（初始 5000 信用点） |
 | Player | players | 选手（虚拟资产标的，价格/评分为模拟数据） |
 | Position | positions | 持仓（UNIQUE(user_id, player_id)） |
 | Trade | trades | 交易流水（只追加，INDEX(user_id, created_at)） |
