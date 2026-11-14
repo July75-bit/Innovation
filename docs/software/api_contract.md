@@ -65,6 +65,7 @@
 | 16 | POST | `/api/auth/logout` | **退出**：撤销当前令牌（幂等） | A + B | ✅ 已实现 |
 | 17 | DELETE | `/api/auth/account` | **删除账号**：口令二次确认，级联删持仓/流水/令牌 | A + B | ✅ 已实现（`tests/unit/test_api_auth.py` + `tests/integration/test_auth_multiuser.py`） |
 | 12 | GET | `/api/debug/db` | **只读自检（验收探针，不对前端开放）**：返回数据库方言、表清单与行数 | B | ✅ 已实现（第 5 天 B；`tests/unit/test_debug_api.py` 3 条）。只回元信息、不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 可关闭（关后 404） |
+| 18 | GET | `/api/debug/logs` | **运行日志自检**（第 6 天补，D）：`?lines=100&level=WARNING`，只读返回最近日志，`DEBUG_ENDPOINTS=0` 时 404 | D | ✅ 已实现（`tests/unit/test_logging_config.py`） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
 > 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进

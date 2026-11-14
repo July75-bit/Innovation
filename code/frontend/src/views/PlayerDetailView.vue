@@ -30,7 +30,6 @@ import { api } from '../api'
 import { ApiError } from '../api/client'
 import type {
   AgentDecisionResponse,
-  AgentNarrativeResponse,
   AgentPanelResponse,
   AgentPlan,
   AgentToolsResponse,

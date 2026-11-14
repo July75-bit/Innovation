@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-07 22:20 复测，auth/账号类接口合入后）**：pytest **276 passed / 0 skipped**（单元 222 / 集成 21 / 评测 33）· 前端 Vitest **51 passed** · 核心逻辑覆盖率 **96%**（1543 语句 / 61 未覆盖，auth 模块扩容所致；末轮新增代码后待复测）· push 后最新一轮 CI 三 job · 已修复缺陷 **15 条**（P0/P1 清零）。
+> **当前基线（2026-11-07 22:20 复测，auth/账号类接口合入后）**：pytest **276 passed / 0 skipped**（单元 222 / 集成 21 / 评测 33）· 前端 Vitest **51 passed** · 核心逻辑覆盖率 **95%**（1782 语句 / 97 未覆盖，auth 模块扩容所致；末轮新增代码后待复测）· push 后最新一轮 CI 三 job · 已修复缺陷 **15 条**（P0/P1 清零）。
 
 ---
 
@@ -152,7 +152,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
 | pytest | 单元+集成测试 | `pyproject.toml` | **276 passed / 0 skipped**（截图 17 摄于 134 条的时点，此后补到 276 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **97%**（1543/61，≥60% 达标，auth 扩容后复测） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **97%**（1782/97，≥60% 达标，auth 扩容后复测） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
@@ -168,19 +168,19 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 类别 | 语言 | 文件数 | 行数 |
 | --- | --- | ---: | ---: |
-| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 78 | 9917 |
-| | Vue（单文件组件） | 13 | 3486 |
-| | TypeScript（api / router / composables / 测试） | 19 | 1641 |
-| | CSS | 1 | 108 |
-| | HTML（原型 591 + 入口 13） | 2 | 604 |
-| **文档** | Markdown（README + 51 份 docs 交付文档） | 51 | 8027 |
-| **配置与数据** | JSON（种子数据、package、tsconfig 等） | 12 | 729 |
-| | YAML（CI、render 蓝图） | 2 | 252 |
-| | **合计（全部跟踪文件）** | **178** | **24764** |
+| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 104 | 14849 |
+| | Vue（单文件组件） | 14 | 4595 |
+| | TypeScript（api / router / composables / 测试） | 23 | 2841 |
+| | CSS | 1 | 120 |
+| | HTML（原型 591 + 入口 451） | 3 | 1042 |
+| **文档** | Markdown（README + 65 份交付文档） | 65 | 10411 |
+| **配置与数据** | JSON（种子数据、package、tsconfig 等） | 17 | 1992 |
+| | YAML（CI、render 蓝图） | 2 | 285 |
+| | **合计（全部跟踪文件）** | **229** | **36135** |
 
-- **代码行小计（Python + Vue + TS + CSS + HTML）= 15756 行**；文档与配置单列，不计入代码。
-- **模块数：18** —— 后端 Python 包 7（`ai`、`app`、`app/api`、`app/core`、`app/models`、`app/schemas`、`core_engine`）+ `scripts` + 测试 2（`tests/unit`、`tests/integration`）+ 前端 `src` 目录 8（`api`/`assets`/`components`/`composables`/`mock`/`router`/`utils`/`views`）。
-- 相比第 5 天的统计（133 文件 / 17420 行），增长主要来自 A 的登录注册页（`AuthView.vue` 737 行、`useAuth.ts` 315 行及其单测）与 D 的汇报材料。
+- **代码行小计（Python + Vue + TS + CSS + HTML）= 23447 行**；文档与配置单列，不计入代码。
+- **模块数：20** —— 后端 Python 包 7（`ai`、`app`、`app/api`、`app/core`、`app/models`、`app/schemas`、`core_engine`）+ `scripts` + 测试 4（`tests/unit`、`tests/integration`、`tests/eval`、`tests/perf`）+ 前端 `src` 目录 8（`api`/`assets`/`components`/`composables`/`mock`/`router`/`utils`/`views`）。
+- 相比第 5 天的统计（133 文件 / 17420 行），增长主要来自 A 的登录注册页与智能体页面入口、B 的账号/agent 接口、C 的回测脚本，以及 D 的评测集（`tests/eval`）、压测脚本与汇报材料。
 - 截图：`evidence/19-complexity-stats.png` 第 2 段（该图摄于第 5 天，行数为当时快照）。
 
 ### 3.1 AI Vibe coding / 团队自写比例（估算，如实标注）
@@ -189,12 +189,12 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 部分 | 行数 | AI 参与度 |
 | --- | ---: | --- |
-| 前端 Vue + TS + CSS | 5235 | **AI 出初稿**，A 逐行复核并做 6 次人工修正 |
+| 前端 Vue + TS + CSS | 7556 | **AI 出初稿**，A 逐行复核并做 6 次人工修正 |
 | 交互原型 `docs/software/prototype/index.html` | 591 | **AI 草稿**，D 校验 18 项交互后定稿 |
-| 后端 + 定价引擎 + 脚本 + 测试（Python） | 9917 | **人工编写**，AI 仅辅助排错与补测试 |
-| **合计（代码行）** | **15756** | — |
+| 后端 + 定价引擎 + 脚本 + 测试（Python） | 14849 | **人工编写**，AI 仅辅助排错与补测试 |
+| **合计（代码行）** | **23447** | — |
 
-> **结论：AI 首稿约 5826 行 / 15756 行 ≈ 37%**；其余 63% 人工编写。
+> **结论：AI 首稿约 8147 行 / 23447 行 ≈ 35%**（前端 7556 + 原型 591）；其余 65% 人工编写。
 > **但 100% 的提交代码经负责人逐行阅读、本地运行验证并配测试背书**（见 `compliance.md` §3 的声明："不存在直接复制未理解代码"）。
 > 比例本身不是评分点，"**用了 AI 但每一行都过手**"才是——这也是我们能在被追问时现场改代码、讲清每处设计的前提。
 
