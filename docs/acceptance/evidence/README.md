@@ -114,11 +114,24 @@
 | `58-liquid-glass-mobile-topbar-blur.png` | **液态玻璃 · 移动顶栏（滚动中）** | 375×667 滚动 460px：内容从玻璃顶栏下方穿过并**真实模糊**（简报卡文字在玻璃后可见但柔和）；玻璃仅顶栏 375×55 = **8.25%** |
 | `59-liquid-glass-mobile-drawer-solid.png` | **移动抽屉 = 实色 sheet** | 抽屉 293×667 若做玻璃会到 78% 配额，且是导航+账户+合规文字密集区 → 实色 + 圆角 24 + 轻投影 |
 | `60-liquid-glass-modal-desktop.png` | **液态玻璃 · 模态框** | 玻璃面板 400×263（圆角 20，内高光+极轻投影）；遮罩 0.66 **无 blur**（模糊只由玻璃层承担，避免玻璃叠玻璃）；弹窗单独占屏 **9.10%** |
-| `61-liquid-glass-kit-gallery.png` | **/ui-kit 材质展厅** | 导航壳 / 悬浮工具条 / Popover / 浅色玻璃（`.theme-light`）/ 配额读数 / 降级开关；展厅同屏多块属演示性质（38–44%），业务页见 56–58 |
+| `61-liquid-glass-kit-gallery.png` | **/ui-kit 材质展厅** | 导航壳 / 悬浮工具条 / Popover / 浅色玻璃 / 配额读数 / 降级开关 / 主题切换；展厅同屏多块属演示性质（38–44%），业务页见 56–58 |
 | `62-liquid-glass-fallback.png` | **降级实测（不支持 backdrop-filter）** | 点「模拟降级」→ `<html class="no-backdrop-filter">`：全部玻璃变不透明实色（`blur=none`、底 `rgb(23,26,33)`），可见玻璃面积 **0%**，圆角/描边/内高光保留 |
 | `63-liquid-glass-mobile-modal-solid.png` | **移动端弹窗 = 实色底部 sheet** | ≤600px 弹窗接近全屏 → 实色、上沿圆角 24、无模糊（玻璃配额与表单可读性双重要求） |
 | `64-liquid-glass-focus-ring.png` | **玻璃上的键盘焦点环** | 工具条按钮 `:focus-visible` → `solid 2px rgb(239,115,119)`，圆角保持控件值；玻璃面板圆角 20 不再被全局焦点样式打成 6（本轮修掉的 bug） |
 | `65-liquid-glass-reduced-transparency.png` | **prefers-reduced-transparency: reduce** | Edge 157 模拟该偏好：`backdrop-filter: none` + 实色底 `rgb(23,26,33)`，hover 半透明高光同时关闭（对比度反而更高） |
+| `66-tokens-light-market.png` | **设计令牌 v2 · 浅色模式市场页**（2026-11-14 17:08） | `[data-theme="light"]` 全量令牌生效：画布 `#f4f6f9`、表面 `#fff`、正文 `#1a1d23`；侧栏玻璃 `rgba(255,255,255,.62)` + 描边 `.72`；同屏玻璃 18.13%（≤30%） |
+| `67-tokens-light-mobile.png` | **设计令牌 v2 · 浅色模式移动顶栏** | 375px 滚动中：浅色玻璃顶栏（`--glass-bg` `.62`）压在内容上；玻璃面积 8.25%，无横向溢出 |
+| `68-tokens-dark-market-v2.png` | **设计令牌 v2 · 深色模式市场页** | 深色玻璃按规范示例值 `rgba(20,20,20,.60)` + scrim `.72`：玻璃上文字实测最低 8.55:1；玻璃面积 18.13% |
+| `69-theme-light-market.png` | **浅色模式 · 市场页**（2026-11-14 17:26，主题切换实测） | `[data-theme="light"]` 全量令牌：画布 `#f4f6f9`、卡片 `#fff`、正文 `#1a1d23`；涨跌文字改用 `--up-text`（#c23539，5.1:1）；侧栏玻璃 `rgba(255,255,255,.62)`；侧栏新增「浅色/深色」切换按钮 |
+| `70-theme-dark-market.png` | **深色模式 · 市场页** | 同一套令牌的深色分支；切换后无闪烁（index.html 内联脚本先定主题） |
+| `71-theme-light-detail.png` | **浅色模式 · 选手详情** | AI 卡/折线图/交易面板全部保持实色内容层；只有侧栏壳是玻璃；买入 CTA 实色 `#b02a2e` 白字 |
+| `72-theme-light-schedule.png` | **浅色模式 · 赛程** | 停牌/轮次徽章：警告文字 `#7a4d0a` on `#e1d4c1` = 4.9:1（修掉了 4.05:1 的原值） |
+| `73-theme-mobile-bottomtab-light.png` | **移动端 · 玻璃底部 Tab（浅色）** | 375×667：悬浮玻璃 Tab 栏（圆角 20、scrim .72），4 个 Tab 各 83×48（点击区 ≥44）；内容区留 96px 底距 |
+| `74-theme-mobile-bottomtab-dark.png` | **移动端 · 玻璃底部 Tab（深色）** | 同结构深色玻璃；选中态 = 中性高亮 + 2px 主色指示条 |
+| `75-select-popover-dark.png` | **玻璃下拉（深色）** | 触发框=内容层实色输入框；弹层=玻璃 panel（实测 radius 20 / blur 22 / bg `.72`），选中项带 ✓ |
+| `76-select-popover-light.png` | **玻璃下拉（浅色）** | 同一弹层浅色分支：`rgba(255,255,255,.72)` + 1px 内高光，文字 `#1a1d23` |
+| `77-modal-open-light.png` | **玻璃弹窗（浅色）** | 圆角 20 / 极轻阴影 / 遮罩 0.32 纯压暗；`aria-labelledby` 指向标题（可访问性核对） |
+| `78-toolbar-light.png` | **悬浮工具栏（浅色）** | 圆角 12；内部按钮全部实色（禁止玻璃叠玻璃） |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

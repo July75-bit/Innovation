@@ -15,6 +15,10 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
+import { initTheme } from './composables/useTheme'
+
+// 主题：index.html 已内联设置过一次（防闪），这里同步内存状态并处理"没存过"的情况
+initTheme()
 
 const app = createApp(App)
 

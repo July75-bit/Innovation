@@ -330,13 +330,13 @@ input[aria-invalid='true'] {
   cursor: pointer;
 }
 .chip:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
 }
 .chip.active {
   background: var(--up-bg);
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent-text);
+  color: var(--accent-text);
   font-weight: 700;
 }
 .chip:disabled {
@@ -431,7 +431,7 @@ button.sell:disabled {
 }
 .feedback.error {
   background: var(--up-bg);
-  color: var(--up);
+  color: var(--up-text);
 }
 .virtual-note {
   margin: 0;

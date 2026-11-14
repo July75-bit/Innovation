@@ -49,7 +49,7 @@ const emit = defineEmits<{ retry: [] }>()
   height: 20px;
   border-radius: 50%;
   background: var(--up-bg);
-  color: var(--up);
+  color: var(--up-text);
   font-weight: 800;
   display: inline-flex;
   align-items: center;
@@ -77,7 +77,7 @@ button {
   border: 1px solid var(--accent);
   border-radius: var(--radius-sm);
   background: var(--up-bg);
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: var(--fs-body);
   font-weight: 600;
   cursor: pointer;

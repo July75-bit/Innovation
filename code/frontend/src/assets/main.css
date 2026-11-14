@@ -30,7 +30,7 @@
   --bg: var(--color-canvas);
   --surface: var(--color-surface);
   --surface-2: var(--color-surface-raised);
-  --surface-3: #2b3039; /* 导航选中/第三层，比 raised 再亮一档 */
+  --surface-3: var(--color-surface-3); /* 导航选中/第三层（明暗两套值都在 tokens.css） */
   --text: var(--color-text);
   --muted: var(--color-text-muted);
   --faint: var(--color-text-faint);
@@ -39,6 +39,7 @@
 
   /* 主色与语义 */
   --accent: var(--color-primary-500);
+  --accent-text: var(--color-primary-300); /* 文字/图标档：对表面对比 ≥5:1 */
   --accent-hover: var(--color-action-hover);
   --accent-weak: var(--color-up-subtle);
   --up: var(--color-up);
@@ -49,7 +50,7 @@
   --warn: var(--color-halt);
   --warn-bg: var(--color-halt-subtle);
   --danger: var(--color-error-strong);
-  --neutral-bg: rgba(255, 255, 255, 0.06);
+  --neutral-bg: var(--color-neutral-bg);
 
   /* 阴影：扁平化——一律无阴影，弹层用极轻投影 */
   --shadow-1: var(--shadow-none);

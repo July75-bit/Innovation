@@ -43,24 +43,27 @@ describe('液态玻璃 · 材质层落点', () => {
 })
 
 describe('液态玻璃 · 令牌与降级', () => {
-  it('玻璃令牌齐全（模糊 / 饱和度 / scrim / 边框 / 回退实色 / 两套圆角）', () => {
+  it('玻璃令牌齐全（定义在 tokens.css；别名在 liquid-glass.css）', () => {
     for (const token of [
+      '--glass-bg',
+      '--glass-bg-strong',
       '--glass-blur',
       '--glass-saturate',
-      '--glass-tint-nav',
-      '--glass-tint-panel',
+      '--glass-scrim',
       '--glass-border',
       '--glass-highlight',
       '--glass-solid',
-      '--glass-radius-control',
-      '--glass-radius-panel',
+      '--glass-radius',
     ]) {
-      expect(glassCss, `缺少令牌 ${token}`).toContain(token)
+      expect(tokensCss, `tokens.css 缺少令牌 ${token}`).toContain(token)
     }
+    // 旧类名（tint/radius-control…）保留为别名，组件不用改
+    expect(glassCss).toContain('--glass-tint-nav: var(--glass-bg)')
+    expect(glassCss).toContain('--glass-radius-panel: var(--radius-material-lg)')
   })
 
   it('模糊半径在规格区间 18–28px，且窄屏仍不低于 18px', () => {
-    expect(glassCss).toMatch(/--glass-blur:\s*22px/)
+    expect(tokensCss).toMatch(/--glass-blur:\s*22px/)
     expect(glassCss).toMatch(/--glass-blur:\s*18px/)
   })
 
@@ -75,12 +78,17 @@ describe('液态玻璃 · 令牌与降级', () => {
     expect(glassCss).toContain('prefers-reduced-motion: no-preference')
   })
 
-  it('内容层圆角仍是 4/6/8，材质层是 12/20/24 —— 两套不混用', () => {
+  it('内容层圆角仍是 4/6/8，材质层是 12/16/20/24 —— 两套不混用', () => {
     expect(tokensCss).toContain('--radius-xs: 4px')
     expect(tokensCss).toContain('--radius-sm: 6px')
     expect(tokensCss).toContain('--radius-md: 8px')
-    expect(glassCss).toMatch(/--glass-radius-control:\s*12px/)
-    expect(glassCss).toMatch(/--glass-radius-panel:\s*20px/)
-    expect(glassCss).toMatch(/--glass-radius-sheet:\s*24px/)
+    for (const [name, value] of [
+      ['sm', '12px'],
+      ['md', '16px'],
+      ['lg', '20px'],
+      ['xl', '24px'],
+    ] as const) {
+      expect(tokensCss).toMatch(new RegExp(`--radius-material-${name}:\\s*${value}`))
+    }
   })
 })

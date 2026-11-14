@@ -11,6 +11,9 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
+import { useTheme } from '../composables/useTheme'
+
+import UiBottomTab from '../components/ui/UiBottomTab.vue'
 import UiButton from '../components/ui/UiButton.vue'
 import UiCard from '../components/ui/UiCard.vue'
 import UiInput from '../components/ui/UiInput.vue'
@@ -20,6 +23,8 @@ import UiNavItem from '../components/ui/UiNavItem.vue'
 import UiPagination from '../components/ui/UiPagination.vue'
 import UiSelect from '../components/ui/UiSelect.vue'
 import UiTable from '../components/ui/UiTable.vue'
+import UiToolbar from '../components/ui/UiToolbar.vue'
+import type { UiTabItem } from '../components/ui/UiBottomTab.vue'
 import UiTag from '../components/ui/UiTag.vue'
 import type { UiTableColumn } from '../components/ui/UiTable.vue'
 
@@ -102,6 +107,22 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', measureGlass)
   document.documentElement.classList.remove('no-backdrop-filter')
 })
+
+/* ---------- 主题：与外壳同一个 useTheme（浅色/深色在 /ui-kit 也能直接验收） ---------- */
+const { theme, toggleTheme } = useTheme()
+const themeLight = computed(() => theme.value === 'light')
+
+/* ---------- 底部 Tab / 悬浮工具栏演示 ---------- */
+const demoTab = ref('market')
+const tabItems: UiTabItem[] = [
+  { key: 'market', label: '市场', icon: 'M2 13h12M4 13V8m4 5V4m4 9v-6' },
+  { key: 'schedule', label: '赛程', icon: 'M2.5 4h11v9.5h-11zM2.5 7h11M5.5 2.5V5M10.5 2.5V5' },
+  { key: 'positions', label: '持仓', icon: 'M2 5.5 8 3l6 2.5L8 8 2 5.5Zm0 3L8 11l6-2.5M2 11 8 13.5 14 11' },
+  { key: 'trades', label: '流水', icon: 'M3 4h10M3 8h10M3 12h6' },
+]
+const toolbarDemoOpen = ref(true)
+const selectLoading = ref(false)
+const cardDisabled = ref(false)
 </script>
 
 <template>
@@ -146,6 +167,7 @@ onBeforeUnmount(() => {
           type="text"
         />
         <UiInput v-model="quantity" label="禁用态" disabled hint="当前选手暂停交易" />
+        <UiInput v-model="quantity" label="校验中（loading）" loading hint="正在校验可用额度…" />
         <UiSelect
           v-model="role"
           label="位置筛选"
@@ -181,6 +203,9 @@ onBeforeUnmount(() => {
         </UiCard>
         <UiCard title="选中态" meta="左侧 2px 主色竖条" selected>
           <p class="kit__note">用于列表里"当前选中项"。</p>
+        </UiCard>
+        <UiCard title="禁用态" meta="不可选（如停牌选手）" :disabled="cardDisabled" interactive>
+          <p class="kit__note">内容对齐、只置灰，不移除（避免布局跳动）。</p>
         </UiCard>
       </div>
     </section>
@@ -243,6 +268,85 @@ onBeforeUnmount(() => {
       </UiModal>
     </section>
 
+    <!-- 底部 Tab（材质层：玻璃） -->
+    <section class="kit__section">
+      <h2>底部 Tab BottomTab（液态玻璃）</h2>
+      <p class="kit__note">
+        移动端主导航的等价入口（业务页 ≤960px 显示，悬浮在底部）；文字坐在 scrim 上，
+        选中态 = 中性高亮 + 2px 主色指示条；点击区 ≥44px。下面这版是 <code>preview</code> 预览形态。
+      </p>
+      <UiBottomTab v-model="demoTab" :items="tabItems" preview aria-label="底部 Tab 示例" />
+      <p class="kit__note">当前选中：<code>{{ demoTab }}</code></p>
+    </section>
+
+    <!-- 悬浮工具栏（材质层：玻璃） -->
+    <section class="kit__section">
+      <h2>悬浮工具栏 Toolbar（液态玻璃）</h2>
+      <p class="kit__note">
+        圆角 12（<code>--radius-material-sm</code>），内部控件一律实色——<strong>禁止在里面再放玻璃按钮</strong>（玻璃叠玻璃）。
+      </p>
+      <UiToolbar label="行情操作">
+        <span>ZywOo · 108.75 · +2.1%</span>
+        <span class="kit__dot" aria-hidden="true"></span>
+        <span>持仓 0 股</span>
+        <template #end>
+          <UiButton variant="primary" size="sm">买入 2 股</UiButton>
+          <UiButton variant="secondary" size="sm">重新分析</UiButton>
+          <UiButton variant="ghost" size="sm" @click="toolbarDemoOpen = !toolbarDemoOpen">
+            {{ toolbarDemoOpen ? '收起' : '展开' }}
+          </UiButton>
+        </template>
+      </UiToolbar>
+      <UiToolbar v-if="toolbarDemoOpen" label="吸顶工具条" position="sticky">
+        <span>sticky 形态：长页面滚动时吸附顶部</span>
+        <template #end><UiButton variant="secondary" size="sm">重试</UiButton></template>
+      </UiToolbar>
+    </section>
+
+    <!-- 下拉（材质层：玻璃 Popover） -->
+    <section class="kit__section">
+      <h2>下拉 Select（液态玻璃 Popover）</h2>
+      <p class="kit__note">
+        触发框是内容层（实色输入框）；<strong>弹层是材质层</strong>（玻璃 panel / 圆角 20 / 极轻阴影）。
+        键盘：↑↓ 移动、Home/End、Enter 选中、Esc 关闭、Tab 关闭并归还焦点。
+      </p>
+      <div class="kit__grid">
+        <UiSelect v-model="role" label="位置筛选" :options="roleOptions" hint="选择后立即生效" />
+        <UiSelect
+          v-model="role"
+          label="错误示例"
+          :options="roleOptions"
+          error="请选择位置后再筛选"
+        />
+        <UiSelect v-model="role" label="禁用态" :options="roleOptions" disabled hint="当前不可筛选" />
+        <UiSelect
+          v-model="role"
+          label="加载态"
+          :options="roleOptions"
+          :loading="selectLoading"
+          hint="正在拉取选项…"
+        />
+      </div>
+      <div class="kit__row">
+        <UiButton size="sm" variant="secondary" @click="selectLoading = !selectLoading">
+          {{ selectLoading ? '结束加载' : '模拟加载' }}
+        </UiButton>
+      </div>
+    </section>
+
+    <!-- 禁止用法 -->
+    <section class="kit__section">
+      <h2>禁止用法 Anti-patterns</h2>
+      <p class="kit__note">以下五种是全站红线，评审/自查时按这个清单反查代码。</p>
+      <ul class="kit__anti">
+        <li><strong>✗ 玻璃叠玻璃</strong>：玻璃工具条里再放玻璃按钮；玻璃弹窗里再套玻璃卡片。玻璃内部一律实色。</li>
+        <li><strong>✗ 表格主体玻璃</strong>：表头/表体/长列表用半透明底——数据可读性直接崩，只用实色 + 1px 分隔线。</li>
+        <li><strong>✗ 低对比文字放玻璃上</strong>：不在 scrim 上写字、不做 <code>rgba(255,255,255,.5)</code> 这类浅灰字。</li>
+        <li><strong>✗ 重阴影 / 装饰渐变</strong>：内容卡零阴影；浮层只用 <code>--glass-shadow</code>；不要霓虹发光、彩色渐变。</li>
+        <li><strong>✗ 大面积玻璃</strong>：抽屉/整页/长文不做玻璃；同屏玻璃面积 >30% 即判定违规（本页有实时读数）。</li>
+      </ul>
+    </section>
+
     <!-- 液态玻璃材质层 -->
     <section id="liquid-glass" class="kit__section">
       <h2>液态玻璃材质层 Liquid Glass</h2>
@@ -258,6 +362,9 @@ onBeforeUnmount(() => {
           {{ fallbackOn ? '恢复玻璃（backdrop-filter）' : '模拟降级（不支持 backdrop-filter）' }}
         </UiButton>
         <UiButton variant="secondary" @click="measureGlass">重新测量玻璃面积</UiButton>
+        <UiButton variant="secondary" @click="toggleTheme">
+          {{ themeLight ? '切回深色模式' : '切浅色模式' }}
+        </UiButton>
       </div>
 
       <!-- ① 导航壳（玻璃，文字坐在 scrim 上） -->
@@ -286,12 +393,13 @@ onBeforeUnmount(() => {
         <p class="glass-popover__hint">现价 136.43 · 评分 88</p>
       </div>
 
-      <!-- ④ 浅色模式玻璃（作用域 .theme-light；业务页默认深色，这里做材质对照） -->
-      <div class="theme-light light-island" data-testid="glass-light">
+      <!-- ④ 浅色模式玻璃（data-theme="light" 是全局令牌开关；业务页默认深色，这里做材质对照） -->
+      <div class="light-island" data-theme="light" data-testid="glass-light">
         <div class="glass glass--panel glass--interactive light-island__panel">
           <p class="light-island__title">浅色玻璃 · 同一套令牌</p>
           <p class="light-island__body">
-            玻璃底 rgba(255,255,255,0.72)，模糊 22px；正文 16px / 1.6，对比度按 AA 校验。
+            玻璃底 rgba(255,255,255,.62)，边框 .72，可读性 scrim .72，模糊 22px；正文 16px /
+            1.6，对比度按 AA 校验。
           </p>
           <!-- 玻璃下面再放内容一律实色：这里是最多"玻璃 + 实色"两层，禁止玻璃叠玻璃 -->
           <div class="light-island__card">
@@ -481,5 +589,29 @@ onBeforeUnmount(() => {
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-aux);
+}
+.kit__dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--color-text-disabled);
+}
+.kit__anti {
+  margin: 0;
+  padding: var(--space-4);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-left: 2px solid var(--color-error-base);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-aux);
+  line-height: var(--line-height-aux);
+}
+.kit__anti strong {
+  color: var(--color-error-base);
 }
 </style>

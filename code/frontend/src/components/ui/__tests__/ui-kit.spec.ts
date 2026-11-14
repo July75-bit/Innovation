@@ -5,6 +5,7 @@
  * 下拉选项与变更事件；标签色调；分页当前页与事件；弹窗 Esc 关闭；表格空/加载/排序。
  */
 import { describe, expect, it } from 'vitest'
+import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 
 import UiButton from '../UiButton.vue'
@@ -59,21 +60,71 @@ describe('UiInput', () => {
   })
 })
 
-describe('UiSelect', () => {
-  it('渲染全部选项并在选择后发事件', async () => {
-    const wrapper = mount(UiSelect, {
-      props: {
-        modelValue: 'a',
-        label: '位置',
-        options: [
-          { label: '狙击手', value: 'a' },
-          { label: '步枪手', value: 'b' },
-        ],
-      },
+describe('UiSelect（自绘玻璃 listbox）', () => {
+  const options = [
+    { label: '狙击手', value: 'a' },
+    { label: '步枪手', value: 'b' },
+  ]
+  const factory = () =>
+    mount(UiSelect, {
+      props: { modelValue: 'a', label: '位置', options },
+      attachTo: document.body,
     })
-    expect(wrapper.findAll('option')).toHaveLength(2)
-    await wrapper.find('select').setValue('b')
+
+  it('默认收起；点开后渲染 listbox，弹层是玻璃材质（材质层）', async () => {
+    const wrapper = factory()
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
+    await wrapper.find('.ui-select').trigger('click')
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(true)
+    expect(wrapper.find('.ui-select__pop').classes()).toContain('glass')
+    expect(wrapper.find('.ui-select__pop').classes()).toContain('glass--panel')
+    expect(wrapper.findAll('[role="option"]')).toHaveLength(2)
+    wrapper.unmount()
+  })
+
+  it('点击选项发出 update:modelValue 并关闭', async () => {
+    const wrapper = factory()
+    await wrapper.find('.ui-select').trigger('click')
+    await wrapper.findAll('[role="option"]')[1]!.trigger('click')
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['b'])
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('键盘：↓ 打开、↓ 移动、Enter 选中、Esc 关闭并归还焦点', async () => {
+    const wrapper = factory()
+    await wrapper.find('.ui-select').trigger('keydown', { key: 'ArrowDown' })
+    await nextTick()
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(true)
+
+    await wrapper.find('[role="listbox"]').trigger('keydown', { key: 'ArrowDown' })
+    await wrapper.find('[role="listbox"]').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['b'])
+
+    await wrapper.find('.ui-select').trigger('click')
+    await nextTick()
+    await wrapper.find('[role="listbox"]').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('[role="listbox"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(wrapper.find('.ui-select').element)
+    wrapper.unmount()
+  })
+
+  it('状态齐全：错误 aria-invalid、禁用与加载不可展开', async () => {
+    const bad = mount(UiSelect, {
+      props: { modelValue: 'a', label: '位置', options, error: '请选择位置' },
+    })
+    expect(bad.find('.ui-select').attributes('aria-invalid')).toBe('true')
+    expect(bad.find('.ui-error').exists()).toBe(true)
+
+    const disabled = mount(UiSelect, { props: { modelValue: 'a', label: '位置', options, disabled: true } })
+    expect(disabled.find('.ui-select').attributes('disabled')).toBeDefined()
+    await disabled.find('.ui-select').trigger('click')
+    expect(disabled.find('[role="listbox"]').exists()).toBe(false)
+
+    const loading = mount(UiSelect, { props: { modelValue: 'a', label: '位置', options, loading: true } })
+    expect(loading.find('.ui-select').attributes('aria-busy')).toBe('true')
+    await loading.find('.ui-select').trigger('click')
+    expect(loading.find('[role="listbox"]').exists()).toBe(false)
   })
 })
 

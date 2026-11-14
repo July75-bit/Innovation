@@ -5,7 +5,7 @@
  * 规范：表面色 + 1px 边框 + 圆角 8（唯一允许极轻投影的组件）；遮罩半透明；
  * 交互：Esc 关闭、点遮罩关闭（可关）、打开时锁定页面滚动、焦点初始进入面板。
  */
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, useId, watch } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -22,6 +22,8 @@ const props = withDefaults(
 const emit = defineEmits<{ 'update:open': [open: boolean] }>()
 
 const panel = ref<HTMLElement | null>(null)
+const uid = useId()
+const titleId = `ui-modal-${uid}-title`
 
 function close() {
   if (!props.dismissible) return
@@ -29,7 +31,31 @@ function close() {
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === 'Escape') close()
+  if (event.key === 'Escape') {
+    close()
+    return
+  }
+  // 焦点陷阱：Tab 在面板内循环，避免焦点跑回背景页面
+  if (event.key !== 'Tab' || !panel.value) return
+  const focusable = panel.value.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  )
+  if (!focusable.length) {
+    event.preventDefault()
+    panel.value.focus()
+    return
+  }
+  const first = focusable[0]
+  const last = focusable[focusable.length - 1]
+  if (!first || !last) return
+  const active = document.activeElement
+  if (event.shiftKey && (active === first || active === panel.value)) {
+    event.preventDefault()
+    last.focus()
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault()
+    first.focus()
+  }
 }
 
 watch(
@@ -39,7 +65,12 @@ watch(
     document.body.style.overflow = open ? 'hidden' : ''
     if (open) {
       window.addEventListener('keydown', onKeydown)
-      requestAnimationFrame(() => panel.value?.focus())
+      void nextTick(() => {
+        const first = panel.value?.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
+        )
+        ;(first ?? panel.value)?.focus()
+      })
     } else {
       window.removeEventListener('keydown', onKeydown)
     }
@@ -62,11 +93,11 @@ onBeforeUnmount(() => {
         :class="`ui-modal--${size}`"
         role="dialog"
         aria-modal="true"
-        :aria-label="title"
+        :aria-labelledby="titleId"
         tabindex="-1"
       >
         <header class="ui-modal__head">
-          <h2 class="ui-modal__title">{{ title }}</h2>
+          <h2 :id="titleId" class="ui-modal__title">{{ title }}</h2>
           <button
             v-if="dismissible"
             type="button"

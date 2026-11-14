@@ -562,7 +562,7 @@ function asGuest(): void {
   color: #6f727a;
 }
 .field input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent-text);
   background: rgba(255, 255, 255, 0.06);
 }
 .field input[aria-invalid='true'] {
@@ -642,7 +642,7 @@ function asGuest(): void {
 }
 .check input {
   margin-top: 2px;
-  accent-color: var(--accent);
+  accent-color: var(--accent-text);
   flex-shrink: 0;
 }
 
@@ -691,7 +691,7 @@ function asGuest(): void {
   background: none;
   border: none;
   padding: 0;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: inherit;
   cursor: pointer;
   text-decoration: underline;
