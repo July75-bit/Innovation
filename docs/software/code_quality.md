@@ -1,4 +1,4 @@
-# 代码质量报告（`docs/software/code_quality.md`）
+﻿# 代码质量报告（`docs/software/code_quality.md`）
 
 > **为什么有这个文件**：课程第 3 天第 2 部分代码质量检查点（SWIEP.pdf p.174）要求提交
 > `docs/software/code_quality.md`（扫描报告截图 + 重构前后对比）。本文件是**该路径的正式交付件**，
@@ -23,8 +23,8 @@
 | 重复率 | 16.09%（dup-report 口径） | 12.52% | — |
 | 业务代码最高圈复杂度 | 11（`scripts/simulate_match.py`） | **7** | 7 |
 | 认知复杂度（complexipy） | 未统计 | 最大 27 / 均值 3.31（>15 全在 `scripts/`） | 同左 |
-| pytest | 65 passed / 5 skipped | 81 passed / 0 skipped | **216 passed / 0 skipped** |
-| 覆盖率 | 未统计 | 91% | **96%**（1515 语句 / 60 未覆盖） |
+| pytest | 65 passed / 5 skipped | 81 passed / 0 skipped | **308 passed / 0 skipped** |
+| 覆盖率 | 未统计 | 91% | **98%**（1782 语句 / 35 未覆盖） |
 
 ## 3. Top 5 最严重问题与重构方式
 
@@ -56,7 +56,7 @@ coverage run --source=app,core_engine -m pytest && coverage report -m      # 97%
 - `docs/acceptance/evidence/17-code-quality-scan.png`：静态扫描 + 测试 + CI 门禁
 - `docs/acceptance/evidence/18-quality-pylint-pep8.png`：Pylint 评分 / PEP8（仅 25 条 E501）/ 格式化体检
 - `docs/acceptance/evidence/19-complexity-stats.png`：认知复杂度 + 代码统计
-- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（264 条 / 96%）
+- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（308 条 / 98%）
 
 ## 6. 已知不足（如实交代）
 

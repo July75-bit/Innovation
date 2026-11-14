@@ -65,6 +65,7 @@
 | 16 | POST | `/api/auth/logout` | **退出**：撤销当前令牌（幂等） | A + B | ✅ 已实现 |
 | 17 | DELETE | `/api/auth/account` | **删除账号**：口令二次确认，级联删持仓/流水/令牌 | A + B | ✅ 已实现（`tests/unit/test_api_auth.py` + `tests/integration/test_auth_multiuser.py`） |
 | 12 | GET | `/api/debug/db` | **只读自检（验收探针，不对前端开放）**：返回数据库方言、表清单与行数 | B | ✅ 已实现（第 5 天 B；`tests/unit/test_debug_api.py` 3 条）。只回元信息、不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 可关闭（关后 404） |
+| 18 | GET | `/api/debug/logs` | **运行日志自检**（第 6 天补，D）：`?lines=100&level=WARNING`，只读返回最近日志，`DEBUG_ENDPOINTS=0` 时 404 | D | ✅ 已实现（`tests/unit/test_logging_config.py`） |
 
 > 第 1 天后端状态：1–9 已按本契约实现并有测试覆盖（`python -m pytest`）；
 > 第 10 项于第 3 天由 D 把 `code/backend/ai/`（`build_player_context` + `analyze`）接进
@@ -476,6 +477,94 @@
 `GET /api/account` / `GET /api/positions` / `GET /api/trades` / `POST /api/trades/buy|sell`
 **响应形状一字未改**，只是背后的 `user_id` 换了来源（`app/api/deps.py:get_current_user`）。
 所以 A 的页面代码零改动，只有 `useAuth` 从"本地假账号"换成真接口。
+
+### 4.18 `GET /api/agent/decision/{player_id}`（智能体决策卡）
+
+在 §4.10 的 6 字段建议之外，给出**可执行的计划**（`/api/analysis` 本身**形状不变**，金标集锁着）：
+
+```json
+{
+  "advice": { "player_id": 1, "action": "BUY", "reason": "…", "risk_level": "MEDIUM",
+              "source": "llm", "disclaimer": "…" },
+  "plan": {
+    "suggested_quantity": 12,
+    "stop_loss_price": 108.4,
+    "confidence": 0.72,
+    "risk_budget_ratio": 0.06,
+    "rationale": ["可用 5000.00 币 × 风险预算 6% → 12 股", "单选手上限 50 股、已持 0 股 → 还能买 50 股"],
+    "note": "启发式估算（非模型概率）；下单仍需你本人确认"
+  },
+  "trace_id": 41,
+  "snapshot": { "balance": 5000.0, "held_quantity": 0, "current_price": 89.13, "change_pct": -10.12, "rating": 88 },
+  "latency_ms": 2610,
+  "disclaimer": "计划为启发式估算，下单必须由你本人确认；AI 不持有任何交易权限"
+}
+```
+
+- 仓位/止损/置信度都是**算术**（按余额×风险预算、50 股上限、已持有约束），不是模型幻觉；
+- 选手不存在 → 404 `PLAYER_NOT_FOUND`；模型不可用 → `advice.source=rule_fallback`，**计划照样算**；
+- 只读业务表；唯一写入是 `agent_traces` 审计行。
+
+### 4.19 `GET /api/agent/brief`（今日智能体简报）
+
+```json
+{ "items": [ { "title": "今日最该看一眼", "detail": "m0NESY（Falcons）变动 -6.4%，现价 85.08", "player_id": 3 } ],
+  "summary": "今日行情由比赛表现驱动，请关注停牌与大幅波动标的。",
+  "source": "llm", "generated_at": "2026-11-14T03:20:00+00:00",
+  "ttl_seconds": 600, "cached": false, "latency_ms": 980 }
+```
+
+固定 3 条要点（波动最大 / 低价区 / 停牌提醒）；**缓存 10 分钟**（`?refresh=true` 强制刷新，cron 每小时会刷一次）。
+
+### 4.20 `POST /api/agent/decisions`（人在环：采纳/忽略）
+
+```json
+请求：{ "player_id": 1, "advice_action": "BUY", "advice_source": "llm", "decision": "accept", "trace_id": 41 }
+响应：{ "success": true, "decision_id": 7, "message": "已记录你的选择" }
+```
+
+`decision ∈ {accept, ignore}`；**记录不等于下单**（下单仍走 §4.7）。
+`GET /api/agent/decisions/stats` 返回 `{total, accepted, accept_rate}`（只统计当前用户）。
+
+### 4.21 `GET /api/agent/traces?limit=20`（审计，只读）
+
+```json
+{ "count": 2, "items": [ { "trace_id": 41, "mode": "decision", "player_id": 1, "source": "llm",
+                           "model": "deepseek-flash", "latency_ms": 2610, "fallback_reason": null } ] }
+```
+
+`mode ∈ {decision, brief, panel, narrative, tools}`；不含账户数据与连接串。
+
+### 4.22 `GET /api/agent/panel/{player_id}`（多角色协作纪要）
+
+```json
+{ "source": "llm",
+  "minutes": [ {"role": "analyst", "content": "…"}, {"role": "risk", "content": "…"}, {"role": "trader", "content": "…"} ],
+  "final": { "action": "HOLD", "risk_level": "HIGH", "reason": "…", "disclaimer": "…" },
+  "note": "三个角色分别调用模型；最终动作以交易员环节为准，冲突点已写在纪要里" }
+```
+
+任一环节失败 → 整份 `source=rule_fallback`（`minutes` 里会写明原因），接口仍 200。
+
+### 4.23 `GET /api/agent/narrative/{player_id}?refresh=false`（叙事归因）
+
+```json
+{ "ts": "2026-11-09T00:00:00+00:00", "narrative": "最新价 89.13，较上一点下跌 10.12%……",
+  "source": "llm", "change_pct": -10.12, "big_move": true, "cached": false }
+```
+
+按 `(player_id, ts)` 缓存在 `price_narratives`；无密钥/超时 → `source=rule_fallback`（用规则 reason 拼句）。
+
+### 4.24 `GET /api/agent/tools/{player_id}`（工具调用演示）
+
+模型通过 3 个只读工具（`get_price_history` / `get_account_snapshot` / `calc_position_size`）自己取数：
+
+```json
+{ "answer": "…", "tool_calls": [ {"round": 1, "name": "get_price_history", "args": {"limit": 6}} ],
+  "rounds": 2, "source": "llm", "trace_id": 44 }
+```
+
+模型/网关不支持 `tools` 协议时 → `source=rule_fallback` + `fallback_reason`，接口 200。
 
 ---
 

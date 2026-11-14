@@ -1,4 +1,4 @@
-"""生成答辩幻灯片 HTML（离线，无 Slidev 依赖），供 Edge headless 打印为 PDF。
+﻿"""生成答辩幻灯片 HTML（离线，无 Slidev 依赖），供 Edge headless 打印为 PDF。
 
 用法（在仓库任意位置执行都可以，路径按脚本自身位置推断）：
     python docs/presentation/build_deck.py
@@ -186,7 +186,7 @@ SLIDES: list[str] = [
         <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
         <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
         <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
-        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>265 条测试、96% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>308 条测试、98% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
         <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
       </table>
       <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
@@ -220,7 +220,7 @@ SLIDES: list[str] = [
         <tr><td>交易闭环：买入 / 卖出 / 持仓 / 流水</td><td>充值 / 提现 / 兑换：<b>合规红线</b>，一律不做</td></tr>
         <tr><td>AI 只给建议，不自动交易</td><td>多用户 / 撮合盘口：6 天做不完，且不影响核心机制</td></tr>
       </table>
-      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>96%</b>）</p>
+      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>98%</b>）</p>
     </section>
     """,
     f"""
@@ -315,7 +315,7 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
             <tr><td>随机</td><td>+4.48%</td><td><b>5.91%</b></td></tr>
             <tr><td>买入持有</td><td>+1.00%</td><td>6.97%</td></tr>
           </table>
-          <p><b>结论只说一条</b>：本 seed 下规则版收益最高，但回撤也最大（8.12%）——单 seed + 28 轮不能宣称"稳定跑赢"。</p>
+          <p><b>结论只说一条</b>：3 个 seed 平均规则版收益最高（+2.34%），但回撤也最大（11.05%）——多数 seed 收益更好，但优势不稳定。</p>
           <p class="small">LLM 版回测待有密钥后补跑（已在报告如实标注）。</p>
         </div>
       </div>
@@ -358,8 +358,8 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
         <div>
           <h3>测试</h3>
           <ul>
-            <li><b>231</b> 条用例（单元 211 / 集成 21 / 评测 33），CI + 本机全绿</li>
-            <li>核心逻辑覆盖率 <b>97%</b>（1543 语句 / 61 未覆盖，要求 ≥60%）</li>
+            <li><b>231</b> 条用例（单元 254 / 集成 21 / 评测 33），CI + 本机全绿</li>
+            <li>核心逻辑覆盖率 <b>97%</b>（1782 语句 / 35 未覆盖，要求 ≥60%）</li>
             <li>已修 <b>15</b> 条真实缺陷（含 3 个 P0）</li>
           </ul>
         </div>

@@ -1,4 +1,4 @@
-# 第 6 天任务清单（功能冻结 · 彩排 · 答辩）
+﻿# 第 6 天任务清单（功能冻结 · 彩排 · 答辩）
 
 > **日期**：第 6 天（2026-11-07）｜ **负责人**：D（维护，全员执行）｜ **里程碑**：**M6 可交付**（当前 ⬜）
 > **课件依据**：SWIEP.pdf p.268–270 —— **8 分钟幻灯片 40% + 2 分钟演示 40% + 5 分钟问答 20%**。
@@ -10,8 +10,8 @@
 | 项 | 值 |
 | --- | --- |
 | 分支 / 工作区 | `develop` 与 `origin/develop` 待齐（合并解决后随推） |
-| 测试 / CI | **265 passed / 0 skipped**（单元 211 / 集成 21 / 评测 33；前端 Vitest 51；junitxml 复核 failures=0）；覆盖率 **96%**；CI 合并后 push 复核新一轮三 job |
-| 覆盖率 | **97%**（1543 语句 / 61 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测，auth/重启后 D 复核） |
+| 测试 / CI | **308 passed / 0 skipped**（单元 254 / 集成 21 / 评测 33；前端 Vitest 62；junitxml 复核 failures=0）；覆盖率 **98%**；CI 合并后 push 复核新一轮三 job |
+| 覆盖率 | **97%**（1782 语句 / 35 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测，auth/重启后 D 复核） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）。**2026-11-07 晚重灌后：16 选手 / 8 队 / 每人 11 价格点 / 5 表 / 0 流水（干净演示态），m0NESY 已在 Falcons** |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
 | 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
@@ -88,7 +88,7 @@
 | --- | --- | --- | --- |
 | D-1 | 导出 `docs/presentation/defense.pdf` | 与 `slides.md` 一致 | ✅ 16 页 / 653 KB（2026-11-07 含 01B/01C/01D 重导），`build_deck.py` 可重生成 |
 | D-2 | 文档收口：`user_manual` 线上地址 / `compliance` §4.1/§4.2 / `day5.md` 勾选 / `prototype_review` 索引 | 无空白、索引齐 | ✅ |
-| D-3 | 回归 + CI：265 条 + 三 job 绿 + `test_report` 结论 | push 后最新 run | ✅ 本机 265 passed（unit 211 / 集成 20，junitxml 口径） |
+| D-3 | 回归 + CI：308 条 + 三 job 绿 + `test_report` 结论 | push 后最新 run | ✅ 本机 308 passed（unit 211 / 集成 20，junitxml 口径） |
 | D-4 | 合并后跑一次线上全链路（market→detail→buy→positions→trades） | 有截图或记录 | 🟡 未单独留证据，今天 A-8/A-7 覆盖一次即可 |
 | **D-5** | 主讲 01 / 03 / 08 / 09 / 10 页 | 8:00 ±30s | ⬜ |
 | **D-6** | 控时：演示 2:00 提示、问答 5:00 收口 | 全程 ≤15:00 | ⬜ |
@@ -134,7 +134,7 @@ conda activate playerstock
 # 若不想依赖激活，改用绝对路径最稳：
 #   & "D:\miniconda\envs\playerstock\python.exe" -m pytest -q -p no:warnings
 
-# ② 全量回归：265 条，约 2 秒
+# ② 全量回归：308 条，约 2 秒
 python -m pytest -q -p no:warnings
 
 # ③ 指着一个 P0 缺陷讲：测试名就是场景
@@ -145,9 +145,9 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 
 | 步骤 | 说一句 |
 | --- | --- |
-| ② | "265 条，0 跳过——不是没写完的占位。" |
+| ② | "308 条，0 跳过——不是没写完的占位。" |
 | ③ | "并发卖出超卖是 P0，判断写进 SQL 的 WHERE，两条连接同时卖只成一笔。" |
-| ④ | "核心逻辑 96%，课程要求 60%。这是刚才那条命令的输出渲染。" |
+| ④ | "核心逻辑 98%，课程要求 60%。这是刚才那条命令的输出渲染。" |
 
 **兜底**：终端出任何意外 → 直接打开 GitHub Actions 的 run #95，指着「后端测试」job 里的 `python -m pytest` 步骤，话术"这是同一条命令在 CI 上的记录"。
 
@@ -161,7 +161,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 | 4 | 演示 2:00 内完成，含错误分支 | 彩排记录 | A |
 | 5 | 线上 `/api/health` 200、16 选手、余额 5000.00 | 截图 | B |
 | 6 | `deployment.md` §5 检查单 **37/37** | 全勾 | B |
-| 7 | `test_report.md` 结论 =「可交付」；265 passed | 文档 + push 后最新 run | D |
+| 7 | `test_report.md` 结论 =「可交付」；308 passed | 文档 + push 后最新 run | D |
 | 8 | 彩排记录写进 `docs/presentation/README.md` | 两次记录 | D |
 | 9 | `daily_summary.md` 第 6 天段 | 有实质内容 | D |
 

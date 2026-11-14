@@ -1,9 +1,9 @@
-# 课程要求 → 仓库落点对照表（答辩自查用）
+﻿# 课程要求 → 仓库落点对照表（答辩自查用）
 
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《创新工程实践营项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
 > **状态**：✅ 已具备（有产物 + 可验证）｜🟡 有但不完整｜❌ 缺
-> 最后核对：2026-11-07 22:20（本机后端 265 passed / 前端 51 passed / 覆盖率 96%）
+> 最后核对：2026-11-07 22:20（本机后端 308 passed / 前端 62 passed / 覆盖率 98%）
 
 ## 一、汇报第一部分：产品设计（8 分钟 / 40%）
 
@@ -39,6 +39,7 @@
 | --- | --- | --- | --- |
 | **3.1 用户体验设计考虑的因素** | `prototype_review.md` §1.5（2026-11-07 补） | 9 类因素 × 取舍 × 落点 | ✅ |
 | **账号体系（第 7 轮新增）** | `api_contract.md` §3 #13–17、§4.11–4.15；`user_manual.md` §2.5；`compliance.md` §4.3 | 注册/登录/me/退出/删号 5 个接口；PBKDF2-HMAC-SHA256 加盐 10 万次、令牌 30 天可撤销；`test_api_auth.py` + `test_auth_multiuser.py` | ✅ |
+| **性能 / 容量（NFR-04/05）** | cceptance/load_test_report.md、	ests/perf/load_test.py | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 |
 | **3.2 语言/IDE/框架 + 版本号，写在 README** | `README.md` 技术栈表、`architecture.md` §4 | Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6 | ✅ |
 | **3.3 仓库链接 + 每人提交次数截图** | `evidence/20~22`、`pulse-committers.csv` | pulse 截图 + 准数统计（49/41/28/21）+ 口径说明 | ✅ |
 | **3.4 生命周期问题汇总表** | `acceptance/lifecycle_issues.md` | 16 条 × 四列（类别/问题/原因/解决），每条带用例 | ✅ |
@@ -79,7 +80,7 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 264 passed |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 308 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 97% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |

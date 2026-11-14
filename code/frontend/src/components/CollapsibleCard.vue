@@ -18,10 +18,21 @@ withDefaults(
   }>(),
   { open: true },
 )
+
+/**
+ * 展开/收起事件（增量能力，不改变既有用法）：
+ * 用于"内容要按需加载"的卡片——比如多角色纪要，用户点开才去请求接口，
+ * 避免一进详情页就白烧三次模型调用。
+ */
+const emit = defineEmits<{ toggle: [open: boolean] }>()
+
+function onToggle(event: Event) {
+  emit('toggle', (event.target as HTMLDetailsElement).open)
+}
 </script>
 
 <template>
-  <details class="collapse" :open="open">
+  <details class="collapse" :open="open" @toggle="onToggle">
     <summary>
       <span class="chev" aria-hidden="true">▸</span>
       <span class="title">{{ title }}</span>

@@ -22,6 +22,12 @@ import { mockAuth } from '../mock/auth'
 import type {
   Account,
   AccountRebuildResponse,
+  AgentBriefResponse,
+  AgentDecisionLogResponse,
+  AgentDecisionResponse,
+  AgentNarrativeResponse,
+  AgentPanelResponse,
+  AgentToolsResponse,
   AnalysisResponse,
   AuthResponse,
   DeleteAccountResponse,
@@ -168,4 +174,110 @@ export const api = {
           note: 'mock',
         }))
       : request<AccountRebuildResponse>('/api/account/rebuild?confirm=true', { method: 'POST' }),
+
+  /** §4.18 智能体决策卡：建议 + 仓位 + 止损 + 置信度（只读，不下单） */
+  getAgentDecision: (playerId: number): Promise<AgentDecisionResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          advice: {
+            player_id: playerId,
+            action: 'HOLD',
+            reason: 'mock 建议',
+            risk_level: 'MEDIUM',
+            source: 'rule_fallback',
+            disclaimer: 'mock',
+          },
+          plan: {
+            suggested_quantity: 0,
+            stop_loss_price: null,
+            confidence: 0.55,
+            risk_budget_ratio: 0.06,
+            rationale: ['mock'],
+            note: 'mock',
+          },
+          trace_id: 0,
+          snapshot: {
+            balance: 5000,
+            held_quantity: 0,
+            current_price: 100,
+            change_pct: 0,
+            rating: 80,
+          },
+          latency_ms: 0,
+          disclaimer: 'mock',
+        }))
+      : request<AgentDecisionResponse>(`/api/agent/decision/${playerId}`),
+
+  /** §4.19 今日智能体简报（后端缓存 10 分钟） */
+  getAgentBrief: (): Promise<AgentBriefResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          generated_at: new Date().toISOString(),
+          ttl_seconds: 600,
+          items: [
+            { title: '今日最该看一眼', detail: 'mock 标的' },
+            { title: '低价区标的', detail: 'mock' },
+            { title: '停牌提醒', detail: '无' },
+          ],
+          summary: 'mock 简报',
+          source: 'rule_fallback' as const,
+          latency_ms: 0,
+          cached: false,
+        }))
+      : request<AgentBriefResponse>('/api/agent/brief'),
+
+  /** §4.20 人在环：记录采纳/忽略（不触发交易） */
+  recordAgentDecision: (payload: {
+    player_id: number
+    advice_action: string
+    advice_source: string
+    decision: 'accept' | 'ignore'
+    trace_id?: number | null
+  }): Promise<AgentDecisionLogResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({ success: true, decision_id: 0, message: 'mock' }))
+      : request<AgentDecisionLogResponse>('/api/agent/decisions', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        }),
+
+  /** §4.22 多角色协作纪要（分析师→风控→交易员），用户点开卡片才请求 */
+  getAgentPanel: (playerId: number): Promise<AgentPanelResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          trace_id: 0,
+          latency_ms: 0,
+          source: 'rule_fallback' as const,
+          minutes: [{ role: 'system', content: 'mock 纪要' }],
+          final: { action: 'HOLD', risk_level: 'MEDIUM', reason: 'mock' },
+          note: 'mock',
+        }))
+      : request<AgentPanelResponse>(`/api/agent/panel/${playerId}`),
+
+  /** §4.23 叙事归因（把规则 reason 扩写成因果解释） */
+  getAgentNarrative: (playerId: number): Promise<AgentNarrativeResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          ts: new Date().toISOString(),
+          narrative: 'mock 归因',
+          source: 'rule_fallback' as const,
+          change_pct: 0,
+          big_move: false,
+          cached: false,
+        }))
+      : request<AgentNarrativeResponse>(`/api/agent/narrative/${playerId}`),
+
+  /** §4.24 工具调用演示：模型自己调只读工具取数 */
+  getAgentTools: (playerId: number): Promise<AgentToolsResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          player_id: playerId,
+          answer: 'mock',
+          rounds: 0,
+          source: 'rule_fallback' as const,
+          tool_calls: [],
+        }))
+      : request<AgentToolsResponse>(`/api/agent/tools/${playerId}`),
 }

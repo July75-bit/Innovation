@@ -28,7 +28,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import { ApiError } from '../api/client'
-import type { AnalysisResponse, PlayerDetail, PricePoint, PositionItem } from '../api/types'
+import type {
+  AgentDecisionResponse,
+  AgentPanelResponse,
+  AgentPlan,
+  AgentToolsResponse,
+  AnalysisResponse,
+  PlayerDetail,
+  PricePoint,
+  PositionItem,
+} from '../api/types'
 import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
@@ -64,6 +73,59 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 /** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
 const analysisLoading = ref(false)
+
+/* ---- 决策卡（第 8 轮）：建议之外的"可执行计划"与"人在环"记录 ---- */
+const plan = ref<AgentPlan | null>(null)
+const snapshot = ref<AgentDecisionResponse['snapshot'] | null>(null)
+const traceId = ref(0)
+const decisionSent = ref(false)
+const decisionNotice = ref('')
+
+/* ---- 第二梯度：叙事归因 / 多角色纪要 / 工具取数（都按需加载，拿不到就隐藏） ---- */
+const narrative = ref<string | null>(null)
+const panel = ref<AgentPanelResponse | null>(null)
+const panelLoading = ref(false)
+const panelError = ref('')
+const tools = ref<AgentToolsResponse | null>(null)
+const toolsLoading = ref(false)
+
+/** 多角色纪要：用户点开卡片才请求（一次三调用，别让人一进页面就白烧） */
+async function loadPanel() {
+  if (panel.value || panelLoading.value) return
+  panelLoading.value = true
+  panelError.value = ''
+  try {
+    panel.value = await api.getAgentPanel(playerId.value)
+  } catch (err) {
+    panelError.value = err instanceof ApiError ? err.message : '纪要生成失败'
+  } finally {
+    panelLoading.value = false
+  }
+}
+
+function onPanelToggle(open: boolean) {
+  if (open) void loadPanel()
+}
+
+/** 工具调用：让用户看到"模型自己查了什么"（只有名字与参数，没有账户隐私） */
+async function loadTools() {
+  if (tools.value || toolsLoading.value) return
+  toolsLoading.value = true
+  try {
+    tools.value = await api.getAgentTools(playerId.value)
+  } catch {
+    tools.value = null
+  } finally {
+    toolsLoading.value = false
+  }
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  analyst: '📊 分析师',
+  risk: '🛡 风控',
+  trader: '💼 交易员',
+  system: '⚙️ 系统',
+}
 
 const ACTION_LABEL: Record<string, string> = { BUY: '买入', SELL: '卖出', HOLD: '持有' }
 const RISK_LABEL: Record<string, string> = { LOW: '低', MEDIUM: '中', HIGH: '高' }
@@ -113,6 +175,9 @@ async function loadCore(silent = false) {
   }
   // AI 分析单独加载：慢/降级都不阻塞行情展示
   analysisLoading.value = true
+  plan.value = null
+  decisionSent.value = false
+  decisionNotice.value = ''
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a
@@ -122,7 +187,50 @@ async function loadCore(silent = false) {
     // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
     if (token === requestToken) analysisLoading.value = false
   }
+  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
+  try {
+    const d = await api.getAgentDecision(playerId.value)
+    if (token === requestToken) {
+      plan.value = d.plan
+      snapshot.value = d.snapshot
+      traceId.value = d.trace_id
+    }
+  } catch {
+    if (token === requestToken) plan.value = null
+  }
+  // 叙事归因：把规则 reason 讲成"为什么"，同样失败即静默
+  narrative.value = null
+  try {
+    const n = await api.getAgentNarrative(playerId.value)
+    if (token === requestToken) narrative.value = n.narrative
+  } catch {
+    if (token === requestToken) narrative.value = null
+  }
+  // 切选手时清掉上一个选手的纪要与工具记录，避免张冠李戴
+  panel.value = null
+  tools.value = null
+  panelError.value = ''
 }
+
+/** 采纳/忽略这条建议：只写"人在环"记录，不触发交易（下单仍要用户自己点买卖） */
+async function recordChoice(decision: 'accept' | 'ignore') {
+  if (!analysis.value || decisionSent.value) return
+  decisionSent.value = true
+  try {
+    await api.recordAgentDecision({
+      player_id: analysis.value.player_id,
+      advice_action: analysis.value.action,
+      advice_source: analysis.value.source,
+      decision,
+      trace_id: traceId.value || null,
+    })
+    decisionNotice.value = decision === 'accept' ? '已记录：你采纳了这条建议' : '已记录：本次不采纳'
+  } catch {
+    decisionNotice.value = '记录失败（不影响交易）'
+  }
+}
+const acceptAdvice = () => recordChoice('accept')
+const ignoreAdvice = () => recordChoice('ignore')
 
 /**
  * 重新分析（用户可控）：只重发 AI 请求，不动行情、不碰账户。
@@ -218,11 +326,99 @@ watch(playerId, () => loadCore())
                 ⚠ 高风险建议：{{ analysis.disclaimer }}
               </p>
               <p class="ai-reason">{{ analysis.reason }}</p>
-              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">
-                {{ analysis.disclaimer }}
+
+              <!-- 叙事归因（第二梯度）：把规则 reason 讲成因果 -->
+              <p v-if="narrative" class="ai-narrative">
+                <span class="ai-narrative-tag">归因解读</span>{{ narrative }}
               </p>
+
+              <!-- 决策卡：把"一句建议"落成"可执行的计划"（仓位/止损/置信度），仍不下单 -->
+              <div v-if="plan" class="plan">
+                <div class="plan-grid num">
+                  <div>
+                    <span>建议仓位</span>
+                    <strong>{{ plan.suggested_quantity }} 股</strong>
+                  </div>
+                  <div>
+                    <span>参考止损</span>
+                    <strong>{{ plan.stop_loss_price ? money(plan.stop_loss_price) : '—' }}</strong>
+                  </div>
+                  <div>
+                    <span>置信度</span>
+                    <strong>{{ Math.round(plan.confidence * 100) }}%</strong>
+                  </div>
+                  <div>
+                    <span>可用余额</span>
+                    <strong>{{ money(snapshot?.balance ?? 0) }}</strong>
+                  </div>
+                </div>
+                <ul class="plan-why">
+                  <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
+                </ul>
+                <p class="plan-note">{{ plan.note }}</p>
+                <div class="plan-actions">
+                  <button
+                    type="button"
+                    class="plan-accept"
+                    :disabled="decisionSent"
+                    @click="acceptAdvice"
+                  >
+                    {{ decisionSent ? '已记录采纳' : '采纳这条建议' }}
+                  </button>
+                  <button type="button" class="plan-ignore" :disabled="decisionSent" @click="ignoreAdvice">
+                    忽略
+                  </button>
+                  <span v-if="decisionNotice" class="plan-notice">{{ decisionNotice }}</span>
+                </div>
+              </div>
+
+              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">{{ analysis.disclaimer }}</p>
             </section>
             <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
+          </CollapsibleCard>
+
+          <!-- 第二梯度：多角色协作纪要（点开才请求，避免一进页面就白烧三次调用） -->
+          <CollapsibleCard title="智能体协作纪要（分析师 → 风控 → 交易员）" :open="false" @toggle="onPanelToggle">
+            <template #meta>
+              <span v-if="panel" class="src">{{ panel.source === 'llm' ? '模型协作' : '规则兜底' }}</span>
+              <span v-else-if="panelLoading" class="src">生成中…</span>
+            </template>
+
+            <p v-if="panelLoading" class="ai-loading">
+              <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span>三个角色正在依次思考…（行情与交易不受影响）</span>
+            </p>
+            <p v-else-if="panelError" class="disclaimer">{{ panelError }}</p>
+            <section v-else-if="panel">
+              <ol class="minutes">
+                <li v-for="(m, i) in panel.minutes" :key="i">
+                  <strong>{{ ROLE_LABEL[m.role] ?? m.role }}</strong>
+                  <span>{{ m.content }}</span>
+                </li>
+              </ol>
+              <p class="panel-final">
+                最终结论：<strong>{{ ACTION_LABEL[panel.final.action] ?? panel.final.action }}</strong>
+                · 风险 {{ RISK_LABEL[panel.final.risk_level] ?? panel.final.risk_level }}
+                <span class="panel-note">{{ panel.note }}</span>
+              </p>
+
+              <!-- 工具调用：让用户看到"模型自己查了什么"，只有工具名与参数 -->
+              <div class="tools-box">
+                <button type="button" class="tools-btn" :disabled="toolsLoading" @click="loadTools">
+                  {{ toolsLoading ? '取数中…' : '看智能体怎么取数（工具调用）' }}
+                </button>
+                <ul v-if="tools && tools.tool_calls.length" class="tools-list">
+                  <li v-for="(c, i) in tools.tool_calls" :key="i">
+                    第 {{ c.round }} 轮调用 <code>{{ c.name }}</code>
+                    <span class="tools-args">{{ JSON.stringify(c.args) }}</span>
+                  </li>
+                </ul>
+                <p v-else-if="tools" class="disclaimer">
+                  本次未触发工具调用（{{ tools.source === 'llm' ? '模型直接作答' : '已降级为规则版' }}）。
+                </p>
+              </div>
+            </section>
+            <EmptyState v-else>展开后自动生成纪要。</EmptyState>
           </CollapsibleCard>
         </div>
 
@@ -418,6 +614,146 @@ h3 {
 .ai-reason {
   margin: 0;
   font-size: var(--fs-body);
+}
+
+/* ---- 决策卡（第一梯度） ---- */
+.plan {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border);
+}
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-2);
+}
+.plan-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg, transparent);
+}
+.plan-grid span {
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.plan-grid strong {
+  font-size: var(--fs-body);
+}
+.plan-why {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1em;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+  display: grid;
+  gap: 2px;
+}
+.plan-note {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.plan-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+.plan-accept,
+.plan-ignore,
+.tools-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--fs-cap);
+  cursor: pointer;
+}
+.plan-accept {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.plan-accept:disabled,
+.plan-ignore:disabled,
+.tools-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.plan-notice {
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+
+/* ---- 叙事归因（第二梯度） ---- */
+.ai-narrative {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 2px solid var(--accent);
+  background: var(--surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.ai-narrative-tag {
+  display: inline-block;
+  margin-right: 6px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- 多角色纪要（第二梯度） ---- */
+.minutes {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1em;
+  display: grid;
+  gap: var(--space-2);
+  font-size: var(--fs-cap);
+}
+.minutes li {
+  display: grid;
+  gap: 2px;
+}
+.minutes strong {
+  color: var(--text);
+}
+.minutes span {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.panel-final {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-body);
+}
+.panel-note {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.tools-box {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px dashed var(--border);
+}
+.tools-list {
+  margin: var(--space-2) 0 0;
+  padding-left: 1.1em;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+  display: grid;
+  gap: 2px;
+}
+.tools-list code {
+  color: var(--accent);
+}
+.tools-args {
+  margin-left: 6px;
+  opacity: 0.85;
 }
 .disclaimer {
   margin: var(--space-2) 0 0;

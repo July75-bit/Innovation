@@ -68,7 +68,8 @@
 | `online/persistence-redeploy.md` | 逐项对账记录 + 复跑命令 | `scripts/persistence_check.py --diff` 退出码 0；含"余额变了为何不等于丢数据"的算术闭合 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
-> **现状（2026-11-07 20:12 重置后）**：16 名选手 / 每人 11 价格点（sh1ro 暂停 2 点）/ 余额 5000.00 / 持仓 0 / 流水 0；
+  > **现状（2026-11-14 重灌后）**：16 名选手 / 8 队；每人 11 价格点（ropz 10，种子仅 1 条）/ 余额 5000.00 / 持仓 0 / 流水 0；暂停交易改为**队伍级派生**——每轮 2 队（4 人）停牌，第 12 轮为 Vitality vs Spirit。
+  > **待补三张整队停牌证据**（A/B 截）：① 市场页第 12 轮 Vitality/Spirit 四人置灰；② 任一停牌选手详情页「比赛中，暂停交易」；③ 同轮可交易选手（如 huNter-）可买作对照。
 > 上面 `online-*` 截图是重置前后的历史留档，数字以本行为准。
 
 ## 汇报证据（3.6 / 3.7 / 3.3）
@@ -76,7 +77,7 @@
 | 文件 | 内容 | 关键断言 |
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
-| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **264 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1515 语句 / 60 未覆盖 / 97%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
+| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **308 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1782 语句 / 35 未覆盖 / 97%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
 | `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
