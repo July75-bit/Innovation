@@ -52,6 +52,26 @@
 | **3.6 软件质量（3.6.1 + 3.6.2）** | `software/CodeReview.md` §1/§2 | 日志 15 处 + 异常五层 + PEP8/Pylint/复杂度 + 3 张截图 | ✅ |
 | **3.7 代码统计（AI 比例/模块数/行数）** | `CodeReview.md` §3 | 178 文件 24764 行、模块 18、AI 首稿 37%（可复算） | ✅ |
 
+## 二·补 第 4 天「测试作品」检查点（新版 SWIEP.pdf p.176–201）
+
+| 要求 | 落点 | 状态 |
+| --- | --- | --- |
+| 单元测试核心逻辑（pytest） | `tests/unit` 24 个文件 | ✅ |
+| 等价类 + 边界值为至少一个输入字段设计用例 | `test_plan.md` §4.0（TC-001~012）+ §7 方法对照 | ✅ |
+| 场景法为一条关键业务流程写 E2E | `tests/integration/test_e2e_flow.py` | ✅ |
+| 覆盖率 ≥60% | `test_report.md` §2.3 → 97% | ✅ |
+| **≥10 个测试用例文档（七列模板：编号/名称/前置条件/步骤/输入/预期/优先级）** | `test_plan.md` **§4.0**（2026-11-14 补，12 条） | ✅ |
+| 测试代码与文档提交到 `tests/` | `tests/unit` + `tests/integration` | ✅ |
+| **缺陷修复使用 GitHub Issues / BugTracker Project** | Bug tracker 项目已建；`bug` 标签 Issue 存在 | 🟡 **14 条 BUG 未逐条建 Issue**（见下方说明） |
+| **智能体测试分层（L1–L5）+ 五原则 + CI 门禁** | `acceptance/agent_test_layers.md` | 🟡 L1–L3 ✅、L4 评测集与 L5 红队未做（如实标注） |
+| **33 项用户测试检查表（P1–P5 / I1–I4 / V1–V4 / H1–H9 / A1–A11）** | `tests/playerstock_agent_demo_user_test.md`（**正式提交版**，学生版表格逐格填满）、`tests/agent_demo_user_test.md`（内部自查版） | ✅ **32 通过 / 1 部分通过 / 0 不通过**（首轮 5 项部分通过已修复 4 项） |
+| 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
+| 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
+
+> 📄 **已备好可直接粘贴的 Issue 标题 + 正文**：[`bug-issues.md`](bug-issues.md)（14 条，含两种建法）。
+> 🟡 **Issues 说明**：仓库现有 Issue 以「day1 / day3 / check frontend」等任务类为主，
+> 14 条缺陷（BUG-01~14）记录在 `test_report.md` §9。若要把缺陷也纳进 BugTracker，需要逐条建 Issue（见交付说明）。
+
 ## 三、交付物与工程证据
 
 | 要求 | 落点 | 状态 |

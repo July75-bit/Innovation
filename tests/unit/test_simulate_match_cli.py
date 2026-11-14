@@ -4,7 +4,8 @@
 
 对应第 3 天验收项「命令行逐条变化及原因」：
 
-- 16 名选手中 1 名 `suspended`（sh1ro），因此固定 seed 下应打印 **15 条价格更新 + 1 条跳过**；
+- seed v5 起 **16 名选手全部 `trading`**：暂停交易改由赛程逐轮派生（批次二接入），
+  因此当前固定 seed 下应打印 **16 条价格更新**、没有"跳过定价"行；
 - 每条更新都必须带中文 `reason`（答辩要拆解归因）；
 - `--json` 导出的 `ts` 必须是 UTC ISO 8601（以 `Z` 结尾），交给 B 直接落 `price_history.ts`。
 
@@ -54,14 +55,15 @@ def test_cli_prints_one_line_per_trading_player(script_module) -> None:
     lines = output.splitlines()
 
     assert "模拟比赛：1 轮 × 16 名选手（seed=42）" in output
-    assert "状态 suspended，本轮跳过定价" in output  # sh1ro 停赛跳过
-    assert "共 15 条价格更新" in output               # 16 人 − 1 名停赛
+    # seed v5：不再有常驻暂停；逐轮暂停由赛程派生（批次二）
+    assert "跳过定价" not in output
+    assert "共 16 条价格更新" in output
 
     # 逐行匹配：说明行里也有"评分"二字，用 count() 会多算一行
     price_lines = [line for line in lines if "评分" in line and "→" in line]
     reason_lines = [line for line in lines if "｜" in line]
-    assert len(price_lines) == 15, price_lines
-    assert len(reason_lines) == 15, reason_lines
+    assert len(price_lines) == 16, price_lines
+    assert len(reason_lines) == 16, reason_lines
     # 第 4 天验收：每条 reason 都要能追溯到"本轮得分"
     assert all("本轮得分" in line for line in reason_lines), reason_lines
     assert all("S=" in line for line in reason_lines), reason_lines
@@ -80,6 +82,6 @@ def test_json_payload_uses_iso_utc_ts(script_module, monkeypatch) -> None:
     assert captured["path"] == "dummy.json"
     assert captured["seed"] == 42
     updates = captured["updates"]
-    assert len(updates) == 15
+    assert len(updates) == 16
     assert all(item["reason"] for item in updates)
     assert all(item["ts"].endswith("Z") and "T" in item["ts"] for item in updates)
