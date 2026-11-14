@@ -79,6 +79,12 @@
   font-size: var(--font-size-aux);
   padding: 0 var(--space-3);
 }
+.ui-btn--lg {
+  height: var(--control-height-lg);
+}
+.ui-table .is-center {
+  text-align: center;
+}
 
 /* ---------------- 输入框 ---------------- */
 .ui-field {

@@ -99,8 +99,10 @@ onMounted(() => {
     <div class="backdrop" aria-hidden="true"></div>
 
     <div class="shell">
-      <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） ===== -->
-      <aside :class="['sidebar', { open: navOpen }]">
+      <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） =====
+           材质层：桌面端是玻璃壳（导航属于材质层）；≤960px 的抽屉是实色 sheet——
+           抽屉占屏 78vw × 100dvh，玻璃面积会直接冲破 30% 配额，且里面是文字密集区。 -->
+      <aside :class="['sidebar', 'glass', 'glass--nav', { open: navOpen }]">
         <RouterLink to="/" class="brand">
           <span class="brand-mark" aria-hidden="true"></span>
           PlayerStock<span class="sub">虚拟选手股</span>
@@ -182,8 +184,8 @@ onMounted(() => {
         </p>
       </aside>
 
-      <!-- ===== 移动端顶栏 ===== -->
-      <header class="topbar">
+      <!-- ===== 移动端顶栏（材质层：玻璃；内容在它下面滚动，模糊才有东西可糊） ===== -->
+      <header class="topbar glass glass--nav">
         <RouterLink to="/" class="brand brand-sm">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
@@ -235,7 +237,7 @@ onMounted(() => {
   width: 100%;
 }
 
-/* ===== 侧栏 ===== */
+/* ===== 侧栏（桌面端材质层：玻璃） ===== */
 .sidebar {
   grid-area: sidebar;
   position: sticky;
@@ -245,8 +247,9 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--space-4);
   padding: var(--space-4) var(--space-3);
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  /* 底色/模糊由全局 .glass 提供；这里只留"靠边一侧"的描边，避免玻璃四周都描边显得像卡片 */
+  border: 0;
+  border-right: 1px solid var(--glass-border);
   overflow-y: auto;
 }
 .brand {
@@ -402,15 +405,15 @@ nav {
   line-height: 1.5;
 }
 
-/* ===== 移动端顶栏（桌面隐藏） ===== */
+/* ===== 移动端顶栏（桌面隐藏；材质层：玻璃，内容从它下面滚过） ===== */
 .topbar {
   grid-area: topbar;
   display: none;
   align-items: center;
   gap: var(--space-3);
   padding: 10px 14px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border: 0;
+  border-bottom: 1px solid var(--glass-border);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -483,8 +486,14 @@ nav {
     z-index: 30;
     transform: translateX(-105%);
     transition: transform 0.2s ease;
-    border-right: 1px solid var(--border);
+    /* 抽屉=文字密集的浮层 sheet：实色，不用玻璃（玻璃面积 78vw×100dvh 会超配额，
+       而且导航/账户/合规声明这类文本直接坐在玻璃上不可读） */
+    background-color: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: var(--shadow-2);
     border: 1px solid var(--border);
+    border-radius: 0 var(--glass-radius-sheet) var(--glass-radius-sheet) 0;
   }
   .sidebar.open {
     transform: translateX(0);
@@ -527,8 +536,9 @@ nav {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: var(--up-bg);
-  color: var(--accent);
+  /* 实色主色底 + 白字：红字压在红色调底上只有 1.7:1，2026-11-14 实测不合格，改实心底 */
+  background: var(--color-action);
+  color: var(--color-action-text);
   font-size: var(--fs-cap);
   font-weight: 800;
   flex-shrink: 0;
