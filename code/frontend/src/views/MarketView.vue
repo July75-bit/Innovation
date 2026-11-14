@@ -38,6 +38,27 @@ const updatedAt = ref('')
 
 /* ---- 今日智能体简报（第 8 轮：让智能体出现在首屏，而不是只藏在详情页） ---- */
 type BriefItem = { title: string; detail: string; player_id?: number | null }
+/**
+ * 简报总述清洗（防守）：
+ * 模型偶尔返回 JSON（`{"action":"HOLD","reason":"..."}`），后端旧版本会原样透传，
+ * 前端必须再兜一层——界面上只允许出现一句话，不允许出现花括号/字段名/代码块。
+ */
+function cleanSummary(raw: string | null | undefined): string {
+  let text = (raw ?? '').trim()
+  if (!text) return ''
+  text = text.replace(/^```\w*\s*/, '').replace(/\s*```$/, '').trim()
+  if (text.startsWith('{')) {
+    const match = text.match(/"(?:reason|summary|text)"\s*:\s*"([^"]*)/)
+    const picked = match?.[1]
+    if (picked) return picked.trim()
+    return text
+      .replace(/[{}"]/g, '')
+      .replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, '')
+      .trim()
+  }
+  return text
+}
+
 const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)
 
 async function loadBrief() {
@@ -139,13 +160,13 @@ onMounted(load)
       </button>
     </div>
 
-    <!-- 今日智能体简报：一进首页就能看到智能体的判断，而不只是行情表 -->
-    <section v-if="brief" class="brief" aria-label="今日智能体简报">
+    <!-- 今日智能体简报：一进首页先给一句人话结论，再列三条要点 -->
+    <section v-if="brief" class="brief" aria-label="今日简报">
       <div class="brief-head">
-        <span class="brief-tag">今日简报</span>
-        <span v-if="brief.source === 'llm'" class="brief-src">AI 生成</span>
+        <h2 class="brief-title">今日简报</h2>
+        <span class="brief-meta">{{ brief.source === 'llm' ? 'AI 生成' : '简化模式' }}</span>
       </div>
-      <p class="brief-summary">{{ brief.summary }}</p>
+      <p class="brief-summary">{{ cleanSummary(brief.summary) }}</p>
       <ul class="brief-items">
         <li v-for="(item, i) in brief.items" :key="i">
           <span class="brief-k">{{ item.title }}</span>
@@ -293,58 +314,62 @@ onMounted(load)
 
 /* ---- 今日智能体简报 ---- */
 .brief {
-  margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   border-radius: var(--radius-md);
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 160%);
 }
 .brief-head {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  align-items: baseline;
+  gap: var(--space-3);
   margin-bottom: var(--space-2);
 }
-.brief-tag {
-  font-size: var(--fs-cap);
-  padding: 1px 8px;
-  border-radius: var(--radius-sm);
-  background: var(--accent-dim, rgba(122, 162, 255, 0.16));
-  color: var(--accent);
+.brief-title {
+  margin: 0;
+  font-size: var(--fs-h3);
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
-.brief-src {
+.brief-meta {
   font-size: var(--fs-cap);
   color: var(--muted);
 }
 .brief-summary {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-body);
+  margin: 0 0 var(--space-4);
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text);
+  max-width: 62ch;
 }
 .brief-items {
   margin: 0;
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 6px;
-  font-size: var(--fs-aux);
-  color: var(--text);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
 }
 .brief-items li {
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: var(--space-3);
-  align-items: baseline;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: var(--space-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 .brief-k {
+  font-size: var(--fs-cap);
   color: var(--muted);
-  white-space: nowrap;
 }
 .brief-v {
+  font-size: var(--fs-body);
+  font-weight: 600;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.55;
 }
 
 /* ---- 工具条 ---- */
@@ -583,11 +608,11 @@ onMounted(load)
 
 /* 窄屏：简报两列改窄，详情允许折行 */
 @media (max-width: 720px) {
-  .brief-items li {
-    grid-template-columns: 78px 1fr;
+  .brief-items {
+    grid-template-columns: 1fr;
   }
-  .brief-v {
-    white-space: normal;
+  .brief-summary {
+    font-size: var(--fs-body);
   }
 }
 </style>

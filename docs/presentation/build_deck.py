@@ -186,7 +186,7 @@ SLIDES: list[str] = [
         <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
         <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
         <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
-        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>308 条测试、98% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>320 条测试、98% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
         <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
       </table>
       <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
@@ -358,8 +358,8 @@ z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
         <div>
           <h3>测试</h3>
           <ul>
-            <li><b>231</b> 条用例（单元 254 / 集成 21 / 评测 33），CI + 本机全绿</li>
-            <li>核心逻辑覆盖率 <b>98%</b>（1782 语句 / 35 未覆盖，要求 ≥60%）</li>
+            <li><b>231</b> 条用例（单元 266 / 集成 21 / 评测 33），CI + 本机全绿</li>
+            <li>核心逻辑覆盖率 <b>98%</b>（1823 语句 / 45 未覆盖，要求 ≥60%）</li>
             <li>已修 <b>15</b> 条真实缺陷（含 3 个 P0）</li>
           </ul>
         </div>
