@@ -12,13 +12,16 @@ license = { text = "MIT" }
 [tool.pytest.ini_options]
 pythonpath = ["code/backend", "code"]
 testpaths = ["tests"]
-addopts = "-q --strict-markers"
+# 默认离线：L4 评测（-m live，需联网 + 真实 LLM）不随每次提交跑，显式 `-m live` 才执行。
+addopts = "-q --strict-markers -m \"not live\""
 # 缓存目录（--lf / --sw 的落点）也钉在仓库内：默认的仓库根 .pytest_cache 一旦被外部
 # 工具用错误的 ACL 建出来，属主连写都会被打回 WinError 5（第 7 轮实测踩过）
 cache_dir = ".pytest-tmp/cache"
 markers = [
     "slow: 耗时较长的集成测试",
     "integration: 需要完整数据库/端到端的测试",
+    "live: 需要联网/真实 LLM 的评测（默认被 addopts 的 -m \"not live\" 排除）",
+    "agent_redteam: 智能体红队/注入/越权/隐私防御测试",
 ]
 
 [tool.ruff]

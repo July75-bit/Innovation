@@ -28,8 +28,8 @@ rule_fallback            ← 确定性：无密钥/超时/脏输出时的兜底 
 | **L1 单元** | 纯函数：解析、规则、拼接；精确断言 | `test_llm_agent.py` 13 条（脏输出/枚举/中英归一）、`test_ai_fallback.py` 6 条（规则版阈值）、`test_api_ai.py` 7 条（6 字段/404/无密钥） | `tests/unit/` | ✅ |
 | **L2 组件** | FakeLLM / Mock Client 隔离模型 | `analyze(ctx, chat=lambda …)` **注入式替身**（同一套接口，测试里传 lambda，生产传 urllib 客户端） | `test_llm_agent.py` 全部用例 | ✅ |
 | **L3 集成** | TestClient + FakeLLM，验证编排/契约/降级 | `test_api_ai.py`：`GET /api/analysis/1` 走真实 FastAPI + 真实 SQLite + 假模型；断言 200 + `source` + 账户不变（只读性） | `tests/unit/test_api_ai.py` | ✅ |
-| **L4 评测（Eval）** | 真实 LLM + 黄金集 + 统计通过率 / LLM-as-Judge | ⚠️ **只有人工抽样**：线上实测 5 名选手 5/5 走真模型、中位 2461ms、reason 含具体数值；**没有黄金集与自动统计** | `qa.md` §三、`qa_drill.md` | 🟡 缺自动化 |
-| **L5 E2E + 红队** | 浏览器交互 + 提示注入/越权/隐私攻击 | E2E 有（浏览器验收 16 张 + 线上走查）；**红队/提示注入没做** | `evidence/01~16`、`online/` | 🟡 缺红队 |
+| **L4 评测（Eval）** | 真实 LLM + 黄金集 + 统计通过率 | ✅ **已建黄金集 20 例**（16 选手 + 4 边界）：离线属性评测 33 条随 CI 跑；线上真模型评测 6 条（`-m live`），实测 **16/16 走 llm、契约 100%、理由含数字 100%、P95 3393ms** | `tests/eval/`、`docs/acceptance/agent_eval_report.md` | ✅ 已补齐 |
+| **L5 E2E + 红队** | 浏览器交互 + 提示注入/越权/隐私攻击 | ✅ E2E 有（浏览器验收 16 张 + 线上走查）；✅ **红队 11 条**（注入/越权/隐私/输出越界，离线随 CI）：**无自由输入故注入面为 0**，间接注入被结构校验兜住 | `tests/eval/test_agent_redteam.py`、`docs/acceptance/agent_redteam.md` | ✅ 已补齐（结构性红队） |
 
 ## 三、五条基本原则逐条对照
 
@@ -45,7 +45,7 @@ rule_fallback            ← 确定性：无密钥/超时/脏输出时的兜底 
 
 | 阶段 | 课件通过标准 | 我们的实际 | 结论 |
 | --- | --- | --- | --- |
-| **PR（L1–L3 离线）** | 100% 通过；guardrails/privacy 分支覆盖 100%；整体行覆盖 ≥80% | 216 条全绿；**行覆盖 97%**（1289 语句 / 43 未覆盖）；AI 相关模块 `ai/*` 与 `app/api/ai.py` 覆盖 100% / 84% | ✅（行覆盖达标；无独立 guardrails 模块，等价为 fallback 分支） |
+| **PR（L1–L3 离线）** | 100% 通过；guardrails/privacy 分支覆盖 100%；整体行覆盖 ≥80% | 264 条全绿；**行覆盖 96%**（1515 语句 / 60 未覆盖）；AI 相关模块 `ai/*` 与 `app/api/ai.py` 覆盖 100% / 84% | ✅（行覆盖达标；无独立 guardrails 模块，等价为 fallback 分支） |
 | **每 PR 集成** | 契约断言：状态码/字段/调用次数 | `test_api_ai.py` 断言 200、6 字段、`source`、404、账户不变 | ✅ |
 | **Nightly（L4）** | 50 题评测、召回/相关率统计 | **未做**（无评测集、无定时任务） | ❌ |
 | **发版（L5）** | 主流程通过、注入拒答 100%、P95 <10s | 主流程 ✅；**注入拒答未测**；AI 中位 2.46s / 1.8–3.9s，**P95 <10s** ✅ | 🟡 |
@@ -54,10 +54,10 @@ rule_fallback            ← 确定性：无密钥/超时/脏输出时的兜底 
 
 | 课件要求 | 我们现状 | 结论 |
 | --- | --- | --- |
-| `tests/` 按 `unit / integration / eval / e2e` 分目录 | 有 `unit`、`integration`；**无 `eval`、`e2e` 目录**（浏览器证据在 `docs/acceptance/evidence/`） | 🟡 |
-| `conftest.py` 统一提供 FakeLLM / FakeEmbedder / tmp 审计路径 | `conftest.py` 提供临时库与 `client`；**FakeLLM 未统一成夹具**（各测试内联 lambda） | 🟡 |
-| `pytest -m "not live"` 默认离线；`-m live` 才调真实模型 | **没有 marker**；默认全部离线（无任何用例调真实模型） | 🟡 缺标记但更安全 |
-| 已知缺陷以 `xfail(strict=True)` 登记 | 未使用 xfail；已知限制写在文档里 | 🟡 |
+| `tests/` 按 `unit / integration / eval / e2e` 分目录 | `unit` 210 条、`integration` 21 条、**`eval` 33 条（新增）**；E2E 仍以人工浏览器证据替代（`evidence/01~16`） | ✅ 三层齐（e2e 目录暂缺，已说明） |
+| `conftest.py` 统一提供 FakeLLM | ✅ **新增 `fake_llm` 夹具**（可 `.buyer()/.holder()/.raw()`，并记录调用次数），新测试统一用它 | ✅ |
+| `pytest -m "not live"` 默认离线；`-m live` 才调真实模型 | ✅ `addopts = -m "not live"`，`live` / `agent_redteam` 两个 marker 已登记 | ✅ |
+| 已知缺陷以 `xfail(strict=True)` 登记 | 未使用 xfail：缺陷已全部修复并建成 Issue（#22–#35）；已知限制写在文档里 | 🟡 不适用（无已知缺陷） |
 
 ## 六、用例模板对照（课件 p.189 的 YAML 模板）
 
@@ -88,6 +88,6 @@ rule_fallback            ← 确定性：无密钥/超时/脏输出时的兜底 
 
 **答辩口径**（被问「智能体怎么测的」）：
 
-> "我们把智能体拆成**确定性壳 + 概率性核**：壳（上下文组装、6 字段契约、降级、只读性）用 216 条离线测试钉死；
+> "我们把智能体拆成**确定性壳 + 概率性核**：壳（上下文组装、6 字段契约、降级、只读性）用 264 条离线测试钉死；
 > 核（模型输出）用**注入式替身**隔离，断言行为不承诺措辞；线上真模型只做人工抽样（5/5、中位 2.5s）。
 > **L4 评测集与红队攻击我们没做**——这是 6 天工期下的取舍，已写进已知限制。"

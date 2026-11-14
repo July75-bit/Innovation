@@ -3,7 +3,7 @@
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《创新工程实践营项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
 > **状态**：✅ 已具备（有产物 + 可验证）｜🟡 有但不完整｜❌ 缺
-> 最后核对：2026-11-07 21:20（合并后本机 219 passed / 覆盖率 97%）
+> 最后核对：2026-11-07 22:20（本机后端 265 passed / 前端 51 passed / 覆盖率 96%）
 
 ## 一、汇报第一部分：产品设计（8 分钟 / 40%）
 
@@ -63,7 +63,9 @@
 | **≥10 个测试用例文档（七列模板：编号/名称/前置条件/步骤/输入/预期/优先级）** | `test_plan.md` **§4.0**（2026-11-14 补，12 条） | ✅ |
 | 测试代码与文档提交到 `tests/` | `tests/unit` + `tests/integration` | ✅ |
 | **缺陷修复使用 GitHub Issues / BugTracker Project** | **BUG-01~14 已逐条建成 Issue #22–#35 并全部关闭**（`bug` + `P0/P1/P2` 标签齐全） | ✅ 已完成（2026-11-14 核实） |
-| **智能体测试分层（L1–L5）+ 五原则 + CI 门禁** | `acceptance/agent_test_layers.md` | 🟡 L1–L3 ✅、L4 评测集与 L5 红队未做（如实标注） |
+| **智能体测试分层（L1–L5）+ 五原则 + CI 门禁** | `acceptance/agent_test_layers.md` | ✅ L1–L5 齐（L4 黄金集 20 例、L5 红队 11 条） |
+| **L4 评测（真模型 + 黄金集）** | `acceptance/agent_eval_report.md`、`tests/eval/` | ✅ 线上 16/16 走真模型、契约 100%、理由含数字 100%、P95 3.4s |
+| **L5 红队（注入/越权/隐私/输出越界）** | `acceptance/agent_redteam.md`、`tests/eval/test_agent_redteam.py` | ✅ 11/11 通过；无自由输入 → 注入面为 0 |
 | **33 项用户测试检查表（P1–P5 / I1–I4 / V1–V4 / H1–H9 / A1–A11）** | `tests/playerstock_agent_demo_user_test.md`（**正式提交版**，学生版表格逐格填满）、`tests/agent_demo_user_test.md`（内部自查版） | ✅ **32 通过 / 1 部分通过 / 0 不通过**（首轮 5 项部分通过已修复 4 项） |
 | 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
 | 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
@@ -77,7 +79,7 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 216 passed |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 264 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 97% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |

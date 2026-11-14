@@ -3,7 +3,7 @@
 > **对应要求**：3.4「整个生命周期，如分析、设计、开发、测试和部署运维中遇到的主要问题及解决方法汇总，可用表格表示」
 > **口径**：只收**真实发生过**的问题，每一条都能在仓库里找到修复提交与回归用例；不写"预想的风险"（风险见 `docs/mgmt/risk_plan.md`）。
 > **来源**：`docs/acceptance/test_report.md` §9（BUG-01~13）、`docs/acceptance/defect_stories.md`（4 个深度复盘）、`docs/software/deployment.md`、本项目开发日志。
-> **截止**：2026-11-07 · 测试基线 219 passed / 0 skipped（覆盖率 97%，auth 模块扩容后待 D 复测）。
+> **截止**：2026-11-07 · 测试基线 265 passed / 0 skipped（覆盖率 96%，末轮新增账号类接口后待 D 复测）。
 
 ## 1. 汇总表
 
