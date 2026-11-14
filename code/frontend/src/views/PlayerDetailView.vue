@@ -387,6 +387,19 @@ watch(playerId, () => loadCore())
                       <span aria-hidden="true">{{ reasonExpanded ? '▴' : '▾' }}</span>
                       {{ reasonExpanded ? '收起' : '展开全文' }}
                     </button>
+                    <!-- 风险/把握是**只读指标**：用文字 + 彩色圆点，不用胶囊（避免被当成按钮） -->
+                    <p class="ai-meta">
+                      <span class="meta-item">
+                        <i :class="['meta-dot', analysis.risk_level.toLowerCase()]" aria-hidden="true"></i>
+                        风险<b :class="['meta-strong', analysis.risk_level.toLowerCase()]">{{
+                          RISK_LABEL[analysis.risk_level] ?? analysis.risk_level
+                        }}</b>
+                      </span>
+                      <template v-if="plan">
+                        <span class="meta-sep" aria-hidden="true">·</span>
+                        <span class="meta-item">把握<b class="meta-strong">{{ confidenceLabel(plan.confidence) }}</b></span>
+                      </template>
+                    </p>
                   </div>
                 </template>
                 <template v-else-if="analysisLoading">
@@ -395,23 +408,16 @@ watch(playerId, () => loadCore())
                 </template>
                 <p v-else class="ai-line muted">AI 建议暂不可用（不影响交易）。</p>
               </div>
-              <div class="ai-side">
-                <template v-if="analysis">
-                  <span :class="['chip', 'risk', analysis.risk_level.toLowerCase()]"
-                    >风险 {{ RISK_LABEL[analysis.risk_level] ?? analysis.risk_level }}</span
-                  >
-                  <span v-if="plan" class="chip">把握 {{ confidenceLabel(plan.confidence) }}</span>
-                </template>
-                <button
-                  v-if="analysis || analysisLoading"
-                  type="button"
-                  class="ghost-btn"
-                  :disabled="analysisLoading"
-                  @click="refreshAnalysis"
-                >
-                  {{ analysisLoading ? '分析中…' : '重新分析' }}
-                </button>
-              </div>
+              <!-- 右侧只放**唯一可点的操作**，别再和只读指标混排 -->
+              <button
+                v-if="analysis || analysisLoading"
+                type="button"
+                class="ghost-btn ai-action"
+                :disabled="analysisLoading"
+                @click="refreshAnalysis"
+              >
+                {{ analysisLoading ? '分析中…' : '重新分析' }}
+              </button>
             </div>
 
             <!-- 第二层：只留两个下单真正用得上的数字 -->
@@ -1038,11 +1044,57 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-aux);
 }
-.ai-side {
-  flex: none;
+/* 只读指标（风险/把握）：文字 + 彩色圆点，**刻意不用胶囊**，免得看起来像能点 */
+.ai-meta {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+  cursor: default;
+}
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.meta-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.meta-dot.low {
+  background: #4cc38a;
+}
+.meta-dot.medium {
+  background: #e0b341;
+}
+.meta-dot.high {
+  background: #e5534b;
+}
+.meta-strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.meta-strong.low {
+  color: #4cc38a;
+}
+.meta-strong.medium {
+  color: #e0b341;
+}
+.meta-strong.high {
+  color: #e5534b;
+}
+.meta-sep {
+  color: var(--border);
+}
+/* 右上角唯一操作：靠上对齐，不与正文抢位置 */
+.ai-action {
+  flex: none;
+  align-self: flex-start;
 }
 .chip {
   padding: 2px 10px;
@@ -1240,9 +1292,9 @@ h3 {
   .ai-verdict {
     flex-wrap: wrap;
   }
-  .ai-side {
-    width: 100%;
-    flex-wrap: wrap;
+  /* 窄屏：操作按钮单独一行、左对齐（不与结论抢位） */
+  .ai-action {
+    align-self: flex-start;
   }
   .ai-facts {
     flex-wrap: wrap;
