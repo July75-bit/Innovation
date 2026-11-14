@@ -1,7 +1,7 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "scenario": "Counter-Strike 2 (CS2)",
-  "description": "PlayerStock 固定演示数据。选手身份（姓名/战队/位置）为公开可查的真实 CS2 职业选手信息；价格与综合表现评分为本项目自行设定的模拟数据，不代表任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部均无关联，非官方产品。",
+  "description": "PlayerStock 固定演示数据。选手身份（姓名/战队/位置）为公开可查的真实 CS2 职业选手信息；价格与综合表现评分为本项目自行设定的模拟数据，不代表任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部均无关联，非官方产品。 2026-11-14（schema v5）：暂停交易改为「队伍 × 轮次」派生——每轮一场比赛，参赛两队（4 名选手）暂停交易；赛程见 data/match_schedule.json，派生规则见 code/core_engine/schedule.py。",
   "non_affiliation_notice": "本项目为课程作品，非官方、未获授权背书；不展示任何官方图片、Logo 或统计口径；选手姓名仅用于技术演示中的标识。",
   "data_sources": {
     "选手身份（姓名/战队/位置）": "HLTV 年度 Top20 选手榜单（2024 赛季，2025-01 公布）",
@@ -17,7 +17,8 @@
     "prev_price": "上一次价格，用于计算 change_pct；初始状态下等于 initial_price",
     "rating": "本项目自行设定的模拟综合表现分（0-100），用于驱动本项目定价公式；**不是 HLTV Rating，也不是任何官方统计**，UI 需标注为模拟数据",
     "role": "选手真实位置：AWPer / Entry / Rifler / IGL / Support / Lurker",
-    "status": "trading / suspended。suspended 表示模拟比赛中，暂停交易"
+    "status": "trading / suspended。注意：seed 里的 status 只是「开赛前」的初始值；第 N 轮的真实可交易状态由 schedule.status_for() 派生，不要逐轮改库",
+    "team_id": "队伍编号，对应顶层 teams[].team_id；仅用于赛程派生，不写入数据库、不进 API 契约"
   },
   "pricing": {
     "alpha": 0.15,
@@ -37,7 +38,8 @@
       "current_price": 126.0,
       "rating": 88,
       "status": "trading",
-      "note": "演示上涨与 BUY 建议的主案例；价格为模拟值"
+      "note": "演示上涨与 BUY 建议的主案例；价格为模拟值",
+      "team_id": 1
     },
     {
       "player_id": 2,
@@ -50,7 +52,8 @@
       "current_price": 143.5,
       "rating": 90,
       "status": "trading",
-      "note": "模拟评分最高，用于演示高价标的"
+      "note": "模拟评分最高，用于演示高价标的",
+      "team_id": 2
     },
     {
       "player_id": 3,
@@ -63,7 +66,8 @@
       "current_price": 91.2,
       "rating": 86,
       "status": "trading",
-      "note": "演示价格回落与 SELL 建议；2026-11-07 转会标注：G2 → Falcons"
+      "note": "演示价格回落与 SELL 建议；2026-11-07 转会标注：G2 → Falcons",
+      "team_id": 3
     },
     {
       "player_id": 4,
@@ -76,7 +80,8 @@
       "current_price": 74.4,
       "rating": 80,
       "status": "trading",
-      "note": "演示持续下跌场景"
+      "note": "演示持续下跌场景",
+      "team_id": 3
     },
     {
       "player_id": 5,
@@ -89,7 +94,8 @@
       "current_price": 105.0,
       "rating": 78,
       "status": "trading",
-      "note": "价格横盘，演示 HOLD 建议"
+      "note": "价格横盘，演示 HOLD 建议",
+      "team_id": 4
     },
     {
       "player_id": 6,
@@ -102,7 +108,8 @@
       "current_price": 90.2,
       "rating": 74,
       "status": "trading",
-      "note": "小幅上涨"
+      "note": "小幅上涨",
+      "team_id": 6
     },
     {
       "player_id": 7,
@@ -114,8 +121,9 @@
       "prev_price": 130.0,
       "current_price": 136.5,
       "rating": 85,
-      "status": "suspended",
-      "note": "模拟比赛进行中，暂停交易（用于演示暂停交易规则）"
+      "status": "trading",
+      "note": "原先的「常驻暂停」演示样本已取消：自 schema v5 起暂停交易由 data/match_schedule.json 按轮派生（该队比赛时整队暂停）",
+      "team_id": 2
     },
     {
       "player_id": 8,
@@ -128,7 +136,8 @@
       "current_price": 63.0,
       "rating": 66,
       "status": "trading",
-      "note": "跌幅最大，用于演示抄底买入"
+      "note": "跌幅最大，用于演示抄底买入",
+      "team_id": 1
     },
     {
       "player_id": 9,
@@ -141,7 +150,8 @@
       "current_price": 96.4,
       "rating": 79,
       "status": "trading",
-      "note": "新增：与 ropz 组成 FaZe 双核；小幅回落用于演示持仓浮亏"
+      "note": "新增：与 ropz 组成 FaZe 双核；小幅回落用于演示持仓浮亏",
+      "team_id": 4
     },
     {
       "player_id": 10,
@@ -154,7 +164,8 @@
       "current_price": 88.3,
       "rating": 72,
       "status": "trading",
-      "note": "新增：NAVI 双核；上市即回调"
+      "note": "新增：NAVI 双核；上市即回调",
+      "team_id": 6
     },
     {
       "player_id": 11,
@@ -167,7 +178,8 @@
       "current_price": 87.4,
       "rating": 71,
       "status": "trading",
-      "note": "新增：G2 双核之一；小幅上涨"
+      "note": "新增：G2 双核之一；小幅上涨",
+      "team_id": 5
     },
     {
       "player_id": 12,
@@ -180,7 +192,8 @@
       "current_price": 61.8,
       "rating": 62,
       "status": "trading",
-      "note": "新增：G2 低分标的，演示低价股买入"
+      "note": "新增：G2 低分标的，演示低价股买入",
+      "team_id": 5
     },
     {
       "player_id": 13,
@@ -193,7 +206,8 @@
       "current_price": 106.7,
       "rating": 82,
       "status": "trading",
-      "note": "新增：老牌明星，温和回落"
+      "note": "新增：老牌明星，温和回落",
+      "team_id": 7
     },
     {
       "player_id": 14,
@@ -206,7 +220,8 @@
       "current_price": 79.6,
       "rating": 69,
       "status": "trading",
-      "note": "新增：Astralis 双核第二名"
+      "note": "新增：Astralis 双核第二名",
+      "team_id": 7
     },
     {
       "player_id": 15,
@@ -219,7 +234,8 @@
       "current_price": 82.9,
       "rating": 77,
       "status": "trading",
-      "note": "新增：亚洲战队首次上市，小幅上涨"
+      "note": "新增：亚洲战队首次上市，小幅上涨",
+      "team_id": 8
     },
     {
       "player_id": 16,
@@ -232,7 +248,50 @@
       "current_price": 57.6,
       "rating": 64,
       "status": "trading",
-      "note": "新增：IGL 折价标的"
+      "note": "新增：IGL 折价标的",
+      "team_id": 8
+    }
+  ],
+  "teams": [
+    {
+      "team_id": 1,
+      "name": "Vitality",
+      "region": "EU"
+    },
+    {
+      "team_id": 2,
+      "name": "Spirit",
+      "region": "EU"
+    },
+    {
+      "team_id": 3,
+      "name": "Falcons",
+      "region": "EU"
+    },
+    {
+      "team_id": 4,
+      "name": "FaZe Clan",
+      "region": "EU"
+    },
+    {
+      "team_id": 5,
+      "name": "G2",
+      "region": "EU"
+    },
+    {
+      "team_id": 6,
+      "name": "NAVI",
+      "region": "EU"
+    },
+    {
+      "team_id": 7,
+      "name": "Astralis",
+      "region": "EU"
+    },
+    {
+      "team_id": 8,
+      "name": "The MongolZ",
+      "region": "APAC"
     }
   ]
 }
