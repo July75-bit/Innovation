@@ -238,7 +238,7 @@ P(t+1) = max( P_floor , P(t) × (1 + α × S(t) + β × D(t)) )
 - [x] C 第 5 天：上线价格链路核对（`scripts/check_price_history.py` + recalc 幂等），见 §12
 - [x] C 第 5 天：答辩定价口径整理（公式/参数/稳定性/下行风险/预设问答），见 §11
 - [x] C 第 7 天：暂停交易改为**队伍级派生**（`data/match_schedule.json` + `core_engine/schedule.py`），
-      接入模拟器 / 落库脚本 / 自查 / 回测 / `POST /api/prices/recalc`；测试 230 条全绿
+      接入模拟器 / 落库脚本 / 自查 / 回测 / `POST /api/prices/recalc`；全量测试全绿（口径以 `test_report.md` 为准）
 - [x] C 第 7 天：线上复验（B 执行 2026-11-14）：16 人 / 175 条价格历史 / 第 12 轮整队停牌 recalc 正确，见 §12.3
 - [ ] C 第 6 天：配合答辩讲解"哪部分来自比赛数据、哪部分来自需求"
 
