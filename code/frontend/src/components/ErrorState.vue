@@ -20,6 +20,7 @@ const emit = defineEmits<{ retry: [] }>()
       <span class="err-msg">{{ message }}</span>
     </div>
     <p class="tip">数据未成功加载，你的账户与持仓不受影响，可点击重试。</p>
+    <p class="tip tip-alt">如果多次重试仍失败，可稍后再试，或换一个网络环境。</p>
     <button @click="emit('retry')">重试</button>
     <slot />
   </div>
@@ -65,6 +66,11 @@ const emit = defineEmits<{ retry: [] }>()
   margin: 0;
   font-size: var(--fs-aux);
   color: var(--muted);
+}
+/* 备选办法提示：连续失败时用户知道还能做什么（H9 错误可恢复） */
+.tip-alt {
+  font-size: var(--fs-cap);
+  opacity: 0.9;
 }
 button {
   padding: 6px 18px;

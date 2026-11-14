@@ -102,7 +102,10 @@ async function submit(side: 'BUY' | 'SELL') {
         step="1"
         :disabled="submitting || suspended"
         :aria-invalid="invalidReason ? 'true' : 'false'"
+        :title="suspended ? '该选手比赛进行中，暂停交易' : '按 Enter 直接买入'"
+        @keyup.enter="submit('BUY')"
       />
+      <span class="qty-unit" aria-hidden="true">股</span>
       <div class="chips" role="group" aria-label="快捷数量">
         <button
           v-for="q in quickQty"
@@ -132,12 +135,13 @@ async function submit(side: 'BUY' | 'SELL') {
 
     <div class="actions">
       <button class="buy" :disabled="!canSubmit" @click="submit('BUY')">
-        {{ submitting ? '提交中…' : '买入' }}
+        {{ suspended ? '暂停交易中' : submitting ? '提交中…' : '买入' }}
       </button>
       <button class="sell" :disabled="!canSubmit" @click="submit('SELL')">
-        {{ submitting ? '提交中…' : '卖出' }}
+        {{ suspended ? '暂停交易中' : submitting ? '提交中…' : '卖出' }}
       </button>
     </div>
+    <p v-if="!suspended" class="kbd-hint">提示：在数量框按 <kbd>Enter</kbd> 直接买入</p>
 
     <!-- 结果反馈：成功/失败都即时可见（aria-live 供读屏播报） -->
     <div v-if="feedback" :class="['feedback', feedback.kind]" role="status" aria-live="polite">
@@ -314,5 +318,26 @@ button.sell:disabled {
     width: 100%;
     max-width: 160px;
   }
+}
+
+/* 数量单位后缀（「股」）：让输入框含义自解释，无需猜测单位 */
+.qty-unit {
+  font-size: var(--fs-aux);
+  color: var(--muted);
+}
+
+/* 键盘提示：告诉用户 Enter 可以直接买入（H7 高效） */
+.kbd-hint {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.kbd-hint kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-2);
+  font-family: inherit;
+  font-size: var(--fs-cap);
 }
 </style>

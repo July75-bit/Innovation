@@ -19,7 +19,7 @@
   --surface: #16181c;
   --surface-2: #1c1f25; /* 嵌套层 / hover 层 */
   --text: #ececef;
-  --muted: #9a9da6;
+  --muted: #b4b7bf; /* 辅助文字：原 #9a9da6 在深灰底上对比不足，按 WCAG AA（4.5:1）提亮 */
   --border: #2a2d33;
 
   /* ---- 主色 + 语义色（涨红跌绿沿用中国市场习惯） ---- */
@@ -54,6 +54,10 @@
   --fs-aux: 13px;
   --fs-cap: 12px;
   --lh: 1.6;
+
+  /* ---- 图标尺寸：导航用小、按钮/强调用中（V4 图标一致性的 token 化） ---- */
+  --icon-sm: 16px;
+  --icon-md: 20px;
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
 }
 
