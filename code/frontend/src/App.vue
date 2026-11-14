@@ -151,7 +151,7 @@ onMounted(() => {
         <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
         <div class="account-card" v-if="account">
           <div class="acct-row">
-            <span>余额（虚拟币）</span>
+            <span>余额（信用点）</span>
             <strong>{{ money(account.balance) }}</strong>
           </div>
           <div class="acct-row">
@@ -177,7 +177,7 @@ onMounted(() => {
         </div>
 
         <p class="side-note">
-          本项目为课程作品：全程虚拟币，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
+          本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
           Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
         </p>
       </aside>

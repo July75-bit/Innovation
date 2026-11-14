@@ -157,12 +157,12 @@ function asGuest(): void {
         </RouterLink>
 
         <h1>把喜欢的选手<br />当成一支支股票</h1>
-        <p class="lede">CS2 职业选手的行情、持仓与交易流水，全程虚拟币，只为练手与展示。</p>
+        <p class="lede">CS2 职业选手的行情、持仓与交易流水，全程信用点，只为练手与展示。</p>
 
         <ul class="points">
           <li>
             <span class="dot" aria-hidden="true"></span>
-            50 名选手行情与模拟表现分
+            16 名选手行情与模拟表现分
           </li>
           <li>
             <span class="dot" aria-hidden="true"></span>
@@ -175,7 +175,7 @@ function asGuest(): void {
         </ul>
 
         <p class="disclaimer">
-          本项目为课程作品：全程虚拟币，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
+          本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
           Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
         </p>
       </section>
@@ -359,7 +359,7 @@ function asGuest(): void {
             {{ pending ? '注册中…' : '注册并进入市场' }}
           </button>
 
-          <p class="note">注册即表示了解：这是课程演示，虚拟币不可充值 / 提现 / 兑换。</p>
+          <p class="note">注册即表示了解：这是课程演示，信用点不可充值 / 提现 / 兑换。</p>
 
           <p class="swap">
             已经有账号了？

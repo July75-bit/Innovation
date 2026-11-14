@@ -24,7 +24,7 @@ AI 建议复用 `code/backend/ai/fallback.py` 的阈值规则（+5% / -5% / 评�
 - 直接双击 `index.html`（或浏览器打开 `file:///.../docs/software/prototype/index.html`）；
 - 想用本地服务器：仓库根执行 `python -m http.server 8080`，访问 `http://127.0.0.1:8080/docs/software/prototype/`。
 
-**重置演示数据**：点页面顶部提示条右侧的「重置演示数据」（刷新即恢复 5000 虚拟币）。
+**重置演示数据**：点页面顶部提示条右侧的「重置演示数据」（刷新即恢复 5000 信用点）。
 
 ## 3. 生成方式与边界（如实标注）
 

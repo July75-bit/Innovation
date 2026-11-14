@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 白话导读：默认首页（URL 是 /），把 8 名选手做成一张可搜索、可排序、可筛选的行情列表。
+ * 白话导读：默认首页（URL 是 /），把 16 名选手做成一张可搜索、可排序、可筛选的行情列表。
  *
  * 页面套路（本项目四个数据页都一样，看懂一个就全懂）：
  *   1) 三个响应式变量：players(数据)、loading(转圈中)、error(错误文案)；
@@ -28,7 +28,7 @@ import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { matchLabel, roundMatch } from '../core/schedule'
-import { currentRound, haltReason, withRoundStatusAll } from '../core/tradingStatus'
+import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
 
 const players = ref<PlayerSummary[]>([])
 const loading = ref(true)
@@ -60,7 +60,17 @@ const sortBy = ref<'default' | 'price' | 'change' | 'rating'>('default')
  * 本轮停牌由赛程派生（`core/tradingStatus.ts`，与后端 suspension_reason 同口径）。
  */
 const round = currentRound()
-const listed = computed(() => withRoundStatusAll(players.value, round))
+/**
+ * 在册名单 + 本轮派生状态。
+ * halt_note 必须用**原始**选手算：派生后的 status 已经是 suspended，再喂给 haltReason
+ * 会被当成手动冻结（实测踩过：悬浮提示变成"状态 suspended（手动暂停）"）。
+ */
+const listed = computed(() =>
+  players.value.map((player) => ({
+    ...withRoundStatus(player, round),
+    halt_note: haltReason(player, round),
+  })),
+)
 const haltedCount = computed(() => listed.value.filter((p) => p.status !== TRADING).length)
 /** 今天是不是比赛日：不是就没有“本轮停牌”，横幅换成“休赛日”而不是硬指一场比赛 */
 const liveMatch = computed(() => (round === null ? null : roundMatch(round)))
@@ -144,6 +154,16 @@ onMounted(load)
       </ul>
     </section>
 
+    <!-- 本轮停牌提示：让玩家一眼知道“这几个人现在买不了”，并能直接去看赛程 -->
+    <p class="round-note num">
+      <template v-if="liveMatch">
+        <span class="rn-tag">第 {{ round }} 轮</span>
+        <strong>{{ matchText }}</strong> 比赛中，<b class="halt">{{ haltedCount }}</b> 人暂停交易
+      </template>
+      <template v-else> <span class="rn-tag">休赛日</span>今天没有比赛，全部选手照常交易 </template>
+      <RouterLink class="rn-link" to="/schedule">看赛程 →</RouterLink>
+    </p>
+
     <!-- 工具条：搜索 + 筛选 + 排序（任务流最短化） -->
     <div class="toolbar">
       <input
@@ -198,7 +218,7 @@ onMounted(load)
         v-for="p in filtered"
         :key="p.player_id"
         :class="['card', { suspended: p.status !== TRADING }]"
-        :title="haltReason(p, round) ?? undefined"
+        :title="p.halt_note ?? undefined"
       >
         <RouterLink :to="`/players/${p.player_id}`" class="card-link">
           <div class="top">
@@ -540,36 +560,6 @@ onMounted(load)
 
 /* ===== 窄屏：工具条纵向堆叠，搜索占整行 ===== */
 @media (max-width: 720px) {
-  .round-note {
-    margin: var(--space-3) 0 calc(var(--space-2) * -1);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    font-size: var(--fs-aux);
-    color: var(--muted);
-  }
-  .round-note strong {
-    color: var(--text);
-  }
-  .round-note .halt {
-    color: var(--warn);
-  }
-  .rn-tag {
-    padding: 1px 9px;
-    border-radius: var(--radius-pill);
-    background: var(--neutral-bg);
-    font-size: var(--fs-cap);
-  }
-  .rn-link {
-    margin-left: auto;
-    color: var(--accent);
-    text-decoration: none;
-    font-size: var(--fs-aux);
-  }
-  .rn-link:hover {
-    text-decoration: underline;
-  }
   .toolbar {
     gap: var(--space-2);
   }

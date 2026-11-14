@@ -127,4 +127,17 @@ describe('市场页 · 本轮停牌可见性', () => {
     expect(w.findAll('.card')).toHaveLength(12)
     expect(w.findAll('.card.suspended')).toHaveLength(0)
   })
+
+  it('停牌卡片的悬浮提示是本轮对阵，不会误报成"手动暂停"', async () => {
+    const w = mountView()
+    await flushPromises()
+
+    // 原因必须拿"原始 status"去算：拿派生后的对象会被判成手动冻结
+    const titles = w.findAll('.card.suspended').map((card) => card.attributes('title'))
+    expect(titles).toHaveLength(4)
+    for (const title of titles) {
+      expect(title).toContain('比赛中，暂停交易')
+      expect(title).not.toContain('手动暂停')
+    }
+  })
 })

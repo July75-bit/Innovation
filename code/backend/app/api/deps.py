@@ -68,7 +68,7 @@ def bearer_token(authorization: str | None) -> str | None:
 
 
 def get_public_demo_user(db: Session) -> User:
-    """取公共演示账户；不存在则按初始 5000 虚拟币创建（第 1 天原逻辑）。"""
+    """取公共演示账户；不存在则按初始 5000 信用点创建（第 1 天原逻辑）。"""
     user = db.scalar(select(User).where(User.nickname == DEMO_NICKNAME))
     if user is None:
         initial = Decimal(settings.initial_balance)

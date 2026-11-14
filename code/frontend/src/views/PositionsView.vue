@@ -39,7 +39,7 @@ const rebuildNotice = ref<string | null>(null)
 async function rebuildBalance() {
   const ok = window.confirm(
     '确定重建余额吗？\n\n' +
-      '· 你的余额会恢复到初始 5000 虚拟币\n' +
+      '· 你的余额会恢复到初始 5000 信用点\n' +
       '· 本账户的持仓与交易记录会被清空（不可撤销）\n' +
       '· 其它账号与市场行情不受影响',
   )
@@ -99,7 +99,7 @@ onMounted(load)
     <!-- 总览：四个关键指标一屏可见 -->
     <div v-if="account" class="summary num">
       <div class="stat">
-        <span>余额（虚拟币）</span><strong>{{ money(account.balance) }}</strong>
+        <span>余额（信用点）</span><strong>{{ money(account.balance) }}</strong>
       </div>
       <div class="stat">
         <span>持仓市值</span><strong>{{ money(account.position_value) }}</strong>

@@ -77,7 +77,7 @@ erDiagram
 | --- | --- | --- | --- |
 | `user_id` | INTEGER | PK, autoincrement | |
 | `nickname` | VARCHAR(50) | NOT NULL, **UNIQUE** | 登录凭据；`demo` = 公共演示账户（第 7 轮起仍保留） |
-| `balance` | FLOAT | NOT NULL, default 5000 | 虚拟币余额，不可为负 |
+| `balance` | FLOAT | NOT NULL, default 5000 | 信用点余额，不可为负 |
 | `initial_balance` | FLOAT | NOT NULL, default 5000 | 用于算收益率 |
 | `password_hash` | VARCHAR(255) | NULL | 第 7 轮新增：`pbkdf2_sha256$<迭代>$<盐>$<散列>`（`app/core/security.py`） |
 | `salt` | VARCHAR(64) | NULL | 第 7 轮新增：每用户独立随机盐（hex） |

@@ -4,7 +4,7 @@
 user_id / nickname / balance / initial_balance / created_at，
 第 7 轮加私人账号后多两个可空列 password_hash / salt（见 app/core/security.py）。
 
-初始 5000 虚拟币，不可充值、不可提现、不可兑换。
+初始 5000 信用点，不可充值、不可提现、不可兑换。
 
 **口令列允许为 NULL**：`demo` 是历史账户，第 7 轮保留为"公共演示账户"——
 没有口令、任何人未登录时都在用它（兜底分支见 app/api/deps.py）。

@@ -111,7 +111,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.app_name,
-    description="虚拟选手股交易与智能体市场模拟系统（虚拟币，不可兑换）",
+    description="虚拟选手股交易与智能体市场模拟系统（信用点，不可兑换）",
     version=settings.app_version,
     lifespan=lifespan,
 )

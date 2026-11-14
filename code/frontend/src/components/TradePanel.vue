@@ -63,7 +63,7 @@ const quickQty = [1, 5, 10, 25]
 const heldNow = computed(() => props.held ?? 0)
 
 /**
- * 「最大」档 = min( 剩余虚拟币 ÷ 现价 向下取整 , 50 股仓位上限 − 已持有 )。
+ * 「最大」档 = min( 剩余信用点 ÷ 现价 向下取整 , 50 股仓位上限 − 已持有 )。
  * 两个数取小的那个：既不会花超余额，也不会一点下去就把仓位顶过 50 股。
  * 余额还没拉到时不瞎猜数字：返回 0 并让这颗键不可点，原因写在 maxBlockReason。
  */
@@ -265,7 +265,7 @@ async function submit(side: 'BUY' | 'SELL') {
       {{ feedback.text }}
     </div>
 
-    <p class="virtual-note">虚拟币交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
+    <p class="virtual-note">信用点交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
   </section>
 </template>
 
