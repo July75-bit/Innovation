@@ -74,7 +74,7 @@ const { service: backend } = useBackendHealth()
 const healthText = computed(() => {
   if (backend.value === null) return '检测后端连接…'
   if (backend.value === false) return '后端未连接'
-  return `连接成功：${backend.value}`
+  return '服务正常'
 })
 
 /** 总收益 = 总资产 - 初始本金（后端字段，前端只做展示计算） */

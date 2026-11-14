@@ -142,14 +142,14 @@ onMounted(load)
     <!-- 今日智能体简报：一进首页就能看到智能体的判断，而不只是行情表 -->
     <section v-if="brief" class="brief" aria-label="今日智能体简报">
       <div class="brief-head">
-        <span class="brief-tag">智能体简报</span>
-        <span class="brief-src">{{ brief.source === 'llm' ? '模型生成' : '规则兜底' }}</span>
+        <span class="brief-tag">今日简报</span>
+        <span v-if="brief.source === 'llm'" class="brief-src">AI 生成</span>
       </div>
       <p class="brief-summary">{{ brief.summary }}</p>
       <ul class="brief-items">
         <li v-for="(item, i) in brief.items" :key="i">
-          <strong>{{ item.title }}</strong>
-          <span>{{ item.detail }}</span>
+          <span class="brief-k">{{ item.title }}</span>
+          <span class="brief-v">{{ item.detail }}</span>
         </li>
       </ul>
     </section>
@@ -323,15 +323,28 @@ onMounted(load)
 }
 .brief-items {
   margin: 0;
-  padding-left: 1.1em;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 4px;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.brief-items strong {
+  gap: 6px;
+  font-size: var(--fs-aux);
   color: var(--text);
-  margin-right: 6px;
+}
+.brief-items li {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+.brief-k {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.brief-v {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ---- 工具条 ---- */
@@ -565,6 +578,16 @@ onMounted(load)
   }
   .search {
     flex-basis: 100%;
+  }
+}
+
+/* 窄屏：简报两列改窄，详情允许折行 */
+@media (max-width: 720px) {
+  .brief-items li {
+    grid-template-columns: 78px 1fr;
+  }
+  .brief-v {
+    white-space: normal;
   }
 }
 </style>

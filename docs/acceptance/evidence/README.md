@@ -92,6 +92,11 @@
 | `29-ai-loading.png` | AI「分析中…」占位态（A5） | 375px 详情页：AI 卡片处显示「**AI 分析中…（行情与交易不受影响）**」+ 三点动画，同时下方交易面板已可用（说明行情/交易不被 AI 阻塞） |
 | `35-projects-list.png` | 仓库 Projects 页：协作三件套已建（2026-11-07，当时为 Private） | PlayerStock_Kanban(#1) / Team planning(#2) / Bug tracker(#3) |
 | `38-projects-public-incognito.png` | **协作三件套已 Public（2026-11-14 无痕窗口实测）** | 未登录状态（右上角 Sign in / Sign up）仍能看到三个项目：Bug tracker(#3) / Team planning(#2) / Kanban(#1)，Open 3 / Closed 0 → 证明匿名可见 |
+| `39-ui-redesign-before-detail.png` | **界面改版前 · 详情页**（2026-11-14 14:44） | AI 卡一张里堆 9 块内容：来源行、理由、红框归因、四格数字（仓位/止损/置信度 48%/余额）、两条依据、说明、采纳按钮、免责；工具调用直接显示英文函数名与 JSON 参数 |
+| `40-ui-redesign-after-detail.png` | **界面改版后 · 详情页**（2026-11-14 15:01） | 结论优先：[买入] + 一句人话理由 + 风险/把握 chip；第二层只留「可买 N 股 / 参考止损」；「为什么这么建议 / 三个角色怎么看 / 它查了哪些数据」三块默认折叠 |
+| `41-ui-redesign-after-market.png` | **界面改版后 · 市场页**（2026-11-14 15:01） | 今日简报改两列对齐（标题列 96px）；技术标签「规则兜底」隐藏；侧栏徽章改「服务正常」 |
+| `42-ui-redesign-after-375.png` | **界面改版后 · 375px 移动端**（2026-11-14 15:01） | 结论/风险/数字/折叠自上而下堆叠；`scrollWidth/innerWidth = 375/375` 无横向滚动 |
+| `43-ui-redesign-panel.png` | **改版后 · 协作纪要展开态**（2026-11-14 15:01） | 模型不可用时不显示 `LLMOutputError` 等技术信息，改为「三个角色本次未能给出纪要（不影响行情与交易）」 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
