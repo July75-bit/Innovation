@@ -1103,8 +1103,9 @@ h3 {
   padding: 4px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
-  /* 比「展开全文」（透明底）再多一点"实"的感觉，但远不到主按钮的强度 */
-  background: rgba(255, 255, 255, 0.04);
+  /* 比「展开全文」（透明底）再多一点"实"的感觉，但远不到主按钮的强度。
+     用令牌而不是写死 rgba(255,255,255,…)：浅色模式下会自动变成"淡黑"底 */
+  background: var(--neutral-bg);
   color: var(--text);
   font-size: var(--fs-cap);
   line-height: 18px;

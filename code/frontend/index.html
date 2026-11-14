@@ -13,18 +13,20 @@
     <title>PlayerStock · 虚拟选手股交易模拟</title>
     <!--
       首屏防闪：在 CSS/JS 之前先定主题（与 src/composables/useTheme.ts 同一个 storage key）。
-      已保存的选择 > 系统偏好 > 深色默认；内联执行，避免"先深后浅"的闪烁。
+      偏好 `auto`（默认，跟随系统）→ 读 prefers-color-scheme；`light`/`dark` 则原样使用。
+      内联执行，避免"先深后浅"的闪烁。
     -->
     <script>
       (function () {
         try {
           var saved = localStorage.getItem('playerstock.theme.v1')
+          var pref = saved === 'auto' || saved === 'light' || saved === 'dark' ? saved : 'auto'
           var mode =
-            saved === 'light' || saved === 'dark'
-              ? saved
-              : window.matchMedia('(prefers-color-scheme: light)').matches
+            pref === 'auto'
+              ? window.matchMedia('(prefers-color-scheme: light)').matches
                 ? 'light'
                 : 'dark'
+              : pref
           document.documentElement.dataset.theme = mode
         } catch (e) {
           document.documentElement.dataset.theme = 'dark'

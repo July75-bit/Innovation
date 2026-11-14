@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * 白话导读：注册 / 登录页（/auth），整页 CS2 背景，表单样式最重的一页，但逻辑很薄。
  *
@@ -436,14 +436,12 @@ function asGuest(): void {
   font-size: clamp(28px, 4.4vw, 44px);
   line-height: 1.18;
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.65);
 }
 .lede {
   margin: 0;
   max-width: 42ch;
   font-size: var(--fs-h3);
-  color: #d6d8dd;
-  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.6);
+  color: var(--muted);
 }
 .points {
   list-style: none;
@@ -453,7 +451,7 @@ function asGuest(): void {
   flex-direction: column;
   gap: var(--space-2);
   font-size: var(--fs-body);
-  color: #dfe1e6;
+  color: var(--text);
 }
 .points li {
   display: flex;
@@ -472,15 +470,15 @@ function asGuest(): void {
   max-width: 52ch;
   font-size: var(--fs-cap);
   line-height: 1.6;
-  color: #a9adb6;
+  color: var(--muted);
 }
 
 /* ===== 右侧面板 ===== */
 .panel {
   padding: var(--space-5);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  background: rgba(18, 20, 24, 0.78);
+  background: var(--surface);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
 }
@@ -489,7 +487,7 @@ function asGuest(): void {
   gap: 2px;
   padding: 3px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--neutral-bg);
 }
 .tab {
   padding: 7px 22px;
@@ -517,7 +515,7 @@ function asGuest(): void {
   color: var(--muted);
 }
 .hint strong {
-  color: #cfd2d8;
+  color: var(--text);
 }
 
 .banner {
@@ -554,16 +552,16 @@ function asGuest(): void {
   padding: 10px var(--space-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--neutral-bg);
   color: var(--text);
   font-size: var(--fs-body);
 }
 .field input::placeholder {
-  color: #6f727a;
+  color: var(--faint);
 }
 .field input:focus {
   border-color: var(--accent-text);
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--neutral-bg);
 }
 .field input[aria-invalid='true'] {
   border-color: var(--warn);
@@ -608,7 +606,7 @@ function asGuest(): void {
   height: 4px;
   flex: 1;
   border-radius: 2px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--neutral-bg);
 }
 .bar.s1 i:nth-child(1) {
   background: var(--warn);
