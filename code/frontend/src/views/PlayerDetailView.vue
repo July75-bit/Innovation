@@ -33,6 +33,7 @@ import { money, pct, trendClass } from '../utils/format'
 import PriceChart from '../components/PriceChart.vue'
 import TradePanel from '../components/TradePanel.vue'
 import StatusBadge from '../components/StatusBadge.vue'
+import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
 import CollapsibleCard from '../components/CollapsibleCard.vue'
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
@@ -48,6 +49,14 @@ const playerId = computed(() => Number(route.params.id))
 const invalidId = computed(() => !Number.isInteger(playerId.value) || playerId.value <= 0)
 
 const player = ref<PlayerDetail | null>(null)
+
+/**
+ * 本轮停牌是赛程派生的（后端 status 只有初始/手动值），所以详情页要显示派生后的状态，
+ * 并把同一份结论交给 TradePanel——否则会出现"徽章说能买、按钮却该禁用"这种自相矛盾。
+ */
+const round = currentRound()
+const viewPlayer = computed(() => (player.value ? withRoundStatus(player.value, round) : null))
+const halt = computed(() => (player.value ? haltReason(player.value, round) : null))
 const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
@@ -150,7 +159,8 @@ watch(playerId, () => loadCore())
           <h2>{{ player.display_name || player.name }}</h2>
           <p class="meta">
             {{ player.team ?? '—' }} · {{ player.role ?? '—' }}
-            <StatusBadge :status="player.status" />
+            <StatusBadge :status="viewPlayer?.status ?? player.status" />
+            <span v-if="halt" class="halt-note">{{ halt }}</span>
           </p>
           <p class="rating-line">
             模拟表现分 <strong>{{ player.rating }}</strong> / 100
@@ -208,7 +218,9 @@ watch(playerId, () => loadCore())
                 ⚠ 高风险建议：{{ analysis.disclaimer }}
               </p>
               <p class="ai-reason">{{ analysis.reason }}</p>
-              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">{{ analysis.disclaimer }}</p>
+              <p v-if="analysis.risk_level !== 'HIGH'" class="disclaimer">
+                {{ analysis.disclaimer }}
+              </p>
             </section>
             <EmptyState v-else>AI 建议暂不可用（不影响交易）。</EmptyState>
           </CollapsibleCard>
@@ -218,7 +230,9 @@ watch(playerId, () => loadCore())
         <aside class="col-side">
           <h3>交易</h3>
           <TradePanel
-            :player="player"
+            v-if="viewPlayer"
+            :player="viewPlayer"
+            :halt-reason="halt"
             :held="held"
             @traded="
               async () => {
@@ -291,6 +305,12 @@ watch(playerId, () => loadCore())
 .change.flat {
   color: var(--muted);
 }
+.halt-note {
+  margin-left: 8px;
+  font-size: var(--fs-cap);
+  color: var(--warn);
+}
+
 .rating-line {
   margin: var(--space-2) 0 0;
   font-size: var(--fs-aux);

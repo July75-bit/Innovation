@@ -33,6 +33,8 @@ const props = defineProps<{
   player: PlayerSummary
   /** 当前持仓（无持仓为 0；未知传 null，不展示提示） */
   held?: number | null
+  /** 停牌原因（赛程派生或手动冻结），由父页按本轮赛程算好传进来 */
+  haltReason?: string | null
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +49,9 @@ const feedback = ref<{ kind: 'success' | 'error'; text: string } | null>(null)
 const { account } = useAccount()
 
 const suspended = computed(() => props.player.status !== 'trading')
+
+/** 提示优先用父页给的原因（如"Vitality vs Spirit 比赛中，暂停交易"），没传再退回通用说法 */
+const haltHint = computed(() => props.haltReason ?? '该选手比赛进行中，暂停交易')
 
 /** 单选手持仓上限（契约 §4.7：前端只做体验校验，最终以接口返回为准） */
 const MAX_HOLD = 50
@@ -185,7 +190,7 @@ async function submit(side: 'BUY' | 'SELL') {
         step="1"
         :disabled="submitting || suspended"
         :aria-invalid="invalidReason ? 'true' : 'false'"
-        :title="suspended ? '该选手比赛进行中，暂停交易' : '按 Enter 直接买入'"
+        :title="suspended ? haltHint : '按 Enter 直接买入'"
         @keyup.enter="submit('BUY')"
       />
       <span class="qty-unit" aria-hidden="true">股</span>
@@ -240,7 +245,7 @@ async function submit(side: 'BUY' | 'SELL') {
 
     <!-- 拦截态：暂停交易时明确说明原因，而不是只禁用按钮 -->
     <p v-if="suspended" class="suspended-hint" role="status">
-      ⚠ 该选手比赛进行中，暂停交易（恢复后可正常下单）
+      ⚠ {{ haltHint }}（恢复后可正常下单）
     </p>
     <p v-else-if="invalidReason" class="invalid-hint" role="alert">{{ invalidReason }}</p>
 

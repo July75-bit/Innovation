@@ -154,7 +154,7 @@ function shortDate(iso: string): string {
           :disabled="selected === todayRound"
           @click="selected = todayRound"
         >
-          跳到本轮
+          回到今日
         </button>
       </div>
     </div>
