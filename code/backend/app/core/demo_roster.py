@@ -13,12 +13,14 @@ Render 的构建上下文是 `rootDir: code/backend`（见 render.yaml），线�
 
 from __future__ import annotations
 
-DEMO_SCHEMA_VERSION = 4
+DEMO_SCHEMA_VERSION = 5
 
 DEMO_DESCRIPTION = (
     "PlayerStock 固定演示数据（部署侧镜像）。选手身份为公开可查的真实 CS2 职业选手；"
     "价格与综合表现评分为本项目设定的模拟数据，不构成任何官方统计或投资建议。"
     "2026-11-07：扩至 16 名选手 / 8 队（每队 2 人），m0NESY 由 G2 转会 Falcons。"
+    "2026-11-14（schema v5）：暂停交易改为「队伍 × 轮次」派生（每轮一场比赛，"
+    "参赛两队 4 人暂停），名单里不再有常驻 suspended；赛程见 data/match_schedule.json。"
 )
 
 DEMO_ROSTER: list[dict[str, str | int]] = [
@@ -97,7 +99,7 @@ DEMO_ROSTER: list[dict[str, str | int]] = [
         "initial_price": "130.00",
         "current_price": "136.50",
         "rating": 85,
-        "status": "suspended",  # 模拟比赛进行中，用于演示暂停交易规则
+        "status": "trading",  # 常驻暂停已取消：暂停交易由 data/match_schedule.json 按轮派生
     },
     {
         "player_id": 8,
