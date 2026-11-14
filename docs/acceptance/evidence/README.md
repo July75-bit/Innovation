@@ -106,6 +106,9 @@
 | `50-ui-v2-after-login.png` | **UI v2 · 登录页** | 渐变背景与发光全部清除，改为扁平底色 + 1px 边框 |
 | `51-design-tokens-after-detail.png` | **设计 Token 接入后 · 详情页**（2026-11-14 15:58） | 买入/卖出改用 AA 合规底色（`#c23438` 白字 5.47:1、`#1a7f4b` 白字 5.02:1）；间距/圆角/字号全部走 `tokens.css`，组件零改动（兼容层映射） |
 | `52-design-tokens-after-market.png` | **设计 Token 接入后 · 市场页** | 简报与卡片沿用统一样式令牌；4/6/8 圆角、1px 边框、无阴影 |
+| `53-ui-kit-full.png` | **UI 组件库预览页**（`/ui-kit`，2026-11-14 16:10） | 按钮 4 变体 × 3 尺寸 × loading/disabled；输入框含 hint/error/后缀/禁用；下拉；5 种标签；卡片 3 态；表格（排序）；分页 96 条；导航选中态 |
+| `54-ui-kit-modal.png` | **危险确认弹窗** | 无 ✕（dismissible=false）、取消在左、红色确认在右、遮罩 72% |
+| `55-ui-kit-375.png` | **组件库 375px** | 无横向滚动（375/375），按钮/输入框/表格均可用 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

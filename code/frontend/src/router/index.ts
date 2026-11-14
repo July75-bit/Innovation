@@ -67,6 +67,13 @@ const router = createRouter({
       name: 'schedule',
       component: () => import('../views/ScheduleView.vue'),
     },
+    // UI 组件库预览（设计系统验收用；不在主导航里，地址直达）
+    {
+      path: '/ui-kit',
+      name: 'ui-kit',
+      component: () => import('../views/UiKitView.vue'),
+      meta: { public: true, title: 'UI 组件库' },
+    },
     // 兜底：任何拼错/过期的路径都回首页。空白页比 404 更像"坏了"，
     // 答辩现场手一抖输错地址不至于看起来像站点挂了。
     {

@@ -5,6 +5,7 @@
 > **交付文件**：
 > - CSS：[`code/frontend/src/assets/tokens.css`](../../code/frontend/src/assets/tokens.css)（变量定义）
 > - JSON：[`code/frontend/src/assets/design-tokens.json`](../../code/frontend/src/assets/design-tokens.json)（含用途与对比度）
+> - 组件实现（Vue，9 个组件 + 状态矩阵 + 禁止用法）：[ui_components.md](ui_components.md)
 > - 组件样式：[`code/frontend/src/assets/ui-kit.css`](../../code/frontend/src/assets/ui-kit.css)（`ui-` 前缀参考实现）
 > - 兼容层：[`code/frontend/src/assets/main.css`](../../code/frontend/src/assets/main.css)（旧变量名 → 新令牌，组件零改动）
 > **对比度口径**：WCAG 2.1，文字/图标相对表面色 `#181b22`；AA 正文 ≥4.5:1、大号文字 ≥3.0:1。
