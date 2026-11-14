@@ -144,6 +144,10 @@
 | `88-p1-light-kit-table.png` | **P1 · 表格实测** | `UiTable` 实测：行高 **59px**（原 ~44）、表头 **49px**、浅色表头 `#fafafa`、深色 `#262b34` |
 | `89-p1-light-detail.png` | **P1 · 选手详情** | 列间距 24→32、卡片留白 24；可点文字统一 `--accent-text`（不再用纯红填充色当文字） |
 | `90-p1-mobile-light-positions.png` | **P1 · 移动端持仓 375px** | 移动端同步生效，无横向溢出；标题/表格在 375 下仍按卡片降级 |
+| `91-auth-light-desktop.png` | **登录页 · 浅色（修复后）**（2026-11-14 18:55） | 原浅色下"白底白字不可读"已修：页面改纯色画布 + 白色面板 + 深色文字；表单面板去掉玻璃/发光阴影；顶部/底部文案全部 token 化（对比度实测 0 违规） |
+| `92-auth-dark-desktop.png` | **登录页 · 深色（同版新实现）** | 深色分支同样走语义令牌：深色画布 + 深色面板 + 浅色文字；与浅色共用一套结构，不再有硬编码的"只在深色下成立"的颜色 |
+| `93-auth-light-375.png` | **登录页 · 浅色 375px** | 单列堆叠：品牌区在上、表单在下；输入框/按钮 44px 高；无横向溢出 |
+| `94-auth-dark-375.png` | **登录页 · 深色 375px** | 同结构深色分支；标题与表单文字均可读 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
