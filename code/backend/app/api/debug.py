@@ -88,7 +88,12 @@ def debug_db(db: Session = Depends(get_db)) -> dict:
 def debug_reseed(
     db: Session = Depends(get_db),
     token: str = Query(description="口令，等于 settings.reseed_token"),
-    rounds: int = Query(default=9, ge=0, le=30, description="模拟轮数；0 = 只写入种子初始价"),
+    rounds: int = Query(
+        default=12,
+        ge=0,
+        le=30,
+        description="模拟轮数（默认 12；赛程每 4 轮覆盖 8 队一次，务必取 4 的倍数）；0 = 只写种子初始价",
+    ),
     seed: int = Query(default=42, description="core_engine 的随机种子（同值结果可复现）"),
 ) -> dict:
     """清空整库并按 `app/core/demo_roster.py`（`data/seed_players.json` 的部署侧镜像）
@@ -231,11 +236,10 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
         "trades": int(db.execute(delete(Trade).where(Trade.user_id == demo.user_id)).rowcount or 0),
     }
 
-    # 2) 其它注册账号：余额复位，登录凭据（password_hash / salt）与令牌行原样保留
-    reset_users = 0
-    for user in db.scalars(select(User).where(User.nickname != "demo")).all():
-        user.balance = Decimal(str(settings.initial_balance))
-        reset_users += 1
+    # 2) **其它注册账号一律不动**：余额 / 持仓 / 流水 / 令牌全部原样保留。
+    #    （2026-11-07 用户口径："每个账户的余额一直保存，跟着账号走"；
+    #      想清空自己账户由用户点 POST /api/account/rebuild，重灌无权替人清账。
+    #      注：这段在合并 C 的赛程分支时曾被旧逻辑回填，已再次修正，有测试守着。）
 
     now = DEMO_SEED_TS
     for row in DEMO_ROSTER:
