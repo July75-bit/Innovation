@@ -156,3 +156,31 @@ def test_tools_endpoint_degrades_without_key(client, monkeypatch):
     assert body["source"] == "rule_fallback"
     assert body["fallback_reason"], "降级必须说明原因"
     assert body["answer"], "降级也要给一句建议"
+
+
+# ---------------------------------------------------------------- 简报里的"停牌"口径
+def test_brief_halt_note_uses_schedule_not_manual_status():
+    """简报的"本轮停牌"必须来自**赛程**，不能看 players.status（手动冻结字段）。
+
+    2026-11-14 修：原先用 `status != trading` 判断，而 16 人全是 trading，
+    于是简报永远显示"无选手停牌"，与前端（按赛程每轮 4 人停牌）自相矛盾。
+    """
+    from app.api.agent import _round_halt_detail
+
+    class P:
+        def __init__(self, name, team, status="trading"):
+            self.name, self.team, self.status = name, team, status
+
+    players = [
+        P("ZywOo", "Vitality"),
+        P("donk", "Spirit"),
+        P("m0NESY", "Falcons"),
+        P("NiKo", "Falcons"),
+    ]
+    # 第 1 轮是 Vitality vs <team_id 8>；至少要点明轮次与人数，且不依赖 players.status
+    detail = _round_halt_detail(players, 1)
+    assert "第 1 轮" in detail
+    assert "停牌" in detail
+
+    # 非比赛日：明确说"没有本轮停牌"，不谎报
+    assert "不是比赛日" in _round_halt_detail(players, None)
