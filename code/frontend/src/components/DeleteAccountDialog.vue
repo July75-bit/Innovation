@@ -72,7 +72,13 @@ async function submit(): Promise<void> {
 <template>
   <Teleport to="body">
     <div v-if="open" class="mask" @keydown="onKeydown" @click.self="open = false">
-      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="del-title" tabindex="-1">
+      <div
+        class="dialog glass glass--panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="del-title"
+        tabindex="-1"
+      >
         <h3 id="del-title">删除账号 {{ nickname }}</h3>
         <p class="warn">
           不可恢复：余额、持仓、交易流水会一并删除，用户名将被释放。 公共演示账户不受影响。
@@ -133,17 +139,32 @@ async function submit(): Promise<void> {
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(2px);
+  /* 遮罩只负责压暗：不再做 blur——玻璃层已经负责模糊，避免"玻璃叠玻璃" */
+  background: rgba(0, 0, 0, 0.66);
 }
 .dialog {
   width: min(420px, 100%);
   padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* 材质层：玻璃（底色/模糊/高光/投影见 .glass--panel） */
+  border-radius: var(--glass-radius-panel);
   outline: none;
+}
+
+/* ≤600px：接近全屏 + 表单文字密集 → 实色底部 sheet，玻璃配额与可读性都更稳 */
+@media (max-width: 600px) {
+  .mask {
+    align-items: end;
+    padding: 0;
+  }
+  .dialog {
+    width: 100%;
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--glass-radius-sheet) var(--glass-radius-sheet) 0 0;
+    box-shadow: var(--shadow-overlay);
+  }
 }
 .dialog h3 {
   margin: 0 0 var(--space-2);

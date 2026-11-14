@@ -9,7 +9,7 @@
  *
  * 该页不在主导航中，直接用地址访问；不影响业务页面。
  */
-import { computed, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import UiButton from '../components/ui/UiButton.vue'
 import UiCard from '../components/ui/UiCard.vue'
@@ -68,6 +68,40 @@ const total = 96
 
 /* ---------- 导航 ---------- */
 const activeNav = ref('market')
+
+/* ---------- 液态玻璃（材质层）演示 ---------- */
+/** 降级开关：给 <html> 加 no-backdrop-filter，模拟"浏览器不支持 backdrop-filter" */
+const fallbackOn = ref(false)
+/** 当前视口内玻璃面积占比（%），用来守 30% 配额 */
+const glassQuota = ref('—')
+
+function toggleFallback(): void {
+  fallbackOn.value = !fallbackOn.value
+  document.documentElement.classList.toggle('no-backdrop-filter', fallbackOn.value)
+}
+
+function measureGlass(): void {
+  if (typeof document === 'undefined') return
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  let area = 0
+  document.querySelectorAll<HTMLElement>('.glass').forEach((el) => {
+    const r = el.getBoundingClientRect()
+    const w = Math.min(r.right, vw) - Math.max(r.left, 0)
+    const h = Math.min(r.bottom, vh) - Math.max(r.top, 0)
+    if (w > 0 && h > 0) area += w * h
+  })
+  glassQuota.value = ((area / (vw * vh)) * 100).toFixed(1)
+}
+
+onMounted(() => {
+  measureGlass()
+  window.addEventListener('resize', measureGlass)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureGlass)
+  document.documentElement.classList.remove('no-backdrop-filter')
+})
 </script>
 
 <template>
@@ -208,6 +242,65 @@ const activeNav = ref('market')
         </template>
       </UiModal>
     </section>
+
+    <!-- 液态玻璃材质层 -->
+    <section id="liquid-glass" class="kit__section">
+      <h2>液态玻璃材质层 Liquid Glass</h2>
+      <p class="kit__note">
+        只有<strong>材质层</strong>用玻璃：导航壳 / 底部工具条 / 弹窗 / Popover。
+        内容层（正文、表格、表单、长文）保持实色扁平，永远不加玻璃。
+        配额：同屏玻璃面积 ≤ 30%，本页实测
+        <strong data-testid="glass-quota">{{ glassQuota }}%</strong>（演示页同时展示多块材质，配额会高于业务页）。
+      </p>
+
+      <div class="kit__row">
+        <UiButton variant="secondary" @click="toggleFallback">
+          {{ fallbackOn ? '恢复玻璃（backdrop-filter）' : '模拟降级（不支持 backdrop-filter）' }}
+        </UiButton>
+        <UiButton variant="secondary" @click="measureGlass">重新测量玻璃面积</UiButton>
+      </div>
+
+      <!-- ① 导航壳（玻璃，文字坐在 scrim 上） -->
+      <div class="glass-demo glass glass--nav glass--interactive" data-testid="glass-nav">
+        <span class="glass-demo__brand">PlayerStock</span>
+        <nav class="glass-demo__nav" aria-label="玻璃导航示例">
+          <a href="#liquid-glass" class="is-active">市场</a>
+          <a href="#liquid-glass">持仓</a>
+          <a href="#liquid-glass">流水</a>
+        </nav>
+        <span class="glass-demo__meta">余额 5000.00</span>
+      </div>
+
+      <!-- ② 悬浮工具条（玻璃，圆角 12） -->
+      <div class="glass-toolbar glass glass--control glass--interactive" data-testid="glass-toolbar">
+        <span class="glass-toolbar__hint">ZywOo · 108.75 · +2.1%</span>
+        <UiButton variant="primary" size="sm">买入 2 股</UiButton>
+        <UiButton variant="secondary" size="sm">重新分析</UiButton>
+        <UiButton variant="ghost" size="sm">忽略</UiButton>
+      </div>
+
+      <!-- ③ Popover 浮层（玻璃，圆角 20，极轻投影） -->
+      <div class="glass-popover glass glass--panel glass--interactive" data-testid="glass-popover">
+        <p class="glass-popover__label">今日最该看一眼</p>
+        <p class="glass-popover__value">sh1ro +13.96%</p>
+        <p class="glass-popover__hint">现价 136.43 · 评分 88</p>
+      </div>
+
+      <!-- ④ 浅色模式玻璃（作用域 .theme-light；业务页默认深色，这里做材质对照） -->
+      <div class="theme-light light-island" data-testid="glass-light">
+        <div class="glass glass--panel glass--interactive light-island__panel">
+          <p class="light-island__title">浅色玻璃 · 同一套令牌</p>
+          <p class="light-island__body">
+            玻璃底 rgba(255,255,255,0.72)，模糊 22px；正文 16px / 1.6，对比度按 AA 校验。
+          </p>
+          <!-- 玻璃下面再放内容一律实色：这里是最多"玻璃 + 实色"两层，禁止玻璃叠玻璃 -->
+          <div class="light-island__card">
+            <strong>实色内容卡</strong>
+            <span>表格与表单永远住在这种实色表面上</span>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
 
@@ -271,5 +364,122 @@ const activeNav = ref('market')
 }
 .is-down {
   color: var(--color-down);
+}
+
+/* ===== 液态玻璃演示（仅在 /ui-kit 出现，业务页不要照抄这些 demo 类名） ===== */
+.glass-demo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--glass-radius-control);
+}
+.glass-demo__brand {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-strong);
+}
+.glass-demo__nav {
+  display: flex;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+.glass-demo__nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* 点击区域 ≥44px */
+  padding: 0 var(--space-3);
+  border-radius: var(--glass-radius-control);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-size-aux);
+}
+.glass-demo__nav a:hover {
+  color: var(--color-text-strong);
+  background: var(--color-surface-raised);
+}
+.glass-demo__nav a.is-active {
+  color: var(--color-text-strong);
+  background: var(--color-surface-raised);
+  box-shadow: inset 2px 0 0 var(--color-primary-500);
+}
+.glass-demo__nav a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.glass-demo__meta {
+  margin-left: auto;
+  font-size: var(--font-size-cap);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-3);
+}
+.glass-toolbar__hint {
+  margin-right: auto;
+  font-size: var(--font-size-aux);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.glass-popover {
+  width: min(280px, 100%);
+  padding: var(--space-4);
+}
+.glass-popover__label {
+  margin: 0;
+  font-size: var(--font-size-cap);
+  color: var(--color-text-muted);
+}
+.glass-popover__value {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-up-text);
+  font-variant-numeric: tabular-nums;
+}
+.glass-popover__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-cap);
+  color: var(--color-text-muted);
+}
+
+/* 浅色玻璃对照区：自带浅色画布，避免和深色业务页混在一起看不出对比 */
+.light-island {
+  background: var(--color-canvas);
+  border-radius: var(--glass-radius-panel);
+  padding: var(--space-5);
+}
+.light-island__panel {
+  padding: var(--space-4);
+}
+.light-island__title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-strong);
+}
+.light-island__body {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text);
+}
+.light-island__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-aux);
 }
 </style>

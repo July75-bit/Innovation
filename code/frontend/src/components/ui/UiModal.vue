@@ -58,7 +58,7 @@ onBeforeUnmount(() => {
     <div v-if="open" class="ui-modal-overlay" @click.self="close">
       <section
         ref="panel"
-        class="ui-modal"
+        class="ui-modal glass glass--panel"
         :class="`ui-modal--${size}`"
         role="dialog"
         aria-modal="true"
@@ -103,10 +103,7 @@ onBeforeUnmount(() => {
   width: 100%;
   max-height: calc(100vh - var(--space-8));
   overflow: auto;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-overlay);
+  /* 材质层：玻璃（底色/模糊/1px 内高光/极轻投影由 .glass--panel 提供） */
   outline: none;
 }
 .ui-modal--sm {
@@ -117,6 +114,23 @@ onBeforeUnmount(() => {
 }
 .ui-modal--lg {
   max-width: 720px;
+}
+
+/* ≤600px：弹窗接近全屏，玻璃面积会破 30% 配额，且里面是表单文字 → 回退实色底部 sheet */
+@media (max-width: 600px) {
+  .ui-modal {
+    background-color: var(--color-surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--glass-radius-sheet) var(--glass-radius-sheet) 0 0;
+    box-shadow: var(--shadow-overlay);
+    max-height: 88dvh;
+  }
+  .ui-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
 }
 .ui-modal__head {
   display: flex;
