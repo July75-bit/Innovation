@@ -699,6 +699,37 @@ onMounted(() => {
   }
   .topbar {
     display: flex;
+    /* 移动端顶栏单行：品牌 / 余额 / 主题 / 菜单 全部垂直居中，余额不再独占一行 */
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    min-height: 56px;
+    height: auto;
+    padding: 8px 12px;
+  }
+  .topbar__right {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+    margin-left: auto;
+    min-width: 0;
+  }
+  .topbar__right .balance {
+    margin-left: 0;
+    font-size: var(--fs-cap);
+    line-height: 1.2;
+  }
+  .topbar__right .balance strong {
+    font-size: var(--fs-aux);
+  }
+  .topbar .theme-toggle,
+  .topbar .menu-toggle {
+    flex: none;
+  }
+  .brand-sm {
+    flex: none;
+    min-width: 0;
   }
   .only-desktop {
     display: none !important;

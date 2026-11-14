@@ -149,6 +149,33 @@ const estimated = computed(() => {
 
 const canSubmit = computed(() => !submitting.value && !suspended.value && !invalidReason.value)
 
+/**
+ * 大额买入风险提示（2026-11-14 用户反馈："大额度买入没有风险提示"）。
+ *
+ * 判定：本次买入金额占当前余额 ≥ 30% 视为"大额"（也覆盖"一键最大"把余额花光的情况）。
+ * 只做提示、**不拦截**——课程项目的定位是"给用户判断依据"，不是替他决策；
+ * 文案里给出具体金额与占比，比一句"注意风险"有用。
+ */
+const BIG_BUY_RATIO = 0.3
+
+const bigBuyWarning = computed(() => {
+  if (suspended.value || !canSubmit.value) return null
+  const balance = account.value?.balance ?? 0
+  const total = estimated.value
+  if (balance <= 0 || total <= 0) return null
+  const ratio = total / balance
+  if (ratio < BIG_BUY_RATIO) return null
+
+  const percent = Math.round(ratio * 100)
+  const tail =
+    percent >= 95
+      ? '几乎会花光余额，价格下跌时没有缓冲空间'
+      : percent >= 60
+        ? '仓位偏重，价格波动会明显放大盈亏'
+        : '建议分批买入，保留一部分余额'
+  return `本次买入约需 ${money(total)} 信用点，占余额 ${percent}%（大额）：${tail}`
+})
+
 async function submit(side: 'BUY' | 'SELL') {
   if (!canSubmit.value) return
   submitting.value = true
@@ -248,6 +275,11 @@ async function submit(side: 'BUY' | 'SELL') {
       ⚠ {{ haltHint }}（恢复后可正常下单）
     </p>
     <p v-else-if="invalidReason" class="invalid-hint" role="alert">{{ invalidReason }}</p>
+
+    <!-- 大额买入风险提示：仓位占比过高时先提醒，而不是等用户点下去才说 -->
+    <p v-if="bigBuyWarning" class="big-buy-hint" role="alert">
+      ⚠ {{ bigBuyWarning }}
+    </p>
 
     <div class="actions">
       <button class="buy" :disabled="!canSubmit" @click="submit('BUY')">
@@ -387,6 +419,17 @@ input[aria-invalid='true'] {
   font-size: var(--fs-aux);
   margin: 0;
   color: var(--warn);
+}
+/* 大额买入提示：黄色警示块，比普通说明更醒目，但不至于像报错 */
+.big-buy-hint {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+  background: var(--warn-bg);
+  color: var(--text);
+  font-size: var(--fs-aux);
+  line-height: 1.55;
 }
 .actions {
   display: flex;

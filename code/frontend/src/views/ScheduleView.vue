@@ -222,8 +222,10 @@ function shortDate(iso: string): string {
           <span class="sub-meta"
             >{{ schedule.season }} · 8 队单循环 · 共 {{ totalRounds }} 轮 · 每轮 1 场</span
           >
-          <span class="sub-note"
-            ><strong class="sub-halt"
+          <span
+            class="sub-note"
+            :title="`第 ${selected} 轮：${playingLabel} 比赛中暂停交易，其余选手照常买卖`"
+          ><strong class="sub-halt"
               >第 {{ selected }} 轮打比赛的两队（{{ playingLabel }}）暂停交易</strong
             >，其余选手照常买卖。</span
           >
@@ -428,6 +430,14 @@ function shortDate(iso: string): string {
 .sub-note {
   /* 允许内部折行，但整句和"，其余…"不会被拆成两个 flex 单位 */
   min-width: 0;
+  /* 固定两行高度（2026-11-14）：队伍名长短不同会导致 1 行 / 2 行切换，
+     下方对决卡片跟着上下跳。这里锁死 2 行并省略超出部分，切换轮次时布局不再位移。 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.6em * 2);
 }
 .sub-halt {
   color: var(--warn);
