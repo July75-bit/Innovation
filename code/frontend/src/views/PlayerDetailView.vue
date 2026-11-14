@@ -372,18 +372,22 @@ watch(playerId, () => loadCore())
                   <span :class="['advice-pill', analysis.action.toLowerCase()]">{{
                     ACTION_LABEL[analysis.action] ?? analysis.action
                   }}</span>
-                  <!-- 主卡：默认完整句子组成的简介；放不下的用「展开全文」就地展开（不出现半句） -->
-                  <p :class="['ai-line', { 'is-expanded': reasonExpanded }]">
-                    {{ reasonExpanded ? cleanReason(analysis.reason) : summaryReason(analysis.reason) }}
-                  </p>
-                  <button
-                    v-if="hasMoreReason(analysis.reason)"
-                    type="button"
-                    class="ai-expand"
-                    @click="reasonExpanded = !reasonExpanded"
-                  >
-                    {{ reasonExpanded ? '收起' : '展开全文' }}
-                  </button>
+                  <!-- 文字与「展开」竖排：按钮永远在正文下方左侧，不会被挤成竖排字 -->
+                  <div class="ai-text">
+                    <p :class="['ai-line', { 'is-expanded': reasonExpanded }]">
+                      {{ reasonExpanded ? cleanReason(analysis.reason) : summaryReason(analysis.reason) }}
+                    </p>
+                    <button
+                      v-if="hasMoreReason(analysis.reason)"
+                      type="button"
+                      class="ai-expand"
+                      :aria-expanded="reasonExpanded"
+                      @click="reasonExpanded = !reasonExpanded"
+                    >
+                      <span aria-hidden="true">{{ reasonExpanded ? '▴' : '▾' }}</span>
+                      {{ reasonExpanded ? '收起' : '展开全文' }}
+                    </button>
+                  </div>
                 </template>
                 <template v-else-if="analysisLoading">
                   <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
@@ -954,6 +958,15 @@ h3 {
   gap: var(--space-3);
   min-width: 0;
 }
+/* 正文 + 「展开全文」：竖向排列，按钮在正文左下角（不再被 flex 挤成竖排字） */
+.ai-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
 .advice-pill {
   flex: none;
   padding: 2px 12px;
@@ -992,20 +1005,34 @@ h3 {
   line-clamp: unset;
   overflow: visible;
 }
-/* 「展开全文 / 收起」：小号文字按钮，不抢主结论的视觉 */
+/*
+ * 「展开全文 / 收起」：安静的胶囊按钮（不是强调色大字，也不抢"卖出/持有"的视觉）。
+ * 关键：white-space: nowrap —— 上一版就是被 flex 挤到只剩一个字宽，变成竖排"展开全文"。
+ */
 .ai-expand {
-  margin: 2px 0 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
   font-size: var(--fs-cap);
+  line-height: 18px;
+  white-space: nowrap;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 .ai-expand:hover {
-  opacity: 0.8;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.ai-expand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .ai-line.muted {
   color: var(--muted);
