@@ -21,6 +21,7 @@ import { mockApi } from '../mock/players'
 import { mockAuth } from '../mock/auth'
 import type {
   Account,
+  AccountRebuildResponse,
   AnalysisResponse,
   AuthResponse,
   DeleteAccountResponse,
@@ -151,4 +152,20 @@ export const api = {
           method: 'DELETE',
           body: JSON.stringify({ password }),
         }),
+
+  /**
+   * §4.17 余额重建：把自己这个账户恢复成刚注册的样子（余额回 5000、清空本账户持仓与流水）。
+   * 重置行情（/api/debug/reseed）不会动账号余额与流水（它们跟着账号走），
+   * 所以"我想重新开始"必须用户自己按这个按钮。
+   */
+  rebuildAccount: (): Promise<AccountRebuildResponse> =>
+    USE_MOCK
+      ? fromMock(() => ({
+          user_id: 1,
+          balance: 5000,
+          cleared_positions: 0,
+          cleared_trades: 0,
+          note: 'mock',
+        }))
+      : request<AccountRebuildResponse>('/api/account/rebuild?confirm=true', { method: 'POST' }),
 }

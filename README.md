@@ -33,7 +33,7 @@
 | Web 前端框架 | Vue | 3.5.42 | 组合式 API（A） |
 | 前端构建 | Vite | 8.2.2 | — |
 | 前端路由 | vue-router | 5.3.1 | 含 `/auth` 登录注册页与守卫、`/market` 重定向与兜底路由（BUG-11） |
-| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 219 条、前端 34 条 |
+| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 231 条、前端 51 条 |
 | 代码质量 | ruff / ESLint / oxlint / Pylint / complexipy | 0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0 | 配置与结果见 `docs/software/CodeReview.md` |
 | 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | 同 Python 运行时 | 无第三方依赖（C） |
 | 智能体 | Python + LLM API（可降级为规则版） | 标准库 urllib，超时 20s | 无密钥/超时/脏输出一律回落 `rule_fallback`（D） |

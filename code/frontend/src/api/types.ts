@@ -167,6 +167,15 @@ export interface LogoutResponse {
   revoked: boolean
 }
 
+/** §4.17：余额重建结果（只影响当前账户） */
+export interface AccountRebuildResponse {
+  user_id: number
+  balance: number
+  cleared_positions: number
+  cleared_trades: number
+  note: string
+}
+
 /**
  * §4.16：删除账号的结果。
  * 三个 deleted_* 是后端回报的真实行数——"级联删干净了"这件事要能在响应里看见，
