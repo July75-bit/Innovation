@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import replace
-from datetime import timedelta
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
 from core_engine import generate_match, standardize_score, update_price
@@ -31,7 +31,12 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.errors import ApiError
-from app.models import Player, PriceHistory, Position, Trade, User
+from app.models import Player, Position, PriceHistory, Trade, User
+
+#: 种子历史点的固定时间戳（开赛前，早于赛程第 1 轮 2026-11-01）。
+#: 与 `scripts/seed_db.py` 的 `SEED_TS` 一致：改用固定值后，
+#: 「初始价格」不会再排到引擎价格点之后（否则 `/prices` 末点价 != current_price）。
+DEMO_SEED_TS = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
@@ -208,7 +213,6 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
     from sqlalchemy import delete
 
     from app.core.demo_roster import DEMO_ROSTER
-    from app.core.time import utcnow
 
     balance = Decimal(str(settings.initial_balance))
 
@@ -224,20 +228,21 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
         "positions": int(
             db.execute(delete(Position).where(Position.user_id == demo.user_id)).rowcount or 0
         ),
-        "trades": int(
-            db.execute(delete(Trade).where(Trade.user_id == demo.user_id)).rowcount or 0
-        ),
+        "trades": int(db.execute(delete(Trade).where(Trade.user_id == demo.user_id)).rowcount or 0),
     }
 
-    # 2) 种子价格历史（每人 1–2 行初始点）
-    now = utcnow()
+    # 2) 其它注册账号：余额复位，登录凭据（password_hash / salt）与令牌行原样保留
+    reset_users = 0
+    for user in db.scalars(select(User).where(User.nickname != "demo")).all():
+        user.balance = Decimal(str(settings.initial_balance))
+        reset_users += 1
+
+    now = DEMO_SEED_TS
     for row in DEMO_ROSTER:
         player_id = int(row["player_id"])
         initial_price = Decimal(str(row["initial_price"]))
         current_price = Decimal(str(row["current_price"]))
-        db.add(
-            PriceHistory(player_id=player_id, price=initial_price, reason="初始价格", ts=now)
-        )
+        db.add(PriceHistory(player_id=player_id, price=initial_price, reason="初始价格", ts=now))
         if current_price != initial_price:
             db.add(
                 PriceHistory(
@@ -254,16 +259,13 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
         "demo 账户（余额复位、持仓/流水已清）": 1,
         **{f"demo 清掉的{n}": v for n, v in demo_cleared.items()},
         "players": int(db.scalar(select(func.count()).select_from(Player)) or 0),
-        "price_history 种子行": int(
-            db.scalar(select(func.count()).select_from(PriceHistory)) or 0
-        ),
+        "price_history 种子行": int(db.scalar(select(func.count()).select_from(PriceHistory)) or 0),
     }
 
 
 def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     """逐轮模拟价：本轮开价 = 上轮新价（apply_updates 会 cascade current_price）。"""
     from app.core.price_update import apply_updates, plan_for_player
-    from app.core.time import utcnow
 
     players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
 
@@ -285,8 +287,15 @@ def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     }
 
     applied_rounds: list[dict] = []
+    from app.core.demo_schedule import DEMO_SCHEDULE
+
+    schedule_matches = DEMO_SCHEDULE["matches"]
     for round_no in range(1, rounds + 1):
-        round_ts = utcnow() + timedelta(days=round_no)
+        # 时间戳取赛程里的比赛日（与 scripts/simulate_match.py 的 ts 口径一致）
+        meta = schedule_matches[(round_no - 1) % len(schedule_matches)]
+        round_ts = datetime.combine(
+            date.fromisoformat(meta["played_at"]), time.min, tzinfo=timezone.utc
+        )
 
         planned_list = []
         for player in players:

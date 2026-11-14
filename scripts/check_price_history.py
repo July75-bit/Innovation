@@ -58,7 +58,9 @@ def is_seed_row(reason: str) -> bool:
     return any(marker in reason for marker in SEED_MARKERS)
 
 
-def check_player(db, player: Player, min_points: int) -> tuple[list[str], dict]:
+def check_player(
+    db, player: Player, min_points: int, rounds: int, schedule: dict | None
+) -> tuple[list[str], dict]:
     rows = list(
         db.scalars(
             select(PriceHistory)
@@ -67,9 +69,26 @@ def check_player(db, player: Player, min_points: int) -> tuple[list[str], dict]:
         ).all()
     )
     problems: list[str] = []
-    suspended = player.status != "trading"
-    need = 1 if suspended else min_points
+    engine_rows = [row for row in rows if not is_seed_row(row.reason)]
 
+    # 不变量：每个可交易轮次恰好一条引擎价格点
+    if schedule is not None:
+        from core_engine.schedule import matches_of_team, resolve_team_id
+
+        try:
+            playing = matches_of_team(schedule, resolve_team_id(player.team or "", schedule), rounds)
+            expected_engine = rounds - playing
+            note = f"（本队 {rounds} 轮内比赛 {playing} 场）" if playing else ""
+        except ValueError:
+            expected_engine = rounds
+            note = "（队伍不在赛程内）"
+        if len(engine_rows) != expected_engine:
+            problems.append(f"引擎点数 {len(engine_rows)} != 预期 {expected_engine}{note}")
+    else:
+        expected_engine = None
+        note = ""
+
+    need = min_points if player.status == "trading" else 1
     if len(rows) < need:
         problems.append(f"点数不足：{len(rows)} < {need}")
 
@@ -115,6 +134,7 @@ def check_player(db, player: Player, min_points: int) -> tuple[list[str], dict]:
         "status": player.status,
         "points": len(rows),
         "engine_points": engine_points,
+        "expected_engine_points": expected_engine,
         "current_price": float(player.current_price),
         "last_price": float(rows[-1].price) if rows else None,
         "last_reason": rows[-1].reason if rows else "",
@@ -124,11 +144,15 @@ def check_player(db, player: Player, min_points: int) -> tuple[list[str], dict]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="价格历史一致性自查（只读）")
-    parser.add_argument("--min-points", type=int, default=10, help="可交易选手的最少价格点（默认 10）")
+    parser.add_argument("--min-points", type=int, default=10, help="每名选手的最少价格点（含种子点，默认 10）")
+    parser.add_argument("--rounds", type=int, default=12, help="赛程轮数（默认 12：用于算每人应有多少引擎价格点）")
     parser.add_argument("--player-id", type=int, default=None, help="只查某一名选手")
     parser.add_argument("--json", action="store_true", help="以 JSON 输出，便于贴进验收记录")
     args = parser.parse_args()
 
+    from core_engine import DEFAULT_SCHEDULE_PATH, load_schedule
+
+    schedule = load_schedule() if DEFAULT_SCHEDULE_PATH.exists() else None
     init_db()
     print(f"[check] 数据库：{engine.url}（只读核对，不写库）")
 
@@ -145,7 +169,7 @@ def main() -> int:
             return 1
 
         for player in players:
-            problems, info = check_player(db, player, args.min_points)
+            problems, info = check_player(db, player, args.min_points, args.rounds, schedule)
             infos.append(info)
             if problems:
                 all_problems.extend(f"{info['name']}：{p}" for p in problems)

@@ -130,6 +130,29 @@ def test_recalc_skips_suspended_player(client, session_factory) -> None:
     assert _history_rows(session_factory, SEED_SH1RO) == []
 
 
+def test_recalc_skips_team_playing_this_round(client, session_factory) -> None:
+    """第 7 轮是 Spirit vs G2：Spirit 的选手即使 status=trading 也要整队跳过。"""
+    with session_factory() as db:
+        player = db.get(Player, SEED_SH1RO)
+        player.status = "trading"  # 排除「手动暂停」，只验证队伍级规则
+        db.commit()
+
+    resp = client.post(
+        "/api/prices/recalc",
+        json=_payload([{"player_id": SEED_SH1RO, "score": 80.0, "signal": 0.3}]),
+    )
+
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["applied"] == []
+    reason = body["skipped"][0]["reason"]
+    assert "比赛中" in reason and "Spirit" in reason, reason
+
+    with session_factory() as db:
+        assert float(db.get(Player, SEED_SH1RO).current_price) == 136.5
+    assert _history_rows(session_factory, SEED_SH1RO) == []
+
+
 def test_recalc_unknown_player_returns_404(client) -> None:
     resp = client.post(
         "/api/prices/recalc",

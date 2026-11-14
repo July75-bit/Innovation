@@ -106,6 +106,56 @@ def suspended_players(
     return [p for p in players if status_for(p, round_no, schedule) == SUSPENDED]
 
 
+# ---------------------------------------------------------------- 管线复用的判定
+def resolve_team_id(team: int | str, schedule: Mapping[str, Any]) -> int:
+    """队伍编号或队伍名 → team_id（兼容 ORM 只有 `team` 字符串的场景）。"""
+    if isinstance(team, int) or (isinstance(team, str) and team.isdigit()):
+        return int(team)
+    by_name = {name: tid for tid, name in team_names(schedule).items()}
+    if team not in by_name:
+        raise ValueError(f"队伍 {team!r} 不在赛程里")
+    return by_name[team]
+
+
+def match_of_team(
+    team: int | str, round_no: int, schedule: Mapping[str, Any]
+) -> dict | None:
+    """这名选手所在队伍这一轮的比赛（不比赛返回 None）。"""
+    team_id = resolve_team_id(team, schedule)
+    match = round_match(schedule, round_no)
+    return match if team_id in {int(match["team_a"]), int(match["team_b"])} else None
+
+
+def team_playing(team: int | str, round_no: int, schedule: Mapping[str, Any]) -> bool:
+    """队伍这一轮是否在比赛（= 整队暂停交易）。"""
+    return match_of_team(team, round_no, schedule) is not None
+
+
+def suspension_reason(
+    player: Mapping[str, Any], round_no: int, schedule: Mapping[str, Any]
+) -> str | None:
+    """这一轮为什么不能交易；可交易返回 None。
+
+    两类来源，**手动 status 优先**（运维临时冻结仍然有效）：
+    1. `player["status"] != "trading"` → "状态 X（手动暂停）"；
+    2. 队伍这一轮有比赛 → "Vitality vs Spirit 比赛中，暂停交易"。
+    """
+    status = str(player.get("status", TRADING))
+    if status != TRADING:
+        return f"状态 {status}（手动暂停）"
+
+    team = player.get("team_id", player.get("team"))
+    if team is None:
+        return None
+    match = match_of_team(team, round_no, schedule)
+    if match is None:
+        return None
+    names = team_names(schedule)
+    team_id = resolve_team_id(team, schedule)
+    opponent = int(match["team_b"]) if int(match["team_a"]) == team_id else int(match["team_a"])
+    return f"{names[team_id]} vs {names[opponent]} 比赛中，暂停交易"
+
+
 # ---------------------------------------------------------------- 点数与校验
 def matches_of_team(
     schedule: Mapping[str, Any], team_id: int, total_rounds: int | None = None
@@ -191,13 +241,17 @@ __all__ = [
     "TRADING",
     "expected_points",
     "load_schedule",
+    "match_of_team",
     "matches_of_team",
     "playing_teams",
+    "resolve_team_id",
     "round_match",
     "rounds",
     "status_for",
+    "suspension_reason",
     "suspended_players",
     "team_names",
+    "team_playing",
     "tradable_players",
     "validate",
 ]

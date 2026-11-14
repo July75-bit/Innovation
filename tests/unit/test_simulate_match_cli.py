@@ -2,11 +2,11 @@
 
 负责人：C
 
-对应第 3 天验收项「命令行逐条变化及原因」：
+对应第 3 天验收项「命令行逐条变化及原因」，第 7 天起叠加「队伍级暂停」：
 
-- seed v5 起 **16 名选手全部 `trading`**：暂停交易改由赛程逐轮派生（批次二接入），
-  因此当前固定 seed 下应打印 **16 条价格更新**、没有"跳过定价"行；
-- 每条更新都必须带中文 `reason`（答辩要拆解归因）；
+- **第 1 轮 = Vitality vs The MongolZ**（`data/match_schedule.json`）→ 这 4 人暂停交易，
+  其余 12 人正常定价，所以固定 seed 下应打印 **12 条价格更新 + 4 条暂停说明**；
+- 每条更新都必须带中文 `reason`（答辩要拆解归因），且 reason 里带「本轮得分 + S」；
 - `--json` 导出的 `ts` 必须是 UTC ISO 8601（以 `Z` 结尾），交给 B 直接落 `price_history.ts`。
 
 运行方式：
@@ -50,20 +50,22 @@ def _run_main(module, argv: list[str]) -> str:
     return buffer.getvalue()
 
 
-def test_cli_prints_one_line_per_trading_player(script_module) -> None:
+def test_cli_skips_whole_team_and_updates_the_rest(script_module) -> None:
     output = _run_main(script_module, ["--seed", "42"])
     lines = output.splitlines()
 
     assert "模拟比赛：1 轮 × 16 名选手（seed=42）" in output
-    # seed v5：不再有常驻暂停；逐轮暂停由赛程派生（批次二）
-    assert "跳过定价" not in output
-    assert "共 16 条价格更新" in output
+    # 第 1 轮 Vitality vs The MongolZ → 2 队 × 2 人 = 4 人暂停
+    assert "Vitality vs The MongolZ 比赛中，暂停交易" in output
+    skipped = [line for line in lines if "本轮跳过定价" in line]
+    assert len(skipped) == 4, skipped
+    assert "共 12 条价格更新" in output
 
     # 逐行匹配：说明行里也有"评分"二字，用 count() 会多算一行
     price_lines = [line for line in lines if "评分" in line and "→" in line]
     reason_lines = [line for line in lines if "｜" in line]
-    assert len(price_lines) == 16, price_lines
-    assert len(reason_lines) == 16, reason_lines
+    assert len(price_lines) == 12, price_lines
+    assert len(reason_lines) == 12, reason_lines
     # 第 4 天验收：每条 reason 都要能追溯到"本轮得分"
     assert all("本轮得分" in line for line in reason_lines), reason_lines
     assert all("S=" in line for line in reason_lines), reason_lines
@@ -82,6 +84,6 @@ def test_json_payload_uses_iso_utc_ts(script_module, monkeypatch) -> None:
     assert captured["path"] == "dummy.json"
     assert captured["seed"] == 42
     updates = captured["updates"]
-    assert len(updates) == 16
+    assert len(updates) == 12
     assert all(item["reason"] for item in updates)
     assert all(item["ts"].endswith("Z") and "T" in item["ts"] for item in updates)

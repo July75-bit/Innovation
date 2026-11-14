@@ -7,7 +7,7 @@
 等价于手跑这三条（见 `docs/software/database_design.md` §4.1）：
 
     python scripts/seed_db.py --reset
-    python scripts/simulate_match.py --seed 42 --rounds 9 --json data/price_updates.json
+    python scripts/simulate_match.py --seed 42 --rounds 12 --json data/price_updates.json
     python scripts/update_prices.py --from-json data/price_updates.json
 
 它**不重写任何算法**：只是按顺序调用上述三个脚本（C 的模拟+定价、B 的入库、B 的种子），
@@ -16,7 +16,7 @@
 用法（仓库根目录）：
 
     python scripts/bootstrap_demo_data.py                  # 清库重建 + 9 轮价格
-    python scripts/bootstrap_demo_data.py --rounds 12      # 想要更长的价格历史
+    python scripts/bootstrap_demo_data.py --rounds 16      # 想要更长的价格历史（4 的倍数）
     python scripts/bootstrap_demo_data.py --seed 7         # 换一套可复现的剧本
     python scripts/bootstrap_demo_data.py --keep           # 不 drop 表，只补价格
     python scripts/bootstrap_demo_data.py --json-out /tmp/price_updates.json   # 顺带留明细
@@ -48,7 +48,7 @@ if hasattr(sys.stdout, "reconfigure"):
         pass
 
 DEFAULT_SEED = 42
-DEFAULT_ROUNDS = 9  # 9 轮：种子只给 ropz 1 条历史，8 轮只到 9 点，9 轮才能让所有人 >= 10
+DEFAULT_ROUNDS = 12  # 12 轮：赛程每 4 轮覆盖 8 队一次 → 每队停 3 轮，每人 2 + 9 = 11 点（>= 10）
 DEFAULT_MIN_POINTS = 10
 
 
@@ -72,35 +72,60 @@ def _run_step(label: str, args: list[str]) -> None:
         raise SystemExit(f"[bootstrap] 步骤失败（exit={completed.returncode}）：{' '.join(args)}")
 
 
-def verify(min_points: int) -> bool:
-    """核对每名可交易选手的价格点数，顺带把库里的其他计数打出来。"""
+def verify(min_points: int, rounds: int, keep: bool = False) -> bool:
+    """核对每名选手的价格点数与赛程预期是否一致，顺带打出库里的其他计数。
+
+    - 全量重建（默认）：每个可交易轮次恰好一条引擎价格点
+      → 引擎点数 == `rounds - 本队前 rounds 轮的比赛场次`；
+    - `--keep`（在现有库上补价格）：历史会累加，只核对总点数下限。
+    """
     from sqlalchemy import func, select
+
+    from core_engine import load_schedule
+    from core_engine.schedule import matches_of_team, resolve_team_id
 
     from app.core.database import SessionLocal
     from app.models import Player, Position, PriceHistory, Trade, User
 
+    schedule = load_schedule()
+    seed_markers = ("初始价格", "种子数据", "行情初始化")
+
     with SessionLocal() as db:
-        counts = dict(
-            db.execute(
-                select(PriceHistory.player_id, func.count()).group_by(PriceHistory.player_id)
-            ).all()
-        )
+        rows = db.execute(select(PriceHistory.player_id, PriceHistory.reason)).all()
         players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
         balance = db.scalar(select(User.balance).where(User.nickname == "demo"))
         positions = db.scalar(select(func.count()).select_from(Position))
         trades = db.scalar(select(func.count()).select_from(Trade))
         total_points = db.scalar(select(func.count()).select_from(PriceHistory))
 
+    counts: dict[int, int] = {}
+    engine_counts: dict[int, int] = {}
+    for player_id, reason in rows:
+        counts[player_id] = counts.get(player_id, 0) + 1
+        if not any(marker in (reason or "") for marker in seed_markers):
+            engine_counts[player_id] = engine_counts.get(player_id, 0) + 1
+
     print("\n=== 结果核对 ===", flush=True)
     all_ok = True
     for player in players:
-        n = int(counts.get(player.player_id, 0))
-        ok = n >= min_points or player.status != "trading"
+        n = counts.get(player.player_id, 0)
+        engine_n = engine_counts.get(player.player_id, 0)
+        try:
+            playing = matches_of_team(schedule, resolve_team_id(player.team or "", schedule), rounds)
+            expected = rounds - playing
+            note = "" if playing == 0 else f"（本队 {rounds} 轮内比赛 {playing} 场，暂停 {playing} 轮）"
+        except ValueError:
+            expected = rounds
+            note = "（队伍不在赛程内，按全程可交易核对）"
+
+        # --keep 是「在现有库上继续补」，引擎点数会累加，只核对下限
+        engine_ok = True if keep else engine_n == expected
+        ok = engine_ok and n >= min_points
         all_ok = all_ok and ok
-        note = "" if player.status == "trading" else f"（{player.status}，按规则不定价）"
         print(
             f"  {'OK' if ok else '!!'} #{player.player_id} {player.name:<7} "
-            f"{n:>2} 点  现价 {player.current_price}{note}",
+            f"{n:>2} 点（引擎 {engine_n}/{expected}{'，累加' if keep else ''}）"
+            f"  现价 {player.current_price}{note}",
             flush=True,
         )
     print(
@@ -158,7 +183,7 @@ def run(args: argparse.Namespace) -> int:
         if cleanup is not None:
             cleanup.unlink(missing_ok=True)
 
-    ok = verify(args.min_points)
+    ok = verify(args.min_points, args.rounds, keep=args.keep)
     if not ok:
         print(
             f"\n[bootstrap] 有可交易选手的价格点少于 {args.min_points} 个，"
@@ -177,7 +202,7 @@ def main() -> None:
     )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED, help="随机种子（演示固定 42）")
     parser.add_argument(
-        "--rounds", type=int, default=DEFAULT_ROUNDS, help="生成几轮比赛（默认 9，保证每人 >= 10 点）"
+        "--rounds", type=int, default=DEFAULT_ROUNDS, help="生成几轮比赛（默认 12：赛程每 4 轮一轮，每人 11 点）"
     )
     parser.add_argument("--keep", action="store_true", help="不 drop 表，只在现有库上补价格")
     parser.add_argument("--json-out", type=str, default=None, help="把价格更新明细另存一份")
