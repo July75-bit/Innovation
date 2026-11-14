@@ -60,7 +60,7 @@
 | 单元测试核心逻辑（pytest） | `tests/unit` 24 个文件 | ✅ |
 | 等价类 + 边界值为至少一个输入字段设计用例 | `test_plan.md` §4.0（TC-001~012）+ §7 方法对照 | ✅ |
 | 场景法为一条关键业务流程写 E2E | `tests/integration/test_e2e_flow.py` | ✅ |
-| 覆盖率 ≥60% | `test_report.md` §2.3 → 97% | ✅ |
+| 覆盖率 ≥60% | `test_report.md` §2.3 → 98% | ✅ |
 | **≥10 个测试用例文档（七列模板：编号/名称/前置条件/步骤/输入/预期/优先级）** | `test_plan.md` **§4.0**（2026-11-14 补，12 条） | ✅ |
 | 测试代码与文档提交到 `tests/` | `tests/unit` + `tests/integration` | ✅ |
 | **缺陷修复使用 GitHub Issues / BugTracker Project** | **BUG-01~14 已逐条建成 Issue #22–#35 并全部关闭**（`bug` + `P0/P1/P2` 标签齐全） | ✅ 已完成（2026-11-14 核实） |
@@ -81,7 +81,7 @@
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
 | 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 308 passed |
-| 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 97% |
+| 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 98% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
