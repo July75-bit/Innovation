@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import replace
-from datetime import timedelta
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
 from core_engine import generate_match, standardize_score, update_price
@@ -32,6 +32,11 @@ from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.errors import ApiError
 from app.models import Player, PriceHistory, Position, Trade, User
+
+#: 种子历史点的固定时间戳（开赛前，早于赛程第 1 轮 2026-11-01）。
+#: 与 `scripts/seed_db.py` 的 `SEED_TS` 一致：改用固定值后，
+#: 「初始价格」不会再排到引擎价格点之后（否则 `/prices` 末点价 != current_price）。
+DEMO_SEED_TS = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
@@ -147,7 +152,6 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
     """demo 账户 + 16 名选手 + 每人初始价历史（口径与 data/seed_players.json 一致）。"""
     from app.core.database import init_db
     from app.core.demo_roster import DEMO_ROSTER
-    from app.core.time import utcnow
 
     # init_db 里还负责 models 注册与历史补列，保留同一入口只是让建表走当前 bind
     init_db()
@@ -155,7 +159,7 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
     balance = Decimal(str(settings.initial_balance))
     db.add(User(nickname="demo", balance=balance, initial_balance=balance))
 
-    now = utcnow()
+    now = DEMO_SEED_TS
     for row in DEMO_ROSTER:
         player_id = int(row["player_id"])
         initial_price = Decimal(str(row["initial_price"]))
@@ -200,7 +204,6 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
 def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     """逐轮模拟价：本轮开价 = 上轮新价（apply_updates 会 cascade current_price）。"""
     from app.core.price_update import apply_updates, plan_for_player
-    from app.core.time import utcnow
 
     players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
 
@@ -222,8 +225,15 @@ def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     }
 
     applied_rounds: list[dict] = []
+    from app.core.demo_schedule import DEMO_SCHEDULE
+
+    schedule_matches = DEMO_SCHEDULE["matches"]
     for round_no in range(1, rounds + 1):
-        round_ts = utcnow() + timedelta(days=round_no)
+        # 时间戳取赛程里的比赛日（与 scripts/simulate_match.py 的 ts 口径一致）
+        meta = schedule_matches[(round_no - 1) % len(schedule_matches)]
+        round_ts = datetime.combine(
+            date.fromisoformat(meta["played_at"]), time.min, tzinfo=timezone.utc
+        )
 
         planned_list = []
         for player in players:
