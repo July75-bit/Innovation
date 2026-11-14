@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * 白话导读：注册 / 登录页（/auth），整页 CS2 背景，表单样式最重的一页，但逻辑很薄。
  *
@@ -11,9 +11,9 @@
 /**
  * 注册 / 登录页（界面层）。
  *
- * 视觉：整页背景用处理过的 CS2 主视觉（压暗 + 轻微模糊 + 暗角，见 assets/auth-bg*.jpg），
- * 上面再叠一层渐变遮罩，保证表单文字在任何屏幕上都有足够对比度。
- * 窄屏（≤900px）换竖版裁切图，避免人物被横向挤扁、表单压成一条。
+ * 视觉：**纯色画布 + 实色表单面板**（内容层），全部色值走 tokens.css 语义令牌，
+ * 因此浅色/深色双模式下都自动保证可读性；不再使用装饰背景图/渐变/玻璃/重阴影。
+ * 窄屏（≤900px）单列堆叠，品牌区在上、表单在下。
  *
  * 行为：表单只调用 src/composables/useAuth.ts，界面不碰 fetch；
  * 第 7 轮之后那层已经改成真鉴权（令牌由后端签发），所以这一页现在**会**打后端。
@@ -24,8 +24,6 @@
 import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 
-import bgWide from '../assets/auth-bg.jpg'
-import bgNarrow from '../assets/auth-bg-narrow.jpg'
 import {
   enterAsGuest,
   login,
@@ -34,17 +32,24 @@ import {
   validatePassword,
   validateUsername,
 } from '../composables/useAuth'
+import { useTheme } from '../composables/useTheme'
 
 type Tab = 'login' | 'register'
 
 const route = useRoute()
 const router = useRouter()
 
-/** 背景图交给 CSS 变量：scoped 样式里按屏幕宽度切换，JS 不参与布局判断 */
-const bgVars = computed(() => ({
-  '--bg-wide': `url(${bgWide})`,
-  '--bg-narrow': `url(${bgNarrow})`,
-}))
+/** 主题：与全站同一个 useTheme（自动 → 浅色 → 深色 循环），登录页也能切 */
+const { preference, theme, cycleTheme } = useTheme()
+const THEME_LABEL: Record<string, string> = { auto: '自动', light: '浅色', dark: '深色' }
+const themePreferenceLabel = computed(() => THEME_LABEL[preference.value] ?? '自动')
+const themeActionLabel = computed(() => {
+  const next =
+    preference.value === 'auto' ? '浅色' : preference.value === 'light' ? '深色' : '自动'
+  return `主题：${themePreferenceLabel.value}${
+    preference.value === 'auto' ? '（跟随系统）' : ''
+  }，点击切换到${next}`
+})
 
 const tab = ref<Tab>(route.query.tab === 'register' ? 'register' : 'login')
 
@@ -144,9 +149,28 @@ function asGuest(): void {
 </script>
 
 <template>
-  <div class="auth-page" :style="bgVars">
-    <!-- 遮罩层：左深右浅，把人物留在左侧、表单留在右侧可读区 -->
-    <div class="veil" aria-hidden="true"></div>
+  <div class="auth-page">
+    <!-- 登录页没有外壳，主题切换自带一个（与全站同一套 auto/light/dark 逻辑） -->
+    <button
+      type="button"
+      class="theme-fab"
+      :aria-label="themeActionLabel"
+      :title="themeActionLabel"
+      @click="cycleTheme"
+    >
+      <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="5.5" />
+        <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
+      </svg>
+      <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+        <circle cx="8" cy="8" r="3" />
+        <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+      </svg>
+      <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+      </svg>
+      <span>{{ themePreferenceLabel }}</span>
+    </button>
 
     <div class="inner">
       <!-- ===== 左：品牌与说明 ===== -->
@@ -372,6 +396,7 @@ function asGuest(): void {
 </template>
 
 <style scoped>
+/* 登录/注册页（内容层）：纯色画布 + 实色面板，浅/深两套令牌自动适配，无装饰图/渐变/玻璃/重阴影 */
 .auth-page {
   position: relative;
   min-height: 100dvh;
@@ -379,20 +404,53 @@ function asGuest(): void {
   align-items: center;
   justify-content: center;
   padding: var(--space-5);
-  /* 处理过的 CS2 主视觉：横向 cover 铺满，窄屏换竖版裁切 */
-  background-image: var(--bg-wide);
-  background-size: cover;
-  background-position: center 38%;
-  background-repeat: no-repeat;
-  background-color: var(--bg);
+  background: var(--color-canvas);
 }
 
-/* 渐变遮罩：左侧压住人物高光、右侧给表单留可读区 */
-.veil {
-  position: absolute;
-  inset: 0;
-  background: var(--bg);
-  pointer-events: none;
+.theme-fab {
+  position: fixed;
+  top: var(--space-4);
+  right: var(--space-4);
+  z-index: var(--z-nav);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px; /* 点击区 ≥44px */
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--font-size-cap);
+  cursor: pointer;
+}
+.theme-fab:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+.theme-fab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.theme-fab svg {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+@media (max-width: 600px) {
+  .theme-fab span {
+    display: none; /* 窄屏只留图标，文字进 aria-label */
+  }
+  .theme-fab {
+    left: auto;
+    top: var(--space-3);
+    right: var(--space-3);
+    padding: 0 var(--space-2);
+  }
 }
 
 .inner {
@@ -429,13 +487,14 @@ function asGuest(): void {
   height: 10px;
   border-radius: 50%;
   background: var(--color-action);
-  border: 1px solid var(--accent);
+  border: 1px solid var(--color-action);
 }
 .pitch h1 {
   margin: var(--space-5) 0 var(--space-3);
   font-size: clamp(28px, 4.4vw, 44px);
   line-height: 1.18;
   letter-spacing: 0.5px;
+  color: var(--text);
 }
 .lede {
   margin: 0;
@@ -470,17 +529,15 @@ function asGuest(): void {
   max-width: 52ch;
   font-size: var(--fs-cap);
   line-height: 1.6;
-  color: var(--muted);
+  color: var(--faint);
 }
 
-/* ===== 右侧面板 ===== */
+/* ===== 右侧面板：内容层（表单）→ 实色 + 1px 边框，不做玻璃 ===== */
 .panel {
   padding: var(--space-5);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
 }
 .tabs {
   display: inline-flex;
@@ -490,7 +547,10 @@ function asGuest(): void {
   background: var(--neutral-bg);
 }
 .tab {
-  padding: 7px 22px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* 点击区 ≥44px */
+  padding: 0 22px;
   border: none;
   border-radius: var(--radius-sm);
   background: transparent;
@@ -499,14 +559,18 @@ function asGuest(): void {
   font-weight: 600;
   cursor: pointer;
 }
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 .tab.active {
   background: var(--color-action);
-  color: #fff;
-  box-shadow: none;
+  color: var(--color-action-text);
 }
 .panel h2 {
   margin: var(--space-4) 0 4px;
   font-size: var(--fs-h2);
+  color: var(--text);
 }
 .hint {
   margin: 0 0 var(--space-4);
@@ -516,6 +580,7 @@ function asGuest(): void {
 }
 .hint strong {
   color: var(--text);
+  font-weight: 600;
 }
 
 .banner {
@@ -526,7 +591,7 @@ function asGuest(): void {
 }
 .banner.error {
   background: var(--up-bg);
-  color: #ff8b8f;
+  color: var(--up-text);
 }
 .banner.ok {
   background: var(--down-bg);
@@ -549,22 +614,27 @@ function asGuest(): void {
 }
 .field input {
   width: 100%;
+  min-height: 44px;
   padding: 10px var(--space-3);
-  border: 1px solid var(--border);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: var(--neutral-bg);
+  background: var(--color-surface-sunken);
   color: var(--text);
   font-size: var(--fs-body);
 }
 .field input::placeholder {
-  color: var(--faint);
+  color: var(--color-text-disabled);
+}
+.field input:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
 }
 .field input:focus {
-  border-color: var(--accent-text);
-  background: var(--neutral-bg);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+  border-color: var(--color-primary-500);
 }
 .field input[aria-invalid='true'] {
-  border-color: var(--warn);
+  border-color: var(--color-error-base);
 }
 
 .pw-wrap {
@@ -579,9 +649,10 @@ function asGuest(): void {
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
+  min-height: 32px;
   padding: 4px 8px;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--neutral-bg);
   color: var(--muted);
   font-size: var(--fs-cap);
@@ -589,6 +660,10 @@ function asGuest(): void {
 }
 .pw-toggle:hover {
   color: var(--text);
+}
+.pw-toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .strength {
@@ -609,13 +684,13 @@ function asGuest(): void {
   background: var(--neutral-bg);
 }
 .bar.s1 i:nth-child(1) {
-  background: var(--warn);
+  background: var(--color-error-base);
 }
 .bar.s2 i:nth-child(-n + 2) {
-  background: #d8c46a;
+  background: var(--color-warning-base);
 }
 .bar.s3 i {
-  background: var(--down);
+  background: var(--color-success-base);
 }
 .strength-text {
   font-size: var(--fs-cap);
@@ -627,7 +702,7 @@ function asGuest(): void {
 .err {
   margin: -6px 0 0;
   font-size: var(--fs-cap);
-  color: var(--warn);
+  color: var(--color-error-base);
 }
 
 .check {
@@ -640,25 +715,25 @@ function asGuest(): void {
 }
 .check input {
   margin-top: 2px;
-  accent-color: var(--accent-text);
+  accent-color: var(--color-primary-500);
   flex-shrink: 0;
 }
 
 .submit {
   margin-top: var(--space-1);
+  min-height: 44px;
   padding: 11px var(--space-4);
   border: none;
   border-radius: var(--radius-sm);
   background: var(--color-action);
-  color: #fff;
+  color: var(--color-action-text);
   font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: 0.5px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(229, 72, 77, 0.35);
 }
-.submit:hover {
-  filter: brightness(1.08);
+.submit:hover:not(:disabled) {
+  background: var(--color-action-hover);
 }
 .submit:disabled {
   opacity: 0.6;
@@ -696,18 +771,13 @@ function asGuest(): void {
   text-underline-offset: 2px;
 }
 .link-btn:hover {
-  color: #ff6b70;
+  color: var(--text);
 }
 
-/* ===== ≤900px：品牌区收到上面、表单占整行，背景换竖版 ===== */
+/* ===== ≤900px：单列堆叠，品牌区在上、表单占整行 ===== */
 @media (max-width: 900px) {
   .auth-page {
-    background-image: var(--bg-narrow);
-    background-position: center top;
     padding: var(--space-4);
-  }
-  .veil {
-    background: var(--bg);
   }
   .inner {
     grid-template-columns: minmax(0, 1fr);
