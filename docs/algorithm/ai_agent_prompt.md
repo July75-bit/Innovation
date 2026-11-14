@@ -59,7 +59,7 @@
 | --- | --- | --- |
 | `player_id` | int | 与请求路径一致 |
 | `action` | enum | 只能是 `BUY` / `SELL` / `HOLD`，大写 |
-| `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 120 字 |
+| `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 200 字（超长在句末标点处截断并补 `…`） |
 | `risk_level` | enum | `LOW` / `MEDIUM` / `HIGH` |
 | `suggested_price_band` | object | **本期不输出**（契约 §4.10 中保留为可缺省字段），`low` ≤ `high`；前端按缺省容错 |
 | `source` | enum | `llm` / `rule_fallback` |

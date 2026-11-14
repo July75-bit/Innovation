@@ -374,6 +374,10 @@ watch(playerId, () => loadCore())
               <details class="ai-more">
                 <summary>为什么这么建议</summary>
                 <div class="ai-more-body">
+                  <!-- 主卡只显示前 3 行（CSS 裁切），这里给**完整理由**，避免"截断感" -->
+                  <p v-if="analysis" class="ai-full">
+                    <strong>完整理由：</strong>{{ cleanReason(analysis.reason) }}
+                  </p>
                   <p v-if="narrative" class="ai-quote">{{ narrative }}</p>
                   <ul v-if="plan && plan.rationale.length" class="ai-why">
                     <li v-for="(line, i) in plan.rationale" :key="i">{{ line }}</li>
@@ -920,6 +924,12 @@ h3 {
   font-size: var(--fs-body);
   line-height: 1.65;
   color: var(--text);
+  /* 主卡最多 3 行：长理由不再把卡片撑开，完整版放进「为什么这么建议」 */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .ai-line.muted {
   color: var(--muted);
@@ -1017,6 +1027,17 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-aux);
   line-height: 1.7;
+}
+/* 折叠区里的「完整理由」：不裁切，主卡 3 行之外的文字在这里能看全 */
+.ai-full {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--text);
+  line-height: 1.7;
+}
+.ai-full strong {
+  color: var(--muted);
+  font-weight: 600;
 }
 .ai-why {
   margin: 0;

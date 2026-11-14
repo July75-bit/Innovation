@@ -22,7 +22,9 @@ LOW_RATING = 60         # 表现分低于此值：上涨缺乏支撑
 HIGH_RATING = 75        # 表现分高于此值：下跌属错杀
 
 DEFAULT_RATING = 50.0
-MAX_REASON_LEN = 120
+# 与 llm_agent.MAX_REASON_LEN 保持一致（2026-11-14 由 120 放宽到 200），
+# 规则版文案本来就短，这里只是口径对齐，避免两版上限不同。
+MAX_REASON_LEN = 200
 
 DISCLAIMER = "仅为分析建议，不构成投资建议；AI 不会自动交易"
 
