@@ -13,7 +13,8 @@ POST /api/prices/recalc（第 4 天新增，C 负责定价与去重逻辑）
   落库仍走 B 的 `app.core.price_update`（本模块不写 SQL）；
 - **幂等**：同一 `(player_id, round)` 只落一次，重复调用返回 `skipped` 而不是再写一行；
   实现上把 `played_at`（比赛日期）写进 `price_history.ts`，用它作为轮次的可查键；
-- 暂停交易（`status != trading`）、同请求内重复的选手 → 记入 `skipped`，不影响其它选手。
+- 暂停交易的两类来源：选手自身 `status != trading`（手动冻结），以及**本队在这一轮有比赛**
+  （`data/match_schedule.json` 派生的队伍级暂停）→ 都记入 `skipped`，不影响其它选手。
 """
 
 from __future__ import annotations
@@ -21,12 +22,13 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import date, datetime, time, timedelta, timezone
 
-from core_engine import update_price
+from core_engine import suspension_reason, update_price
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.demo_schedule import DEMO_SCHEDULE
 from app.core.errors import ApiError
 from app.core.price_update import apply_updates, plan_for_player
 from app.models import Player, PriceHistory
@@ -107,12 +109,16 @@ def recalc_prices(
         player = db.get(Player, item.player_id)
         if player is None:
             raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
-        if player.status != "trading":
+
+        # 暂停交易：手动 status 优先，其次看本队这一轮是否有比赛（整队停牌）
+        blocked = suspension_reason(
+            {"status": player.status, "team": player.team},
+            payload.round_no,
+            DEMO_SCHEDULE,
+        )
+        if blocked:
             skipped.append(
-                PriceRecalcSkipped(
-                    player_id=item.player_id,
-                    reason=f"选手状态 {player.status}，跳过定价",
-                )
+                PriceRecalcSkipped(player_id=item.player_id, reason=blocked)
             )
             continue
 

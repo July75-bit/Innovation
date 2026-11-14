@@ -20,12 +20,17 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SEED_FILE = ROOT / "data" / "seed_players.json"
+
+#: 种子历史点的固定时间戳（开赛前，必须早于赛程第 1 轮 2026-11-01）。
+#: 用固定值而不是 `utcnow()`：否则「当前时间」越过赛程末日后，初始价格会排在
+#: 所有引擎价格点之后，导致 `/prices` 末点价 != current_price（2026-11-14 实测到）。
+SEED_TS = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
 
 # 让脚本能 import 到 code/backend/app（避免依赖 PYTHONPATH）
 sys.path.insert(0, str(ROOT / "code/backend"))
@@ -48,16 +53,25 @@ def load_seed() -> dict:
 
 
 def seed(reset: bool) -> None:
-    from sqlalchemy import func, select
+    from sqlalchemy import delete, func, select
 
     from app.core.config import settings
-    from app.core.database import Base, SessionLocal, engine, init_db
-    from app.core.time import utcnow
-    from app.models import Player, PriceHistory, User
+    from app.core.database import SessionLocal, init_db
+    from app.models import Player, Position, PriceHistory, Trade, User
 
     if reset:
-        Base.metadata.drop_all(bind=engine)
-        print("[seed] 已删除全部表（--reset）")
+        # 2026-11-07 修（BUG-15）：原先 `drop_all()` 会把 `users` 表一起删掉，
+        # 结果是"注册过的私人账号一重置就消失"。账号是用户资产，重置只该复位行情：
+        # 删 持仓/流水/价格历史/选手（先子后父），**保留 users**（凭据与令牌不动），
+        # 余额在下面统一复位到 initial_balance。
+        init_db()  # 先建表：全新库里 DELETE 才不会报 "no such table"
+        with SessionLocal() as reset_db:
+            for model in (Position, Trade, PriceHistory, Player):
+                reset_db.execute(delete(model))
+            for user in reset_db.scalars(select(User)).all():
+                user.balance = Decimal(str(settings.initial_balance))
+            reset_db.commit()
+        print("[seed] 已清空业务数据（--reset；**保留注册账号**，余额已复位）")
 
     init_db()
     print("[seed] 表结构已就绪")
@@ -76,7 +90,7 @@ def seed(reset: bool) -> None:
             initial_price = Decimal(str(row["initial_price"])).quantize(CENT)
             prev_price = Decimal(str(row["prev_price"])).quantize(CENT)
             current_price = Decimal(str(row["current_price"])).quantize(CENT)
-            now = utcnow()
+            now = SEED_TS  # 固定开赛前时间，保证排序在引擎价格点之前
 
             db.add(
                 Player(

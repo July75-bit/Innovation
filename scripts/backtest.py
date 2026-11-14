@@ -52,13 +52,20 @@ def load_players(seed_path: Path) -> list[dict]:
 
 
 def build_price_paths(players: list[dict], seed: int, rounds: int, start_date: str) -> dict:
-    """用 C 的模拟器 + 定价引擎生成每名选手 rounds 轮的价格/得分序列。"""
-    from core_engine import generate_match, standardize_score, update_price
+    """用 C 的模拟器 + 定价引擎生成每名选手 rounds 轮的价格/得分序列。
 
+    暂停交易按赛程逐轮派生（`data/match_schedule.json`）：本队有比赛的那一轮，
+    价格原地不动、也不消费比赛得分；`tradable[i]` 供策略循环跳过该轮交易。
+    """
+    from core_engine import generate_match, load_schedule, standardize_score, update_price
+    from core_engine.schedule import team_playing
+
+    schedule = load_schedule()
     paths: dict[int, dict] = {}
     start = date.fromisoformat(start_date)
     for player in players:
         pid = int(player["player_id"])
+        team = str(player.get("team") or "")
         base = float(player["rating"])
         price = float(player["current_price"])
         history = [
@@ -67,15 +74,27 @@ def build_price_paths(players: list[dict], seed: int, rounds: int, start_date: s
         ]
         prices: list[float] = []
         ts: list[str] = []
+        tradable: list[bool] = []
         for round_no in range(1, rounds + 1):
+            ts.append((start + timedelta(days=round_no - 1)).isoformat())
+            if team_playing(team, round_no, schedule):
+                prices.append(price)  # 停牌：价格冻结
+                tradable.append(False)
+                continue
+
             match = generate_match(pid, seed=seed, round_no=round_no, base_rating=base)
             signal = standardize_score(match.score, history, window=WINDOW)
             update = update_price(price, signal)
             price = float(update.new_price)
             history.append(match.score)
             prices.append(price)
-            ts.append((start + timedelta(days=round_no - 1)).isoformat())
-        paths[pid] = {"prices": prices, "ts": ts, "base_rating": base}
+            tradable.append(True)
+        paths[pid] = {
+            "prices": prices,
+            "ts": ts,
+            "base_rating": base,
+            "tradable": tradable,
+        }
     return paths
 
 
@@ -147,9 +166,11 @@ def _record_decision(
 
 
 def _init_hold(cash: Decimal, pids: list[int], quantities: dict, paths: dict):
-    budget = cash / len(pids)
+    # 第 1 轮就在比赛的队伍买不进，按「第 1 轮可交易」的选手等权分配
+    tradable = [pid for pid in pids if paths[pid].get("tradable", [True])[0]]
+    budget = cash / len(tradable) if tradable else Decimal(0)
     trades = 0
-    for pid in pids:
+    for pid in tradable:
         price = Decimal(str(paths[pid]["prices"][0]))
         shares = int(budget // price)
         if shares > 0:
@@ -177,6 +198,8 @@ def _simulate_trading(
     equity_curve: list[float] = []
     for index in range(rounds):
         for pid in pids:
+            if not paths[pid].get("tradable", [True])[index]:
+                continue  # 本队这一轮在比赛：暂停交易
             price = Decimal(str(paths[pid]["prices"][index]))
             action = _decide_action(
                 kind, rng, pid, paths, index, ratings, quantities[pid]

@@ -5,6 +5,29 @@
 > **数据来源**：`docs/acceptance/test_report.md` §9（每条都有能复跑的用例或实测记录）。
 > **纪律**：全部**已修复并关闭**；建 Issue 是为了留痕，不要新建"未修复"的问题。
 
+## 状态：已全部建成并关闭（2026-11-14 核实）
+
+| 缺陷 | Issue | 状态 |
+| --- | --- | --- |
+| BUG-01 | [#22](https://github.com/July75-bit/Innovation/issues/22) | ✅ closed |
+| BUG-02 | [#23](https://github.com/July75-bit/Innovation/issues/23) | ✅ closed |
+| BUG-03 | [#24](https://github.com/July75-bit/Innovation/issues/24) | ✅ closed |
+| BUG-04 | [#25](https://github.com/July75-bit/Innovation/issues/25) | ✅ closed |
+| BUG-05 | [#26](https://github.com/July75-bit/Innovation/issues/26) | ✅ closed |
+| BUG-06 | [#27](https://github.com/July75-bit/Innovation/issues/27) | ✅ closed |
+| BUG-07 | [#28](https://github.com/July75-bit/Innovation/issues/28) | ✅ closed |
+| BUG-08 | [#29](https://github.com/July75-bit/Innovation/issues/29) | ✅ closed |
+| BUG-09 | [#30](https://github.com/July75-bit/Innovation/issues/30) | ✅ closed |
+| BUG-10 | [#31](https://github.com/July75-bit/Innovation/issues/31) | ✅ closed |
+| BUG-11 | [#32](https://github.com/July75-bit/Innovation/issues/32) | ✅ closed |
+| BUG-12 | [#33](https://github.com/July75-bit/Innovation/issues/33) | ✅ closed |
+| BUG-13 | [#34](https://github.com/July75-bit/Innovation/issues/34) | ✅ closed |
+| BUG-14 | [#35](https://github.com/July75-bit/Innovation/issues/35) | ✅ closed |
+
+> 核实方式：GitHub API 查 `labels=bug`，14 条 BUG-01~14 均为 **closed**（#22–#35）。
+> 另：`#15` 是更早的「BUG-01~10 总账」Issue（已关闭）；**`#37` BUG-15（重灌删注册账号，P1）仍是 open**，
+> 其正文已写「已修复合入 develop」，需要补一次关闭动作。
+
 ## 0. 两种建法
 
 ### 方式 A：网页（每人 2 分钟 × 14 条）

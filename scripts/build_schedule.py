@@ -31,9 +31,66 @@ sys.path.insert(0, str(ROOT / "code"))
 
 SEED_FILE = ROOT / "data" / "seed_players.json"
 SCHEDULE_FILE = ROOT / "data" / "match_schedule.json"
+BACKEND_MIRROR = ROOT / "code" / "backend" / "app" / "core" / "demo_schedule.py"
 DEFAULT_START = date(2026, 11, 1)
 MATCHES_PER_ROUND = 1
 ROUNDS_PER_BLOCK = 4  # 8 队 / 每轮 2 队 = 4 轮覆盖全部队伍
+
+
+def write_backend_mirror(payload: dict) -> None:
+    """把赛程写成后端的部署侧镜像（Render 容器里没有仓库根的 data/）。"""
+    teams = "\n".join(f'    ({t["team_id"]}, "{t["name"]}"),' for t in payload["teams"])
+    matches = "\n".join(
+        f'    ({m["round"]}, "{m["played_at"]}", {m["team_a"]}, {m["team_b"]}),'
+        for m in payload["matches"]
+    )
+    source = f'''"""赛程的**部署侧镜像**（与 `data/match_schedule.json` 同源）。
+
+负责人：C ｜ **本文件由 `scripts/build_schedule.py` 自动生成，不要手改。**
+
+为什么需要它：Render 后端的构建上下文是 `rootDir: code/backend`，容器里没有仓库根的
+`data/` 目录；而 `POST /api/prices/recalc` 要在服务端判断"这一轮谁在比赛"，
+所以必须把赛程打进后端包（配套的选手名单镜像是 `app/core/demo_roster.py`）。
+"""
+
+from __future__ import annotations
+
+DEMO_SCHEDULE_SCHEMA_VERSION = {payload["schema_version"]}
+DEMO_SEASON = "{payload["season"]}"
+DEMO_FEATURED_ROUND = {payload["featured_round"]}
+
+#: (team_id, 队伍名)
+DEMO_TEAMS: list[tuple[int, str]] = [
+{teams}
+]
+
+#: (round, played_at, team_a, team_b)
+DEMO_MATCHES: list[tuple[int, str, int, int]] = [
+{matches}
+]
+
+DEMO_SCHEDULE: dict = {{
+    "schema_version": DEMO_SCHEDULE_SCHEMA_VERSION,
+    "season": DEMO_SEASON,
+    "featured_round": DEMO_FEATURED_ROUND,
+    "teams": [{{"team_id": tid, "name": name}} for tid, name in DEMO_TEAMS],
+    "matches": [
+        {{"round": rnd, "played_at": day, "team_a": a, "team_b": b}}
+        for rnd, day, a, b in DEMO_MATCHES
+    ],
+}}
+
+__all__ = [
+    "DEMO_FEATURED_ROUND",
+    "DEMO_MATCHES",
+    "DEMO_SCHEDULE",
+    "DEMO_SCHEDULE_SCHEMA_VERSION",
+    "DEMO_SEASON",
+    "DEMO_TEAMS",
+]
+'''
+    BACKEND_MIRROR.parent.mkdir(parents=True, exist_ok=True)
+    BACKEND_MIRROR.write_text(source, encoding="utf-8")
 
 
 def load_roster() -> tuple[list[dict], int]:
@@ -174,6 +231,12 @@ def main() -> int:
 
     SCHEDULE_FILE.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    write_backend_mirror(payload)
+    print(
+        f"[build] 同步后端镜像 {BACKEND_MIRROR.relative_to(ROOT)}"
+        f"（{len(payload['matches'])} 场）",
+        flush=True,
     )
 
     rounds = payload["rules"]["rounds"]

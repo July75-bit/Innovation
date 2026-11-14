@@ -105,15 +105,22 @@ def with_score_in_reason(reason: str, score: float) -> str:
 def plan_from_engine(
     players, *, seed: int = 42, window: int = 5, warmup: int = 3, rounds: int = 1
 ):
-    """进程内调 C 的模拟比赛 + 定价引擎，算出每名可交易选手的待落库变化。"""
-    from core_engine import generate_match, standardize_score, update_price
+    """进程内调 C 的模拟比赛 + 定价引擎，算出每名可交易选手的待落库变化。
+
+    暂停交易有两类来源：选手自身 `status != trading`（手动冻结），
+    以及**本队在该轮有比赛**（`data/match_schedule.json` 派生）。两者都跳过。
+    """
+    from core_engine import generate_match, load_schedule, standardize_score, update_price
+    from core_engine.schedule import team_playing
 
     from app.core.price_update import plan_for_player
 
+    schedule = load_schedule()
+    last_round = max(rounds, 1)
     planned = []
     skipped = []
     for player in players:
-        if player.status != TRADING_STATUS:
+        if player.status != TRADING_STATUS or team_playing(player.team or "", last_round, schedule):
             skipped.append(player)
             continue
 

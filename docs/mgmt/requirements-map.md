@@ -62,7 +62,7 @@
 | 覆盖率 ≥60% | `test_report.md` §2.3 → 97% | ✅ |
 | **≥10 个测试用例文档（七列模板：编号/名称/前置条件/步骤/输入/预期/优先级）** | `test_plan.md` **§4.0**（2026-11-14 补，12 条） | ✅ |
 | 测试代码与文档提交到 `tests/` | `tests/unit` + `tests/integration` | ✅ |
-| **缺陷修复使用 GitHub Issues / BugTracker Project** | Bug tracker 项目已建；`bug` 标签 Issue 存在 | 🟡 **14 条 BUG 未逐条建 Issue**（见下方说明） |
+| **缺陷修复使用 GitHub Issues / BugTracker Project** | **BUG-01~14 已逐条建成 Issue #22–#35 并全部关闭**（`bug` + `P0/P1/P2` 标签齐全） | ✅ 已完成（2026-11-14 核实） |
 | **智能体测试分层（L1–L5）+ 五原则 + CI 门禁** | `acceptance/agent_test_layers.md` | 🟡 L1–L3 ✅、L4 评测集与 L5 红队未做（如实标注） |
 | **33 项用户测试检查表（P1–P5 / I1–I4 / V1–V4 / H1–H9 / A1–A11）** | `tests/playerstock_agent_demo_user_test.md`（**正式提交版**，学生版表格逐格填满）、`tests/agent_demo_user_test.md`（内部自查版） | ✅ **32 通过 / 1 部分通过 / 0 不通过**（首轮 5 项部分通过已修复 4 项） |
 | 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
@@ -82,7 +82,7 @@
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
-| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project + M1–M6 + **缺陷 Issue #22–#35（14 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅（需评委登录可见或看截图） |
+| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅（需评委登录可见或看截图） |
 
 ## 四、明确不做 / 已知限制（诚实清单）
 

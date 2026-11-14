@@ -48,7 +48,7 @@
 - [x] `code/backend/app/core/config.py` 已把 `postgres://` / 裸 `postgresql://` 归一化成 **`postgresql+psycopg2://`**：① 不转 `postgres://` 会报 `Can't load plugin: sqlalchemy.dialects:postgres`；② **SQLAlchemy 2.1 起裸 `postgresql://` 默认驱动是 psycopg 3（包名 `psycopg`）**，而项目只装 `psycopg2-binary`，不显式写驱动会 `ModuleNotFoundError: No module named 'psycopg'` 直接起不来（第 4 天预检实测，`tests/unit/test_config_db_url.py` 6 条守着）
 - [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
 - [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
-- [x] 灌数命令就绪：`python scripts/bootstrap_demo_data.py`（种子 + 9 轮价格，干净库实测每人 ≥10 点，见 §3.9）
+- [x] 灌数命令就绪：`python scripts/bootstrap_demo_data.py`（种子 + **12 轮**价格，干净库实测每人 11 点、引擎 9/9，见 §3.9）
 - [x] 代码已推到 GitHub 并确认 **要部署的分支**（团队用 `develop`，Blueprint 创建时选它）
       ——⚠️ 当前 `develop` 仍有未推送的本地提交，**部署前必须先 push**，否则 Render 拉不到最新代码
 
@@ -93,7 +93,7 @@
 > 要连 Render 的 **External Database URL** 从本地写入。
 
 1. 后端启动时会自动建表（`init_db()`），此时表是空的 → 前端会显示"没有选手"
-2. 本地仓库根目录执行（**一条命令**：种子 + 9 轮价格，让每人 ≥10 个价格点）：
+2. 本地仓库根目录执行（**一条命令**：种子 + 12 轮价格；4 的倍数才均衡，每人 11 个价格点）：
 
    ```powershell
    $env:DATABASE_URL="<External Database URL>"
@@ -126,7 +126,7 @@
 | 5 | `LLM_API_KEY`、`CORS_ORIGINS` 均为 `sync: false` | ✅ | 第 5 天填；CORS 不填前端会跨域失败 |
 | 6 | `.env.example` 字段与 `Settings` 一致（含 `LLM_TIMEOUT_SECONDS=20`） | ✅ | 第 4 天已把注释里"挂载磁盘后改 SQLite"改为"线上必须填 Postgres"并写明驱动归一化，与方案 B 一致 |
 | 7 | `requirements.lock.txt` 已入库（B，第 2 天） | ✅ | 部署 build 仍用 `requirements.txt`；锁定文件作为"可复现"证据保留 |
-| 8 | 演示数据初始化方式 | ✅ | 免费实例无 Shell → 本地连 **External** URL 跑 `python scripts/bootstrap_demo_data.py` 一条命令（种子 + 9 轮价格 = 每人 ≥10 点，见 §3.6） |
+| 8 | 演示数据初始化方式 | ✅ | 免费实例无 Shell → 本地连 **External** URL 跑 `python scripts/bootstrap_demo_data.py` 一条命令（种子 + 12 轮价格 = 每人 11 点、每轮 4 人停牌，见 §3.6） |
 | 9 | 线上验收清单（第 5 节 TC-401~406） | ⬜ | 第 5 天执行 |
 | 10 | 前端构建产物（`dist/`） | ✅ | A 的脚手架已入库；第 4 天 B 本地复跑 `npm ci` / `npm run build`（58 modules，exit 0）/ oxlint / eslint / vitest 全绿，CI run #30 前端 job 亦绿（见 `test_report.md` §2.4） |
 
@@ -339,7 +339,8 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com -
 | 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
 | 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
 | 已知问题 6 | `/market` 直接访问曾白屏（市场页在 `/`、无兜底路由）。已修：`/market → /` 重定向 + `/:pathMatch(.*)* → /` 兜底（BUG-11）。**前端需重新部署后生效** |
-| 已知问题 7（LLM 实配，B 2026-11-07） | **已切换到真模型并线上验证通过**。过程：① 先试 OpenCode Zen 免费档（`deepseek-v4.1-flash-free`），key 能过鉴权但返回 `429 FreeUsageLimitError`，换 4 个免费模型均 429 → 免费档是账号级限制；② 改用 **DeepSeek 官方 API**：`LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，等价 V4.1-Flash；旧名 `deepseek-v4-flash` 仍接受，`deepseek-chat` 已过时）→ `GET /api/analysis/1` **`source=llm`**，5 名选手实测 **中位 2461ms**（1.8–3.9s，目标 ≤8s），结果见 `test_report.md` §8.3。**注意**：真实模型比规则版慢约 2.3s，演示前预热即可；超时/失败仍自动回落规则版（上限 20s），不会卡死。成本约 ¥0.003/次。诊断工具：`python scripts/check_llm.py --direct/--scan/--base` |
+| 已知问题 7（LLM 实配，B 2026-11-07） | **已切换到真模型并线上验证通过**。过程：① 先试 OpenCode Zen 免费档（`deepseek-v4.1-flash-free`），key 能过鉴权但返回 `429 FreeUsageLimitError`，换 4 个免费模型均 429 → 免费档是账号级限制；② 改用 **DeepSeek 官方 API**：`LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，等价 V4.1-Flash）→ `GET /api/analysis/1` **`source=llm`**，5 名选手实测 **中位 2461ms**（1.8–3.9s，目标 ≤8s），结果见 `test_report.md` §8.3。**注意**：真实模型比规则版慢约 2.3s，演示前预热即可；超时/失败仍自动回落规则版（上限 20s），不会卡死。成本约 ¥0.003/次。诊断工具：`python scripts/check_llm.py --direct/--scan/--base` |
+| 已知问题 8（账号持久化 / BUG-15，B 2026-11-07） | **注册账号会随"重灌演示数据"一起被删**——根因是 `seed_db.py --reset` 与 `POST /api/debug/reseed` 都走 `Base.metadata.drop_all()`，把 `users` 表（用户名/口令散列/令牌）也删了。**已修**：两处都改为「只清 positions/trades/price_history/players，`users` 原样保留」，并把各用户余额复位到 `initial_balance`（行情回种子价、钱也回起点才自洽）。回归用例 `test_reseed_keeps_registered_account`（注册→买股→重灌→**原密码仍可登录**）。**注意**：账号本来就存在 Postgres 里（`pbkdf2_sha256$迭代$盐$散列`，令牌只存 SHA-256、TTL 30 天），"第二天消失"不是过期，是被人为重灌删掉的——修好之后重灌不再影响账号 |
 
 ## 7. 常见故障排查
 

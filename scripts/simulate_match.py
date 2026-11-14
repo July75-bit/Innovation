@@ -40,7 +40,9 @@ from core_engine import (  # noqa: E402
     PriceUpdate,
     generate_match,
     generate_match_series,
+    load_schedule,
     standardize_score,
+    suspension_reason,
     update_price,
 )
 
@@ -199,14 +201,17 @@ def _process_match(
     args: argparse.Namespace,
     updates: list[dict],
     stats: dict,
+    schedule: dict,
 ) -> None:
     """算一名选手这一场的价格，打印并把结果记入 updates / stats。"""
     player = by_id[match.player_id]
     label = f"{player.get('display_name', player['name'])}（{player['team']} / {player['role']}）"
     st = state[match.player_id]
 
-    if player.get("status") != "trading":
-        print(f"  {label:<32} 状态 {player.get('status')}，本轮跳过定价")
+    # 暂停交易 = 手动 status 或「本队这一轮有比赛」（见 core_engine/schedule.py）
+    blocked = suspension_reason(player, round_no, schedule)
+    if blocked:
+        print(f"  {label:<32} {blocked}，本轮跳过定价")
         return
 
     signal = standardize_score(match.score, st["history"], window=args.window)
@@ -252,6 +257,7 @@ def main() -> None:
     args = _build_parser().parse_args()
 
     players = load_players()
+    schedule = load_schedule()  # 队伍级暂停：每轮两支队整队停牌（data/match_schedule.json）
     by_id = {p["player_id"]: p for p in players}
     player_ids = [p["player_id"] for p in players]
     base_ratings = {p["player_id"]: float(p["rating"]) for p in players}
@@ -291,7 +297,7 @@ def main() -> None:
             print("  （无历史评分 → S=0，价格不变；历史不足 2 场时标准差为 0）")
 
         for match in round_matches:
-            _process_match(match, round_no, by_id, state, args, updates, stats)
+            _process_match(match, round_no, by_id, state, args, updates, stats, schedule)
 
     _print_summary(updates, stats)
     _export_json(args.json, updates, args)

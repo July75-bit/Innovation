@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import replace
-from datetime import timedelta
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 
 from core_engine import generate_match, standardize_score, update_price
@@ -32,6 +32,11 @@ from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.errors import ApiError
 from app.models import Player, PriceHistory, Position, Trade, User
+
+#: 种子历史点的固定时间戳（开赛前，早于赛程第 1 轮 2026-11-01）。
+#: 与 `scripts/seed_db.py` 的 `SEED_TS` 一致：改用固定值后，
+#: 「初始价格」不会再排到引擎价格点之后（否则 `/prices` 末点价 != current_price）。
+DEMO_SEED_TS = datetime(2026, 10, 31, 12, 0, tzinfo=timezone.utc)
 
 router = APIRouter(prefix="/debug", tags=["debug"])
 
@@ -94,7 +99,8 @@ def debug_reseed(
     一次 POST 就完成，演示前还能一键复位。
 
     管线（与 `scripts/bootstrap_demo_data.py` 三步同源，进程内实现）：
-    1. drop 游戏五表 → 重建 → demo 账户 + 16 名选手 + 每人初始价历史（1–2 行）；
+    1. 清空业务数据（持仓/流水/价格历史/选手）→ **保留 `users`**（BUG-15：注册账号不能被重灌删掉）
+       → 重写 16 名选手 + 每人初始价历史（1–2 行）；
     2. 逐轮 `core_engine.generate_match → standardize_score → update_price`
        → `app.core.price_update.plan_for_player + apply_updates`（cascades 从 current_price）；
     3. 自检：trading 选手每人 ≥ 10 点（含负轮回填，与脚本同一约定）。
@@ -113,7 +119,7 @@ def debug_reseed(
     with _RESEED_LOCK:
         from app.core import demo_roster
 
-        _reseed_tables(db)
+        cleared = _reseed_tables(db)
         seed_counts = _reseed_demo_rows(db)
         applied_rounds = _simulate_rounds(db, rounds=rounds, seed=seed)
         report = _final_selfcheck(db, rounds=rounds)
@@ -123,7 +129,8 @@ def debug_reseed(
         "schema_version": demo_roster.DEMO_SCHEMA_VERSION,
         "rounds": rounds,
         "seed": seed,
-        "清理并重建": seed_counts,
+        "清理（仅业务表，users 保留）": cleared,
+        "重建": seed_counts,
         "模拟轮次": applied_rounds,
         "点数自检": "OK" if not report["点数自检"] else "；".join(report["点数自检"]),
         "业务核对": {
@@ -131,31 +138,71 @@ def debug_reseed(
             "战队数": report["战队数"],
             "demo 余额": report["demo 余额"],
         },
-        "下一步": "GET /api/players 应为 16 名；交易/持仓/流水已随重置清零",
-        "提示": "破坏性操作已完成；可用 DEBUG_ENDPOINTS=0 关闭本接口",
+        "下一步": "GET /api/players 应为 16 名；交易/持仓/流水已清零；**注册账号仍可登录**（余额已复位到 5000）",
+        "提示": "重灌只复位行情与余额，不删账号；可用 DEBUG_ENDPOINTS=0 关闭本接口",
     }
 
 
-def _reseed_tables(db: Session) -> None:
-    """删掉游戏五表重建（**不含 alembic**，6 天版由 init_db 同款 create_all 重建）。"""
-    bind = db.get_bind()
-    Base.metadata.drop_all(bind=bind)
-    Base.metadata.create_all(bind=bind)
+def _reseed_tables(db: Session) -> dict[str, int]:
+    """清空**业务数据**（持仓/流水/价格历史/选手），**保留 `users` 表**。
+
+    2026-11-07 修（BUG-15）：原先这里用 `Base.metadata.drop_all()` 连 `users` 一起删，
+    结果是"注册过的私人账号下次重灌就消失"（用户实测第二天登录提示账号不存在）。
+    账号数据是用户资产，重灌只该复位行情与交易：
+    - 删：positions → trades → price_history → players（按 FK 依赖顺序，先子后父）；
+    - **留**：users（用户名 / 口令散列 / 盐 / 令牌行全保留，登录态不失效）；
+    - 余额在 `_reseed_demo_rows` 里统一复位（钱跟着行情一起回到起点，见那里的注释）。
+    """
+    from sqlalchemy import delete
+
+    counts = {
+        "positions": 0,
+        "trades": 0,
+        "price_history": 0,
+        "players": 0,
+    }
+    # 用 SQLAlchemy 的 delete() 而不是裸 SQL：SQLite / Postgres 同一套语义
+    for key, model in (
+        ("positions", Position),
+        ("trades", Trade),
+        ("price_history", PriceHistory),
+        ("players", Player),
+    ):
+        counts[key] = int(db.execute(delete(model)).rowcount or 0)
+
+    # 表结构缺失时补齐（新库第一次调用也能用），但**不重建已存在的表**
+    from app.core.database import init_db
+
+    init_db()
+    db.commit()
+    return counts
 
 
 def _reseed_demo_rows(db: Session) -> dict[str, int]:
-    """demo 账户 + 16 名选手 + 每人初始价历史（口径与 data/seed_players.json 一致）。"""
-    from app.core.database import init_db
-    from app.core.demo_roster import DEMO_ROSTER
-    from app.core.time import utcnow
+    """demo 账户（若缺则建）+ 16 名选手 + 每人初始价历史（口径与 `data/seed_players.json` 一致）。
 
-    # init_db 里还负责 models 注册与历史补列，保留同一入口只是让建表走当前 bind
-    init_db()
+    **注册账号保留**：只保证 `demo` 存在、并把所有用户的余额复位到 `initial_balance`
+    ——行情回到种子价、持仓/流水已清空，钱也一起回到起点才是自洽的；
+    用户名、口令散列、令牌都不动，所以重灌后**原来注册的账号仍能直接登录**。
+    """
+    from app.core.demo_roster import DEMO_ROSTER
 
     balance = Decimal(str(settings.initial_balance))
-    db.add(User(nickname="demo", balance=balance, initial_balance=balance))
 
-    now = utcnow()
+    # 1) demo 账户：有就复位，没有就建（不能用 drop 的方式"重建"，会把私人账号一起删掉）
+    demo = db.scalar(select(User).where(User.nickname == "demo"))
+    if demo is None:
+        db.add(User(nickname="demo", balance=balance, initial_balance=balance))
+    else:
+        demo.balance = balance
+
+    # 2) 其它注册账号：余额复位，登录凭据（password_hash / salt）与令牌行原样保留
+    reset_users = 0
+    for user in db.scalars(select(User).where(User.nickname != "demo")).all():
+        user.balance = Decimal(str(settings.initial_balance))
+        reset_users += 1
+
+    now = DEMO_SEED_TS
     for row in DEMO_ROSTER:
         player_id = int(row["player_id"])
         initial_price = Decimal(str(row["initial_price"]))
@@ -190,6 +237,7 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
     db.commit()
     return {
         "users": int(db.scalar(select(func.count()).select_from(User)) or 0),
+        "注册账号（已复位余额、保留凭据）": reset_users,
         "players": int(db.scalar(select(func.count()).select_from(Player)) or 0),
         "price_history 种子行": int(
             db.scalar(select(func.count()).select_from(PriceHistory)) or 0
@@ -200,7 +248,6 @@ def _reseed_demo_rows(db: Session) -> dict[str, int]:
 def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     """逐轮模拟价：本轮开价 = 上轮新价（apply_updates 会 cascade current_price）。"""
     from app.core.price_update import apply_updates, plan_for_player
-    from app.core.time import utcnow
 
     players = list(db.scalars(select(Player).order_by(Player.player_id)).all())
 
@@ -222,8 +269,15 @@ def _simulate_rounds(db: Session, *, rounds: int, seed: int) -> list[dict]:
     }
 
     applied_rounds: list[dict] = []
+    from app.core.demo_schedule import DEMO_SCHEDULE
+
+    schedule_matches = DEMO_SCHEDULE["matches"]
     for round_no in range(1, rounds + 1):
-        round_ts = utcnow() + timedelta(days=round_no)
+        # 时间戳取赛程里的比赛日（与 scripts/simulate_match.py 的 ts 口径一致）
+        meta = schedule_matches[(round_no - 1) % len(schedule_matches)]
+        round_ts = datetime.combine(
+            date.fromisoformat(meta["played_at"]), time.min, tzinfo=timezone.utc
+        )
 
         planned_list = []
         for player in players:
