@@ -26,6 +26,11 @@ import sys
 from datetime import date, timedelta
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    # Windows 控制台默认 GBK，本脚本会打印 ✅/❌，不兜底会直接 UnicodeEncodeError
+    # （与 bootstrap_demo_data.py / check_llm.py 同一处理）
+    sys.stdout.reconfigure(encoding="utf-8")
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "code"))
 
