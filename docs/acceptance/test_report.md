@@ -318,6 +318,7 @@ SAME balance=True total=True qty=True trades=True points=True
 ## 9. 缺陷清单
 
 > 只登记**真实发现并修掉**的缺陷；每条都给了能复跑的用例或实测记录。当前 P0/P1 全部清零。
+> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug)**（14 条，与下表 BUG-01~14 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
 
 | ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
