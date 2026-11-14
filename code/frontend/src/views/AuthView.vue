@@ -428,7 +428,7 @@ function asGuest(): void {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--color-action);
   border: 1px solid var(--accent);
 }
 .pitch h1 {
@@ -464,7 +464,7 @@ function asGuest(): void {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--color-action);
   flex-shrink: 0;
 }
 .disclaimer {
@@ -502,7 +502,7 @@ function asGuest(): void {
   cursor: pointer;
 }
 .tab.active {
-  background: var(--accent);
+  background: var(--color-action);
   color: #fff;
   box-shadow: none;
 }
@@ -651,7 +651,7 @@ function asGuest(): void {
   padding: 11px var(--space-4);
   border: none;
   border-radius: var(--radius-sm);
-  background: var(--accent);
+  background: var(--color-action);
   color: #fff;
   font-size: var(--fs-body);
   font-weight: 700;
