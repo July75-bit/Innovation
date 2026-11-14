@@ -82,7 +82,7 @@
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
-| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project + M1–M6 + **缺陷 Issue #22–#35（14 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅（需评委登录可见或看截图） |
+| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅（需评委登录可见或看截图） |
 
 ## 四、明确不做 / 已知限制（诚实清单）
 
