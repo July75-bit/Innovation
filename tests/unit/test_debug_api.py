@@ -69,36 +69,80 @@ def test_reseed_rebuilds_16_players_and_clean_demo(client) -> None:
 
 
 def test_reseed_keeps_registered_account(client) -> None:
-    """BUG-15 回归：重灌**不能删注册账号**（原先 drop_all 连 users 表一起删）。
+    """BUG-15 回归 + 用户口径：重灌**只重置行情与 demo 账户**。
 
-    用户实测"注册的账户第二天就消失"，根因是重灌把 users 表删了。
-    这里：注册 → 买 3 股造脏数据 → 重灌 → 原密码仍能登录，且余额/流水复位。
+    注册账号的**余额、持仓、流水、登录态全部跟着账号走**：
+    用户原话"每个账户的余额一直保存，跟着账号走，无论什么时候登录都有之前的流水记录"。
     """
     reg = client.post(
         "/api/auth/register", json={"username": "keep_me", "password": "Passw0rd123"}
     )
     assert reg.status_code == 201, reg.text
-    token = reg.json()["token"]
-    auth = {"Authorization": f"Bearer {token}"}
+    auth = {"Authorization": f"Bearer {reg.json()['token']}"}
 
     assert client.post("/api/trades/buy", json={"player_id": 1, "quantity": 3}, headers=auth).status_code == 200
+    before = client.get("/api/account", headers=auth).json()
+    assert before["position_value"] > 0
     assert len(client.get("/api/trades", headers=auth).json()) == 1
 
     resp = client.post(f"/api/debug/reseed?token={settings.reseed_token}&rounds=2&seed=42")
     assert resp.status_code == 200, resp.text
-    assert resp.json()["重建"]["注册账号（已复位余额、保留凭据）"] >= 1
+    body = resp.json()
+    # 只动行情 + demo 账户；注册账号不再出现在"被复位"口径里
+    assert "行情重置（只动行情与 demo 账户）" in body
+    assert body["重建"]["demo 账户（余额复位、持仓/流水已清）"] == 1
 
-    # 账号还在、原密码可用（用户真正关心的"账号别消失"）
+    # 账号还在、原密码可用（"账号别消失"）
     relogin = client.post(
         "/api/auth/login", json={"username": "keep_me", "password": "Passw0rd123"}
     )
     assert relogin.status_code == 200, relogin.text
     new_auth = {"Authorization": f"Bearer {relogin.json()['token']}"}
 
-    # 余额与流水一起复位（行情回种子价，钱也回起点才自洽）
-    account = client.get("/api/account", headers=new_auth).json()
-    assert float(account["balance"]) == 5000.0
-    assert client.get("/api/trades", headers=new_auth).json() == []
+    # **余额不变**（钱不跟着行情重置），持仓与流水也都还在
+    after = client.get("/api/account", headers=new_auth).json()
+    assert after["balance"] == before["balance"], (before, after)
+    assert after["position_value"] > 0
+    assert len(client.get("/api/trades", headers=new_auth).json()) == 1
+
+    # 行情本身确实被重置了（16 人重建、demo 余额回 5000）
+    assert len(client.get("/api/players").json()) == 16
+    demo = client.get("/api/account").json()  # 无令牌 = 公共 demo 账户
+    assert float(demo["balance"]) == 5000.0
+    assert client.get("/api/trades").json() == []
+
+
+def test_rebuild_account_resets_only_self(client) -> None:
+    """余额重建：只清当前账户，余额回 5000，别的账号不受影响。"""
+    a = client.post("/api/auth/register", json={"username": "rebuild_a", "password": "Passw0rd123"})
+    assert a.status_code == 201
+    auth_a = {"Authorization": f"Bearer {a.json()['token']}"}
+    assert client.post("/api/trades/buy", json={"player_id": 2, "quantity": 5}, headers=auth_a).status_code == 200
+
+    b = client.post("/api/auth/register", json={"username": "rebuild_b", "password": "Passw0rd123"})
+    assert b.status_code == 201
+    auth_b = {"Authorization": f"Bearer {b.json()['token']}"}
+    assert client.post("/api/trades/buy", json={"player_id": 8, "quantity": 2}, headers=auth_b).status_code == 200
+    b_before = client.get("/api/account", headers=auth_b).json()
+
+    # 不显式确认 → 拒绝
+    assert client.post("/api/account/rebuild", headers=auth_a).status_code == 400
+
+    resp = client.post("/api/account/rebuild?confirm=true", headers=auth_a)
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["balance"] == 5000.0
+    assert body["cleared_positions"] == 1
+    assert body["cleared_trades"] == 1
+
+    # A 干净了，B 原样
+    a_after = client.get("/api/account", headers=auth_a).json()
+    assert float(a_after["balance"]) == 5000.0
+    assert a_after["position_value"] == 0.0
+    assert client.get("/api/trades", headers=auth_a).json() == []
+    b_after = client.get("/api/account", headers=auth_b).json()
+    assert b_after["balance"] == b_before["balance"]
+    assert len(client.get("/api/trades", headers=auth_b).json()) == 1
 
 
 def test_reseed_rejects_wrong_token(client) -> None:

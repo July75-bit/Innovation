@@ -30,6 +30,36 @@ const error = ref<string | null>(null)
 const updatedAt = ref('')
 const { account, refreshAccount } = useAccount()
 
+// 「余额重建」：把自己这个账户恢复成刚注册的样子（余额回 5000、清空本账户持仓与流水）。
+// 语义说明：重置行情（/api/debug/reseed）**不会**动任何账号的余额与流水——它们跟着账号走，
+// 所以"我想重新开始"只能由用户自己按这个按钮。
+const rebuilding = ref(false)
+const rebuildNotice = ref<string | null>(null)
+
+async function rebuildBalance() {
+  const ok = window.confirm(
+    '确定重建余额吗？\n\n' +
+      '· 你的余额会恢复到初始 5000 虚拟币\n' +
+      '· 本账户的持仓与交易记录会被清空（不可撤销）\n' +
+      '· 其它账号与市场行情不受影响',
+  )
+  if (!ok) return
+
+  rebuilding.value = true
+  rebuildNotice.value = null
+  try {
+    const result = await api.rebuildAccount()
+    rebuildNotice.value =
+      `已重建：余额 ${money(result.balance)}；清空持仓 ${result.cleared_positions} 条、` +
+      `交易记录 ${result.cleared_trades} 条`
+    await load()
+  } catch (err) {
+    rebuildNotice.value = err instanceof ApiError ? err.message : '重建失败，请稍后再试'
+  } finally {
+    rebuilding.value = false
+  }
+}
+
 async function load() {
   loading.value = true
   error.value = null
@@ -56,8 +86,15 @@ onMounted(load)
         <h2>我的持仓</h2>
         <p class="updated" v-if="updatedAt && !loading && !error">更新于 {{ updatedAt }}</p>
       </div>
-      <button class="refresh" :disabled="loading" @click="load">刷新</button>
+      <div class="head-actions">
+        <button class="refresh" :disabled="loading" @click="load">刷新</button>
+        <button class="rebuild" :disabled="rebuilding || loading" @click="rebuildBalance">
+          {{ rebuilding ? '重建中…' : '余额重建' }}
+        </button>
+      </div>
     </div>
+
+    <p v-if="rebuildNotice" class="rebuild-notice">{{ rebuildNotice }}</p>
 
     <!-- 总览：四个关键指标一屏可见 -->
     <div v-if="account" class="summary num">
@@ -145,6 +182,39 @@ onMounted(load)
 .refresh:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* 头部按钮组：刷新 + 余额重建 */
+.head-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+.rebuild {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-body);
+  cursor: pointer;
+}
+.rebuild:hover {
+  border-color: var(--danger, #d9534f);
+  color: var(--danger, #d9534f);
+}
+.rebuild:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rebuild-notice {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: var(--fs-cap);
+  color: var(--text);
 }
 
 /* 总览卡片：统一间距/圆角/层级 */
