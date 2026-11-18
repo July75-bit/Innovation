@@ -41,6 +41,7 @@ function listedRounds(w: ReturnType<typeof mountView>): number[] {
 }
 
 beforeEach(() => {
+  sessionStorage.removeItem('playerstock.schedule.round.v1')
   vi.useFakeTimers()
   vi.setSystemTime(MATCH_DAY)
 })

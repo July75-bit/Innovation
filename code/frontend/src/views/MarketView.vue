@@ -17,7 +17,7 @@
  * 界面设计层：搜索 / 排序 / 状态筛选让"找到目标选手"这一步最短；
  * 状态层：空 / 骨架加载 / 成功 / 出错四态齐备，加载不再整页闪白。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PlayerSummary } from '../api/types'
@@ -29,6 +29,7 @@ import ErrorState from '../components/ErrorState.vue'
 import { roundMatch, teamNames } from '../core/schedule'
 import TeamLogo from '../components/TeamLogo.vue'
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
+import { MARKET_DEFAULTS, readMarketState, saveMarketState } from '../composables/useMarketState'
 
 const players = ref<PlayerSummary[]>([])
 const loading = ref(true)
@@ -92,7 +93,8 @@ function cleanSummary(raw: string | null | undefined): string {
 
 const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)
 /** 简报默认只显示一句话；要看三条要点再展开 */
-const briefOpen = ref(false)
+const restored = readMarketState()
+const briefOpen = ref(restored.briefOpen)
 
 async function loadBrief() {
   try {
@@ -105,9 +107,20 @@ async function loadBrief() {
 }
 
 /* ---- 筛选 / 排序（纯前端展示逻辑，不改后端数据） ---- */
-const keyword = ref('')
-const statusFilter = ref<'all' | 'trading' | 'halted'>('all')
-const sortBy = ref<'default' | 'price' | 'change' | 'rating'>('default')
+const keyword = ref(restored.keyword)
+const statusFilter = ref(restored.status)
+/** 默认「涨幅从高到低」：打开先看今天谁在动，而不是按 id 顺序 */
+const sortBy = ref(restored.sort)
+
+// 任何筛选变化都记下来：从选手详情返回、刷新页面都还在
+watch([keyword, statusFilter, sortBy, briefOpen], () => {
+  saveMarketState({
+    keyword: keyword.value,
+    status: statusFilter.value,
+    sort: sortBy.value,
+    briefOpen: briefOpen.value,
+  })
+})
 
 /**
  * 市场页显示的是"现在能不能买"：后端 status 只有初始/手动值，
@@ -210,10 +223,21 @@ async function load() {
 function resetFilters() {
   keyword.value = ''
   statusFilter.value = 'all'
-  sortBy.value = 'default'
+  sortBy.value = MARKET_DEFAULTS.sort
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  // 回来时把滚动位置还原（等卡片渲染完一帧再滚，否则高度不够滚不到）
+  const target = restored.scrollY
+  if (target > 0) {
+    requestAnimationFrame(() => window.scrollTo({ top: target, behavior: 'instant' }))
+  }
+})
+
+onBeforeUnmount(() => {
+  saveMarketState({ scrollY: window.scrollY })
+})
 </script>
 
 <template>
@@ -388,9 +412,9 @@ onMounted(load)
       </div>
       <label class="sort">
         <select v-model="sortBy" aria-label="排序方式">
-          <option value="default">默认排序</option>
-          <option value="price">价格从高到低</option>
           <option value="change">涨幅从高到低</option>
+          <option value="default">列表顺序</option>
+          <option value="price">价格从高到低</option>
           <option value="rating">评分从高到低</option>
         </select>
       </label>

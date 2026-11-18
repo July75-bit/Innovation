@@ -10,7 +10,7 @@
  * 2. 三条要点仍然正常渲染（清洗不能把内容洗没）。
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import MarketView from '../MarketView.vue'
 
@@ -55,6 +55,10 @@ const h = vi.hoisted(() => ({
 }))
 
 vi.mock('../../api', () => ({ api: h.api }))
+
+beforeEach(() => {
+  sessionStorage.removeItem('playerstock.market.v1')
+})
 
 describe('市场页 · 今日简报', () => {
   it('摘要里的 JSON 被清洗成人话，界面上不出现花括号与字段名', async () => {

@@ -53,7 +53,18 @@ const lastPlayedAt = schedule.matches[totalRounds - 1]?.played_at ?? ''
 /** 默认停在今天这一轮；休赛日停在"最近可看的一轮"（赛季结束后就停在最后一轮） */
 const todayRound = liveRoundNo ?? (today > lastPlayedAt ? totalRounds : roundOfDate(today))
 
-const selected = ref(todayRound)
+const SCHEDULE_ROUND_KEY = 'playerstock.schedule.round.v1'
+/** 上次浏览到第几轮（从比赛详情/其它页返回时接着看，而不是跳回今天） */
+function readSelectedRound(): number | null {
+  try {
+    const raw = sessionStorage.getItem(SCHEDULE_ROUND_KEY)
+    const value = raw ? Number(JSON.parse(raw)) : NaN
+    return Number.isInteger(value) && value >= 1 && value <= totalRounds ? value : null
+  } catch {
+    return null
+  }
+}
+const selected = ref(readSelectedRound() ?? todayRound)
 
 /* -------------------------------------------------------------- 选中轮次派生 */
 
@@ -190,7 +201,14 @@ function onViewportChange(): void {
 }
 
 /** 换轮次就重新居中：左右翻页、点 chip、点列表行、回到今日，全走同一个 `selected` */
-watch(selected, () => void centerSelectedRound())
+watch(selected, (value) => {
+  try {
+    sessionStorage.setItem(SCHEDULE_ROUND_KEY, JSON.stringify(value))
+  } catch {
+    /* 隐私模式存不下：只影响「回来时接不接着看」，不影响当前操作 */
+  }
+  void centerSelectedRound()
+})
 onMounted(() => {
   void centerSelectedRound('auto')
   window.addEventListener('resize', onViewportChange)

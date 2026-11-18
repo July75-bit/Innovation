@@ -72,6 +72,8 @@ function mountView() {
 }
 
 beforeEach(() => {
+  // 市场筛选状态会写 sessionStorage；不清掉会让上一个用例的筛选串到下一个
+  sessionStorage.removeItem('playerstock.market.v1')
   vi.useFakeTimers()
   // 钉在赛季内的比赛日（UTC）：第 14 轮 G2 vs Astralis，避免用例跟着真实日期变红
   vi.setSystemTime(new Date('2026-11-14T04:00:00Z'))

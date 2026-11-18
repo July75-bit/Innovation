@@ -170,6 +170,8 @@
 | `114-highlights-dark-1440.png` | **重点数字条（深色）** | 深色下涨红/跌绿与琥珀都保持可读；无换行、无横向溢出 |
 | `115-highlights-open-1440.png` | **重点数字条 · 展开态** | 展开只多两行小字：AI 原话 + 停牌名单（ropz、jL、broky、w0nderful） |
 | `116-highlights-mobile-390.png` | **重点数字条（390）** | 窄屏自动折两行，图标与数值仍成组；无横向溢出 |
+| `117-market-state-restored.png` | **返回保留状态 · 市场**（2026-11-18） | 排序改成「价格从高到低」、搜索填 `a`、筛选「交易中」、滚动到 420px 后点进选手详情再返回：四项全部还原（`sessionStorage`），滚动位置也回到原处 |
+| `118-schedule-round-restored.png` | **返回保留状态 · 赛程** | 点第 20 轮 → 去市场 → 从导航回赛程：仍停在第 20 轮（原来是跳回今天第 18 轮） |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
