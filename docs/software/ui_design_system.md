@@ -277,3 +277,25 @@ AI 卡结构 = 结论行（建议 + 一句理由 + 风险/把握）→ 关键数
   下拉里保留「列表顺序」一项，需要原始顺序仍可切回。
 
 证据：`117-market-state-restored.png`、`118-schedule-round-restored.png`。
+
+### 11.9 动效：短、只动 opacity/transform、尊重减少动效（2026-11-18）
+
+目标：切换页面、开菜单、进下一层时有"丝滑"反馈，但不抢注意力。
+
+| 场景 | 做法 | 时长 |
+| --- | --- | --- |
+| 路由切换 | 旧页淡出 → 新页淡入 + 上移 8px（`mode="out-in"`，不重叠） | 120ms + 240ms |
+| 移动端抽屉 | `translateX(-105%) → 0`，`cubic-bezier(.22,1,.36,1)` | 260ms |
+| 抽屉遮罩 | opacity 0 → 0.55（`fade` 过渡） | 200ms |
+| 弹窗 | 遮罩淡入 + 面板上移 10px、scale .985 → 1 | 180–220ms |
+| 下拉弹层 | opacity + `translateY(-4px)`、scale .99 → 1，原点在顶部 | 140–160ms |
+| 市场卡片 | opacity + 上浮 4px，20ms 阶梯（最多 120ms 延迟） | 300ms |
+| 登录页 | 淡入 + 上移 6px（它不走 RouterView 过渡） | 240ms |
+| hover / 选中 | 颜色/背景/边框过渡 | 120–160ms |
+
+- 全部只用 `opacity` / `transform`，不触发布局；`mode="out-in"` 避免两页同时在场。
+- **`prefers-reduced-motion: reduce` 全部退化为瞬时**：路由/遮罩/弹窗/下拉/卡片/抽屉/登录页均不播动画。
+
+验证（CDP 逐帧采样，非目测）：路由 leave 透明度 1→0.017（8 帧）、enter 位移 7.64px→0.75px；
+抽屉中段 `translateX(-160px)` + 遮罩 opacity 0.07；弹窗遮罩 0→0.26→0.76→0.997；下拉 0.88→1；
+开启减少动效后 `document.getAnimations()` 为空、抽屉 `transition-duration: 0s`。

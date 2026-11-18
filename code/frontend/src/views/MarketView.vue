@@ -1036,4 +1036,39 @@ onBeforeUnmount(() => {
     font-size: 24px;
   }
 }
+
+/* 卡片入场：列表出现时轻轻上浮，20ms 阶梯；筛选/返回时重建也会重新播放，但幅度很小 */
+@media (prefers-reduced-motion: no-preference) {
+  .p-card {
+    animation: card-in 300ms cubic-bezier(0.2, 0, 0.2, 1) both;
+  }
+  .p-card:nth-child(2) {
+    animation-delay: 20ms;
+  }
+  .p-card:nth-child(3) {
+    animation-delay: 40ms;
+  }
+  .p-card:nth-child(4) {
+    animation-delay: 60ms;
+  }
+  .p-card:nth-child(5) {
+    animation-delay: 80ms;
+  }
+  .p-card:nth-child(6) {
+    animation-delay: 100ms;
+  }
+  .p-card:nth-child(n + 7) {
+    animation-delay: 120ms;
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
 </style>

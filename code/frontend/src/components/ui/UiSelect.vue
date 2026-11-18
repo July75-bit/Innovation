@@ -194,7 +194,8 @@ onBeforeUnmount(() => {
     </button>
 
     <!-- 弹层：材质层（玻璃）。文字坐在 --glass-bg-strong 上，保证 AA -->
-    <div v-if="open" class="ui-select__pop glass glass--popover">
+    <Transition name="pop">
+      <div v-if="open" class="ui-select__pop glass glass--popover">
       <ul
         :id="listId"
         ref="list"
@@ -228,7 +229,8 @@ onBeforeUnmount(() => {
           暂无选项
         </li>
       </ul>
-    </div>
+      </div>
+    </Transition>
 
     <p v-if="message" :id="descId" :class="invalid ? 'ui-error' : 'ui-hint'">{{ message }}</p>
   </div>
@@ -341,6 +343,36 @@ onBeforeUnmount(() => {
   }
   .ui-select__spinner {
     animation: none;
+  }
+}
+
+/* 下拉弹层：从触发框下方"长出来"一点，别直接闪现 */
+.pop-enter-active {
+  transition:
+    opacity 140ms ease,
+    transform 160ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+.pop-leave-active {
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.99);
+}
+.ui-select__pop {
+  transform-origin: top center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pop-enter-active,
+  .pop-leave-active {
+    transition: none !important;
+  }
+  .pop-enter-from,
+  .pop-leave-to {
+    transform: none;
   }
 }
 </style>

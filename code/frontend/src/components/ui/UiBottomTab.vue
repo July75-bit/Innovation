@@ -78,6 +78,9 @@ function pick(key: string): void {
   box-shadow: var(--shadow-overlay);
 }
 .ui-tab {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
   flex: 1;
   min-width: 0;
   min-height: 44px;

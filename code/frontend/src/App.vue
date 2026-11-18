@@ -292,7 +292,11 @@ onMounted(() => {
       </header>
 
       <main class="content">
-        <RouterView />
+        <RouterView v-slot="{ Component, route: current }">
+          <Transition name="page" mode="out-in">
+            <component :is="Component" :key="current.path" />
+          </Transition>
+        </RouterView>
         <footer class="page-foot">
           <span :class="['foot-dot', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
             ><i aria-hidden="true"></i>{{ healthText }}</span
@@ -305,8 +309,10 @@ onMounted(() => {
       <UiBottomTab :model-value="activeTab" :items="tabItems" @select="onTabSelect" />
     </div>
 
-    <!-- 抽屉遮罩（移动端） -->
-    <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+    <!-- 抽屉遮罩（移动端）：淡入淡出，别让页面"啪"地变暗 -->
+    <Transition name="fade">
+      <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
+    </Transition>
 
     <!-- 删除账号确认弹窗（Teleport 到 body，不受侧栏 / 抽屉布局影响） -->
     <!--
@@ -394,6 +400,11 @@ onMounted(() => {
   font-size: var(--fs-body);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
+}
+.nav-item {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
 }
 .nav-item:hover {
   background: var(--neutral-bg);
@@ -777,7 +788,7 @@ onMounted(() => {
     width: min(78vw, 300px);
     z-index: 30;
     transform: translateX(-105%);
-    transition: transform 0.2s ease;
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
     /* 抽屉=文字密集的浮层 sheet：实色，不用玻璃（玻璃面积 78vw×100dvh 会超配额，
        而且导航/账户/合规声明这类文本直接坐在玻璃上不可读） */
     background-color: var(--surface);
@@ -884,5 +895,13 @@ onMounted(() => {
 }
 .danger-link:hover {
   color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .nav-item,
+  .icon-btn svg {
+    transition: none !important;
+  }
 }
 </style>

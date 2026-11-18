@@ -400,6 +400,7 @@ function asGuest(): void {
 .auth-page {
   position: relative;
   min-height: 100dvh;
+  animation: auth-in 240ms ease both;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -793,6 +794,22 @@ function asGuest(): void {
   }
   .disclaimer {
     display: none;
+  }
+}
+
+@keyframes auth-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-page {
+    animation: none;
   }
 }
 </style>
