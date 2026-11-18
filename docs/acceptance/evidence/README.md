@@ -160,6 +160,9 @@
 | `104-paper-mobile-market.png` | **纸感重构 · 移动端市场 390px** | 单列卡片、留白优先；无横向溢出 |
 | `105-paper-mobile-positions.png` | **纸感重构 · 移动端持仓 390px** | 表格转「标签 + 值」堆叠行；总览 2×2 |
 | `106-brief-clean-summary.png` | **简报总述清洗（2026-11-18）** | 模型返回的整句引号已剥离、中文与数字间补空格：`sh1ro 涨 13.96% 报 136.43，bLitz 报 48.48，第 18 轮四人停牌` |
+| `107-market-top-icons-light.png` | **市场页顶部改版（浅色）**（2026-11-18） | 「展开要点」文字按钮 → 星标（来源）+ 箭头图标；比赛长句 → 轮次 + 两队队标/队名 + 暂停图标「4 人」+ 日历图标 |
+| `108-market-top-icons-dark.png` | **市场页顶部改版（深色）** | 同结构深色；图标按钮 40px 点击区，sr-only 文案保留可读替代 |
+| `109-market-top-icons-390.png` | **市场页顶部改版（390px）** | 移动端一行放得下（轮次 + 队标对阵 + 停牌人数 + 赛程图标），无横向溢出 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

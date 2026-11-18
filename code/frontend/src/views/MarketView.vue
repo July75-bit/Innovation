@@ -26,7 +26,8 @@ import { TRADING } from '../core/schedule'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import { matchLabel, roundMatch } from '../core/schedule'
+import { roundMatch, teamNames } from '../core/schedule'
+import TeamLogo from '../components/TeamLogo.vue'
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
 
 const players = ref<PlayerSummary[]>([])
@@ -116,7 +117,24 @@ const listed = computed(() =>
 const haltedCount = computed(() => listed.value.filter((p) => p.status !== TRADING).length)
 /** 今天是不是比赛日：不是就没有“本轮停牌”，横幅换成“休赛日”而不是硬指一场比赛 */
 const liveMatch = computed(() => (round === null ? null : roundMatch(round)))
-const matchText = computed(() => (liveMatch.value ? matchLabel(liveMatch.value) : ''))
+
+/** 本轮对阵的两支队伍（队标 + 队名）：用 team_id → 名字，避免从 "A vs B" 反解 */
+const teamNameMap = teamNames()
+const matchSides = computed(() => {
+  const m = liveMatch.value
+  if (!m) return null
+  const a = Number(m.team_a)
+  const b = Number(m.team_b)
+  return {
+    a: { id: a, name: teamNameMap.get(a) ?? String(m.team_a) },
+    b: { id: b, name: teamNameMap.get(b) ?? String(m.team_b) },
+  }
+})
+
+/** 简报来源做成图标 + tooltip，屏幕上不再占一行字 */
+const sourceLabel = computed(() =>
+  brief.value?.source === 'llm' ? 'AI 生成简报' : '简化模式（未连接模型）',
+)
 
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
@@ -187,15 +205,22 @@ onMounted(load)
     <!-- 今日简报：一句话说结论，要点收起来 -->
     <section v-if="brief" class="lede-block" aria-label="今日简报">
       <p class="lede">{{ cleanSummary(brief.summary) }}</p>
-      <div class="lede-foot">
-        <span class="lede-src">{{ brief.source === 'llm' ? 'AI 生成' : '简化模式' }}</span>
+      <div class="lede-actions">
+        <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
+          </svg>
+        </span>
         <button
           v-if="brief.items.length"
           type="button"
-          class="quiet-link"
+          class="icon-btn"
+          :class="{ 'is-open': briefOpen }"
+          :aria-expanded="briefOpen"
           @click="briefOpen = !briefOpen"
         >
-          {{ briefOpen ? '收起要点' : '展开要点' }}
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
+          <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
         </button>
       </div>
       <ul v-if="briefOpen" class="lede-items">
@@ -206,13 +231,44 @@ onMounted(load)
       </ul>
     </section>
 
-    <p class="round-line">
-      <template v-if="liveMatch">
-        第 {{ round }} 轮 · {{ matchText }} 比赛中，{{ haltedCount }} 人暂停交易
+    <div class="round-line match-line">
+      <template v-if="liveMatch && matchSides">
+        <span class="round-chip num">第 {{ round }} 轮</span>
+        <span class="match">
+          <span class="side">
+            <TeamLogo :team="matchSides.a.id" :name="matchSides.a.name" size="xs" />
+            <span class="team-name">{{ matchSides.a.name }}</span>
+          </span>
+          <span class="vs" aria-hidden="true">vs</span>
+          <span class="side side-b">
+            <span class="team-name">{{ matchSides.b.name }}</span>
+            <TeamLogo :team="matchSides.b.id" :name="matchSides.b.name" size="xs" />
+          </span>
+        </span>
+        <span
+          class="halt-ico num"
+          :title="`比赛中，${haltedCount} 人暂停交易`"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="5.6" />
+            <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+          </svg>
+          {{ haltedCount }} 人
+        </span>
+        <span class="sr-only">比赛中，{{ haltedCount }} 人暂停交易</span>
       </template>
-      <template v-else>休赛日 · 全部选手照常交易</template>
-      <RouterLink class="quiet-link rn-link" to="/schedule">看赛程</RouterLink>
-    </p>
+      <template v-else>
+        <span class="round-chip">休赛日</span>
+        <span class="rest">全部选手照常交易</span>
+      </template>
+      <RouterLink class="icon-btn rn-link" to="/schedule" aria-label="查看赛程" title="查看赛程">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 4.5h10v9H3zM3 7h10M5.5 2.8V5M10.5 2.8V5" />
+        </svg>
+        <span class="sr-only">看赛程</span>
+      </RouterLink>
+    </div>
 
     <div class="controls">
       <input
@@ -365,16 +421,82 @@ onMounted(load)
   line-height: var(--line-height-body);
   color: var(--text);
 }
-.lede-foot {
-  margin-top: var(--space-2);
+.lede-actions {
+  margin-top: var(--space-3);
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  font-size: var(--fs-cap);
+  gap: var(--space-2);
   color: var(--faint);
 }
-.lede-src {
+
+/* 图标按钮：默认低调，hover/展开时提一点；44px 点击区 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
   color: var(--faint);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--neutral-bg);
+}
+.icon-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.icon-btn.is-open svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn svg {
+    transition: none;
+  }
+}
+.src-ico {
+  display: inline-flex;
+  align-items: center;
+  color: var(--faint);
+}
+.src-ico svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 屏幕阅读器专用文字（图标按钮/图标数字的可读替代） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .lede-items {
   list-style: none;
@@ -392,14 +514,64 @@ onMounted(load)
 }
 
 /* ===== 轮次提示 ===== */
-.round-line {
+/* 比赛行：轮次 + 队标对阵 + 停牌人数 + 赛程图标，基本不用句子 */
+.match-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4);
   margin: 0 0 var(--space-6);
   font-size: var(--fs-aux);
   color: var(--muted);
 }
-.round-line .quiet-link {
-  margin-left: var(--space-3);
+.round-chip {
+  color: var(--faint);
+  font-size: var(--fs-cap);
   white-space: nowrap;
+}
+.match {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.match .side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.match .side-b {
+  flex-direction: row;
+}
+.team-name {
+  color: var(--text);
+  font-size: var(--fs-cap);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.match .vs {
+  color: var(--faint);
+  font-size: var(--fs-cap);
+}
+.halt-ico {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--halt);
+  font-variant-numeric: tabular-nums;
+}
+.halt-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.rest {
+  color: var(--faint);
+}
+.match-line .rn-link {
+  margin-left: 0;
 }
 
 /* ===== 搜索 / 筛选 / 排序 ===== */
