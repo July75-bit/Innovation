@@ -8,9 +8,28 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PlayerStock · 虚拟选手股交易模拟</title>
+    <meta
+      name="description"
+      content="PlayerStock 是课程作品：用信用点模拟买卖 CS2 职业选手股，查看行情、持仓、交易流水与 AI 市场简报。"
+    />
+    <!-- 浏览器地址栏 / 标签页配色：跟随当前主题，深色下不刺眼 -->
+    <meta name="theme-color" content="#f6f4ef" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141310" media="(prefers-color-scheme: dark)" />
+    <!-- 图标：优先 SVG（缩到 16px 也清楚），老浏览器退 .ico；iOS 用 180px PNG -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- 分享卡片（复制链接到聊天软件时不至于只有一个裸标题） -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PlayerStock · 虚拟选手股交易模拟" />
+    <meta
+      property="og:description"
+      content="用信用点模拟买卖 CS2 职业选手股：行情、持仓、交易流水与 AI 市场简报。"
+    />
+    <meta property="og:locale" content="zh_CN" />
     <!--
       首屏防闪：在 CSS/JS 之前先定主题（与 src/composables/useTheme.ts 同一个 storage key）。
       偏好 `auto`（默认，跟随系统）→ 读 prefers-color-scheme；`light`/`dark` 则原样使用。

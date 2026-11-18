@@ -299,3 +299,21 @@ AI 卡结构 = 结论行（建议 + 一句理由 + 风险/把握）→ 关键数
 验证（CDP 逐帧采样，非目测）：路由 leave 透明度 1→0.017（8 帧）、enter 位移 7.64px→0.75px；
 抽屉中段 `translateX(-160px)` + 遮罩 opacity 0.07；弹窗遮罩 0→0.26→0.76→0.997；下拉 0.88→1；
 开启减少动效后 `document.getAnimations()` 为空、抽屉 `transition-duration: 0s`。
+
+### 11.10 专业化打磨：品牌、元信息与细节（2026-11-18）
+
+目标：让作品从"能用的课程 demo"更像"正经产品"。
+
+- **品牌资产**：生成红色圆角方块 + 白色 P 的 SVG/ICO/PNG 图标（`favicon.svg`/`favicon.ico`/`icon-192/512.png`/`apple-touch-icon.png`），
+  加 `manifest.webmanifest`（可安装为 PWA，主题色/背景色与纸感一致）。
+- **站点元信息**（`index.html`）：`description`、`og:title/description/locale`、双 `theme-color`（浅 `#f6f4ef`/深 `#141310`）；
+  手切主题时 `useTheme` 会同步更新 `theme-color`，地址栏颜色跟页面一致。
+- **404 页**：兜底路由从"静默重定向首页"改为真正的 404 页面（`NotFoundView.vue`，public + 标题「页面不存在」+ 回到市场）。
+- **数字与时间口径**：金额统一千分位两位小数（`4,748.00`）、日期/时钟统一 24 小时制 `zh-CN`（`dateTime`/`clockTime`），
+  表格数字用 `tabular-nums`，不会左右跳。
+- **换页滚动**：普通跳转回顶部，浏览器前进/后退恢复原位置（`router.scrollBehavior`）。
+- **可访问性**：新增「跳到主要内容」skip link（键盘第一个 Tab）+ `main#main` 地标。
+- **加载骨架**：持仓/流水加载时按版式占位（`aria-busy`，减少动效时停跳）。
+- 细节：`::selection` 品牌淡色、滚动条细化、`-webkit-font-smoothing`（原有）。
+
+证据：`119~122-pro-*.png`。

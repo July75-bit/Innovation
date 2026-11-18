@@ -25,6 +25,14 @@ declare module 'vue-router' {
 /** 路由约定见原 code/frontend/README.md：/ 市场、/players/:id 详情、/positions 持仓、/trades 流水、/schedule 赛程 */
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  /**
+   * 换页滚动规则：
+   *  - 普通跳转（点卡片/导航）→ 回到顶部，别让人落在新页面的中段；
+   *  - 浏览器前进/后退 → 用浏览器记录的位置（恢复上一页当时滚到哪）。
+   */
+  scrollBehavior(_to, _from, savedPosition) {
+    return savedPosition ?? { top: 0 }
+  },
   routes: [
     // 注册 / 登录：本地演示页，纯前端账号态，不发后端请求（见 composables/useAuth.ts）
     {
@@ -79,11 +87,13 @@ const router = createRouter({
       component: () => import('../views/UiKitView.vue'),
       meta: { public: true, title: 'UI 组件库' },
     },
-    // 兜底：任何拼错/过期的路径都回首页。空白页比 404 更像"坏了"，
-    // 答辩现场手一抖输错地址不至于看起来像站点挂了。
+    // 兜底：拼错/过期的路径给一个明确的 404 页（带"回到市场"），
+    // 而不是悄悄重定向到首页——用户以为自己看的是原地址，其实内容被换掉了。
     {
       path: '/:pathMatch(.*)*',
-      redirect: '/',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue'),
+      meta: { public: true, title: '页面不存在' },
     },
   ],
 })

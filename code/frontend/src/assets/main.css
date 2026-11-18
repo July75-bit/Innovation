@@ -190,3 +190,92 @@ th.num {
     transform: none;
   }
 }
+
+/* ============================================================
+ * 细节打磨（2026-11-18）
+ *   - 选中文字用品牌淡色，而不是系统默认蓝
+ *   - 滚动条细化，和纸感一致（Firefox 用 scrollbar-color，Chromium 用伪元素）
+ *   - 数字用等宽数字，表格里不会左右跳
+ * ============================================================ */
+::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-text);
+}
+
+html {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.num,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 列表骨架：加载时先占好版式，避免转圈后内容"跳"出来 */
+.sk-list {
+  display: flex;
+  flex-direction: column;
+}
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.sk {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--neutral-bg);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+.sk-name {
+  width: 120px;
+  height: 16px;
+}
+.sk-mid {
+  width: 180px;
+}
+.sk-num {
+  width: 88px;
+  margin-left: auto;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    opacity: 0.6;
+  }
+}

@@ -35,7 +35,10 @@ function onSystemThemeChange(): void {
   if (preference.value !== 'auto') return
   const next = resolveTheme('auto')
   theme.value = next
-  if (typeof document !== 'undefined') document.documentElement.dataset.theme = next
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = next
+    syncThemeColor(next)
+  }
 }
 
 function readStored(): ThemePreference | null {
@@ -79,11 +82,23 @@ function bindSystemListener(): void {
   }
 }
 
+/** 让浏览器地址栏/状态栏颜色跟着当前主题（浅色纸底 / 深色暗底） */
+export function syncThemeColor(mode: ThemeMode): void {
+  if (typeof document === 'undefined') return
+  const color = mode === 'light' ? '#f6f4ef' : '#141310'
+  document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+    meta.setAttribute('content', color)
+  })
+}
+
 /** 应用偏好：写 `<html data-theme>` + 记住选择 */
 export function applyTheme(pref: ThemePreference): void {
   preference.value = pref
   theme.value = resolveTheme(pref)
-  if (typeof document !== 'undefined') document.documentElement.dataset.theme = theme.value
+  if (typeof document !== 'undefined') {
+    document.documentElement.dataset.theme = theme.value
+    syncThemeColor(theme.value)
+  }
   try {
     localStorage.setItem(THEME_STORAGE_KEY, pref)
   } catch {

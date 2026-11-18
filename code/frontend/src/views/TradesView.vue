@@ -15,11 +15,10 @@ import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { TradeItem } from '../api/types'
-import { dateTime, money } from '../utils/format'
+import { dateTime, money, clockTime } from '../utils/format'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
 
 const trades = ref<TradeItem[]>([])
 const loading = ref(true)
@@ -32,7 +31,7 @@ async function load() {
   checkBackendHealth()
   try {
     trades.value = await api.listTrades()
-    updatedAt.value = new Date().toLocaleTimeString()
+    updatedAt.value = clockTime()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载交易流水失败'
   } finally {
@@ -56,7 +55,12 @@ onMounted(load)
       </button>
     </header>
 
-    <LoadingState v-if="loading" />
+    <div v-if="loading" class="sk-list" aria-busy="true" aria-label="加载交易记录">
+      <div v-for="i in 4" :key="i" class="sk-row">
+        <span class="sk sk-name"></span><span class="sk sk-mid"></span
+        ><span class="sk sk-num"></span>
+      </div>
+    </div>
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="trades.length === 0">
       暂无交易记录。去 <RouterLink to="/">市场</RouterLink> 完成第一笔虚拟交易吧。

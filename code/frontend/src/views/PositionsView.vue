@@ -17,12 +17,11 @@ import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PositionItem } from '../api/types'
-import { money, pct, trendClass } from '../utils/format'
+import { money, pct, trendClass, clockTime } from '../utils/format'
 import { useAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
 
 const positions = ref<PositionItem[]>([])
 const loading = ref(true)
@@ -68,7 +67,7 @@ async function load() {
     // 余额刷新是 best-effort：失败不应把已能拿到的持仓列表也打成错误态
     const [list] = await Promise.all([api.getPositions(), refreshAccount().catch(() => {})])
     positions.value = list
-    updatedAt.value = new Date().toLocaleTimeString()
+    updatedAt.value = clockTime()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载持仓失败'
   } finally {
@@ -120,7 +119,12 @@ onMounted(load)
       </div>
     </dl>
 
-    <LoadingState v-if="loading" />
+    <div v-if="loading" class="sk-list" aria-busy="true" aria-label="加载持仓">
+      <div v-for="i in 4" :key="i" class="sk-row">
+        <span class="sk sk-name"></span><span class="sk sk-mid"></span
+        ><span class="sk sk-num"></span>
+      </div>
+    </div>
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="positions.length === 0">
       暂无持仓，去 <RouterLink to="/">市场</RouterLink> 看看。

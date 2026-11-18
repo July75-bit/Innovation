@@ -141,11 +141,11 @@ describe('router 兜底', () => {
     expect(router.currentRoute.value.name).toBe('market')
   })
 
-  it('未知路径也回市场页，而不是空白', async () => {
+  it('未知路径落到 404 页，而不是静默换页或空白', async () => {
     await router.push('/no-such-page')
 
-    expect(router.currentRoute.value.path).toBe('/')
-    expect(router.currentRoute.value.name).toBe('market')
+    expect(router.currentRoute.value.path).toBe('/no-such-page')
+    expect(router.currentRoute.value.name).toBe('not-found')
   })
 
   it('正常子路由不受影响', async () => {

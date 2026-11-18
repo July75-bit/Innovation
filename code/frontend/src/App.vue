@@ -146,6 +146,8 @@ onMounted(() => {
   <RouterView v-if="isAuthPage" />
 
   <template v-else>
+    <!-- 键盘用户第一个 Tab 就能跳过导航（专业站点的常规做法） -->
+    <a class="skip-link" href="#main">跳到主要内容</a>
     <!-- CS2 氛围背景（纯装饰）：雷达网格 + 红色氛围光 -->
     <div class="backdrop" aria-hidden="true"></div>
 
@@ -291,7 +293,7 @@ onMounted(() => {
         </div>
       </header>
 
-      <main class="content">
+      <main id="main" class="content">
         <RouterView v-slot="{ Component, route: current }">
           <Transition name="page" mode="out-in">
             <component :is="Component" :key="current.path" />
@@ -903,5 +905,27 @@ onMounted(() => {
   .icon-btn svg {
     transition: none !important;
   }
+}
+
+/* 跳转链接：默认藏在视口外，键盘聚焦时才出现 */
+.skip-link {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: calc(var(--z-modal) + 10);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  color: var(--text);
+  font-size: var(--fs-aux);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 </style>

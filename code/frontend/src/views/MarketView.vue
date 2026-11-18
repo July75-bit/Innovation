@@ -21,7 +21,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PlayerSummary } from '../api/types'
-import { money, pct, trendClass } from '../utils/format'
+import { money, pct, trendClass, clockTime } from '../utils/format'
 import { TRADING } from '../core/schedule'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
@@ -212,7 +212,7 @@ async function load() {
   void loadBrief() // 简报与行情并发，互不阻塞
   try {
     players.value = await api.listPlayers()
-    updatedAt.value = new Date().toLocaleTimeString()
+    updatedAt.value = clockTime()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载选手列表失败'
   } finally {
