@@ -163,6 +163,9 @@
 | `107-market-top-icons-light.png` | **市场页顶部改版（浅色）**（2026-11-18） | 「展开要点」文字按钮 → 星标（来源）+ 箭头图标；比赛长句 → 轮次 + 两队队标/队名 + 暂停图标「4 人」+ 日历图标 |
 | `108-market-top-icons-dark.png` | **市场页顶部改版（深色）** | 同结构深色；图标按钮 40px 点击区，sr-only 文案保留可读替代 |
 | `109-market-top-icons-390.png` | **市场页顶部改版（390px）** | 移动端一行放得下（轮次 + 队标对阵 + 停牌人数 + 赛程图标），无横向溢出 |
+| `110-brief-items-light.png` | **展开要点 · 紧凑版（1440）**（2026-11-18） | 三条要点改成「小图标 + 短标题 + 一行值」：`最该看 / 低价区 / 停牌`；轮次与对阵不再重复；摘要行宽屏一行放下 |
+| `111-brief-items-1920.png` | **展开要点 · 紧凑版（1920）** | 宽屏下摘要不提前折行（`max-width: 56em`），要点三行共 74px |
+| `112-brief-items-390.png` | **展开要点 · 紧凑版（390）** | 窄屏标题与值自动换行，无横向溢出 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

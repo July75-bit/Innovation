@@ -225,8 +225,16 @@ onMounted(load)
       </div>
       <ul v-if="briefOpen" class="lede-items">
         <li v-for="(item, i) in brief.items" :key="i">
+          <span class="item-ico" aria-hidden="true">
+            <svg v-if="i === 0" viewBox="0 0 16 16"><path d="M3 11.2 7 7.2l3 2 3-5" /></svg>
+            <svg v-else-if="i === 1" viewBox="0 0 16 16"><path d="M8 3v8M5 8l3 3 3-3" /></svg>
+            <svg v-else viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="5.6" />
+              <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+            </svg>
+          </span>
           <span class="k">{{ item.title }}</span>
-          {{ item.detail }}
+          <span class="v">{{ item.detail }}</span>
         </li>
       </ul>
     </section>
@@ -416,10 +424,11 @@ onMounted(load)
 }
 .lede {
   margin: 0;
-  max-width: 60ch;
+  max-width: 56em;
   font-size: var(--fs-body);
   line-height: var(--line-height-body);
   color: var(--text);
+  text-wrap: pretty;
 }
 .lede-actions {
   margin-top: var(--space-3);
@@ -504,13 +513,45 @@ onMounted(load)
   padding: 0;
   display: flex;
   flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-cap);
+}
+.lede-items li {
+  display: flex;
+  align-items: baseline;
   gap: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
+  line-height: 1.6;
+}
+.lede-items .item-ico {
+  flex: none;
+  width: 14px;
+  align-self: center;
+  color: var(--faint);
+}
+.lede-items .item-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .lede-items .k {
+  flex: none;
+  min-width: 4.2em;
+  color: var(--faint);
+}
+.lede-items .v {
   color: var(--text);
-  margin-right: var(--space-2);
+}
+@media (max-width: 600px) {
+  .lede-items li {
+    flex-wrap: wrap;
+  }
+  .lede-items .k {
+    min-width: 0;
+  }
 }
 
 /* ===== 轮次提示 ===== */

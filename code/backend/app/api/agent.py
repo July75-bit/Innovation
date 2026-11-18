@@ -190,11 +190,30 @@ def _round_halt_detail(players: list[Player], round_no: int | None) -> str:
 
     所以简报若只看 `status`，就永远显示"无选手停牌"——与实际（每轮 4 人停牌）矛盾。
     """
+    halted, matchup, round_no, manual_note = _round_halt_parts(players, round_no)
+
+    if round_no is None:
+        return "今天不是比赛日，没有本轮停牌" + manual_note
+    if matchup is None:
+        return "赛程数据不可用，无法判断本轮停牌" + manual_note
+    if not halted:
+        return f"第 {round_no} 轮 {matchup} 比赛中，但没有选手匹配到这两支队伍" + manual_note
+    return f"第 {round_no} 轮 {matchup} 比赛中，{len(halted)} 人停牌：{'、'.join(halted)}" + manual_note
+
+
+def _round_halt_parts(
+    players: list[Player], round_no: int | None
+) -> tuple[list[str], str | None, int | None, str]:
+    """`_round_halt_detail` 的拆解版：返回（停牌名单, 对阵文案, 轮次, 手动冻结备注）。
+
+    展开要点只需要「4 人 · ropz、jL、broky、w0nderful」这一行，
+    轮次与对阵在页面的比赛行里已经有了，不必重复。
+    """
     manual = [p.name for p in players if p.status != "trading"]
     manual_note = f"（另有手动冻结：{'、'.join(manual)}）" if manual else ""
 
     if round_no is None:
-        return "今天不是比赛日，没有本轮停牌" + manual_note
+        return [], None, None, manual_note
 
     from core_engine.schedule import playing_teams, resolve_team_id, team_names
 
@@ -208,11 +227,9 @@ def _round_halt_detail(players: list[Player], round_no: int | None) -> str:
         ]
         matchup = " vs ".join(names.get(t, f"#{t}") for t in sorted(team_ids))
     except Exception:  # noqa: BLE001 —— 赛程镜像异常不该影响简报
-        return "赛程数据不可用，无法判断本轮停牌" + manual_note
+        return [], None, round_no, manual_note
 
-    if not halted:
-        return f"第 {round_no} 轮 {matchup} 比赛中，但没有选手匹配到这两支队伍" + manual_note
-    return f"第 {round_no} 轮 {matchup} 比赛中，{len(halted)} 人停牌：{'、'.join(halted)}" + manual_note
+    return halted, matchup, round_no, manual_note
 
 
 _WRAP_QUOTES: dict[str, str] = {
@@ -293,21 +310,28 @@ def _brief_items(db: Session) -> list[dict[str, Any]]:
 
     round_no = current_round(DEMO_SCHEDULE)
 
+    halted, _matchup, _round_no, _manual_note = _round_halt_parts(players, round_no)
+    halt_detail = (
+        f"{len(halted)} 人 · {'、'.join(halted)}"
+        if halted
+        else "今天没有本轮停牌"
+    )
+
     items = [
         {
-            "title": "今日最该看一眼",
-            "detail": f"{hottest[0].name}（{hottest[0].team}）变动 {hottest[1]:+.2f}%，现价 {float(hottest[0].current_price):.2f}",
+            "title": "最该看",
+            "detail": f"{hottest[0].name} {hottest[1]:+.2f}% · {float(hottest[0].current_price):.2f}",
             "player_id": hottest[0].player_id,
         },
         {
-            "title": "低价区标的",
-            "detail": f"{cheapest.name} 现价 {float(cheapest.current_price):.2f}，评分 {cheapest.rating}",
+            "title": "低价区",
+            "detail": f"{cheapest.name} {float(cheapest.current_price):.2f} · 评分 {cheapest.rating}",
             "player_id": cheapest.player_id,
         },
         {
             # 标题点明口径：这是"本轮赛程停牌"，不是"手动冻结"
-            "title": f"本轮停牌（第 {round_no} 轮）" if round_no else "本轮停牌",
-            "detail": _round_halt_detail(players, round_no),
+            "title": "停牌",
+            "detail": halt_detail,
             "player_id": None,
         },
     ]
