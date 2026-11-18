@@ -897,4 +897,198 @@ td .weekday {
     border-radius: var(--radius-sm);
   }
 }
+
+/* ============================================================
+ * 纸感覆盖（2026-11-18）：只调视觉重量，不动轮次逻辑与结构
+ * ============================================================ */
+.page {
+  gap: var(--space-6);
+}
+.page-head h2 {
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sub {
+  color: var(--faint);
+  max-width: 68ch;
+}
+.sub-halt {
+  color: var(--halt);
+  font-weight: 500;
+}
+.ghost {
+  border: 0;
+  background: none;
+  padding: var(--space-2) 0;
+  color: var(--muted);
+}
+.ghost:hover:not(:disabled) {
+  color: var(--text);
+}
+.page-head .today {
+  color: var(--faint);
+}
+
+/* 卡片：一个容器 + 大留白，不再是"卡片里套卡片" */
+.card {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  gap: var(--space-4);
+}
+.card-title {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+}
+
+/* 轮次条：去掉底色，只留细边与文字 */
+.chip .chip-d {
+  color: var(--muted);
+}
+.chip.played {
+  opacity: 0.78;
+}
+.step {
+  border: 0;
+  background: none;
+  color: var(--faint);
+  width: 24px;
+}
+.step:hover:not(:disabled) {
+  color: var(--text);
+}
+.chip {
+  background: transparent;
+  border-color: var(--color-border);
+  padding: 6px 10px;
+}
+.chip:hover {
+  border-color: var(--color-border-strong);
+}
+.chip.on {
+  background: var(--neutral-bg);
+  border-color: var(--color-border-strong);
+}
+.chip.on .chip-r,
+.chip.on .chip-d {
+  color: var(--text);
+}
+.chip.today .chip-d {
+  color: var(--halt);
+}
+.chip-d i {
+  color: var(--halt);
+}
+.legend {
+  color: var(--faint);
+}
+.legend .mini {
+  display: none;
+}
+.dot.played,
+.dot.upcoming {
+  background: var(--faint);
+}
+.dot.today {
+  background: var(--halt);
+}
+
+/* 对阵：字号降一档，vs 用弱化颜色 */
+.match-main {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+}
+.match-main .vs {
+  color: var(--faint);
+  font-size: var(--fs-aux);
+  font-weight: 400;
+}
+.phase {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: var(--fs-cap);
+}
+.phase.played {
+  color: var(--faint);
+}
+.phase.today {
+  background: none;
+  color: var(--halt);
+}
+.phase.upcoming {
+  background: none;
+  color: var(--down);
+}
+
+/* 表：行高加大、分组行不抢眼 */
+th,
+td {
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+th {
+  padding-top: 0;
+  color: var(--faint);
+  font-weight: 400;
+}
+tr.row:hover {
+  background: transparent;
+}
+tr.row.on {
+  background: var(--neutral-bg);
+}
+.group-row td {
+  background: transparent;
+  padding-top: var(--space-5);
+  color: var(--faint);
+  font-weight: 400;
+}
+.mini {
+  color: var(--faint);
+}
+
+/* 轮次条：隐藏滚动条但保留横向滚动 */
+.strip {
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* 分组行与状态标签：去掉底色，只留文字 */
+.group-row td,
+.group-row.up td,
+.group-row.down td {
+  background: transparent;
+  color: var(--faint);
+  font-weight: 400;
+}
+.tag {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: var(--fs-cap);
+}
+.tag.played {
+  background: none;
+  color: var(--faint);
+}
+.tag.today {
+  background: none;
+  color: var(--halt);
+}
+.tag.upcoming {
+  background: none;
+  color: var(--down);
+}
+.row.on td,
+.row.on .c-round {
+  color: var(--text);
+}
+.row.on .star {
+  color: var(--halt);
+}
 </style>

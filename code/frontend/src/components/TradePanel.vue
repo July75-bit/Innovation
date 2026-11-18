@@ -255,15 +255,15 @@ async function submit(side: 'BUY' | 'SELL') {
       </div>
     </div>
 
-    <p class="estimate num">
-      约需 <strong>{{ money(estimated) }}</strong> 币
-    </p>
-
-    <!-- 「最大 / 清仓」怎么算的：一行小字说清（被拦住时变色） -->
-    <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">{{ maxNote }}</p>
-    <p :class="['sell-hint', { blocked: sellAllBlockReason !== null }]" role="status">
-      {{ sellAllNote }}
-    </p>
+    <div class="trade-meta num">
+      <p class="estimate">
+        约需 <strong>{{ money(estimated) }}</strong> 币
+      </p>
+      <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">{{ maxNote }}</p>
+      <p :class="['sell-hint', { blocked: sellAllBlockReason !== null }]" role="status">
+        {{ sellAllNote }}
+      </p>
+    </div>
 
     <!-- 拦截态：暂停交易时明确说明原因，而不是只禁用按钮 -->
     <p v-if="suspended" class="suspended-hint" role="status">
@@ -366,6 +366,14 @@ input[aria-invalid='true'] {
 .chip:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.trade-meta {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 .estimate {
   margin: 0;

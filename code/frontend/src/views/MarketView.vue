@@ -379,6 +379,7 @@ onMounted(load)
 }
 .round-line .quiet-link {
   margin-left: var(--space-3);
+  white-space: nowrap;
 }
 
 /* ===== 搜索 / 筛选 / 排序 ===== */

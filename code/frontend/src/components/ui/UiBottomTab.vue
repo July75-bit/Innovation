@@ -106,9 +106,9 @@ function pick(key: string): void {
   outline-offset: 2px;
 }
 .ui-tab.is-active {
-  /* P1：与侧栏统一——淡主色底 pill + 主色文字，不再用顶部竖条 */
-  color: var(--color-selection-text);
-  background: var(--color-selection-bg);
+  /* 纸感：与侧栏一致，深色文字 + 极淡中性底 */
+  color: var(--color-text);
+  background: var(--neutral-bg);
   font-weight: var(--font-weight-semibold);
 }
 .ui-tab__icon svg {

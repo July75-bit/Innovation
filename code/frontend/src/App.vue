@@ -407,19 +407,31 @@ onMounted(() => {
   stroke-width: 1.6;
   stroke-linecap: round;
 }
+.nav-item {
+  position: relative;
+}
 .nav-item.router-link-active {
-  /* P1：选中态 = 淡主色底 pill + 主色文字 */
-  color: var(--color-selection-text);
+  /* 纸感：只用文字与一条 2px 竖线表示选中，不再用彩色底 */
+  color: var(--text);
   font-weight: 600;
-  background: var(--color-selection-bg);
+  background: transparent;
+}
+.nav-item.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--color-text);
 }
 
 /* 账户概览卡片 */
 .account-card {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+  /* 纸感：不套灰底卡片，直接是几行数字 + 一条细线 */
+  padding: var(--space-3) 0 var(--space-2);
+  border-top: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -511,8 +523,8 @@ onMounted(() => {
   justify-content: center;
   gap: var(--space-2);
   min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--muted);
@@ -522,8 +534,6 @@ onMounted(() => {
 }
 .theme-toggle:hover {
   color: var(--text);
-  border-color: var(--border-strong);
-  background: var(--neutral-bg);
 }
 .theme-toggle:focus-visible {
   outline: 2px solid var(--accent);
@@ -809,10 +819,8 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
 }
 .avatar {
   width: 28px;
