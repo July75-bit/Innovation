@@ -39,18 +39,15 @@ export function trendClass(value: number): 'up' | 'down' | 'flat' {
   return 'flat'
 }
 
-/** ISO 8601 UTC 时间转本地可读格式：统一 24 小时制 + 固定字段，避免各浏览器格式不一 */
-const DATETIME_FORMAT = new Intl.DateTimeFormat('zh-CN', {
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hour12: false,
-})
+/**
+ * ISO 8601 UTC 时间转本地可读格式：`2026-11-18 19:32:42`。
+ * 手写而不用 Intl：`zh-CN` 会给成 `2026/11/18`，斜杠在数据表里偏"网页默认"，
+ * 短横线更像行情/交易系统的时间戳。
+ */
 export function dateTime(iso: string): string {
-  return DATETIME_FORMAT.format(new Date(iso))
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
 /** 价格历史点的短时间（时:分，24 小时制） */

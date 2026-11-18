@@ -51,9 +51,12 @@ const chart = computed(() => {
   const innerH = H - PAD.top - PAD.bottom
   const step = pts.length > 1 ? innerW / (pts.length - 1) : 0
 
+  // Y 轴取"好看的刻度"（1/2/5 × 10^k），并让首尾点与上下边留一点呼吸
+  const { low, high, ticks } = niceDomain(min, max, 3)
+
   const dots = pts.map((p, i) => {
     const x = PAD.left + i * step
-    const y = PAD.top + innerH * (1 - (p.price - min) / (max - min))
+    const y = PAD.top + innerH * (1 - (p.price - low) / (high - low))
     return { x, y, ts: p.ts, price: p.price, reason: p.reason }
   })
 
@@ -69,9 +72,10 @@ const chart = computed(() => {
     line,
     area,
     dots,
-    minY: min,
-    maxY: max,
-    midY: (min + max) / 2,
+    ticks: ticks.map((value) => ({
+      value,
+      y: PAD.top + innerH * (1 - (value - low) / (high - low)),
+    })),
     baseline: PAD.top + innerH,
     firstTs: (pts[0] as PricePoint).ts,
     lastTs: (pts[pts.length - 1] as PricePoint).ts,
@@ -86,9 +90,26 @@ const hovered = computed(() => {
   return (chart.value.dots[i] as (typeof chart.value.dots)[number] | undefined) ?? null
 })
 
-/** X 轴首尾标签：只显示日期（种子数据的时间点通常都是同一时刻） */
+/**
+ * 把 [min,max] 扩成"整齐的" Y 轴区间：步长取 1/2/5 × 10^k，
+ * 保证刻度是 90/105/120 这种整数，而不是 89.13/107.57 这类原值。
+ */
+function niceDomain(min: number, max: number, count: number) {
+  const raw = (max - min) / count
+  const mag = 10 ** Math.floor(Math.log10(raw))
+  const norm = raw / mag
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10) * mag
+  const low = Math.floor(min / step) * step
+  const high = Math.ceil(max / step) * step
+  const ticks: number[] = []
+  for (let v = low; v <= high + step / 1000; v += step) ticks.push(Number(v.toFixed(6)))
+  return { low, high, ticks }
+}
+
+/** X 轴首尾标签：只显示"月/日"，比完整日期更像行情轴 */
+const DAY_FORMAT = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' })
 function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString()
+  return DAY_FORMAT.format(new Date(iso))
 }
 
 function tipStyle(d: { x: number; y: number }) {
@@ -112,28 +133,18 @@ function tipStyle(d: { x: number; y: number }) {
             :y2="chart.baseline"
             class="axis"
           />
-          <line :x1="PAD.left" :y1="PAD.top" :x2="W - PAD.right" :y2="PAD.top" class="grid" />
-          <line
-            :x1="PAD.left"
-            :y1="(PAD.top + chart.baseline) / 2"
-            :x2="W - PAD.right"
-            :y2="(PAD.top + chart.baseline) / 2"
-            class="grid"
-          />
-          <text :x="PAD.left - 8" :y="PAD.top + 4" class="tick" text-anchor="end">
-            {{ money(chart.maxY) }}
-          </text>
-          <text
-            :x="PAD.left - 8"
-            :y="(PAD.top + chart.baseline) / 2 + 4"
-            class="tick"
-            text-anchor="end"
-          >
-            {{ money(chart.midY) }}
-          </text>
-          <text :x="PAD.left - 8" :y="chart.baseline + 4" class="tick" text-anchor="end">
-            {{ money(chart.minY) }}
-          </text>
+          <g v-for="tick in chart.ticks" :key="tick.value">
+            <line
+              :x1="PAD.left"
+              :y1="tick.y"
+              :x2="W - PAD.right"
+              :y2="tick.y"
+              :class="tick.value === chart.ticks[0]!.value ? 'axis' : 'grid'"
+            />
+            <text :x="PAD.left - 8" :y="tick.y + 4" class="tick" text-anchor="end">
+              {{ money(tick.value) }}
+            </text>
+          </g>
 
           <polygon :points="chart.area" :class="['area', chart.rising ? 'up' : 'down']" />
           <polyline :points="chart.line" fill="none" :class="['line', chart.rising ? 'up' : 'down']" />
@@ -224,8 +235,8 @@ function tipStyle(d: { x: number; y: number }) {
 .chart-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 12px;
+  border-radius: var(--radius-md);
+  padding: 14px;
 }
 .chart-wrap {
   position: relative;

@@ -176,6 +176,8 @@
 | `120-pro-positions-dark.png` | **专业化打磨 · 持仓（深色）** | 深色下金额/空态/表头对比度正常，主题色随深浅切换 |
 | `121-pro-notfound.png` | **404 页** | 未知路径不再静默重定向：明确「这个页面不存在」+ 回到市场按钮 |
 | `122-pro-skeleton.png` | **加载骨架（持仓）** | 加载时按版式占位（4 行、`aria-busy`），不再转圈后内容跳动 |
+| `123-pro-chart.png` | **价格图表打磨**（2026-11-18） | Y 轴改成整齐刻度 80/100/120/140 + 4 条网格线；X 轴改「月/日」；卡片圆角统一到内容层 |
+| `124-pro-trades.png` | **交易流水时间格式** | 时间统一 `2026-11-18 19:32:42`（短横线，不再斜杠），金额千分位、右对齐 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
