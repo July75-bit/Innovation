@@ -13,18 +13,18 @@
  * ============================================================ */
 :root {
   /* ---------- 中性色 9 阶 ---------- */
-  --color-neutral-0: #f7f8fa; /* 最高亮文字 | on surface 16.2:1 */
-  --color-neutral-100: #e9eaee; /* 主文字     | 14.3:1 */
-  --color-neutral-200: #c6c9d1; /* 强调正文   | 10.4:1 */
-  --color-neutral-300: #b6bac4; /* 次要文字   | 8.9:1 */
-  --color-neutral-400: #8f949f; /* 辅助文字   | 5.7:1 */
-  --color-neutral-500: #5c626e; /* 占位符/禁用 | 2.9:1（仅装饰） */
-  --color-neutral-600: #3a404c; /* 强边框     | 非文字 */
-  --color-neutral-700: #262b34; /* 抬起面/悬停底 */
-  --color-neutral-800: #181b22; /* 卡片/表面   */
+  --color-neutral-0: #f6f4ef; /* 最高亮文字 | on surface 16.2:1 */
+  --color-neutral-100: #ebe8e1; /* 主文字     | 14.3:1 */
+  --color-neutral-200: #cfcbc1; /* 强调正文   | 10.4:1 */
+  --color-neutral-300: #b7b2a6; /* 次要文字   | 8.9:1 */
+  --color-neutral-400: #918c7f; /* 辅助文字   | 5.7:1 */
+  --color-neutral-500: #6b665b; /* 占位符/禁用 | 2.9:1（仅装饰） */
+  --color-neutral-600: #46423a; /* 强边框     | 非文字 */
+  --color-neutral-700: #24221d; /* 抬起面/悬停底 */
+  --color-neutral-800: #1b1a17; /* 卡片/表面   */
 
   /* 画布（页面底色，不属于 9 阶；比 n-800 再深一档） */
-  --color-canvas: #12141a;
+  --color-canvas: #141310;
 
   /* ---------- 主色 5 阶（品牌红） ---------- */
   --color-primary-50: #fdecec; /* 浅底/标签底色 */
@@ -63,21 +63,21 @@
   --color-bg: var(--color-canvas);
   --color-surface: var(--color-neutral-800);
   --color-surface-raised: var(--color-neutral-700); /* 悬停/嵌套 */
-  --color-surface-3: #2b3039; /* 导航选中/第三层，比 raised 再亮一档 */
-  --color-surface-sunken: #14161c; /* 更深的输入底 */
+  --color-surface-3: #26241f; /* 导航选中/第三层，比 raised 再亮一档 */
+  --color-surface-sunken: #100f0d; /* 更深的输入底 */
   --color-neutral-bg: rgba(255, 255, 255, 0.06); /* 中性弱底（徽章/按钮 hover） */
   --color-text: var(--color-neutral-100);
   --color-text-strong: var(--color-neutral-0);
   --color-text-muted: var(--color-neutral-300);
   --color-text-faint: var(--color-neutral-400);
   --color-text-disabled: var(--color-neutral-500);
-  --color-border: #2c313b; /* 1px 常规边框（非文字，无对比度要求） */
+  --color-border: #2e2b25; /* 1px 常规边框（非文字，无对比度要求） */
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-300); /* 焦点环（6.06:1） */
   --color-overlay: rgba(9, 10, 14, 0.58); /* 遮罩：压暗但不把玻璃后面的内容压没 */
   --color-selection-bg: rgba(229, 72, 77, 0.16); /* P1：选中态淡主色底（侧栏/Tab/筛选统一） */
   --color-selection-text: #ef7377; /* 选中态文字：在淡红底上仍 ≥4.5:1 */
-  --color-table-head: #262b34; /* 表头底色（浅色模式为 #fafafa） */
+  --color-table-head: #211f1b; /* 表头底色（浅色模式为 #fafafa） */
 
   /* 业务语义：涨 = 主色，跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);
@@ -101,7 +101,7 @@
   --font-size-min: 12px; /* 仅用于非关键标注，不再更小 */
 
   --line-height-tight: 1.35; /* 标题 */
-  --line-height-body: 1.6; /* 正文 16px */
+  --line-height-body: 1.7; /* 正文 16px */
   --line-height-aux: 1.5; /* 辅助 13px */
 
   --font-weight-regular: 400;
@@ -144,8 +144,8 @@
   /* ---------- 布局 ---------- */
   --layout-max-width: 1280px;
   --layout-topbar-height: 56px; /* 桌面玻璃顶栏高度（内容从它下面滚过） */
-  --layout-sidebar-width: 232px;
-  --layout-content-max: 1200px;
+  --layout-sidebar-width: 220px;
+  --layout-content-max: 1040px;
 
   /* ---------- 动效（克制；尊重 reduced-motion） ---------- */
   --motion-fast: 120ms;
@@ -192,16 +192,16 @@
  * ============================================================ */
 [data-theme='light'] {
   /* 中性 9 阶（0 = 最强对比 → 800 = 表面） */
-  --color-neutral-0: #0b0d11;
-  --color-neutral-100: #1a1d23;
-  --color-neutral-200: #2e333c;
-  --color-neutral-300: #454b56;
-  --color-neutral-400: #667085; /* P1：辅助灰更柔和（对白 4.8:1 仍 AA） */
-  --color-neutral-500: #8b919d; /* 仅禁用/占位（非正文） */
-  --color-neutral-600: #c3c8d2;
-  --color-neutral-700: #e8ebf0;
+  --color-neutral-0: #14120e;
+  --color-neutral-100: #22201c;
+  --color-neutral-200: #33302a;
+  --color-neutral-300: #4f4b42;
+  --color-neutral-400: #6c675c; /* P1：辅助灰更柔和（对白 4.8:1 仍 AA） */
+  --color-neutral-500: #8f8a7d; /* 仅禁用/占位（非正文） */
+  --color-neutral-600: #cfcabd;
+  --color-neutral-700: #f0ede6;
   --color-neutral-800: #ffffff;
-  --color-canvas: #f4f6f9;
+  --color-canvas: #f6f4ef;
 
   /* 主色 5 阶（品牌红在浅底上的文字档要更深才达 AA） */
   --color-primary-50: #fdecec;
@@ -231,21 +231,21 @@
   --color-bg: var(--color-canvas);
   --color-surface: var(--color-neutral-800);
   --color-surface-raised: var(--color-neutral-700);
-  --color-surface-3: #eef1f6;
-  --color-neutral-bg: rgba(15, 20, 30, 0.05);
-  --color-surface-sunken: #f7f8fb;
+  --color-surface-3: #efede7;
+  --color-neutral-bg: rgba(60, 55, 45, 0.06);
+  --color-surface-sunken: #faf9f6;
   --color-text: var(--color-neutral-100);
   --color-text-strong: var(--color-neutral-0);
   --color-text-muted: var(--color-neutral-300);
   --color-text-faint: var(--color-neutral-400);
   --color-text-disabled: var(--color-neutral-500);
-  --color-border: #e5e8ee; /* P1：边框更轻，接近白卡分割线 */
+  --color-border: #e6e2d9; /* P1：边框更轻，接近白卡分割线 */
   --color-border-strong: var(--color-neutral-600);
   --color-focus: var(--color-primary-500);
   --color-overlay: rgba(15, 18, 24, 0.26);
   --color-selection-bg: rgba(229, 72, 77, 0.10);
   --color-selection-text: #b02a2e;
-  --color-table-head: #fafafa;
+  --color-table-head: #f7f5f0;
 
   /* 业务语义：涨 = 品牌红、跌 = 成功绿（国内行情习惯） */
   --color-up: var(--color-primary-500);

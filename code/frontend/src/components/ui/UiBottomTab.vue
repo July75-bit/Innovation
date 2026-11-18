@@ -39,7 +39,7 @@ function pick(key: string): void {
 
 <template>
   <nav
-    class="ui-tabbar glass glass--panel glass--scrim glass--interactive"
+    class="ui-tabbar"
     :class="{ 'is-preview': preview }"
     :aria-label="ariaLabel"
   >
@@ -72,6 +72,10 @@ function pick(key: string): void {
   gap: 2px;
   width: min(520px, calc(100% - 24px));
   padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
 }
 .ui-tab {
   flex: 1;

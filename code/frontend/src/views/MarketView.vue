@@ -26,7 +26,6 @@ import { TRADING } from '../core/schedule'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import StatusBadge from '../components/StatusBadge.vue'
 import { matchLabel, roundMatch } from '../core/schedule'
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
 
@@ -60,6 +59,8 @@ function cleanSummary(raw: string | null | undefined): string {
 }
 
 const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)
+/** 简报默认只显示一句话；要看三条要点再展开 */
+const briefOpen = ref(false)
 
 async function loadBrief() {
   try {
@@ -149,161 +150,175 @@ onMounted(load)
 </script>
 
 <template>
-  <div>
-    <div class="page-head">
+  <article class="market">
+    <header class="masthead">
       <div>
-        <h2>选手市场</h2>
-        <p class="updated" v-if="updatedAt && !loading && !error">更新于 {{ updatedAt }}</p>
+        <h1>市场</h1>
+        <p v-if="updatedAt && !loading && !error" class="mast-meta">
+          16 名选手 · 更新于 {{ updatedAt }}
+        </p>
       </div>
-      <button class="refresh" :disabled="loading" @click="load">
-        <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span> 刷新
+      <button type="button" class="quiet-btn" :disabled="loading" @click="load">
+        <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span>
+        {{ loading ? '刷新中' : '刷新' }}
       </button>
-    </div>
+    </header>
 
-    <!-- 今日智能体简报：一进首页先给一句人话结论，再列三条要点 -->
-    <section v-if="brief" class="brief" aria-label="今日简报">
-      <div class="brief-head">
-        <h2 class="brief-title">今日简报</h2>
-        <span class="brief-meta">{{ brief.source === 'llm' ? 'AI 生成' : '简化模式' }}</span>
+    <!-- 今日简报：一句话说结论，要点收起来 -->
+    <section v-if="brief" class="lede-block" aria-label="今日简报">
+      <p class="lede">{{ cleanSummary(brief.summary) }}</p>
+      <div class="lede-foot">
+        <span class="lede-src">{{ brief.source === 'llm' ? 'AI 生成' : '简化模式' }}</span>
+        <button
+          v-if="brief.items.length"
+          type="button"
+          class="quiet-link"
+          @click="briefOpen = !briefOpen"
+        >
+          {{ briefOpen ? '收起要点' : '展开要点' }}
+        </button>
       </div>
-      <p class="brief-summary">{{ cleanSummary(brief.summary) }}</p>
-      <ul class="brief-items">
+      <ul v-if="briefOpen" class="lede-items">
         <li v-for="(item, i) in brief.items" :key="i">
-          <span class="brief-k">{{ item.title }}</span>
-          <span class="brief-v">{{ item.detail }}</span>
+          <span class="k">{{ item.title }}</span>
+          {{ item.detail }}
         </li>
       </ul>
     </section>
 
-    <!-- 本轮停牌提示：让玩家一眼知道“这几个人现在买不了”，并能直接去看赛程 -->
-    <p class="round-note num">
+    <p class="round-line">
       <template v-if="liveMatch">
-        <span class="rn-tag">第 {{ round }} 轮</span>
-        <strong>{{ matchText }}</strong> 比赛中，<b class="halt">{{ haltedCount }}</b> 人暂停交易
+        第 {{ round }} 轮 · {{ matchText }} 比赛中，{{ haltedCount }} 人暂停交易
       </template>
-      <template v-else> <span class="rn-tag">休赛日</span>今天没有比赛，全部选手照常交易 </template>
-      <RouterLink class="rn-link" to="/schedule">看赛程 →</RouterLink>
+      <template v-else>休赛日 · 全部选手照常交易</template>
+      <RouterLink class="quiet-link rn-link" to="/schedule">看赛程</RouterLink>
     </p>
 
-    <!-- 工具条：搜索 + 筛选 + 排序（任务流最短化） -->
-    <div class="toolbar">
+    <div class="controls">
       <input
         v-model="keyword"
         class="search"
         type="search"
-        placeholder="搜索选手 / 战队…"
+        placeholder="搜索选手 / 战队"
         aria-label="搜索选手或战队"
       />
-      <div class="segment" role="group" aria-label="按交易状态筛选">
+      <div class="filters" role="group" aria-label="按交易状态筛选">
         <button
           v-for="opt in [
             { v: 'all', t: '全部' },
             { v: 'trading', t: '交易中' },
-            { v: 'halted', t: '暂停' },
+            { v: 'halted', t: '停牌' },
           ]"
           :key="opt.v"
           type="button"
-          :class="['seg-btn', { active: statusFilter === opt.v }]"
+          :class="['filter', { active: statusFilter === opt.v }]"
           @click="statusFilter = opt.v as typeof statusFilter"
         >
           {{ opt.t }}
         </button>
       </div>
       <label class="sort">
-        <span>排序</span>
         <select v-model="sortBy" aria-label="排序方式">
-          <option value="default">默认</option>
-          <option value="price">价格高→低</option>
-          <option value="change">涨幅高→低</option>
-          <option value="rating">评分高→低</option>
+          <option value="default">默认排序</option>
+          <option value="price">价格从高到低</option>
+          <option value="change">涨幅从高到低</option>
+          <option value="rating">评分从高到低</option>
         </select>
       </label>
     </div>
 
-    <!-- 加载态：骨架卡片，保持布局不跳动 -->
     <ul v-if="loading" class="grid" aria-busy="true" aria-label="加载选手列表">
-      <li v-for="i in 8" :key="i" class="card skeleton">
-        <span class="sk sk-name"></span><span class="sk sk-meta"></span
-        ><span class="sk sk-price"></span>
+      <li v-for="i in 6" :key="i" class="p-card skeleton">
+        <span class="sk sk-name"></span>
+        <span class="sk sk-meta"></span>
+        <span class="sk sk-price"></span>
       </li>
     </ul>
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="players.length === 0">市场暂无选手</EmptyState>
     <EmptyState v-else-if="filtered.length === 0">
       没有符合条件的选手。
-      <button type="button" class="link-btn" @click="resetFilters">清除筛选</button>
+      <button type="button" class="quiet-link" @click="resetFilters">清除筛选</button>
     </EmptyState>
 
     <ul v-else class="grid">
       <li
         v-for="p in filtered"
         :key="p.player_id"
-        :class="['card', { suspended: p.status !== TRADING }]"
+        :class="['p-card', { suspended: p.status !== TRADING }]"
         :title="p.halt_note ?? undefined"
       >
-        <RouterLink :to="`/players/${p.player_id}`" class="card-link">
-          <div class="top">
-            <span class="name">{{ p.display_name || p.name }}</span>
-            <StatusBadge :status="p.status" />
+        <RouterLink :to="`/players/${p.player_id}`" class="p-link">
+          <div class="p-top">
+            <span class="p-name">{{ p.display_name || p.name }}</span>
+            <span :class="['p-status', p.status === TRADING ? 'on' : 'off']">
+              <i aria-hidden="true"></i>{{ p.status === TRADING ? '交易中' : '停牌' }}
+            </span>
           </div>
-          <div class="meta">
-            <span>{{ p.team ?? '—' }}</span>
-            <span class="role">{{ p.role ?? '—' }}</span>
-          </div>
-          <div class="price-row num">
-            <span class="price">{{ money(p.current_price) }}</span>
-            <span :class="['change', trendClass(p.change_pct)]">{{ pct(p.change_pct) }}</span>
-          </div>
-          <div class="rating-row">
-            <span class="rating-label">模拟表现分</span>
-            <span class="rating">{{ p.rating }}</span>
-          </div>
+          <p class="p-meta">
+            {{ p.team ?? '—' }}<template v-if="p.role"> · {{ p.role }}</template>
+          </p>
+          <p class="p-price">
+            <span class="num">{{ money(p.current_price) }}</span>
+            <span :class="['p-chg', trendClass(p.change_pct)]">{{ pct(p.change_pct) }}</span>
+          </p>
         </RouterLink>
       </li>
     </ul>
-  </div>
+  </article>
 </template>
 
 <style scoped>
-.page-head {
+/* 市场页（纸感）：一屏 3 列 × 2 行 = 6 张卡；区块之间用留白分开，不用分割线堆叠 */
+.market {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+/* ===== 页头 ===== */
+.masthead {
+  display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
-.page-head h2 {
+.masthead h1 {
   margin: 0;
-  font-size: var(--fs-h2);
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
-.updated {
-  margin: 4px 0 0;
+.mast-meta {
+  margin: var(--space-2) 0 0;
   font-size: var(--fs-cap);
-  color: var(--muted);
+  color: var(--faint);
 }
-.refresh {
+.quiet-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-body);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-aux);
   cursor: pointer;
 }
-.refresh:hover {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
+.quiet-btn:hover {
+  color: var(--text);
 }
-.refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.quiet-btn:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 .ico-refresh {
   display: inline-block;
+  font-size: 15px;
+  line-height: 1;
 }
-.ico-refresh.spinning {
+.spinning {
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin {
@@ -311,304 +326,273 @@ onMounted(load)
     transform: rotate(360deg);
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
+  }
+}
 
-/* ---- 今日智能体简报 ---- */
-.brief {
-  margin-top: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--surface);
+/* ===== 一句话简报 ===== */
+.lede-block {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
 }
-.brief-head {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
-}
-.brief-title {
+.lede {
   margin: 0;
-  font-size: var(--fs-h3);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.brief-meta {
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.brief-summary {
-  margin: 0 0 var(--space-4);
-  font-size: 17px;
-  line-height: 1.75;
+  max-width: 60ch;
+  font-size: var(--fs-body);
+  line-height: var(--line-height-body);
   color: var(--text);
-  max-width: 62ch;
 }
-.brief-items {
-  margin: 0;
-  padding: 0;
+.lede-foot {
+  margin-top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.lede-src {
+  color: var(--faint);
+}
+.lede-items {
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
-}
-.brief-items li {
+  margin: var(--space-3) 0 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: var(--space-3);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.brief-k {
-  font-size: var(--fs-cap);
+  gap: var(--space-2);
+  font-size: var(--fs-aux);
   color: var(--muted);
 }
-.brief-v {
-  font-size: var(--fs-body);
-  font-weight: 600;
+.lede-items .k {
   color: var(--text);
-  line-height: 1.55;
+  margin-right: var(--space-2);
 }
 
-/* ---- 工具条 ---- */
-.round-note {
-  margin: var(--space-3) 0 calc(var(--space-2) * -1);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+/* ===== 轮次提示 ===== */
+.round-line {
+  margin: 0 0 var(--space-6);
   font-size: var(--fs-aux);
   color: var(--muted);
 }
-.round-note strong {
-  color: var(--text);
+.round-line .quiet-link {
+  margin-left: var(--space-3);
 }
-.round-note .halt {
-  color: var(--warn);
-}
-.rn-tag {
-  padding: 1px 9px;
-  border-radius: var(--radius-pill);
-  background: var(--neutral-bg);
-  font-size: var(--fs-cap);
-}
-.rn-link {
-  margin-left: auto;
-  color: var(--accent-text);
-  text-decoration: none;
-  font-size: var(--fs-aux);
-}
-.rn-link:hover {
-  text-decoration: underline;
-}
-.toolbar {
+
+/* ===== 搜索 / 筛选 / 排序 ===== */
+.controls {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-top: var(--space-4);
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 .search {
-  flex: 1;
-  min-width: 180px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  width: 240px;
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
   color: var(--text);
+  font: inherit;
   font-size: var(--fs-body);
 }
 .search::placeholder {
-  color: var(--muted);
+  color: var(--faint);
 }
-.segment {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--surface);
+.search:focus {
+  outline: none;
+  border-bottom-color: var(--color-border-strong);
 }
-.seg-btn {
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--fs-aux);
-  cursor: pointer;
-}
-.seg-btn.active {
-  background: var(--color-selection-bg);
-  color: var(--color-selection-text);
-  font-weight: 700;
-}
-.sort {
-  display: inline-flex;
+.filters {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
-.sort select {
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-aux);
-}
-
-/* ---- 卡片网格 ---- */
-.grid {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-4) 0 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-4);
 }
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  transition: border-color 0.15s ease;
-}
-.card:hover {
-  /* P1：内容卡片不位移、不加阴影，只提亮边框（参考站的做法） */
-  border-color: var(--border-strong);
-}
-.card.suspended {
-  opacity: 0.65;
-}
-.card-link {
-  display: block;
-  padding: var(--space-5); /* P1：卡片留白 16→24 */
-  text-decoration: none;
-  color: inherit;
-}
-.top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-}
-.name {
-  font-size: var(--fs-h3);
-  font-weight: 700;
-}
-.meta {
-  display: flex;
-  gap: var(--space-2);
-  color: var(--muted);
-  font-size: var(--fs-aux);
-  margin-top: 2px;
-}
-.role {
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
-}
-.price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-top: var(--space-3);
-}
-.price {
-  font-size: 22px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.change {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.change.up {
-  color: var(--up-text);
-}
-.change.down {
-  color: var(--down);
-}
-.change.flat {
-  color: var(--muted);
-}
-.rating-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
-.rating {
-  font-weight: 700;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--accent-text);
-  font-size: inherit;
-  cursor: pointer;
+.filter {
   padding: 0;
-  text-decoration: underline;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: inherit;
+  font-size: var(--fs-aux);
+  cursor: pointer;
+}
+.filter:hover {
+  color: var(--text);
+}
+.filter.active {
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--color-text);
+}
+.sort {
+  margin-left: auto;
+}
+.sort select {
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: inherit;
+  font-size: var(--fs-aux);
+  cursor: pointer;
+}
+.sort select:hover {
+  color: var(--text);
 }
 
-/* ---- 骨架屏 ---- */
-.card.skeleton {
-  padding: var(--space-4);
+/* ===== 选手卡：一屏 6 张，留白优先 ===== */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.p-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--motion-fast) var(--motion-ease);
+}
+.p-card:hover {
+  border-color: var(--color-border-strong);
+}
+.p-link {
   display: flex;
   flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  color: inherit;
+  text-decoration: none;
+}
+.p-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--space-3);
-  pointer-events: none;
+}
+.p-name {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.p-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.p-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.p-status.on {
+  color: var(--down);
+}
+.p-status.off {
+  color: var(--halt);
+}
+.p-meta {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  line-height: 1.4;
+}
+.p-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+.p-price .num {
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.p-chg {
+  font-size: var(--fs-aux);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.p-chg.up {
+  color: var(--up-text);
+}
+.p-chg.down {
+  color: var(--down);
+}
+.p-chg.flat {
+  color: var(--muted);
+}
+
+/* 骨架 */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
 }
 .sk {
-  border-radius: 6px;
+  display: block;
+  border-radius: 4px;
   background: var(--neutral-bg);
   animation: sk-pulse 1.2s ease-in-out infinite;
 }
 .sk-name {
-  height: 20px;
-  width: 60%;
+  width: 46%;
+  height: 18px;
 }
 .sk-meta {
+  width: 64%;
   height: 12px;
-  width: 40%;
 }
 .sk-price {
-  height: 26px;
-  width: 75%;
+  width: 38%;
+  height: 24px;
 }
 @keyframes sk-pulse {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.85;
   }
 }
 
-/* ===== 窄屏：工具条纵向堆叠，搜索占整行 ===== */
+/* ===== 窄屏：2 列 → 1 列 ===== */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 720px) {
-  .toolbar {
-    gap: var(--space-2);
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .masthead {
+    margin-bottom: var(--space-5);
+  }
+  .controls {
+    flex-wrap: wrap;
+    gap: var(--space-4);
   }
   .search {
-    flex-basis: 100%;
+    width: 100%;
   }
-}
-
-/* 窄屏：简报两列改窄，详情允许折行 */
-@media (max-width: 720px) {
-  .brief-items {
-    grid-template-columns: 1fr;
+  .sort {
+    margin-left: 0;
   }
-  .brief-summary {
-    font-size: var(--fs-body);
+  .p-price .num {
+    font-size: 24px;
   }
 }
 </style>

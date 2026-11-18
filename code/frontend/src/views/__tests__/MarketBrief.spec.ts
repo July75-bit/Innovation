@@ -63,7 +63,7 @@ describe('市场页 · 今日简报', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     await flushPromises()
 
-    const summary = wrapper.find('.brief-summary')
+    const summary = wrapper.find('.lede')
     expect(summary.exists()).toBe(true)
     const text = summary.text()
 
@@ -79,7 +79,13 @@ describe('市场页 · 今日简报', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     await flushPromises()
 
-    const items = wrapper.findAll('.brief-items li')
+    // 纸感重构：三条要点默认收起，点「展开要点」后才出现
+    expect(wrapper.find('.lede-items').exists()).toBe(false)
+    const toggle = wrapper.findAll('button').find((b) => b.text().includes('展开要点'))
+    expect(toggle).toBeTruthy()
+    await toggle!.trigger('click')
+
+    const items = wrapper.findAll('.lede-items li')
     expect(items).toHaveLength(3)
     expect(items[0]!.text()).toContain('今日最该看一眼')
     expect(items[1]!.text()).toContain('低价区标的')

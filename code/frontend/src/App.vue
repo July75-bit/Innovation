@@ -25,6 +25,7 @@ import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { money } from './utils/format'
 import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
+import AboutDialog from './components/AboutDialog.vue'
 import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
 import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
@@ -80,7 +81,6 @@ const router = useRouter()
 
 /** 桌面玻璃顶栏的页面标题（来自路由 meta.title；必须放在 useRoute/useRouter 之后——
     immediate watch 会在 setup 阶段立刻执行，早于 const route 声明会报 TDZ） */
-const pageTitle = computed(() => route.meta.title ?? '选手市场')
 watch(
   () => route.meta.title,
   (title) => {
@@ -93,6 +93,7 @@ watch(
 
 /** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
 const deleteOpen = ref(false)
+const aboutOpen = ref(false)
 
 /**
  * 删除成功后：弹窗内部已经清掉会话，这里只负责把人送回登录页，
@@ -152,7 +153,7 @@ onMounted(() => {
       <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） =====
            材质层：桌面端是玻璃壳（导航属于材质层）；≤960px 的抽屉是实色 sheet——
            抽屉占屏 78vw × 100dvh，玻璃面积会直接冲破 30% 配额，且里面是文字密集区。 -->
-      <aside :class="['sidebar', 'glass', 'glass--nav', { open: navOpen }]">
+      <aside :class="['sidebar', { open: navOpen }]">
         <RouterLink to="/" class="brand">
           <span class="brand-mark" aria-hidden="true"></span>
           PlayerStock<span class="sub">虚拟选手股</span>
@@ -222,12 +223,6 @@ onMounted(() => {
           ><span class="sk sk-line"></span>
         </div>
 
-        <div
-          :class="['health', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
-        >
-          <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
-        </div>
-
         <!-- 主题：自动（跟随系统）→ 浅色 → 深色 三档循环，44px 点击区 -->
         <button
           type="button"
@@ -251,31 +246,17 @@ onMounted(() => {
           <span>{{ themePreferenceLabel }}</span>
         </button>
 
-        <p class="side-note">
-          本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
-          Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
-        </p>
       </aside>
 
       <!-- ===== 顶栏（材质层：玻璃）=====
            桌面：fixed 在内容列上方，页面内容从它下面滚过 → 真模糊（这是桌面端唯一"有东西可糊"的位置）
            移动：sticky 在页面顶部，内容同样从下面滚过 -->
-      <header class="topbar glass glass--nav">
-        <div class="topbar__title only-desktop">
-          <span class="topbar__crumb">PlayerStock</span>
-          <h1 class="topbar__h">{{ pageTitle }}</h1>
-        </div>
+      <header class="topbar">
         <RouterLink to="/" class="brand brand-sm only-mobile">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
 
         <div class="topbar__right">
-          <span
-            class="topbar__health only-desktop"
-            :class="backend === null ? 'checking' : backend === false ? 'bad' : 'good'"
-          >
-            <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
-          </span>
           <div class="balance" v-if="account">
             余额 <strong>{{ money(account.balance) }}</strong>
           </div>
@@ -312,6 +293,12 @@ onMounted(() => {
 
       <main class="content">
         <RouterView />
+        <footer class="page-foot">
+          <span :class="['foot-dot', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
+            ><i aria-hidden="true"></i>{{ healthText }}</span
+          >
+          <button type="button" class="foot-link" @click="aboutOpen = true">关于本站</button>
+        </footer>
       </main>
 
       <!-- 移动端底部 Tab（材质层：玻璃；≤960px 显示） -->
@@ -327,6 +314,8 @@ onMounted(() => {
       currentUser 立刻变 null，组件会在 emit('deleted') 之前被卸载，父层就再也收不到通知
       （实测踩过：账号删掉了但页面停在市场页）。组件自己按 open 控制渲染。
     -->
+    <AboutDialog v-model:open="aboutOpen" />
+
     <DeleteAccountDialog
       v-model="deleteOpen"
       :nickname="currentUser?.nickname ?? ''"
@@ -355,11 +344,10 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-3);
-  /* 底色/模糊由全局 .glass 提供；这里只留"靠边一侧"的描边，避免玻璃四周都描边显得像卡片 */
-  border: 0;
-  border-right: 1px solid var(--glass-border);
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   overflow-y: auto;
 }
 .brand {
@@ -604,19 +592,10 @@ onMounted(() => {
   cursor: pointer;
 }
 
-/* ===== 桌面（≥961px）：顶栏 fixed 在内容列上方，内容从它下面滚过 ===== */
+/* ===== 桌面（≥961px）：不要顶栏，把纵向空间还给内容 ===== */
 @media (min-width: 961px) {
   .topbar {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: var(--layout-sidebar-width);
-    right: 0;
-    height: var(--layout-topbar-height);
-    padding: 0 var(--space-5);
-    border: 0;
-    border-bottom: 1px solid var(--glass-border);
-    z-index: var(--z-nav);
+    display: none;
   }
   .topbar__title {
     display: flex;
@@ -664,10 +643,9 @@ onMounted(() => {
   .topbar__health.bad {
     color: var(--up-text);
   }
-  /* 桌面内容区给 fixed 顶栏让出高度（内容从顶栏下面滚过）
-     用 .shell .content 提高优先级：基础 .content 规则在文件更后面 */
+  /* 桌面内容区：大留白，视线从容 */
   .shell .content {
-    padding-top: calc(var(--layout-topbar-height) + var(--space-5));
+    padding: var(--space-7) var(--space-6) var(--space-6);
   }
 }
 .only-mobile {
@@ -677,11 +655,54 @@ onMounted(() => {
 /* ===== 主区 ===== */
 .content {
   grid-area: content;
-  padding: var(--space-5);
+  padding: var(--space-6) var(--space-5);
   width: 100%;
-  /* 宽屏修复：主区在侧栏右侧的剩余空间内居中，避免右侧大片空白 */
-  max-width: 1280px;
+  max-width: var(--layout-content-max);
   margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 页脚：服务状态 + 关于（低调，不抢内容） */
+.page-foot {
+  margin-top: auto;
+  padding-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.foot-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.foot-dot i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.foot-dot.good {
+  color: var(--down);
+}
+.foot-dot.bad {
+  color: var(--up-text);
+}
+.foot-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--faint);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.foot-link:hover {
+  color: var(--text);
 }
 
 /* 遮罩（仅移动端抽屉用） */

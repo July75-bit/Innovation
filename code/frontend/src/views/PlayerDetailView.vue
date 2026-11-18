@@ -339,7 +339,7 @@ watch(playerId, () => loadCore())
 
     <template v-else-if="player">
       <!-- 行情头部：名称/状态 + 大字价格 -->
-      <header class="head card">
+      <header class="head">
         <div class="head-left">
           <h2>{{ player.display_name || player.name }}</h2>
           <p class="meta">
@@ -574,13 +574,15 @@ watch(playerId, () => loadCore())
   border-radius: var(--radius-md);
 }
 .head {
+  /* 纸感：头部不套卡片，直接用排版和一条细线分隔 */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-top: var(--space-3);
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-5);
+  padding: 0 0 var(--space-5);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
 }
 .head h2 {
   margin: 0;
@@ -946,13 +948,13 @@ h3 {
 
 /* ══════════ 智能体结论卡（改版：结论优先，细节折叠） ══════════ */
 .ai-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 .ai-top {
   display: flex;
@@ -1082,13 +1084,13 @@ h3 {
   font-weight: 600;
 }
 .meta-strong.low {
-  color: #4cc38a;
+  color: var(--color-success-base);
 }
 .meta-strong.medium {
-  color: #e0b341;
+  color: var(--color-warning-base);
 }
 .meta-strong.high {
-  color: #e5534b;
+  color: var(--color-error-base);
 }
 .meta-sep {
   color: var(--border);

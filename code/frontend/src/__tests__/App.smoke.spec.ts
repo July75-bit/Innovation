@@ -40,7 +40,8 @@ describe('App 外壳', () => {
     expect(wrapper.find('.shell').exists()).toBe(true)
     expect(wrapper.find('.sidebar').exists()).toBe(true)
     expect(wrapper.find('.topbar').exists()).toBe(true)
-    expect(wrapper.find('.topbar').classes()).toContain('glass')
+    // 2026-11-18 纸感重构：外壳不再用玻璃，顶栏保留但应为实色
+    expect(wrapper.find('.topbar').classes()).not.toContain('glass')
     expect(wrapper.find('.content').exists()).toBe(true)
     wrapper.unmount()
   })

@@ -257,15 +257,10 @@ async function submit(side: 'BUY' | 'SELL') {
 
     <p class="estimate num">
       约需 <strong>{{ money(estimated) }}</strong> 币
-      <span class="hint">（以成交价实时计算）</span>
     </p>
 
-    <p v-if="held != null" class="held-hint">当前持仓：{{ held }} 股 / 上限 50 股</p>
-
-    <!-- 把「最大 / 清仓」的算法结果直接写出来：窄屏没有鼠标悬停，也得看得懂这两颗键怎么算的 -->
-    <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">
-      {{ maxNote }}
-    </p>
+    <!-- 「最大 / 清仓」怎么算的：一行小字说清（被拦住时变色） -->
+    <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">{{ maxNote }}</p>
     <p :class="['sell-hint', { blocked: sellAllBlockReason !== null }]" role="status">
       {{ sellAllNote }}
     </p>
@@ -289,15 +284,12 @@ async function submit(side: 'BUY' | 'SELL') {
         {{ suspended ? '暂停交易中' : submitting ? '提交中…' : '卖出' }}
       </button>
     </div>
-    <p v-if="!suspended" class="kbd-hint">提示：在数量框按 <kbd>Enter</kbd> 直接买入</p>
 
     <!-- 结果反馈：成功/失败都即时可见（aria-live 供读屏播报） -->
     <div v-if="feedback" :class="['feedback', feedback.kind]" role="status" aria-live="polite">
       <span class="fb-ico" aria-hidden="true">{{ feedback.kind === 'success' ? '✓' : '✕' }}</span>
       {{ feedback.text }}
     </div>
-
-    <p class="virtual-note">信用点交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
   </section>
 </template>
 
@@ -399,6 +391,10 @@ input[aria-invalid='true'] {
 }
 .max-hint,
 .sell-hint {
+  margin: 0;
+  font-size: var(--fs-cap);
+  line-height: 1.5;
+  color: var(--muted);
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);

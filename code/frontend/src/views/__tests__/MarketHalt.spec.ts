@@ -90,16 +90,16 @@ describe('市场页 · 本轮停牌可见性', () => {
     const w = mountView()
     await flushPromises()
 
-    expect(w.findAll('.card')).toHaveLength(16)
-    expect(w.findAll('.card.suspended')).toHaveLength(4)
-    expect(w.findAll('.badge.halt')).toHaveLength(4)
+    expect(w.findAll('.p-card')).toHaveLength(16)
+    expect(w.findAll('.p-card.suspended')).toHaveLength(4)
+    expect(w.findAll('.p-status.off')).toHaveLength(4)
   })
 
   it('顶部横幅说明"谁在打比赛、停了几个人"，并能直接去赛程页', async () => {
     const w = mountView()
     await flushPromises()
 
-    const note = w.get('.round-note').text()
+    const note = w.get('.round-line').text()
     expect(note).toContain(`第 ${currentRound()} 轮`)
     expect(note).toContain('比赛中')
     expect(note).toContain('4 人暂停交易')
@@ -110,22 +110,22 @@ describe('市场页 · 本轮停牌可见性', () => {
     const w = mountView()
     await flushPromises()
 
-    const haltedBtn = w.findAll('.seg-btn').find((btn) => btn.text() === '暂停')
+    const haltedBtn = w.findAll('.filter').find((btn) => btn.text() === '停牌')
     await haltedBtn!.trigger('click')
 
-    expect(w.findAll('.card')).toHaveLength(4)
-    expect(w.findAll('.card.suspended')).toHaveLength(4)
+    expect(w.findAll('.p-card')).toHaveLength(4)
+    expect(w.findAll('.p-card.suspended')).toHaveLength(4)
   })
 
   it('筛选"交易中"排除本轮停牌的 4 人', async () => {
     const w = mountView()
     await flushPromises()
 
-    const tradingBtn = w.findAll('.seg-btn').find((btn) => btn.text() === '交易中')
+    const tradingBtn = w.findAll('.filter').find((btn) => btn.text() === '交易中')
     await tradingBtn!.trigger('click')
 
-    expect(w.findAll('.card')).toHaveLength(12)
-    expect(w.findAll('.card.suspended')).toHaveLength(0)
+    expect(w.findAll('.p-card')).toHaveLength(12)
+    expect(w.findAll('.p-card.suspended')).toHaveLength(0)
   })
 
   it('停牌卡片的悬浮提示是本轮对阵，不会误报成"手动暂停"', async () => {
@@ -133,7 +133,7 @@ describe('市场页 · 本轮停牌可见性', () => {
     await flushPromises()
 
     // 原因必须拿"原始 status"去算：拿派生后的对象会被判成手动冻结
-    const titles = w.findAll('.card.suspended').map((card) => card.attributes('title'))
+    const titles = w.findAll('.p-card.suspended').map((card) => card.attributes('title'))
     expect(titles).toHaveLength(4)
     for (const title of titles) {
       expect(title).toContain('比赛中，暂停交易')
