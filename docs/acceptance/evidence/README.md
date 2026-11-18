@@ -151,6 +151,14 @@
 | `95-auth-theme-light.png` | **登录页 · 主题按钮（浅色）**（2026-11-14 19:15） | 登录页右上角新增主题按钮（自动/浅色/深色三档循环，与全站同一 `useTheme`）；当前「自动·系统浅色」→ 实际浅色；按钮 76×44、与品牌区不重叠 |
 | `96-auth-theme-dark.png` | **登录页 · 主题按钮（深色）** | 切到深色后整页立即变深，按钮显示「深色」+ 月亮图标；表单/标题/链接对比度实测达标 |
 | `97-auth-theme-mobile-light.png` | **登录页 · 主题按钮 375px** | 窄屏按钮收成图标（34×44，文字进 aria-label），不遮挡品牌与表单；无横向溢出 |
+| `98-paper-light-market.png` | **纸感重构 · 市场（浅色）**（2026-11-18） | 一句话简报 + 要点折叠 + 3×2 卡片；首屏可见节点 247→165、文字块 115→72 |
+| `99-paper-dark-market.png` | **纸感重构 · 市场（深色）** | 暖中性深色底（#141310 / #1b1a17），无模糊无高光；卡片 hover 只改边框 |
+| `100-paper-light-detail.png` | **纸感重构 · 选手详情** | 头部不套卡片；交易面板 3 行小字合一行；风险色改语义令牌（浅色对比度 1.96:1 → 达标） |
+| `101-paper-light-positions.png` | **纸感重构 · 持仓** | 总览 4 卡 → 一行排版；明细 8 列 → 5 列、行高 64 |
+| `102-paper-light-trades.png` | **纸感重构 · 交易记录** | 7 列 → 5 列；方向只用文字颜色 |
+| `103-paper-light-schedule.png` | **纸感重构 · 赛程** | 轮次条去底色/滚动条；分组行与状态标签去彩色底 |
+| `104-paper-mobile-market.png` | **纸感重构 · 移动端市场 390px** | 单列卡片、留白优先；无横向溢出 |
+| `105-paper-mobile-positions.png` | **纸感重构 · 移动端持仓 390px** | 表格转「标签 + 值」堆叠行；总览 2×2 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
