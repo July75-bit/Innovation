@@ -42,6 +42,25 @@ type BriefItem = { title: string; detail: string; player_id?: number | null }
  * 模型偶尔返回 JSON（`{"action":"HOLD","reason":"..."}`），后端旧版本会原样透传，
  * 前端必须再兜一层——界面上只允许出现一句话，不允许出现花括号/字段名/代码块。
  */
+const WRAP_QUOTES: Record<string, string> = {
+  '"': '"',
+  "'": "'",
+  '“': '”',
+  '‘': '’',
+  '「': '」',
+  '『': '』',
+}
+
+/** 去掉模型给整句套的外层引号（最多 3 层），并合并多余空白 */
+function tidySentence(text: string): string {
+  let t = text.trim()
+  for (let i = 0; i < 3; i += 1) {
+    if (t.length >= 2 && WRAP_QUOTES[t[0]!] === t[t.length - 1]) t = t.slice(1, -1).trim()
+    else break
+  }
+  return t.replace(/\s+/g, ' ').trim()
+}
+
 function cleanSummary(raw: string | null | undefined): string {
   let text = (raw ?? '').trim()
   if (!text) return ''
@@ -49,13 +68,14 @@ function cleanSummary(raw: string | null | undefined): string {
   if (text.startsWith('{')) {
     const match = text.match(/"(?:reason|summary|text)"\s*:\s*"([^"]*)/)
     const picked = match?.[1]
-    if (picked) return picked.trim()
-    return text
-      .replace(/[{}"]/g, '')
-      .replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, '')
-      .trim()
+    if (picked) return tidySentence(picked)
+    return tidySentence(
+      text
+        .replace(/[{}"]/g, '')
+        .replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, ''),
+    )
   }
-  return text
+  return tidySentence(text)
 }
 
 const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)

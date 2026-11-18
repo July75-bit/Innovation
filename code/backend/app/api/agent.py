@@ -215,6 +215,34 @@ def _round_halt_detail(players: list[Player], round_no: int | None) -> str:
     return f"第 {round_no} 轮 {matchup} 比赛中，{len(halted)} 人停牌：{'、'.join(halted)}" + manual_note
 
 
+_WRAP_QUOTES: dict[str, str] = {
+    '"': '"',
+    "'": "'",
+    "\u201c": "\u201d",  # “ ”
+    "\u2018": "\u2019",  # ‘ ’
+    "\u300c": "\u300d",  # 「 」
+    "\u300e": "\u300f",  # 『 』
+}
+
+
+def _strip_wrapping_quotes(text: str) -> str:
+    """去掉模型给整句套的外层引号（最多 3 层）。"""
+    for _ in range(3):
+        t = text.strip()
+        if len(t) >= 2 and t[0] in _WRAP_QUOTES and t[-1] == _WRAP_QUOTES[t[0]]:
+            text = t[1:-1]
+        else:
+            break
+    return text.strip()
+
+
+def _space_cjk_ascii(text: str) -> str:
+    """中文与数字/字母之间补一个空格：`sh1ro涨13.96%` → `sh1ro 涨 13.96%`。"""
+    text = re.sub(r"([\u4e00-\u9fff])([A-Za-z0-9%])", r"\1 \2", text)
+    text = re.sub(r"([A-Za-z0-9%])([\u4e00-\u9fff])", r"\1 \2", text)
+    return text
+
+
 def _clean_brief_summary(raw: str | None) -> str:
     """把模型输出清洗成「一句中文总述」（简报是给人看的，绝不能透出 JSON/字段名）。
 
@@ -244,7 +272,11 @@ def _clean_brief_summary(raw: str | None) -> str:
 
     # 3) 合并空白（保留句末标点，只去首尾空格）
     text = re.sub(r"\s+", " ", text).strip()
-    return text[:80]
+    # 4) 去掉模型给整句套的引号（线上真实样本：`"sh1ro涨13.96%报136.43…"`）
+    text = _strip_wrapping_quotes(text)
+    # 5) 中文与数字/字母之间补空格，避免「sh1ro涨13.96%」挤成一团
+    text = re.sub(r"\s+", " ", _space_cjk_ascii(text)).strip()
+    return text[:80].rstrip()
 
 
 def _brief_items(db: Session) -> list[dict[str, Any]]:

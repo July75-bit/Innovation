@@ -283,9 +283,48 @@ def test_clean_brief_summary_keeps_plain_sentence() -> None:
     assert agent_api._clean_brief_summary(raw) == raw
 
 
+def test_clean_brief_summary_strips_wrapping_quotes() -> None:
+    """线上真实样本：模型把整句套了引号，界面不该把引号也显示出来。"""
+    raw = '\u201csh1ro\u6da813.96%\u62a5136.43\uff0cbLitz\u62a548.48\uff0c\u7b2c18\u8f6e\u56db\u4eba\u505c\u724c\u201d'
+
+    clean = agent_api._clean_brief_summary(raw)
+
+    assert not clean.startswith(("\u201c", '"', "\u300c"))
+    assert not clean.endswith(("\u201d", '"', "\u300d"))
+    assert clean.startswith("sh1ro")
+
+
+def test_clean_brief_summary_spaces_cjk_and_ascii() -> None:
+    """中文和数字/字母挤在一起时补空格，读起来不费劲。"""
+    clean = agent_api._clean_brief_summary("sh1ro\u6da813.96%\u62a5136.43")
+
+    assert clean == "sh1ro \u6da8 13.96% \u62a5 136.43"
+
+
 def test_clean_brief_summary_handles_empty() -> None:
     assert agent_api._clean_brief_summary("") == ""
     assert agent_api._clean_brief_summary(None) == ""
+
+
+def test_brief_endpoint_strips_quotes_and_spaces(client, monkeypatch) -> None:
+    """端到端：模型返回「整句带引号 + 中英数字挤在一起」时，接口给的是干净一句中文。"""
+    _clear_brief_cache()
+    monkeypatch.setattr(settings, "llm_api_key", "sk-test")
+
+    import ai.llm_agent as llm
+
+    monkeypatch.setattr(
+        llm,
+        "_default_chat",
+        lambda *_a, **_k: '\u201csh1ro\u6da813.96%\u62a5136.43\uff0cbLitz\u62a548.48\u201d',
+    )
+
+    body = client.get("/api/agent/brief?refresh=true").json()
+    summary = body["summary"]
+
+    assert summary == "sh1ro \u6da8 13.96% \u62a5 136.43\uff0cbLitz \u62a5 48.48"
+    assert "\u201c" not in summary and "\u201d" not in summary
+    _clear_brief_cache()
 
 
 def test_brief_endpoint_never_leaks_json(client, monkeypatch) -> None:

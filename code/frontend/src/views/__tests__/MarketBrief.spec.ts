@@ -73,6 +73,21 @@ describe('市场页 · 今日简报', () => {
     expect(text).toContain('sh1ro 现价 136.43')
   })
 
+  it('整句被模型套上引号时，界面上不显示引号', async () => {
+    const original = h.brief.summary
+    h.brief.summary = '\u201csh1ro 涨 13.96%，报 136.43\u201d'
+    const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+
+    const text = wrapper.find('.lede').text()
+    expect(text).toBe('sh1ro 涨 13.96%，报 136.43')
+    expect(text).not.toContain('\u201c')
+    expect(text).not.toContain('\u201d')
+    h.brief.summary = original
+  })
+
   it('三条要点照常显示（清洗不影响内容）', async () => {
     const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
     await flushPromises()
