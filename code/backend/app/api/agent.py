@@ -322,17 +322,33 @@ def _brief_items(db: Session) -> list[dict[str, Any]]:
             "title": "最该看",
             "detail": f"{hottest[0].name} {hottest[1]:+.2f}% · {float(hottest[0].current_price):.2f}",
             "player_id": hottest[0].player_id,
+            # 结构化字段：前端据此渲染「大号数字 + 颜色 + 图标」，不必再解析句子
+            "kind": "up",
+            "name": hottest[0].name,
+            "value": f"{hottest[1]:+.2f}%",
+            "sub": f"{float(hottest[0].current_price):.2f}",
+            "tone": "up" if hottest[1] >= 0 else "down",
         },
         {
             "title": "低价区",
             "detail": f"{cheapest.name} {float(cheapest.current_price):.2f} · 评分 {cheapest.rating}",
             "player_id": cheapest.player_id,
+            "kind": "low",
+            "name": cheapest.name,
+            "value": f"{float(cheapest.current_price):.2f}",
+            "sub": f"评分 {cheapest.rating}",
+            "tone": "neutral",
         },
         {
             # 标题点明口径：这是"本轮赛程停牌"，不是"手动冻结"
             "title": "停牌",
             "detail": halt_detail,
             "player_id": None,
+            "kind": "halt",
+            "name": None,
+            "value": str(len(halted)) if halted else "0",
+            "sub": "人停牌",
+            "tone": "halt",
         },
     ]
     return items

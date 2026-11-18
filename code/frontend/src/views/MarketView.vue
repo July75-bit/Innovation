@@ -37,7 +37,18 @@ const error = ref<string | null>(null)
 const updatedAt = ref('')
 
 /* ---- 今日智能体简报（第 8 轮：让智能体出现在首屏，而不是只藏在详情页） ---- */
-type BriefItem = { title: string; detail: string; player_id?: number | null }
+type BriefTone = 'up' | 'down' | 'neutral' | 'halt'
+type BriefItem = {
+  title: string
+  detail: string
+  player_id?: number | null
+  /** 结构化字段（新后端）：kind 决定图标，value 用大号数字展示 */
+  kind?: 'up' | 'low' | 'halt'
+  name?: string | null
+  value?: string
+  sub?: string
+  tone?: BriefTone
+}
 /**
  * 简报总述清洗（防守）：
  * 模型偶尔返回 JSON（`{"action":"HOLD","reason":"..."}`），后端旧版本会原样透传，
@@ -136,6 +147,24 @@ const sourceLabel = computed(() =>
   brief.value?.source === 'llm' ? 'AI 生成简报' : '简化模式（未连接模型）',
 )
 
+/** 结构化重点条：三条 items 都带 kind/value 才用新样式，否则回退到旧句子（兼容旧后端/测试 mock） */
+const highlights = computed<BriefItem[] | null>(() => {
+  const items = brief.value?.items
+  if (!items?.length) return null
+  if (!items.every((item) => item.kind && item.value !== undefined)) return null
+  return items
+})
+
+/** AI 原话（只在展开时以灰色小字出现） */
+const aiLine = computed(() => cleanSummary(brief.value?.summary))
+
+/** 停牌名单：detail 形如「4 人 · ropz、jL、broky、w0nderful」 */
+const haltNames = computed(() => {
+  const halt = highlights.value?.find((item) => item.kind === 'halt')
+  const parts = (halt?.detail ?? '').split('·')
+  return parts.length > 1 ? parts.slice(1).join('·').trim() : ''
+})
+
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
   let list = listed.value
@@ -204,39 +233,95 @@ onMounted(load)
 
     <!-- 今日简报：一句话说结论，要点收起来 -->
     <section v-if="brief" class="lede-block" aria-label="今日简报">
-      <p class="lede">{{ cleanSummary(brief.summary) }}</p>
-      <div class="lede-actions">
-        <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
-          <svg viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
-          </svg>
-        </span>
-        <button
-          v-if="brief.items.length"
-          type="button"
-          class="icon-btn"
-          :class="{ 'is-open': briefOpen }"
-          :aria-expanded="briefOpen"
-          @click="briefOpen = !briefOpen"
+      <!-- 重点数字条：图标 + 名字 + 大号数字（涨红跌绿）+ 小字补充；桌面不换行 -->
+      <div v-if="highlights" class="hl-row">
+        <span
+          v-for="item in highlights"
+          :key="item.kind"
+          :class="['hl', `hl--${item.kind}`]"
+          :title="item.detail"
         >
-          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
-          <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
-        </button>
-      </div>
-      <ul v-if="briefOpen" class="lede-items">
-        <li v-for="(item, i) in brief.items" :key="i">
-          <span class="item-ico" aria-hidden="true">
-            <svg v-if="i === 0" viewBox="0 0 16 16"><path d="M3 11.2 7 7.2l3 2 3-5" /></svg>
-            <svg v-else-if="i === 1" viewBox="0 0 16 16"><path d="M8 3v8M5 8l3 3 3-3" /></svg>
+          <span class="hl-ico" aria-hidden="true">
+            <svg v-if="item.kind === 'up'" viewBox="0 0 16 16">
+              <path d="M3 11.2 7 7.2l3 2 3-5" />
+            </svg>
+            <svg v-else-if="item.kind === 'low'" viewBox="0 0 16 16">
+              <path d="M8 3v8M5 8l3 3 3-3" />
+            </svg>
             <svg v-else viewBox="0 0 16 16">
               <circle cx="8" cy="8" r="5.6" />
               <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
             </svg>
           </span>
-          <span class="k">{{ item.title }}</span>
-          <span class="v">{{ item.detail }}</span>
-        </li>
-      </ul>
+          <span v-if="item.name" class="hl-name">{{ item.name }}</span>
+          <span :class="['hl-value', `tone-${item.tone ?? 'neutral'}`]">{{ item.value }}</span>
+          <span class="hl-sub">{{ item.sub }}</span>
+        </span>
+
+        <span class="hl-actions">
+          <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
+            </svg>
+          </span>
+          <button
+            v-if="brief.items.length"
+            type="button"
+            class="icon-btn"
+            :class="{ 'is-open': briefOpen }"
+            :aria-expanded="briefOpen"
+            @click="briefOpen = !briefOpen"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
+            <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
+          </button>
+        </span>
+      </div>
+
+      <!-- 旧后端/测试 mock 的回退样式：一句话 + 展开按钮 -->
+      <template v-else>
+        <p class="lede">{{ aiLine }}</p>
+        <div class="lede-actions">
+          <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
+            </svg>
+          </span>
+          <button
+            v-if="brief.items.length"
+            type="button"
+            class="icon-btn"
+            :class="{ 'is-open': briefOpen }"
+            :aria-expanded="briefOpen"
+            @click="briefOpen = !briefOpen"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
+            <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
+          </button>
+        </div>
+      </template>
+
+      <!-- 展开：AI 原话（小字）+ 停牌名单 -->
+      <div v-if="briefOpen" class="brief-more">
+        <template v-if="highlights">
+          <p class="brief-quote">{{ aiLine }}</p>
+          <p v-if="haltNames" class="halt-line">停牌：{{ haltNames }}</p>
+        </template>
+        <ul v-else class="lede-items">
+          <li v-for="(item, i) in brief.items" :key="i">
+            <span class="item-ico" aria-hidden="true">
+              <svg v-if="i === 0" viewBox="0 0 16 16"><path d="M3 11.2 7 7.2l3 2 3-5" /></svg>
+              <svg v-else-if="i === 1" viewBox="0 0 16 16"><path d="M8 3v8M5 8l3 3 3-3" /></svg>
+              <svg v-else viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="5.6" />
+                <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+              </svg>
+            </span>
+            <span class="k">{{ item.title }}</span>
+            <span class="v">{{ item.detail }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
     <div class="round-line match-line">
@@ -430,6 +515,104 @@ onMounted(load)
   color: var(--text);
   text-wrap: pretty;
 }
+.lede-block {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+/* 重点数字条：一行放下，靠字号/颜色分层，不写句子 */
+.hl-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-6);
+  flex-wrap: nowrap;
+}
+.hl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.hl-ico {
+  display: inline-flex;
+  align-self: center;
+  color: var(--faint);
+}
+.hl-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hl-name {
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.hl-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.hl--low .hl-value,
+.hl--halt .hl-value {
+  font-size: 20px;
+}
+.hl-value.tone-up {
+  color: var(--up-text);
+}
+.hl-value.tone-down {
+  color: var(--down);
+}
+.hl-value.tone-neutral {
+  color: var(--text);
+}
+.hl-value.tone-halt {
+  color: var(--halt);
+}
+.hl-sub {
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.hl-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--faint);
+}
+.brief-more {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.brief-quote {
+  margin: 0;
+  max-width: 68em;
+  font-size: var(--fs-cap);
+  line-height: 1.7;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.halt-line {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+@media (max-width: 900px) {
+  .hl-row {
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .hl-actions {
+    margin-left: 0;
+  }
+}
+
 .lede-actions {
   margin-top: var(--space-3);
   display: flex;

@@ -88,6 +88,26 @@ describe('市场页 · 今日简报', () => {
     h.brief.summary = original
   })
 
+  it('结构化 items 走「重点数字条」：大号数字 + 涨跌颜色，无长句', async () => {
+    const original = h.brief.items
+    h.brief.items = [
+      { title: '最该看', detail: 'sh1ro +13.96% · 136.43', player_id: 7, kind: 'up', name: 'sh1ro', value: '+13.96%', sub: '136.43', tone: 'up' },
+      { title: '低价区', detail: 'bLitz 48.48 · 评分 64', player_id: 16, kind: 'low', name: 'bLitz', value: '48.48', sub: '评分 64', tone: 'neutral' },
+      { title: '停牌', detail: '4 人 · ropz、jL', player_id: null, kind: 'halt', name: null, value: '4', sub: '人停牌', tone: 'halt' },
+    ] as unknown as typeof h.brief.items
+    const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+
+    expect(wrapper.find('.hl-row').exists()).toBe(true)
+    expect(wrapper.find('.lede').exists()).toBe(false)
+    expect(wrapper.findAll('.hl')).toHaveLength(3)
+    expect(wrapper.get('.hl-value.tone-up').text()).toBe('+13.96%')
+    expect(wrapper.get('.hl-value.tone-halt').text()).toBe('4')
+    h.brief.items = original
+  })
+
   it('三条要点照常显示（清洗不影响内容）', async () => {
     const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
     await flushPromises()
