@@ -159,6 +159,7 @@
 | `103-paper-light-schedule.png` | **纸感重构 · 赛程** | 轮次条去底色/滚动条；分组行与状态标签去彩色底 |
 | `104-paper-mobile-market.png` | **纸感重构 · 移动端市场 390px** | 单列卡片、留白优先；无横向溢出 |
 | `105-paper-mobile-positions.png` | **纸感重构 · 移动端持仓 390px** | 表格转「标签 + 值」堆叠行；总览 2×2 |
+| `106-brief-clean-summary.png` | **简报总述清洗（2026-11-18）** | 模型返回的整句引号已剥离、中文与数字间补空格：`sh1ro 涨 13.96% 报 136.43，bLitz 报 48.48，第 18 轮四人停牌` |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
