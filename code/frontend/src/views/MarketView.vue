@@ -30,10 +30,13 @@ import { roundMatch, teamNames } from '../core/schedule'
 import TeamLogo from '../components/TeamLogo.vue'
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
 import { MARKET_DEFAULTS, readMarketState, saveMarketState } from '../composables/useMarketState'
+import { useSlowHint } from '../composables/useSlowHint'
 
 const players = ref<PlayerSummary[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+/** 加载超过 4 秒就解释一下「可能在唤醒服务」 */
+const slowLoading = useSlowHint(loading)
 /** 系统状态可见：告诉用户"这批行情是什么时候拉的" */
 const updatedAt = ref('')
 
@@ -218,7 +221,8 @@ function warmDetailRoute(): void {
   void import('../views/PlayerDetailView.vue')
 }
 
-function prefetchPlayer(playerId: number): void {
+/** 行情类数据（后端百毫秒级）：悬停即取 */
+function prefetchCore(playerId: number): void {
   warmDetailRoute()
   if (prefetchedPlayers.has(playerId) || prefetchedPlayers.size >= 20) return
   prefetchedPlayers.add(playerId)
@@ -229,6 +233,36 @@ function prefetchPlayer(playerId: number): void {
     api.getPositions(),
   ])
 }
+
+/**
+ * AI 分析要 2–3 秒（LLM）：只在指针停留 >= 250ms 时预取，避免扫过卡片就烧一次调用；
+ * 手指按下（pointerdown）视为确定意图，立即预取。
+ */
+let aiPrefetchTimer: ReturnType<typeof setTimeout> | null = null
+const aiPrefetched = new Set<number>()
+
+function prefetchAnalysis(playerId: number): void {
+  if (aiPrefetched.has(playerId)) return
+  aiPrefetched.add(playerId)
+  void api.getAnalysis(playerId).catch(() => {
+    aiPrefetched.delete(playerId) // 失败的话下次还能再试
+  })
+}
+function cancelAiPrefetch(): void {
+  if (aiPrefetchTimer !== null) {
+    clearTimeout(aiPrefetchTimer)
+    aiPrefetchTimer = null
+  }
+}
+function scheduleAiPrefetch(playerId: number): void {
+  cancelAiPrefetch()
+  aiPrefetchTimer = setTimeout(() => prefetchAnalysis(playerId), 250)
+}
+function prefetchOnPointerDown(playerId: number): void {
+  prefetchCore(playerId)
+  prefetchAnalysis(playerId)
+}
+onBeforeUnmount(cancelAiPrefetch)
 
 async function load(fresh = false) {
   if (fresh) api.invalidate?.() // 用户点"刷新"：不能吃缓存，要拿最新行情
@@ -453,6 +487,9 @@ onBeforeUnmount(() => {
         <span class="sk sk-price"></span>
       </li>
     </ul>
+    <p v-if="loading && slowLoading" class="slow-hint">
+      服务可能在唤醒中（免费实例休眠后首次访问约 30 秒），数据到了会自动显示…
+    </p>
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="players.length === 0">市场暂无选手</EmptyState>
     <EmptyState v-else-if="filtered.length === 0">
@@ -470,9 +507,11 @@ onBeforeUnmount(() => {
         <RouterLink
           :to="`/players/${p.player_id}`"
           class="p-link"
-          @mouseenter="prefetchPlayer(p.player_id)"
-          @focus="prefetchPlayer(p.player_id)"
-          @pointerdown="prefetchPlayer(p.player_id)"
+          @mouseenter="prefetchCore(p.player_id); scheduleAiPrefetch(p.player_id)"
+          @mouseleave="cancelAiPrefetch"
+          @focus="prefetchCore(p.player_id); scheduleAiPrefetch(p.player_id)"
+          @blur="cancelAiPrefetch"
+          @pointerdown="prefetchOnPointerDown(p.player_id)"
         >
           <div class="p-top">
             <span class="p-name">{{ p.display_name || p.name }}</span>
@@ -1128,5 +1167,11 @@ onBeforeUnmount(() => {
       transform: none;
     }
   }
+}
+
+.slow-hint {
+  margin: var(--space-4) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
 }
 </style>

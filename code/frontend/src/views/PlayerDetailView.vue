@@ -25,6 +25,7 @@
  * 决策所需信息在一屏内闭环，不必来回滚动。
  */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useSlowHint } from '../composables/useSlowHint'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import { ApiError } from '../api/client'
@@ -46,7 +47,6 @@ import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
 
 const route = useRoute()
 const playerId = computed(() => Number(route.params.id))
@@ -68,6 +68,8 @@ const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
 const loading = ref(true)
+/** 加载超过 4 秒就解释一句"可能在唤醒服务" */
+const slowLoading = useSlowHint(loading)
 const error = ref<string | null>(null)
 /** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
 const analysisLoading = ref(false)
@@ -356,7 +358,32 @@ watch(playerId, () => loadCore())
 <template>
   <div>
     <RouterLink to="/" class="back">← 返回市场</RouterLink>
-    <LoadingState v-if="loading" />
+    <!-- 骨架屏：先把版式撑起来（标题/价格/图表/交易面板），数据到了再替换内容 -->
+    <div v-if="loading" class="detail-skeleton" aria-busy="true" aria-label="加载选手详情">
+      <div class="sk-head">
+        <div class="sk-lines">
+          <span class="sk sk-title"></span>
+          <span class="sk sk-meta"></span>
+          <span class="sk sk-rating"></span>
+        </div>
+        <span class="sk sk-price"></span>
+      </div>
+      <div class="sk-cols">
+        <div class="sk-panel">
+          <span class="sk sk-panel-title"></span>
+          <span class="sk sk-chart"></span>
+        </div>
+        <div class="sk-panel">
+          <span class="sk sk-panel-title"></span>
+          <span class="sk sk-para"></span>
+          <span class="sk sk-para short"></span>
+          <span class="sk sk-btn"></span>
+        </div>
+      </div>
+      <p v-if="slowLoading" class="slow-hint">
+        服务可能在唤醒中（免费实例休眠后首次访问约 30 秒），数据到了会自动显示…
+      </p>
+    </div>
     <ErrorState v-else-if="error" :message="error" @retry="loadCore()" />
 
     <template v-else-if="player">
@@ -1376,6 +1403,85 @@ h3 {
     width: 100%;
     justify-content: flex-end;
     flex-wrap: wrap;
+  }
+}
+
+/* ===== 首屏骨架（不转圈，版式先占位） ===== */
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.sk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.sk-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sk-title {
+  width: 180px;
+  height: 26px;
+}
+.sk-meta {
+  width: 220px;
+}
+.sk-rating {
+  width: 140px;
+}
+.sk-price {
+  width: 120px;
+  height: 34px;
+}
+.sk-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-6);
+}
+.sk-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.sk-panel-title {
+  width: 96px;
+  height: 18px;
+}
+.sk-chart {
+  width: 100%;
+  height: 240px;
+  border-radius: var(--radius-sm);
+}
+.sk-para {
+  width: 100%;
+  height: 14px;
+}
+.sk-para.short {
+  width: 62%;
+}
+.sk-btn {
+  width: 120px;
+  height: 40px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+.slow-hint {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+@media (max-width: 960px) {
+  .sk-cols {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>
