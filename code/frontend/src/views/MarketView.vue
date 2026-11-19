@@ -205,7 +205,33 @@ const filtered = computed(() => {
   }
 })
 
-async function load() {
+/**
+ * 详情页预取：鼠标悬停/键盘聚焦/手指按下时就开始下载详情页代码 + 拉这份选手数据。
+ * 等真正点进去时 分包已经下载完、数据已经进缓存 → 首屏几乎即时。
+ */
+let detailChunkLoaded = false
+const prefetchedPlayers = new Set<number>()
+
+function warmDetailRoute(): void {
+  if (detailChunkLoaded) return
+  detailChunkLoaded = true
+  void import('../views/PlayerDetailView.vue')
+}
+
+function prefetchPlayer(playerId: number): void {
+  warmDetailRoute()
+  if (prefetchedPlayers.has(playerId) || prefetchedPlayers.size >= 20) return
+  prefetchedPlayers.add(playerId)
+  // 预取失败静默忽略：用户点击时会走正常加载/报错路径
+  void Promise.allSettled([
+    api.getPlayer(playerId),
+    api.getPriceHistory(playerId),
+    api.getPositions(),
+  ])
+}
+
+async function load(fresh = false) {
+  if (fresh) api.invalidate?.() // 用户点"刷新"：不能吃缓存，要拿最新行情
   loading.value = true
   error.value = null
   checkBackendHealth()
@@ -249,7 +275,7 @@ onBeforeUnmount(() => {
           16 名选手 · 更新于 {{ updatedAt }}
         </p>
       </div>
-      <button type="button" class="quiet-btn" :disabled="loading" @click="load">
+      <button type="button" class="quiet-btn" :disabled="loading" @click="load(true)">
         <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span>
         {{ loading ? '刷新中' : '刷新' }}
       </button>
@@ -441,7 +467,13 @@ onBeforeUnmount(() => {
         :class="['p-card', { suspended: p.status !== TRADING }]"
         :title="p.halt_note ?? undefined"
       >
-        <RouterLink :to="`/players/${p.player_id}`" class="p-link">
+        <RouterLink
+          :to="`/players/${p.player_id}`"
+          class="p-link"
+          @mouseenter="prefetchPlayer(p.player_id)"
+          @focus="prefetchPlayer(p.player_id)"
+          @pointerdown="prefetchPlayer(p.player_id)"
+        >
           <div class="p-top">
             <span class="p-name">{{ p.display_name || p.name }}</span>
             <span :class="['p-status', p.status === TRADING ? 'on' : 'off']">

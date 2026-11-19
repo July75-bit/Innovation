@@ -59,7 +59,8 @@ async function rebuildBalance() {
   }
 }
 
-async function load() {
+async function load(fresh = false) {
+  if (fresh) api.invalidate?.()
   loading.value = true
   error.value = null
   checkBackendHealth()
@@ -87,7 +88,7 @@ onMounted(load)
         <p v-if="updatedAt && !loading && !error" class="meta">更新于 {{ updatedAt }}</p>
       </div>
       <div class="head-actions">
-        <button class="quiet-btn" :disabled="loading" @click="load">
+        <button class="quiet-btn" :disabled="loading" @click="load(true)">
           {{ loading ? '刷新中' : '刷新' }}
         </button>
         <button class="quiet-btn danger" :disabled="rebuilding || loading" @click="rebuildBalance">

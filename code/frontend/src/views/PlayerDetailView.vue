@@ -161,15 +161,23 @@ async function loadCore(silent = false) {
   checkBackendHealth()
   try {
     const id = playerId.value
-    const [detail, history, positions] = await Promise.all([
-      api.getPlayer(id),
-      api.getPriceHistory(id),
-      api.getPositions(),
-    ])
+    if (!silent) held.value = 0 // 换选手先清零，别让上一个选手的"已持有"短暂串台
+    // 持仓（已持有多少股）只影响交易面板提示，不影响首屏：并行发，但不阻塞 header/图表渲染
+    const positionsTask = api
+      .getPositions()
+      .then((positions: PositionItem[]) => {
+        if (token === requestToken) {
+          held.value = positions.find((p) => p.player_id === id)?.quantity ?? 0
+        }
+      })
+      .catch(() => {
+        /* 拿不到持仓就按 0 显示，交易时的最大可买由后端兜底 */
+      })
+    const [detail, history] = await Promise.all([api.getPlayer(id), api.getPriceHistory(id)])
     if (token !== requestToken) return // 已切走，丢弃过期响应
     player.value = detail
     points.value = history.points
-    held.value = positions.find((p: PositionItem) => p.player_id === id)?.quantity ?? 0
+    void positionsTask
   } catch (err) {
     if (token !== requestToken) return
     if (!silent) {
@@ -179,40 +187,53 @@ async function loadCore(silent = false) {
   } finally {
     if (token === requestToken) loading.value = false
   }
-  // AI 分析单独加载：慢/降级都不阻塞行情展示
+  // AI 分析 / 决策 / 叙事是三个独立接口，并行发出：慢的时候总耗时 = 最慢那个，而不是三份相加。
+  // analysisLoading 只跟"建议文本"绑定——建议先到就先显示，决策卡/叙事晚到再补，互不阻塞。
   analysisLoading.value = true
   plan.value = null
   decisionSent.value = false
   decisionNotice.value = ''
   reasonExpanded.value = false // 换选手时收起，避免上一个选手的展开状态带过来
-  try {
-    const a = await api.getAnalysis(playerId.value)
-    if (token === requestToken) analysis.value = a
-  } catch {
-    if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
-  } finally {
-    // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
-    if (token === requestToken) analysisLoading.value = false
-  }
-  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
-  try {
-    const d = await api.getAgentDecision(playerId.value)
-    if (token === requestToken) {
-      plan.value = d.plan
-      snapshot.value = d.snapshot
-      traceId.value = d.trace_id
-    }
-  } catch {
-    if (token === requestToken) plan.value = null
-  }
-  // 叙事归因：把规则 reason 讲成"为什么"，同样失败即静默
   narrative.value = null
-  try {
-    const n = await api.getAgentNarrative(playerId.value)
-    if (token === requestToken) narrative.value = n.narrative
-  } catch {
-    if (token === requestToken) narrative.value = null
-  }
+
+  const analysisTask = api
+    .getAnalysis(playerId.value)
+    .then((a) => {
+      if (token === requestToken) analysis.value = a
+    })
+    .catch(() => {
+      if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+    })
+    .finally(() => {
+      // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
+      if (token === requestToken) analysisLoading.value = false
+    })
+
+  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
+  const decisionTask = api
+    .getAgentDecision(playerId.value)
+    .then((d) => {
+      if (token === requestToken) {
+        plan.value = d.plan
+        snapshot.value = d.snapshot
+        traceId.value = d.trace_id
+      }
+    })
+    .catch(() => {
+      if (token === requestToken) plan.value = null
+    })
+
+  // 叙事归因：把规则 reason 讲成"为什么"，同样失败即静默
+  const narrativeTask = api
+    .getAgentNarrative(playerId.value)
+    .then((n) => {
+      if (token === requestToken) narrative.value = n.narrative
+    })
+    .catch(() => {
+      if (token === requestToken) narrative.value = null
+    })
+
+  await Promise.allSettled([analysisTask, decisionTask, narrativeTask])
   // 切选手时清掉上一个选手的纪要与工具记录，避免张冠李戴
   panel.value = null
   tools.value = null
@@ -247,6 +268,7 @@ async function refreshAnalysis() {
   if (analysisLoading.value || invalidId.value) return
   const token = requestToken // 沿用当前页面的令牌：切走选手后丢弃本次响应
   analysisLoading.value = true
+  api.invalidate?.(`analysis:${playerId.value}`) // 用户主动"重新分析"：必须拿新结果，不吃缓存
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a

@@ -16,6 +16,7 @@
  * 默认（false / 未设置）走真实后端接口。上线前必须确认为 false。
  */
 import { request } from './client'
+import { cached, invalidateCache } from './cache'
 import { getToken } from './token'
 import { mockApi } from '../mock/players'
 import { mockAuth } from '../mock/auth'
@@ -47,56 +48,80 @@ const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 /** 同步 mock 结果包装成 Promise，保持与真实接口完全一致的调用形状 */
 const fromMock = <T>(fn: () => T): Promise<T> => Promise.resolve().then(fn)
 
+/** 手动让缓存失效：页面上的「刷新」按钮、重新分析前调用，保证拿到的是新数据 */
+const invalidate = (prefix?: string): void => invalidateCache(prefix)
+
 export const api = {
+  /** 手动失效缓存（刷新按钮/重新分析用） */
+  invalidate,
+
   /** §4.1 健康检查 */
   health: (): Promise<HealthResponse> =>
     USE_MOCK ? fromMock(mockApi.health) : request<HealthResponse>('/api/health'),
 
   /** §4.2 市场选手列表（16 名，无分页，按 player_id 升序） */
   listPlayers: (): Promise<PlayerSummary[]> =>
-    USE_MOCK ? fromMock(mockApi.listPlayers) : request<PlayerSummary[]>('/api/players'),
+    USE_MOCK
+      ? fromMock(mockApi.listPlayers)
+      : cached('players', 30_000, () => request<PlayerSummary[]>('/api/players')),
 
   /** §4.3 单个选手详情（404 = PLAYER_NOT_FOUND） */
   getPlayer: (playerId: number): Promise<PlayerDetail> =>
     USE_MOCK
       ? fromMock(() => mockApi.getPlayer(playerId))
-      : request<PlayerDetail>(`/api/players/${playerId}`),
+      : cached(`player:${playerId}`, 60_000, () =>
+          request<PlayerDetail>(`/api/players/${playerId}`),
+        ),
 
   /** §4.4 价格历史（升序，空数据 points:[]，不 404） */
   getPriceHistory: (playerId: number): Promise<PriceHistoryResponse> =>
     USE_MOCK
       ? fromMock(() => mockApi.getPriceHistory(playerId))
-      : request<PriceHistoryResponse>(`/api/players/${playerId}/prices`),
+      : cached(`prices:${playerId}`, 60_000, () =>
+          request<PriceHistoryResponse>(`/api/players/${playerId}/prices`),
+        ),
 
   /** §4.5 账户余额 */
   getAccount: (): Promise<Account> =>
-    USE_MOCK ? fromMock(mockApi.getAccount) : request<Account>('/api/account'),
+    USE_MOCK
+      ? fromMock(mockApi.getAccount)
+      : cached('account', 30_000, () => request<Account>('/api/account')),
 
   /** §4.6 持仓列表（清仓选手不出现） */
   getPositions: (): Promise<PositionItem[]> =>
-    USE_MOCK ? fromMock(mockApi.getPositions) : request<PositionItem[]>('/api/positions'),
+    USE_MOCK
+      ? fromMock(mockApi.getPositions)
+      : cached('positions', 30_000, () => request<PositionItem[]>('/api/positions')),
 
   /** §4.7 买入：{player_id, quantity}，quantity 必须正整数 */
-  buy: (playerId: number, quantity: number): Promise<TradeResponse> =>
-    USE_MOCK
-      ? fromMock(() => mockApi.buy(playerId, quantity))
-      : request<TradeResponse>('/api/trades/buy', {
+  buy: async (playerId: number, quantity: number): Promise<TradeResponse> => {
+    const result = USE_MOCK
+      ? await fromMock(() => mockApi.buy(playerId, quantity))
+      : await request<TradeResponse>('/api/trades/buy', {
           method: 'POST',
           body: JSON.stringify({ player_id: playerId, quantity }),
-        }),
+        })
+    invalidateCache() // 余额/持仓/流水都变了：整库缓存清掉，回到页面即拿到新数据
+    return result
+  },
 
   /** §4.8 卖出：失败 INSUFFICIENT_POSITION，不允许卖空 */
-  sell: (playerId: number, quantity: number): Promise<TradeResponse> =>
-    USE_MOCK
-      ? fromMock(() => mockApi.sell(playerId, quantity))
-      : request<TradeResponse>('/api/trades/sell', {
+  sell: async (playerId: number, quantity: number): Promise<TradeResponse> => {
+    const result = USE_MOCK
+      ? await fromMock(() => mockApi.sell(playerId, quantity))
+      : await request<TradeResponse>('/api/trades/sell', {
           method: 'POST',
           body: JSON.stringify({ player_id: playerId, quantity }),
-        }),
+        })
+    invalidateCache()
+    return result
+  },
 
   /** §4.9 交易流水（后端已按时间倒序） */
   listTrades: (): Promise<TradeItem[]> =>
-    USE_MOCK ? fromMock(mockApi.listTrades) : request<TradeItem[]>('/api/trades'),
+    USE_MOCK
+      ? fromMock(mockApi.listTrades)
+      : cached('trades', 30_000, () => request<TradeItem[]>('/api/trades')),
 
   /**
    * §4.10 AI 分析。
@@ -106,7 +131,9 @@ export const api = {
   getAnalysis: (playerId: number): Promise<AnalysisResponse> =>
     USE_MOCK
       ? fromMock(() => mockApi.getAnalysis(playerId))
-      : request<AnalysisResponse>(`/api/analysis/${playerId}`),
+      : cached(`analysis:${playerId}`, 120_000, () =>
+          request<AnalysisResponse>(`/api/analysis/${playerId}`),
+        ),
 
   /* ---------------- 第 7 轮：私人账号 ---------------- */
 
@@ -206,7 +233,9 @@ export const api = {
           latency_ms: 0,
           disclaimer: 'mock',
         }))
-      : request<AgentDecisionResponse>(`/api/agent/decision/${playerId}`),
+      : cached(`decision:${playerId}`, 120_000, () =>
+          request<AgentDecisionResponse>(`/api/agent/decision/${playerId}`),
+        ),
 
   /** §4.19 今日智能体简报（后端缓存 10 分钟） */
   getAgentBrief: (): Promise<AgentBriefResponse> =>
@@ -253,7 +282,9 @@ export const api = {
           final: { action: 'HOLD', risk_level: 'MEDIUM', reason: 'mock' },
           note: 'mock',
         }))
-      : request<AgentPanelResponse>(`/api/agent/panel/${playerId}`),
+      : cached(`panel:${playerId}`, 120_000, () =>
+          request<AgentPanelResponse>(`/api/agent/panel/${playerId}`),
+        ),
 
   /** §4.23 叙事归因（把规则 reason 扩写成因果解释） */
   getAgentNarrative: (playerId: number): Promise<AgentNarrativeResponse> =>
@@ -267,7 +298,9 @@ export const api = {
           big_move: false,
           cached: false,
         }))
-      : request<AgentNarrativeResponse>(`/api/agent/narrative/${playerId}`),
+      : cached(`narrative:${playerId}`, 120_000, () =>
+          request<AgentNarrativeResponse>(`/api/agent/narrative/${playerId}`),
+        ),
 
   /** §4.24 工具调用演示：模型自己调只读工具取数 */
   getAgentTools: (playerId: number): Promise<AgentToolsResponse> =>
@@ -279,5 +312,7 @@ export const api = {
           source: 'rule_fallback' as const,
           tool_calls: [],
         }))
-      : request<AgentToolsResponse>(`/api/agent/tools/${playerId}`),
+      : cached(`tools:${playerId}`, 120_000, () =>
+          request<AgentToolsResponse>(`/api/agent/tools/${playerId}`),
+        ),
 }

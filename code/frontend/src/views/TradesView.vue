@@ -25,7 +25,8 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const updatedAt = ref('')
 
-async function load() {
+async function load(fresh = false) {
+  if (fresh) api.invalidate?.()
   loading.value = true
   error.value = null
   checkBackendHealth()
@@ -50,7 +51,7 @@ onMounted(load)
         <h1>交易记录</h1>
         <p v-if="updatedAt && !loading && !error" class="meta">更新于 {{ updatedAt }}</p>
       </div>
-      <button class="quiet-btn" :disabled="loading" @click="load">
+      <button class="quiet-btn" :disabled="loading" @click="load(true)">
         {{ loading ? '刷新中' : '刷新' }}
       </button>
     </header>
