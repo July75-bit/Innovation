@@ -59,7 +59,10 @@ services:
     runtime: python
     plan: free
     region: singapore
-    schedule: "0 * * * *" # 每小时整点（UTC）
+    # 每 10 分钟一次：Render 免费 Web Service 闲置 15 分钟就休眠，唤醒一次约 30 秒。
+    # 巡检本身也是一次 HTTP 请求 → 用来"保活"；只在 UTC 0–15 点（北京 08:00–23:59）跑，
+    # 避开整夜空转，免费 750 小时/月不会被打满（约 16h/天 ≈ 496h/月）。
+    schedule: "*/10 0-15 * * *"
     buildCommand: echo "patrol 脚本只用标准库，无需构建"
     startCommand: python scripts/agent_patrol.py
     envVars:
