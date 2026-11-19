@@ -178,6 +178,10 @@
 | `122-pro-skeleton.png` | **加载骨架（持仓）** | 加载时按版式占位（4 行、`aria-busy`），不再转圈后内容跳动 |
 | `123-pro-chart.png` | **价格图表打磨**（2026-11-18） | Y 轴改成整齐刻度 80/100/120/140 + 4 条网格线；X 轴改「月/日」；卡片圆角统一到内容层 |
 | `124-pro-trades.png` | **交易流水时间格式** | 时间统一 `2026-11-18 19:32:42`（短横线，不再斜杠），金额千分位、右对齐 |
+| `125-dark-market.png` | **深色适配根因修复**（2026-11-19） | 声明 `color-scheme: dark` 后，原生下拉/滚动条/自动填充跟随主题；排序下拉透明底 + 自绘箭头 + option 上色 |
+| `126-drawer-desktop.png` | **赛程 · 比赛抽屉（桌面）** | 点任意一轮比赛 → 右侧抽屉显示两队 4 名选手（队标/位置/现价/涨跌），点选手进详情页 |
+| `127-drawer-mobile.png` | **赛程 · 比赛抽屉（390）** | 抽屉占满宽度，4 名选手与入口完整可读；无横向溢出 |
+| `128-dark-auth.png` | **深色登录页** | 输入框/文字/滚动条均跟随深色，`color-scheme: dark` 让自动填充不再刷白底 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
