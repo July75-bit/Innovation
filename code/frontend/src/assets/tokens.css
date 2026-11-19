@@ -12,6 +12,9 @@
  * 对比度（WCAG 2.1，相对 #181b22 表面）标注见每条注释。
  * ============================================================ */
 :root {
+  /* 原生控件（select / date / scrollbar / autofill）的配色跟随主题：
+     不写这一行，深色页面里的 <select> 弹层仍是浏览器默认的浅色 */
+  color-scheme: dark;
   /* ---------- 中性色 9 阶 ---------- */
   --color-neutral-0: #f6f4ef; /* 最高亮文字 | on surface 16.2:1 */
   --color-neutral-100: #ebe8e1; /* 主文字     | 14.3:1 */
@@ -191,6 +194,7 @@
  *   当前业务页默认深色；切浅色：document.documentElement.dataset.theme = 'light'
  * ============================================================ */
 [data-theme='light'] {
+  color-scheme: light;
   /* 中性 9 阶（0 = 最强对比 → 800 = 表面） */
   --color-neutral-0: #14120e;
   --color-neutral-100: #22201c;

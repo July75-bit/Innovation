@@ -869,17 +869,43 @@ onBeforeUnmount(() => {
   box-shadow: inset 0 -2px 0 var(--color-text);
 }
 .sort {
+  position: relative;
   margin-left: auto;
 }
 .sort select {
+  appearance: none;
+  -webkit-appearance: none;
   border: 0;
-  background: none;
+  background: transparent;
   color: var(--faint);
   font: inherit;
   font-size: var(--fs-aux);
+  padding: 4px 18px 4px 0;
   cursor: pointer;
+  color-scheme: inherit;
 }
 .sort select:hover {
+  color: var(--text);
+}
+/* 自己画箭头：原生箭头在不同系统/主题下样式不可控 */
+.sort::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  color: var(--faint);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.sort:hover::after {
+  color: var(--text);
+}
+.sort select option {
+  background: var(--color-surface);
   color: var(--text);
 }
 

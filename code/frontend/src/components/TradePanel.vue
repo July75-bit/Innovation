@@ -448,7 +448,7 @@ button.sell {
   font-size: var(--fs-body);
   font-weight: 700;
   cursor: pointer;
-  color: #fff;
+  color: var(--color-action-text);
 }
 button.buy:disabled,
 button.sell:disabled {

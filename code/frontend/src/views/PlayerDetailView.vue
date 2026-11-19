@@ -692,7 +692,7 @@ h3 {
   font-size: var(--fs-cap);
   padding: 3px 12px;
   border-radius: var(--radius-pill);
-  color: #fff;
+  color: var(--color-action-text);
 }
 .advice.buy {
   background: var(--up);

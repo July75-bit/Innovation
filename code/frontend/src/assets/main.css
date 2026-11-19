@@ -279,3 +279,15 @@ html {
     opacity: 0.6;
   }
 }
+
+/* 浏览器自动填充：深浅主题下保持输入框底色与文字色（Chrome 会强行刷浅黄） */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--color-surface-raised) inset;
+  transition: background-color 9999s ease-out 0s;
+}

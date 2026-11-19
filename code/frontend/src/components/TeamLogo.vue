@@ -53,8 +53,9 @@ const shown = computed(() => (src.value && src.value !== failed.value ? src.valu
   justify-content: center;
   flex-shrink: 0;
   box-sizing: border-box;
+  /* 底板固定浅色：部分队标是纯黑/纯白，放深色主题上会糊成一片 */
   background: #f3f5f9;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(16, 24, 40, 0.08);
   border-radius: var(--radius-sm);
   overflow: hidden;
   line-height: 1;

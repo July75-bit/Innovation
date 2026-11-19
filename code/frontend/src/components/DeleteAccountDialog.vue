@@ -236,7 +236,7 @@ async function submit(): Promise<void> {
   border: none;
   border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #fff;
+  color: var(--color-action-text);
   font-size: var(--fs-body);
   font-weight: 700;
   cursor: pointer;
