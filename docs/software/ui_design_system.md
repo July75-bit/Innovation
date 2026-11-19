@@ -368,3 +368,12 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
 - **数据**：赛程本身仍是纯静态派生；选手数据**懒加载**（点开才请求 `/api/players`，成功后缓存），
   失败给"重试"，不影响赛程浏览；看历史/未来场次不会误标"停牌"（只有当前轮次的两队才标停牌）。
 - 证据：`126-drawer-desktop.png`、`127-drawer-mobile.png`。
+
+### 11.14 样式分包与仓库卫生（2026-11-19）
+
+- **`ui-kit.css` 改为按路由加载**：`.ui-*` 组件库样式只服务 `/ui-kit`（消费它的是 `UiButton/UiCard/UiTable/UiNav/UiTag/UiInput`，
+  这些组件也只在该页出现）。从 `main.css` 移除，改由 `UiKitView.vue` import：
+  构建后业务页只加载 `index-*.css`（43.16KB），`/ui-kit` 额外加载 `UiKitView-*.css`（17.5KB）。
+- `liquid-glass.css` **仍全局**：模态框、删除账号弹窗、图表 tooltip 还在用 `.glass` 系列，不能拆。
+- **CI 仓库卫生 job**（最前置，几秒内失败）：`git grep -n -E "^(<<<<<<< |>>>>>>> )"`，
+  防"冲突标记进仓库"（历史两次事故：eslint 报 diff marker → Render 构建失败 → 白屏）。

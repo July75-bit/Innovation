@@ -92,10 +92,10 @@ C 的成本（路由/分享/状态）与收益不匹配；A 会让列表失去�
 | --- | --- | --- |
 | 暖纸色令牌 / 双模式 / 主题守卫 | 有意为之 | 设计系统核心，保留 |
 | `liquid-glass.css`（225 行） | 历史遗留 | 玻璃已降级为实色；文件里高光/边缘/模糊令牌基本不再产生视觉效果，仅 `--glass-radius-*` 等形状令牌还有用 |
-| `ui-kit.css`（278 行） | 演示专用 | 只有 `/ui-kit` 用；却全局 import，业务页白付 CSS 体积 |
+| `ui-kit.css`（278 行） | UI 组件层样式（只在 `/ui-kit` 出场） | `.ui-*` 类只被 `UiButton/UiCard/UiTable/UiNav/UiTag/UiInput` 使用，而这些组件只在 `/ui-kit` 路由出现；此前全局 import 导致业务页白付体积。**2026-11-19 已改为路由级引入** |
 | 兼容变量层（`--bg/--surface/--muted/--glass-*`） | 历史遗留 | 两套命名并存，新人不知道改哪套 |
 | `UiTable/UiNav/UiNavItem/UiPagination/UiTag/UiCard/UiInput/UiToolbar` | 展示组件 | 只在 `/ui-kit` 出现（设计系统交付物），不是业务代码；若无验收要求可归档 |
-| `CollapsibleCard.vue` | **死代码** | 全仓 0 引用 |
+| `CollapsibleCard.vue` | **死代码** | 全仓 0 引用。**2026-11-19 已删除** |
 | `useGlassGlow`（main.ts 初始化） | 半死 | 只服务 `.glass` 元素（现仅模态框/tooltip/UI-Kit），指针高光在纸感下几乎无感 |
 | 前端 `cleanSummary` + 后端 `_clean_brief_summary` | 有意为之（双保险） | 展示层不信任模型输出，保留 |
 
@@ -150,9 +150,22 @@ C 的成本（路由/分享/状态）与收益不匹配；A 会让列表失去�
 6. **外部文本统一清洗入口**：模型/后端文本进入 UI 前必须经 `clean*` 函数（后端 + 前端各一层）。
 7. **pull --rebase + 小步提交**：减少 merge 与冲突，CI 运行次数预计可降 20–30%。
 
+**本轮已落地（2026-11-19）**
+
+- **规则 1（主题守卫）**：`src/__tests__/theme-guards.spec.ts` 4 条断言（commit `6542ab0`）。
+- **规则 2（CI 冲突标记守卫）**：`.github/workflows/ci.yml` 新增最前置的 `hygiene` job，
+  `git grep -n -E "^(<<<<<<< |>>>>>>> )"` 命中即失败；本地模拟命中/干净树两种结果均验证（commit 见本轮）。
+- **步骤 ② 的前半**：`ui-kit.css` 从 `main.css` 移除，改为 `UiKitView.vue` 按路由 import；
+  构建产物实测：业务页只加载 `index-*.css`（43.16KB），`/ui-kit` 额外加载 `UiKitView-*.css`（17.5KB），
+  `.ui-btn` 只出现在后者；`/ui-kit` 按钮计算高度仍 44px（样式未丢）。
+  `CollapsibleCard.vue`（0 引用）已删除。
+  **修正原判断**：`ui-kit.css` 并非"纯演示 CSS"（`.ui-btn/.ui-input/.ui-card/...` 是组件库样式），
+  只是消费它的 `Ui*` 组件恰好只在 `/ui-kit` 出场；所以正确做法是"随路由分包"，而不是删除。
+  `liquid-glass.css` 仍必须全局（模态框/删除账号弹窗/图表 tooltip 仍用 `.glass`）。
+
 ## 10. 后续清单（不影响本轮验收）
 
 - P0（答辩前）：把 `git grep "^<<<<<<< "` 加进 CI；演示前 `bootstrap + prewarm`。
-- P1：`/ui-kit` CSS 异步化（业务页少 500 行 CSS）；删 `CollapsibleCard`；`ARCHITECTURE.md`。
+- ~~P1：`/ui-kit` CSS 异步化；删 `CollapsibleCard`~~ → **2026-11-19 已完成**（分包 + 删死代码）；剩下 `ARCHITECTURE.md`。
 - P1：文档数字脚本化（test_report/README/evidence 索引统一生成）。
 - P2：大 SFC 拆分（ScheduleView / PlayerDetailView）；命名统一；`--glass-*` 清理。
