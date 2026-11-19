@@ -399,11 +399,14 @@ function shortDate(iso: string): string {
             type="button"
             :class="['chip', item.phase, { on: item.round === selected }]"
             :aria-pressed="item.round === selected"
+            :aria-label="`第 ${item.round} 轮 ${item.day}，${phaseText[item.phase]}`"
             @click="selected = item.round"
           >
             <span class="chip-r num">{{ item.round }}</span>
             <span class="chip-d num"
-              >{{ item.day }}<i v-if="item.featured" title="焦点局">★</i></span
+              >{{ item.day
+              }}<i v-if="item.phase === 'today'" class="chip-now" title="今天开打">今</i
+              ><i v-if="item.featured" title="焦点局">★</i></span
             >
           </button>
         </div>
@@ -418,9 +421,9 @@ function shortDate(iso: string): string {
         </button>
       </div>
       <p class="legend">
-        <span class="lg"><span class="dot played"></span>已结束</span>
-        <span class="lg"><span class="dot today"></span>今天</span>
-        <span class="lg"><span class="dot upcoming"></span>未开始</span>
+        <span class="lg"><span class="dot played"></span>已结束（灰底）</span>
+        <span class="lg"><span class="dot today"></span>今天开打（暖色）</span>
+        <span class="lg"><span class="dot upcoming"></span>未开始（空心）</span>
         <span class="mini">★ 焦点局 · 点一轮，对阵与列表高亮跟着切换</span>
       </p>
       <div class="match">
@@ -946,12 +949,14 @@ tr.row.on td {
   gap: var(--space-3);
   flex-wrap: wrap;
 }
-/* 列表头的两个圆点跟着区块底色走：未开始=暖色，已结束=冷灰 */
+/* 列表头图例与轮次图例保持同一套含义：已结束=灰实心，未开始=空心 */
 .list-head .dot.upcoming {
-  background: var(--warn);
+  background: transparent;
+  border: 1.5px solid var(--color-border-strong);
 }
 .list-head .dot.played {
-  background: var(--muted);
+  background: var(--neutral-bg);
+  border: 1px solid var(--color-border);
 }
 td .star {
   font-style: normal;
@@ -1133,7 +1138,8 @@ td .weekday {
  * 纸感覆盖（2026-11-18）：只调视觉重量，不动轮次逻辑与结构
  * ============================================================ */
 .page {
-  gap: var(--space-6);
+  /* 页头两行文字与轮次条之间收紧（原来 32px 太松） */
+  gap: var(--space-4);
 }
 .page-head h2 {
   font-size: var(--fs-h1);
@@ -1178,8 +1184,35 @@ td .weekday {
 .chip .chip-d {
   color: var(--muted);
 }
+/* 已结束：灰底、弱化但仍可读（不再只靠 opacity 压暗） */
 .chip.played {
-  opacity: 0.78;
+  opacity: 1;
+  background: var(--neutral-bg);
+  border-color: transparent;
+}
+.chip.played .chip-r {
+  color: var(--muted);
+  font-weight: 600;
+}
+.chip.played .chip-d {
+  color: var(--faint);
+}
+/* 今天开打：暖色底 + 暖色边框 + 日期加「今」，一眼能找到 */
+.chip.today {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.chip.today .chip-r {
+  color: var(--text);
+}
+.chip.today .chip-d {
+  color: var(--warn);
+  font-weight: 600;
+}
+.chip-now {
+  font-style: normal;
+  margin-left: 2px;
+  font-weight: 700;
 }
 .step {
   border: 0;
@@ -1199,12 +1232,9 @@ td .weekday {
   border-color: var(--color-border-strong);
 }
 .chip.on {
-  background: var(--neutral-bg);
-  border-color: var(--color-border-strong);
-}
-.chip.on .chip-r,
-.chip.on .chip-d {
-  color: var(--text);
+  /* 选中 = 深色描边 + 内描边；状态底色继续保留（今天=暖底、已结束=灰底、未开始=空） */
+  border-color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-text);
 }
 .chip.today .chip-d {
   color: var(--halt);
@@ -1213,17 +1243,29 @@ td .weekday {
   color: var(--halt);
 }
 .legend {
-  color: var(--faint);
+  color: var(--muted);
+  gap: var(--space-3);
+  font-size: var(--fs-aux);
 }
-.legend .mini {
-  display: none;
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
 }
-.dot.played,
-.dot.upcoming {
-  background: var(--faint);
+.dot.played {
+  background: var(--neutral-bg);
+  border: 1px solid var(--color-border);
 }
 .dot.today {
   background: var(--halt);
+}
+.dot.upcoming {
+  background: transparent;
+  border: 1.5px solid var(--color-border-strong);
+}
+.legend .mini {
+  display: none;
 }
 
 /* 对阵：字号降一档，vs 用弱化颜色 */
@@ -1298,10 +1340,22 @@ tr.row.on {
   font-weight: 400;
 }
 .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   padding: 0;
   border-radius: 0;
   background: none;
   font-size: var(--fs-cap);
+}
+/* 状态点用文字同色：灰=已结束、暖色=今天、绿=未开始 */
+.tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
 }
 .tag.played {
   background: none;

@@ -50,6 +50,10 @@
   --down-bg: var(--color-down-subtle);
   --warn: var(--color-halt);
   --warn-bg: var(--color-halt-subtle);
+  /* 停牌 / 今天开打 用的琥珀色（历史类名就叫 halt；之前缺这个别名，
+     var(--halt) 全部静默失效 → 今天状态点、停牌标签、市场停牌数字都掉回普通文字色） */
+  --halt: var(--color-halt);
+  --halt-bg: var(--color-halt-subtle);
   --danger: var(--color-error-strong);
   --neutral-bg: var(--color-neutral-bg);
 

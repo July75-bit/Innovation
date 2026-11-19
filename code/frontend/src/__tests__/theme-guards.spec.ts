@@ -68,6 +68,11 @@ describe('设计系统守卫 · 深色适配', () => {
     expect(offenders).toEqual([])
   })
 
+  it('停牌/今天用的 --halt 别名必须在兼容层里定义（否则 12 处 var(--halt) 静默失效）', () => {
+    expect(main).toMatch(/--halt:\s*var\(--color-halt\)/)
+    expect(main).toMatch(/--halt-bg:\s*var\(--color-halt-subtle\)/)
+  })
+
   it('保留了选中色 / 自动填充的主题适配', () => {
     expect(main).toContain('::selection')
     expect(main).toContain('input:-webkit-autofill')

@@ -186,6 +186,8 @@
 | `130-detail-slow-hint.png` | **慢加载提示** | 超过 4 秒显示「服务可能在唤醒中（免费实例休眠后首次访问约 30 秒）」，配合 GET 自动重试 |
 | `131-detail-back-schedule.png` | **详情页返回赛程**（2026-11-19） | 从赛程抽屉点进选手后，返回链接变成「← 返回赛程」并带回 `?round=18` |
 | `132-schedule-drawer-restored.png` | **返回后抽屉恢复** | 点「返回赛程」/浏览器后退/刷新，都回到赛程并重新打开该场（第 18 轮）选手抽屉 |
+| `133-schedule-status-light.png` | **赛程状态可读性（浅色）**（2026-11-19） | 页头与轮次条间距 32→16px；已结束=灰底、今天=暖底+「今」、未开始=空心；图例改成同款方块并写明含义 |
+| `134-schedule-status-dark.png` | **赛程状态可读性（深色）** | 深色下三种状态同样可辨；列表状态标签改为「状态点 + 文字」（灰/暖/绿） |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
