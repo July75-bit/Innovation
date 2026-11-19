@@ -1,6 +1,7 @@
 @import './tokens.css';
-@import './ui-kit.css';
-/* 液态玻璃材质层：只给导航/浮层用，内容层保持扁平（规范见文件头注释） */
+/* ui-kit.css 是 UI 组件库（UiButton/UiCard/UiTable/UiNav/UiTag…）的样式，
+   只有 /ui-kit 演示路由用得到 → 改由 UiKitView.vue 按路由引入，不再让所有页面白付这 278 行。
+   liquid-glass.css 仍全局：模态框/删除账号弹窗/图表 tooltip 这些业务浮层还在用 .glass。 */
 @import './liquid-glass.css';
 
 /*

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// 组件库样式只在这一页用：按路由分包，业务页不再加载
+import '../assets/ui-kit.css'
 /**
  * UI 组件库预览页（/ui-kit）
  *
