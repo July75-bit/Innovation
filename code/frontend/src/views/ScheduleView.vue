@@ -22,6 +22,7 @@
  * 渲染统一走 `src/components/TeamLogo.vue`：认不到队伍或图加载失败就退成队名首字母。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { money, pct, trendClass } from '../utils/format'
 import { api } from '../api'
 import { ApiError } from '../api/client'
@@ -70,6 +71,8 @@ function readSelectedRound(): number | null {
   }
 }
 const selected = ref(readSelectedRound() ?? todayRound)
+// 测试环境没有 router 注入（返回 undefined），所以下面统一做可用性判断
+const router = useRouter() as ReturnType<typeof useRouter> | undefined
 
 /* -------------------------------------------------------------- 选中轮次派生 */
 
@@ -218,6 +221,9 @@ onMounted(() => {
   void centerSelectedRound('auto')
   window.addEventListener('resize', onViewportChange)
   window.addEventListener('keydown', onDrawerKeydown)
+  // 从选手详情点「返回赛程」回来时 URL 带 ?round=N：恢复该场抽屉
+  const round = Number(new URLSearchParams(window.location.search).get('round'))
+  if (Number.isInteger(round) && round >= 1 && round <= totalRounds) openMatchDrawer(round)
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(resizeRaf)
@@ -292,13 +298,31 @@ async function loadPlayers(force = false): Promise<void> {
 
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
+/**
+ * 抽屉状态与 URL 同步（replace，不新增历史记录）：
+ * 走 router.replace 而不是裸 history.replaceState —— 后者不更新 vue-router 的内部状态，
+ * 浏览器后退时 URL 会被 router 恢复成旧值（实测抽屉丢失）。测试环境没有 router，退回 replaceState。
+ */
+function syncDrawerUrl(round: number | null): void {
+  const query = round === null ? {} : { round: String(round) }
+  if (router) {
+    void router.replace({ path: '/schedule', query })
+    return
+  }
+  if (typeof window === 'undefined' || !window.history.replaceState) return
+  const url = round === null ? window.location.pathname : `${window.location.pathname}?round=${round}`
+  window.history.replaceState(window.history.state, '', url)
+}
+
 function openMatchDrawer(round: number): void {
   selected.value = round
   drawerRound.value = round
+  syncDrawerUrl(round)
   void loadPlayers()
 }
 function closeMatchDrawer(): void {
   drawerRound.value = null
+  syncDrawerUrl(null)
 }
 
 function onDrawerKeydown(event: KeyboardEvent): void {
@@ -573,7 +597,13 @@ function shortDate(iso: string): string {
                   :key="p.player_id"
                   :class="['p-row', { 'is-halted': drawerHalted }]"
                 >
-                  <RouterLink class="p-link" :to="`/players/${p.player_id}`">
+                  <RouterLink
+                    class="p-link"
+                    :to="{
+                      path: `/players/${p.player_id}`,
+                      query: { from: 'schedule', round: String(drawerRound) },
+                    }"
+                  >
                     <span class="p-name">{{ p.display_name || p.name }}</span>
                     <span class="p-role">{{ p.role || '—' }}</span>
                     <span class="p-price num">{{ money(p.current_price) }}</span>

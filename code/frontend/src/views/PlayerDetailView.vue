@@ -49,6 +49,20 @@ import { checkBackendHealth } from '../composables/useBackendHealth'
 import ErrorState from '../components/ErrorState.vue'
 
 const route = useRoute()
+
+/**
+ * 返回链接：从赛程抽屉点进来的选手，返回到「赛程 + 该场抽屉」；
+ * 其余入口（市场卡片/直接打开）照旧返回市场。
+ */
+const backLink = computed(() => {
+  const q = (route.query ?? {}) as Record<string, string | string[] | undefined>
+  if (q.from !== 'schedule') return { to: '/', label: '返回市场' }
+  const raw = Array.isArray(q.round) ? q.round[0] : q.round
+  const round = Number(raw)
+  return Number.isInteger(round) && round > 0
+    ? { to: { path: '/schedule', query: { round: String(round) } }, label: '返回赛程' }
+    : { to: '/schedule', label: '返回赛程' }
+})
 const playerId = computed(() => Number(route.params.id))
 
 /** 路由参数非法（NaN / 非正整数）时不发请求，直接友好提示；
@@ -357,7 +371,7 @@ watch(playerId, () => loadCore())
 
 <template>
   <div>
-    <RouterLink to="/" class="back">← 返回市场</RouterLink>
+    <RouterLink :to="backLink.to" class="back">← {{ backLink.label }}</RouterLink>
     <!-- 骨架屏：先把版式撑起来（标题/价格/图表/交易面板），数据到了再替换内容 -->
     <div v-if="loading" class="detail-skeleton" aria-busy="true" aria-label="加载选手详情">
       <div class="sk-head">

@@ -367,7 +367,10 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
   点卡片进 `/players/{id}` 看价格历史、AI 建议并下单（赛程页**不做交易**，避免误操作）。
 - **数据**：赛程本身仍是纯静态派生；选手数据**懒加载**（点开才请求 `/api/players`，成功后缓存），
   失败给"重试"，不影响赛程浏览；看历史/未来场次不会误标"停牌"（只有当前轮次的两队才标停牌）。
-- 证据：`126-drawer-desktop.png`、`127-drawer-mobile.png`。
+- **返回路径（2026-11-19 补）**：抽屉状态与 URL 同步（`?round=N`，走 `router.replace` 不新增历史记录）；
+  抽屉里的选手链接带 `from=schedule&round=N`，选手详情页的返回链接因此显示「← 返回赛程」并回到该场抽屉
+  （浏览器后退/刷新同样能恢复）；从市场等其它入口进来的详情页仍是「← 返回市场」。
+- 证据：`126-drawer-desktop.png`、`127-drawer-mobile.png`、`131-detail-back-schedule.png`、`132-schedule-drawer-restored.png`。
 
 ### 11.14 样式分包与仓库卫生（2026-11-19）
 

@@ -16,6 +16,8 @@ const h = vi.hoisted(() => ({
   getPriceHistory: vi.fn<() => Promise<unknown>>(),
   getPositions: vi.fn<() => Promise<unknown>>(),
   getAnalysis: vi.fn<() => Promise<unknown>>(),
+  getAgentDecision: vi.fn<() => Promise<unknown>>(),
+  getAgentNarrative: vi.fn<() => Promise<unknown>>(),
 }))
 
 vi.mock('../../api', () => ({
@@ -26,6 +28,8 @@ vi.mock('../../api', () => ({
     getPriceHistory: () => h.getPriceHistory(),
     getPositions: () => h.getPositions(),
     getAnalysis: () => h.getAnalysis(),
+    getAgentDecision: () => h.getAgentDecision(),
+    getAgentNarrative: () => h.getAgentNarrative(),
   },
 }))
 vi.mock('vue-router', () => ({
@@ -89,6 +93,11 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+beforeEach(() => {
+  h.getAgentDecision.mockRejectedValue(new Error('not mocked'))
+  h.getAgentNarrative.mockRejectedValue(new Error('not mocked'))
 })
 
 describe('详情页 · 本轮停牌', () => {

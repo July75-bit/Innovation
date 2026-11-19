@@ -28,7 +28,23 @@ function mountView() {
   return mount(ScheduleView, {
     global: {
       components: {
-        RouterLink: { name: 'RouterLink', props: ['to'], template: '<a :href="to"><slot /></a>' },
+        RouterLink: {
+          name: 'RouterLink',
+          props: ['to'],
+          methods: {
+            href(to: string | { path?: string; query?: Record<string, string> }) {
+              if (typeof to === 'string') return to
+              const query = to.query
+                ? '?' +
+                  Object.entries(to.query)
+                    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+                    .join('&')
+                : ''
+              return `${to.path ?? ''}${query}`
+            },
+          },
+          template: '<a :href="href(to)"><slot /></a>',
+        },
       },
     },
   })
@@ -253,6 +269,7 @@ describe('赛程 · 比赛抽屉', () => {
     apiMock.listPlayers.mockReset()
     document.body.style.overflow = ''
     document.body.innerHTML = ''
+    window.history.replaceState({}, '', '/schedule')
   })
 
   /** 抽屉通过 <Teleport to="body"> 挂到 body，测不了 wrapper，直接查 document */
@@ -286,7 +303,12 @@ describe('赛程 · 比赛抽屉', () => {
       (link) => link.getAttribute('href'),
     )
     expect(hrefs).toEqual(
-      expect.arrayContaining(['/players/2', '/players/9', '/players/5', '/players/12']),
+      expect.arrayContaining([
+        '/players/2?from=schedule&round=18',
+        '/players/9?from=schedule&round=18',
+        '/players/5?from=schedule&round=18',
+        '/players/12?from=schedule&round=18',
+      ]),
     )
     w.unmount()
   })
@@ -312,6 +334,17 @@ describe('赛程 · 比赛抽屉', () => {
     await flushPromises()
     expect(drawer()).toBeNull()
     expect(document.body.style.overflow).toBe('')
+    w.unmount()
+  })
+
+  it('从详情页「返回赛程」带 ?round=18 回来 → 自动恢复该场抽屉', async () => {
+    window.history.replaceState({}, '', '/schedule?round=18')
+    const w = mountView()
+    await flushPromises()
+
+    expect(drawer()).not.toBeNull()
+    expect(drawer()!.textContent).toContain('第 18 轮')
+    expect(document.querySelectorAll('.match-drawer .p-link')).toHaveLength(4)
     w.unmount()
   })
 
