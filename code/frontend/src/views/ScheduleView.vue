@@ -22,6 +22,10 @@
  * 渲染统一走 `src/components/TeamLogo.vue`：认不到队伍或图加载失败就退成队名首字母。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { money, pct, trendClass } from '../utils/format'
+import { api } from '../api'
+import { ApiError } from '../api/client'
+import type { PlayerSummary } from '../api/types'
 import TeamLogo from '../components/TeamLogo.vue'
 import {
   DEFAULT_BLOCK,
@@ -30,6 +34,7 @@ import {
   phaseOf,
   playingTeams,
   roundMatch,
+  resolveTeamId,
   roundOfDate,
   rounds,
   schedule,
@@ -212,10 +217,13 @@ watch(selected, (value) => {
 onMounted(() => {
   void centerSelectedRound('auto')
   window.addEventListener('resize', onViewportChange)
+  window.addEventListener('keydown', onDrawerKeydown)
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(resizeRaf)
   window.removeEventListener('resize', onViewportChange)
+  window.removeEventListener('keydown', onDrawerKeydown)
+  document.body.style.overflow = ''
 })
 
 function prevRound(): void {
@@ -224,6 +232,88 @@ function prevRound(): void {
 function nextRound(): void {
   selected.value = Math.min(totalRounds, selected.value + 1)
 }
+
+/* ------------------------------------------------------------ 比赛详情抽屉 */
+
+/**
+ * 点任意一行比赛 → 右侧抽屉显示这场两队 4 名选手（名字/位置/现价/涨跌/交易状态），
+ * 点选手进详情页看图表、AI 建议并下单（赛程页只做"看人"，不做交易，避免误操作）。
+ *
+ * 数据懒加载：赛程本身是纯静态派生（离线也能看），只有真正点开时才请求 /api/players；
+ * 成功后缓存，反复点不同场次不再重复请求；失败给"重试"，不影响赛程本身。
+ */
+const drawerRound = ref<number | null>(null)
+const drawerMatch = computed(() =>
+  drawerRound.value === null ? null : roundMatch(drawerRound.value),
+)
+const drawerPhase = computed(() =>
+  drawerMatch.value ? phaseOf(drawerMatch.value, today) : null,
+)
+/** 只有"正在打的那一轮"这两队才是此刻停牌；看历史/未来场次不能误标成停牌 */
+const drawerHalted = computed(
+  () => drawerRound.value !== null && drawerRound.value === liveRoundNo,
+)
+const drawerNote = computed(() => {
+  if (drawerPhase.value === 'played') return '这场比赛已结束；选手现在可正常交易。'
+  if (drawerHalted.value) return '这两支队伍本轮停牌（比赛期间不可交易），其余选手照常买卖。'
+  return '这场比赛还没打；到这一轮时，这两队选手会暂停交易。'
+})
+
+const drawerTeamIds = computed(() => {
+  const m = drawerMatch.value
+  return m ? [Number(m.team_a), Number(m.team_b)] : []
+})
+const players = ref<PlayerSummary[]>([])
+const playersLoading = ref(false)
+const playersError = ref<string | null>(null)
+let playersLoaded = false
+
+const drawerTeams = computed(() =>
+  drawerTeamIds.value.map((id) => ({
+    id,
+    name: names.get(id) ?? String(id),
+    players: players.value.filter((p) => resolveTeamId(p.team ?? '') === id),
+  })),
+)
+
+async function loadPlayers(force = false): Promise<void> {
+  if (playersLoading.value || (playersLoaded && !force)) return
+  playersLoading.value = true
+  playersError.value = null
+  try {
+    players.value = await api.listPlayers()
+    playersLoaded = true
+  } catch (err) {
+    playersError.value = err instanceof ApiError ? err.message : '选手数据加载失败'
+  } finally {
+    playersLoading.value = false
+  }
+}
+
+const closeBtn = ref<HTMLButtonElement | null>(null)
+
+function openMatchDrawer(round: number): void {
+  selected.value = round
+  drawerRound.value = round
+  void loadPlayers()
+}
+function closeMatchDrawer(): void {
+  drawerRound.value = null
+}
+
+function onDrawerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && drawerRound.value !== null) closeMatchDrawer()
+}
+
+watch(drawerRound, async (value) => {
+  document.body.style.overflow = value === null ? '' : 'hidden'
+  if (value !== null) {
+    await nextTick()
+    closeBtn.value?.focus()
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 
 function shortDate(iso: string): string {
   return `${Number(iso.slice(5, 7))}月${Number(iso.slice(8, 10))}日`
@@ -349,7 +439,7 @@ function shortDate(iso: string): string {
           <span class="lg"
             ><span class="dot played"></span>已结束 {{ playedCount }} 场 · 时间逆序在下</span
           >
-          <span class="mini">点任意一行，上面就切到那一轮</span>
+          <span class="mini">点任意一行，展开这场比赛的选手</span>
         </p>
       </div>
       <table>
@@ -370,7 +460,12 @@ function shortDate(iso: string): string {
               v-for="match in section.matches"
               :key="match.round"
               :class="['row', { on: match.round === selected }]"
-              @click="selected = match.round"
+              tabindex="0"
+              role="button"
+              :aria-label="`第 ${match.round} 轮：查看这场比赛的选手`"
+              @click="openMatchDrawer(match.round)"
+              @keydown.enter.prevent="openMatchDrawer(match.round)"
+              @keydown.space.prevent="openMatchDrawer(match.round)"
             >
               <td data-label="轮次" class="num c-round">
                 {{ match.round }}<i v-if="match.round === featuredRound" class="star">★</i>
@@ -408,6 +503,94 @@ function shortDate(iso: string): string {
         </tbody>
       </table>
     </section>
+
+    <!-- ====== 比赛抽屉：两队 4 名选手 + 进详情页入口 ====== -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="drawerMatch" class="drawer-scrim" @click="closeMatchDrawer"></div>
+      </Transition>
+      <Transition name="drawer">
+        <aside
+          v-if="drawerMatch && drawerPhase"
+          class="match-drawer"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="`第 ${drawerRound} 轮比赛选手`"
+        >
+          <header class="drawer-head">
+            <div>
+              <p class="drawer-kicker num">
+                第 {{ drawerRound }} 轮
+                <span :class="['tag', drawerPhase]">{{ phaseText[drawerPhase] }}</span>
+              </p>
+              <h3 class="drawer-title num">
+                <TeamLogo
+                  :team="drawerTeams[0]?.id"
+                  :name="drawerTeams[0]?.name"
+                  size="xs"
+                />
+                {{ drawerTeams[0]?.name }}
+                <span class="vs">vs</span>
+                {{ drawerTeams[1]?.name }}
+                <TeamLogo
+                  :team="drawerTeams[1]?.id"
+                  :name="drawerTeams[1]?.name"
+                  size="xs"
+                />
+              </h3>
+            </div>
+            <button
+              ref="closeBtn"
+              type="button"
+              class="drawer-close"
+              aria-label="关闭"
+              @click="closeMatchDrawer"
+            >
+              ✕
+            </button>
+          </header>
+
+          <p class="drawer-note">{{ drawerNote }}</p>
+
+          <div v-if="playersLoading" class="drawer-skeleton" aria-busy="true" aria-label="加载选手">
+            <div v-for="i in 4" :key="i" class="sk-row">
+              <span class="sk sk-name"></span><span class="sk sk-mid"></span
+              ><span class="sk sk-num"></span>
+            </div>
+          </div>
+          <div v-else-if="playersError" class="drawer-error">
+            <p>{{ playersError }}</p>
+            <button type="button" @click="loadPlayers(true)">重试</button>
+          </div>
+          <div v-else class="drawer-body">
+            <section v-for="team in drawerTeams" :key="team.id" class="drawer-team">
+              <h4 class="drawer-team-name num">
+                <TeamLogo :team="team.id" :name="team.name" size="xs" />{{ team.name }}
+              </h4>
+              <ul class="p-list">
+                <li
+                  v-for="p in team.players"
+                  :key="p.player_id"
+                  :class="['p-row', { 'is-halted': drawerHalted }]"
+                >
+                  <RouterLink class="p-link" :to="`/players/${p.player_id}`">
+                    <span class="p-name">{{ p.display_name || p.name }}</span>
+                    <span class="p-role">{{ p.role || '—' }}</span>
+                    <span class="p-price num">{{ money(p.current_price) }}</span>
+                    <span :class="['p-chg', 'num', trendClass(p.change_pct)]">{{
+                      pct(p.change_pct)
+                    }}</span>
+                    <span class="p-go" aria-hidden="true">→</span>
+                  </RouterLink>
+                </li>
+                <li v-if="!team.players.length" class="p-empty">这队暂无在册选手</li>
+              </ul>
+            </section>
+            <p class="drawer-foot">点选手进入详情页：看价格历史、AI 建议，并下单。</p>
+          </div>
+        </aside>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -1109,4 +1292,207 @@ tr.row.on {
 .row.on .star {
   color: var(--halt);
 }
+
+/* ==================== 比赛抽屉（右侧滑出） ==================== */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgba(0, 0, 0, 0.38);
+}
+.match-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: calc(var(--z-overlay) + 1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(420px, 100vw);
+  height: 100dvh;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-overlay);
+}
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  transform: translateX(100%);
+}
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.drawer-kicker {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.drawer-title .vs {
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-aux);
+  cursor: pointer;
+}
+.drawer-close:hover {
+  color: var(--text);
+  background: var(--neutral-bg);
+}
+.drawer-note {
+  margin: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.drawer-team-name {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--text);
+}
+.p-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.p-row + .p-row {
+  border-top: 1px solid var(--color-border);
+}
+.p-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 14px;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 10px 2px;
+  color: inherit;
+  text-decoration: none;
+}
+.p-link:hover .p-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.p-name {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-role {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.p-row .p-link {
+  grid-template-rows: auto auto;
+  row-gap: 0;
+}
+.p-price,
+.p-chg {
+  font-size: var(--fs-aux);
+  align-self: center;
+}
+.p-chg.up {
+  color: var(--up-text);
+}
+.p-chg.down {
+  color: var(--color-down);
+}
+.p-chg.flat {
+  color: var(--faint);
+}
+.p-go {
+  color: var(--faint);
+  font-size: var(--fs-cap);
+}
+.p-row.is-halted .p-name::after {
+  content: '停牌';
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--halt);
+  border-radius: var(--radius-pill);
+  color: var(--halt);
+  font-size: var(--fs-cap);
+  font-weight: 500;
+  vertical-align: 1px;
+}
+.p-empty {
+  padding: 10px 2px;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-foot {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--fs-aux);
+}
+.drawer-error p {
+  margin: 0;
+}
+.drawer-error button {
+  padding: 6px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.drawer-skeleton .sk-row:last-child {
+  border-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer-enter-active,
+  .drawer-leave-active {
+    transition: none;
+  }
+}
+
 </style>

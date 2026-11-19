@@ -14,7 +14,10 @@
  * `src/core/__tests__/schedule.spec.ts` 里逐条守着，这里只测界面。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
+
+const apiMock = vi.hoisted(() => ({ listPlayers: vi.fn<() => Promise<unknown>>() }))
+vi.mock('../../api', () => ({ api: apiMock }))
 
 import ScheduleView from '../ScheduleView.vue'
 
@@ -25,7 +28,7 @@ function mountView() {
   return mount(ScheduleView, {
     global: {
       components: {
-        RouterLink: { name: 'RouterLink', props: ['to'], template: '<a><slot /></a>' },
+        RouterLink: { name: 'RouterLink', props: ['to'], template: '<a :href="to"><slot /></a>' },
       },
     },
   })
@@ -33,6 +36,19 @@ function mountView() {
 
 async function pickRound(w: ReturnType<typeof mountView>, round: number) {
   await w.findAll('.strip .chip')[round - 1]!.trigger('click')
+}
+
+/** 第 18 轮 FaZe Clan vs NAVI 的四名选手（抽屉里应该正好这 4 个） */
+const ROUND18_PLAYERS = [
+  { player_id: 2, name: 'ropz', display_name: null, team: 'FaZe Clan', role: 'Lurker', current_price: 122.99, prev_price: 122, change_pct: 0.82, rating: 78, status: 'trading' },
+  { player_id: 9, name: 'broky', display_name: null, team: 'FaZe Clan', role: 'AWPer', current_price: 89.29, prev_price: 97.2, change_pct: -9.58, rating: 71, status: 'trading' },
+  { player_id: 5, name: 'jL', display_name: null, team: 'NAVI', role: 'Rifler', current_price: 87.07, prev_price: 88.2, change_pct: -1.21, rating: 76, status: 'trading' },
+  { player_id: 12, name: 'w0nderful', display_name: null, team: 'NAVI', role: 'AWPer', current_price: 72.3, prev_price: 71, change_pct: 1.83, rating: 74, status: 'trading' },
+]
+
+/** 列表里的第 N 轮那一行 */
+function rowOf(w: ReturnType<typeof mountView>, round: number) {
+  return w.findAll('tr.row').find((row) => row.find('td').text().replace('★', '').trim() === String(round))!
 }
 
 /** 列表里每一行的轮次（★ 是焦点局标记，会混在文字里） */
@@ -220,5 +236,98 @@ describe('ScheduleView', () => {
     expect(w.text()).not.toContain('人可交易')
     // 页头仍然给出结论（谁停牌），只是不再逐人列名单
     expect(w.find('.page-head').text()).toContain('暂停交易')
+  })
+})
+
+describe('赛程 · 比赛抽屉', () => {
+  beforeEach(() => {
+    sessionStorage.removeItem('playerstock.schedule.round.v1')
+    // 不用 fake timers：组件里 rAF/过渡定时器与 runAllTimers 组合会卡死；
+    // 这组断言不依赖"今天"的具体日期
+    vi.useRealTimers()
+    apiMock.listPlayers.mockResolvedValue(ROUND18_PLAYERS)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    apiMock.listPlayers.mockReset()
+    document.body.style.overflow = ''
+    document.body.innerHTML = ''
+  })
+
+  /** 抽屉通过 <Teleport to="body"> 挂到 body，测不了 wrapper，直接查 document */
+  const drawer = () => document.querySelector<HTMLElement>('.match-drawer')
+
+  it('点任意一场比赛 → 右侧抽屉显示两队与 4 名选手', async () => {
+    const w = mountView()
+    await rowOf(w, 18).trigger('click')
+    await flushPromises()
+
+    const el = drawer()
+    expect(el).not.toBeNull()
+    const text = el!.textContent ?? ''
+    expect(text).toContain('第 18 轮')
+    expect(text).toContain('FaZe Clan')
+    expect(text).toContain('NAVI')
+    for (const name of ['ropz', 'broky', 'jL', 'w0nderful']) expect(text).toContain(name)
+
+    expect(el!.querySelectorAll('.p-link')).toHaveLength(4)
+    expect(document.body.style.overflow).toBe('hidden')
+    w.unmount()
+    expect(document.body.style.overflow).toBe('')
+  })
+
+  it('抽屉里的选手卡指向选手详情页（看行情 → 再下单）', async () => {
+    const w = mountView()
+    await rowOf(w, 18).trigger('click')
+    await flushPromises()
+
+    const hrefs = [...document.querySelectorAll<HTMLAnchorElement>('.match-drawer .p-link')].map(
+      (link) => link.getAttribute('href'),
+    )
+    expect(hrefs).toEqual(
+      expect.arrayContaining(['/players/2', '/players/9', '/players/5', '/players/12']),
+    )
+    w.unmount()
+  })
+
+  it('未来轮次也能点开（不限制在今天）', async () => {
+    const w = mountView()
+    await rowOf(w, 25).trigger('click')
+    await flushPromises()
+
+    expect(drawer()!.textContent).toContain('第 25 轮')
+    // 未来轮次照样能看到对阵两队（fixture 只准备了 18 轮的选手，这里只验抽屉本身）
+    expect(drawer()!.querySelectorAll('.drawer-team')).toHaveLength(2)
+    w.unmount()
+  })
+
+  it('Esc 关闭抽屉，并恢复页面滚动', async () => {
+    const w = mountView()
+    await rowOf(w, 18).trigger('click')
+    await flushPromises()
+    expect(drawer()).not.toBeNull()
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    await flushPromises()
+    expect(drawer()).toBeNull()
+    expect(document.body.style.overflow).toBe('')
+    w.unmount()
+  })
+
+  it('选手数据加载失败 → 给出重试，重试成功后正常显示', async () => {
+    apiMock.listPlayers.mockRejectedValueOnce(new Error('network down'))
+    const w = mountView()
+    await rowOf(w, 18).trigger('click')
+    await flushPromises()
+
+    expect(document.querySelector('.drawer-error')).not.toBeNull()
+    expect(document.querySelectorAll('.match-drawer .p-link')).toHaveLength(0)
+
+    ;(document.querySelector('.drawer-error button') as HTMLButtonElement).click()
+    await flushPromises()
+    expect(document.querySelector('.drawer-error')).toBeNull()
+    expect(document.querySelectorAll('.match-drawer .p-link')).toHaveLength(4)
+    w.unmount()
   })
 })
