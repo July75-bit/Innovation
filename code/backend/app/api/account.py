@@ -16,6 +16,8 @@ POST /api/account/rebuild —— **余额重建**（用户自助）：把自己�
 
 from __future__ import annotations
 
+from bisect import bisect_right
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query
@@ -25,8 +27,14 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.core.errors import ApiError
-from app.models import Player, Position, Trade, User
-from app.schemas.account import AccountRebuildResponse, AccountResponse
+from app.models import Player, Position, PriceHistory, Trade, User
+from app.schemas.account import (
+    AccountHistoryResponse,
+    AccountRebuildResponse,
+    AccountResponse,
+    AccountStats,
+    AssetPoint,
+)
 
 router = APIRouter(prefix="/account", tags=["account"])
 
@@ -54,6 +62,133 @@ def get_account(
         initial_balance=float(Decimal(user.initial_balance).quantize(CENT)),
         position_value=float(position_value),
         total_asset=float((balance + position_value).quantize(CENT)),
+    )
+
+
+def _epoch(dt: datetime) -> float:
+    """把可能被 SQLite 读成 naive 的时间统一成 UTC 时间戳。"""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+@router.get("/history", response_model=AccountHistoryResponse, summary="资产曲线与统计")
+def get_account_history(
+    days: int = Query(default=30, ge=1, le=365, description="回看多少天"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AccountHistoryResponse:
+    """个人页用：按时间重建「现金 + 持仓市值」曲线，并汇总交易统计。
+
+    - 数据只来自**本账户**的流水 + 全市场历史价格（价格是公共数据）；
+    - 曲线点 = 历史价格时间点 ∪ 交易时间点 ∪ 现在；没有交易时是一条 5000 的水平线；
+    - 最后一个点用当前余额/当前持仓对齐 `GET /api/account`，保证两处数字一致。
+    """
+    initial = Decimal(str(user.initial_balance)).quantize(CENT)
+    now = datetime.now(timezone.utc)
+    cutoff = now.timestamp() - days * 86400
+
+    trades = list(
+        db.scalars(
+            select(Trade).where(Trade.user_id == user.user_id).order_by(Trade.created_at)
+        ).all()
+    )
+    trade_epochs = [(_epoch(trade.created_at), trade) for trade in trades]
+
+    # 每个选手的 (时间戳, 价格) 序列，供任意时刻取"最近一次已知价格"
+    price_rows = db.execute(
+        select(PriceHistory.player_id, PriceHistory.ts, PriceHistory.price).order_by(
+            PriceHistory.ts
+        )
+    ).all()
+    series: dict[int, list[tuple[float, float]]] = {}
+    price_epochs: set[float] = set()
+    for player_id, ts, price in price_rows:
+        epoch = _epoch(ts)
+        series.setdefault(int(player_id), []).append((epoch, float(price)))
+        price_epochs.add(epoch)
+    for rows in series.values():
+        rows.sort(key=lambda item: item[0])
+
+    current_prices = {
+        int(player_id): float(price)
+        for player_id, price in db.execute(select(Player.player_id, Player.current_price)).all()
+    }
+
+    def price_at(player_id: int, epoch: float) -> float:
+        rows = series.get(player_id)
+        if not rows:
+            return current_prices.get(player_id, 0.0)
+        epochs = [row[0] for row in rows]
+        index = bisect_right(epochs, epoch) - 1
+        if index < 0:
+            index = 0
+        return rows[index][1]
+
+    timeline = sorted(
+        {epoch for epoch in price_epochs if epoch >= cutoff}
+        | {epoch for epoch, _ in trade_epochs if epoch >= cutoff}
+        | {now.timestamp()}
+    )
+
+    points: list[AssetPoint] = []
+    last_epoch = timeline[-1]
+    for epoch in timeline:
+        cash = float(initial)
+        holdings: dict[int, int] = {}
+        for trade_epoch, trade in trade_epochs:
+            if trade_epoch > epoch:
+                break
+            amount = float(trade.amount)
+            quantity = int(trade.quantity)
+            player_id = int(trade.player_id)
+            if trade.side == "BUY":
+                cash -= amount
+                holdings[player_id] = holdings.get(player_id, 0) + quantity
+            else:
+                cash += amount
+                holdings[player_id] = holdings.get(player_id, 0) - quantity
+
+        if abs(epoch - last_epoch) < 1e-6:
+            # 最后一点直接用当前账户值，和 GET /api/account 完全对齐
+            account = get_account(db=db, user=user)
+            cash = account.balance
+            position_value = account.position_value
+        else:
+            position_value = sum(
+                max(quantity, 0) * price_at(player_id, epoch)
+                for player_id, quantity in holdings.items()
+            )
+        points.append(
+            AssetPoint(
+                ts=datetime.fromtimestamp(epoch, tz=timezone.utc),
+                cash=round(cash, 2),
+                position_value=round(position_value, 2),
+                total_asset=round(cash + position_value, 2),
+            )
+        )
+
+    account = get_account(db=db, user=user)
+    buys = [trade for trade in trades if trade.side == "BUY"]
+    sells = [trade for trade in trades if trade.side == "SELL"]
+    position_rows = db.execute(
+        select(Position.quantity, Player.current_price)
+        .join(Player, Position.player_id == Player.player_id)
+        .where(Position.user_id == user.user_id, Position.quantity > 0)
+    ).all()
+    return AccountHistoryResponse(
+        initial_balance=float(initial),
+        points=points,
+        stats=AccountStats(
+            trades=len(trades),
+            buys=len(buys),
+            sells=len(sells),
+            buy_amount=round(sum(float(trade.amount) for trade in buys), 2),
+            sell_amount=round(sum(float(trade.amount) for trade in sells), 2),
+            positions=len(position_rows),
+            position_value=account.position_value,
+            profit=round(account.total_asset - float(initial), 2),
+        ),
     )
 
 

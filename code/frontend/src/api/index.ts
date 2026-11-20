@@ -41,6 +41,7 @@ import type {
   PriceHistoryResponse,
   TradeItem,
   TradeResponse,
+  AccountHistoryResponse,
 } from './types'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
@@ -86,6 +87,14 @@ export const api = {
     USE_MOCK
       ? fromMock(mockApi.getAccount)
       : cached('account', 30_000, () => request<Account>('/api/account')),
+
+  /** 个人页：资产曲线 + 交易统计（只统计当前账户） */
+  getAccountHistory: (days = 30): Promise<AccountHistoryResponse> =>
+    USE_MOCK
+      ? fromMock(() => mockApi.getAccountHistory(days))
+      : cached(`account:history:${days}`, 15_000, () =>
+          request<AccountHistoryResponse>(`/api/account/history?days=${days}`),
+        ),
 
   /** §4.6 持仓列表（清仓选手不出现） */
   getPositions: (): Promise<PositionItem[]> =>

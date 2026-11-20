@@ -22,28 +22,10 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { money } from './utils/format'
-import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
-import AboutDialog from './components/AboutDialog.vue'
-import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
 import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
-import { useTheme } from './composables/useTheme'
-
-const { account } = useAccount()
-
-/** 主题：自动（跟随系统）/ 浅色 / 深色 三档循环（令牌在 tokens.css；偏好记在 localStorage） */
-const { preference, theme, cycleTheme } = useTheme()
-const THEME_LABEL: Record<string, string> = { auto: '自动', light: '浅色', dark: '深色' }
-const themePreferenceLabel = computed(() => THEME_LABEL[preference.value] ?? '自动')
-const themeActionLabel = computed(() => {
-  const current = themePreferenceLabel.value
-  const next =
-    preference.value === 'auto' ? '浅色' : preference.value === 'light' ? '深色' : '自动'
-  return `主题：${current}${preference.value === 'auto' ? '（跟随系统）' : ''}，点击切换到${next}`
-})
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -60,6 +42,7 @@ const tabItems: UiTabItem[] = [
 ]
 const activeTab = computed(() => {
   if (route.path.startsWith('/players')) return 'market' // 详情页属于"市场"这条线
+  if (route.path === '/me') return '' // 个人页不在底部 Tab 里，不高亮任何一项
   const hit = Object.entries(TAB_ROUTES).find(([, path]) => path === route.path)
   return hit ? hit[0] : 'market'
 })
@@ -76,7 +59,7 @@ watch(
   () => (navOpen.value = false),
 )
 
-const { currentUser, accountLabel: accountKind, isLoggedIn, logout } = useAuth()
+const { currentUser } = useAuth()
 const router = useRouter()
 
 /** 桌面玻璃顶栏的页面标题（来自路由 meta.title；必须放在 useRoute/useRouter 之后——
@@ -91,34 +74,12 @@ watch(
   { immediate: true },
 )
 
-/** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
-const deleteOpen = ref(false)
-const aboutOpen = ref(false)
-
-/**
- * 删除成功后：弹窗内部已经清掉会话，这里只负责把人送回登录页，
- * 并用 ?deleted=1 让登录页显示一句结果说明（不带 message 进 query：
- * 后端回报的行数已经打在控制台，URL 里塞长文本既难看又会被收藏成怪链接）。
- */
-async function onAccountDeleted(): Promise<void> {
-  await router.push({ name: 'auth', query: { deleted: '1' } })
-}
-
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
 
-/** 私人账户只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
+/** 移动端顶栏头像：入口指向个人页（侧栏里也有「我的」） */
 const displayName = computed(() => currentUser.value?.nickname ?? '访客')
 const userInitial = computed(() => displayName.value.charAt(0).toUpperCase())
-
-/**
- * 侧栏账号按钮：私人账户 = 退出（撤销服务端令牌），访客 = 放弃访客态去登录页。
- * 两种情况都先清会话再跳 /auth——不清的话守卫会把"已登录"的用户从 /auth 弹回市场页。
- */
-async function onAccountAction(): Promise<void> {
-  await logout()
-  await router.push({ name: 'auth' })
-}
 
 const { service: backend } = useBackendHealth()
 
@@ -128,16 +89,8 @@ const healthText = computed(() => {
   return '服务正常'
 })
 
-/** 总收益 = 总资产 - 初始本金（后端字段，前端只做展示计算） */
-const profit = computed(() =>
-  account.value ? account.value.total_asset - account.value.initial_balance : null,
-)
-
 onMounted(() => {
   checkBackendHealth()
-  refreshAccount().catch(() => {
-    /* 后端未启动时侧栏显示占位即可，页面各自有错误提示 */
-  })
 })
 </script>
 
@@ -184,69 +137,14 @@ onMounted(() => {
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
             交易记录
           </RouterLink>
+          <RouterLink to="/me" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="5.5" r="2.5" />
+              <path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4" />
+            </svg>
+            我的
+          </RouterLink>
         </nav>
-
-        <!-- 当前身份：私人账户（令牌）/ 公共演示账户（访客）/ 未登录 -->
-        <div class="user-card">
-          <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
-          <span class="who">
-            <strong>{{ displayName }}</strong>
-            <small>{{ accountKind }}</small>
-          </span>
-          <button type="button" class="acct-action" @click="onAccountAction">
-            {{ currentUser ? '退出' : '登录' }}
-          </button>
-        </div>
-
-        <!-- 删除账号：只有私人账户能删，且要口令二次确认（契约 §4.16） -->
-        <button v-if="isLoggedIn" type="button" class="danger-link" @click="deleteOpen = true">
-          删除账号
-        </button>
-
-        <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
-        <div class="account-card" v-if="account">
-          <div class="acct-row">
-            <span>余额（信用点）</span>
-            <strong>{{ money(account.balance) }}</strong>
-          </div>
-          <div class="acct-row">
-            <span>总资产</span>
-            <strong>{{ money(account.total_asset) }}</strong>
-          </div>
-          <div class="acct-row">
-            <span>总收益</span>
-            <strong :class="(profit ?? 0) > 0 ? 'up' : (profit ?? 0) < 0 ? 'down' : 'flat'">
-              {{ profit === null ? '—' : (profit >= 0 ? '+' : '') + money(profit) }}
-            </strong>
-          </div>
-        </div>
-        <div class="account-card placeholder" v-else aria-busy="true">
-          <span class="sk sk-line"></span><span class="sk sk-line"></span
-          ><span class="sk sk-line"></span>
-        </div>
-
-        <!-- 主题：自动（跟随系统）→ 浅色 → 深色 三档循环，44px 点击区 -->
-        <button
-          type="button"
-          class="theme-toggle"
-          :aria-label="themeActionLabel"
-          :title="themeActionLabel"
-          @click="cycleTheme"
-        >
-          <!-- 自动：半黑半白圆（跟随系统） -->
-          <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="5.5" />
-            <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
-          </svg>
-          <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="3" />
-            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
-          </svg>
-          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
-          </svg>
-          <span>{{ themePreferenceLabel }}</span>
-        </button>
 
       </aside>
 
@@ -259,28 +157,14 @@ onMounted(() => {
         </RouterLink>
 
         <div class="topbar__right">
-          <div class="balance" v-if="account">
-            余额 <strong>{{ money(account.balance) }}</strong>
-          </div>
-          <button
-            class="theme-toggle topbar-theme"
-            type="button"
-            :aria-label="themeActionLabel"
-            :title="themeActionLabel"
-            @click="cycleTheme"
+          <RouterLink
+            to="/me"
+            class="topbar-profile only-mobile"
+            :aria-label="`我的：${displayName}`"
+            :title="`我的：${displayName}`"
           >
-            <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="5.5" />
-              <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
-            </svg>
-            <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="3" />
-              <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
-            </svg>
-            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
-            </svg>
-          </button>
+            {{ userInitial }}
+          </RouterLink>
           <button
             class="menu-toggle only-mobile"
             type="button"
@@ -303,7 +187,6 @@ onMounted(() => {
           <span :class="['foot-dot', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
             ><i aria-hidden="true"></i>{{ healthText }}</span
           >
-          <button type="button" class="foot-link" @click="aboutOpen = true">关于本站</button>
         </footer>
       </main>
 
@@ -316,19 +199,6 @@ onMounted(() => {
       <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
     </Transition>
 
-    <!-- 删除账号确认弹窗（Teleport 到 body，不受侧栏 / 抽屉布局影响） -->
-    <!--
-      这里故意不写 v-if="currentUser"：删除成功时 useAuth 会清会话，
-      currentUser 立刻变 null，组件会在 emit('deleted') 之前被卸载，父层就再也收不到通知
-      （实测踩过：账号删掉了但页面停在市场页）。组件自己按 open 控制渲染。
-    -->
-    <AboutDialog v-model:open="aboutOpen" />
-
-    <DeleteAccountDialog
-      v-model="deleteOpen"
-      :nickname="currentUser?.nickname ?? ''"
-      @deleted="onAccountDeleted"
-    />
   </template>
 </template>
 
@@ -530,6 +400,24 @@ onMounted(() => {
 }
 
 /* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
+.topbar-profile {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  background: var(--neutral-bg);
+  color: var(--text);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  text-decoration: none;
+}
+.topbar-profile:hover {
+  border-color: var(--color-border-strong);
+}
+
 .theme-toggle {
   display: inline-flex;
   align-items: center;

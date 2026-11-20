@@ -291,6 +291,38 @@ export const mockApi = {
     return { player_id: id, points: pricePoints(seed) }
   },
   getAccount: account,
+  getAccountHistory: (days = 30) => {
+    const current = account()
+    const now = new Date()
+    return {
+      initial_balance: current.initial_balance,
+      points: [
+        {
+          ts: new Date(now.getTime() - days * 86400_000).toISOString(),
+          cash: current.initial_balance,
+          position_value: 0,
+          total_asset: current.initial_balance,
+        },
+        {
+          ts: now.toISOString(),
+          cash: current.balance,
+          position_value: current.position_value,
+          total_asset: current.total_asset,
+        },
+      ],
+      stats: {
+        trades: state.trades.length,
+        buys: state.trades.filter((t) => t.side === 'BUY').length,
+        sells: state.trades.filter((t) => t.side === 'SELL').length,
+        buy_amount: 0,
+        sell_amount: 0,
+        positions: state.positions.size,
+        position_value: current.position_value,
+        profit: current.total_asset - current.initial_balance,
+      },
+    }
+  },
+
   getPositions: (): PositionItem[] => {
     const list: PositionItem[] = []
     for (const [pid, pos] of state.positions) {

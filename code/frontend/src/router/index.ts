@@ -72,6 +72,13 @@ const router = createRouter({
       component: () => import('../views/TradesView.vue'),
       meta: { title: '交易记录' },
     },
+    // 个人主页（第 9 天）：身份/资产/统计/偏好/账户安全都收在这里，侧栏只留导航
+    {
+      path: '/me',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { title: '我的' },
+    },
     // 赛程（第 8 天新增）：展示"赛程 → 队伍级暂停 → 点数"的派生算法本身，
     // 数据来自 src/data/demoSchedule.ts，规则来自 src/core/schedule.ts
     {

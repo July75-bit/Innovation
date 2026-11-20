@@ -271,3 +271,29 @@ export interface DeleteAccountResponse {
   deleted_trades: number
   deleted_tokens: number
 }
+
+
+/** 资产曲线快照（个人页） */
+export interface AssetPoint {
+  ts: string
+  cash: number
+  position_value: number
+  total_asset: number
+}
+
+export interface AccountStats {
+  trades: number
+  buys: number
+  sells: number
+  buy_amount: number
+  sell_amount: number
+  positions: number
+  position_value: number
+  profit: number
+}
+
+export interface AccountHistoryResponse {
+  initial_balance: number
+  points: AssetPoint[]
+  stats: AccountStats
+}

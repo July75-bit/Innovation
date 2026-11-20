@@ -53,6 +53,7 @@
 | 3 | GET | `/api/players/{player_id}` | 单个选手详情 | A + B | ✅ 已实现 |
 | 4 | GET | `/api/players/{player_id}/prices` | 价格历史 | A + B + C | ✅ 已实现 |
 | 5 | GET | `/api/account` | 账户余额 | A + B | ✅ 已实现 |
+| 5.1 | GET | `/api/account/history` | 资产曲线与统计（个人页） | A + B | ✅ 已实现 |
 | 6 | GET | `/api/positions` | 持仓列表 | A + B | ✅ 已实现 |
 | 7 | POST | `/api/trades/buy` | 买入 | A + B | ✅ 已实现 |
 | 8 | POST | `/api/trades/sell` | 卖出 | A + B | ✅ 已实现（提前完成） |
@@ -155,6 +156,29 @@
   "total_asset": 5000.00
 }
 ```
+
+### 4.5.1 `GET /api/account/history`（个人页：资产曲线 + 统计）
+
+个人主页用；只统计当前账户，价格来自全市场历史（公共数据）。
+
+```json
+{
+  "initial_balance": 5000.00,
+  "points": [
+    { "ts": "2026-11-01T00:00:00+00:00", "cash": 5000.00, "position_value": 0.00, "total_asset": 5000.00 },
+    { "ts": "2026-11-21T00:47:00+00:00", "cash": 4108.70, "position_value": 891.30, "total_asset": 5000.00 }
+  ],
+  "stats": {
+    "trades": 1, "buys": 1, "sells": 0,
+    "buy_amount": 891.30, "sell_amount": 0.00,
+    "positions": 1, "position_value": 891.30, "profit": 0.00
+  }
+}
+```
+
+- `days`（查询参数，1–365，默认 30）：回看窗口；超出范围 422；
+- `points` 按 `ts` 升序；没有交易时是一条 `initial_balance` 水平线；
+- 最后一点与 `GET /api/account` 完全一致（余额/持仓市值/总资产同口径）。
 
 ### 4.6 `GET /api/positions`
 
