@@ -4,6 +4,10 @@
 > 前台已改为**纸感**：`liquid-glass.css` 末尾统一覆盖 `.glass` 为实色表面 + 1px 细边，
 > 无模糊/高光/边缘光/悬停提亮（类名与降级逻辑保留，可回滚）。现行基线见
 > [`ui_design_system.md`](./ui_design_system.md) §11。
+>
+> **2026-11-21 清理**：`.glass--nav` / `.glass--sheet` / `.glass--scrim` 三个变体已删除
+> （业务与 /ui-kit 展厅都不再使用；仍在用的是 `.glass` / `.glass--panel` / `.glass--popover` /
+> `.glass--control` / `.glass--interactive`），展厅里对应「导航壳」示例已移除。
 
 
 > 对象：PlayerStock 虚拟选手股交易模拟（课程作品，答辩演示为主）

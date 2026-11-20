@@ -100,7 +100,7 @@
 | `--glass-hover-tint` | `rgba(255,255,255,.40)` | `rgba(255,255,255,.05)` | hover 时整块轻微提亮 | 仅桌面 hover；reduced-motion 关闭 |
 | `--glass-solid` | `#ffffff` | `#171a21` | 不支持 backdrop-filter / 降低透明时的回退底 | 回退后对比度不得下降 |
 
-**配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--nav` / `.glass--panel` / `.glass--control` / `.glass--scrim`
+**配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--panel` / `.glass--popover` / `.glass--control`
 （旧类名 `--glass-tint-*`、`--glass-radius-*` 保留为别名，组件无需改）。
 
 ### 1.7 浅色模式覆盖（除中性 9 阶外的差异）

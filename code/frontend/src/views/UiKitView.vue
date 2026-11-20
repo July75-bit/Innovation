@@ -353,10 +353,11 @@ const cardDisabled = ref(false)
     <section id="liquid-glass" class="kit__section">
       <h2>液态玻璃材质层 Liquid Glass</h2>
       <p class="kit__note">
-        只有<strong>材质层</strong>用玻璃：导航壳 / 底部工具条 / 弹窗 / Popover。
+        只有<strong>材质层</strong>用玻璃：底部工具条 / 弹窗 / Popover。
         内容层（正文、表格、表单、长文）保持实色扁平，永远不加玻璃。
         配额：同屏玻璃面积 ≤ 30%，本页实测
-        <strong data-testid="glass-quota">{{ glassQuota }}%</strong>（演示页同时展示多块材质，配额会高于业务页）。
+        <strong data-testid="glass-quota">{{ glassQuota }}%</strong>
+        （纸感模式下 backdrop-filter 已关闭，所以读数为 0；回滚玻璃材质时用这个读数做验收）。
       </p>
 
       <div class="kit__row">
@@ -369,18 +370,7 @@ const cardDisabled = ref(false)
         </UiButton>
       </div>
 
-      <!-- ① 导航壳（玻璃，文字坐在 scrim 上） -->
-      <div class="glass-demo glass glass--nav glass--interactive" data-testid="glass-nav">
-        <span class="glass-demo__brand">PlayerStock</span>
-        <nav class="glass-demo__nav" aria-label="玻璃导航示例">
-          <a href="#liquid-glass" class="is-active">市场</a>
-          <a href="#liquid-glass">持仓</a>
-          <a href="#liquid-glass">流水</a>
-        </nav>
-        <span class="glass-demo__meta">余额 5000.00</span>
-      </div>
-
-      <!-- ② 悬浮工具条（玻璃，圆角 12） -->
+      <!-- ① 悬浮工具条（玻璃，圆角 12） -->
       <div class="glass-toolbar glass glass--control glass--interactive" data-testid="glass-toolbar">
         <span class="glass-toolbar__hint">ZywOo · 108.75 · +2.1%</span>
         <UiButton variant="primary" size="sm">买入 2 股</UiButton>
@@ -388,14 +378,14 @@ const cardDisabled = ref(false)
         <UiButton variant="ghost" size="sm">忽略</UiButton>
       </div>
 
-      <!-- ③ Popover 浮层（玻璃，圆角 20，极轻投影） -->
+      <!-- ② Popover 浮层（玻璃，圆角 20，极轻投影） -->
       <div class="glass-popover glass glass--panel glass--interactive" data-testid="glass-popover">
         <p class="glass-popover__label">今日最该看一眼</p>
         <p class="glass-popover__value">sh1ro +13.96%</p>
         <p class="glass-popover__hint">现价 136.43 · 评分 88</p>
       </div>
 
-      <!-- ④ 浅色模式玻璃（data-theme="light" 是全局令牌开关；业务页默认深色，这里做材质对照） -->
+      <!-- ③ 浅色模式玻璃（data-theme="light" 是全局令牌开关；业务页默认深色，这里做材质对照） -->
       <div class="light-island" data-theme="light" data-testid="glass-light">
         <div class="glass glass--panel glass--interactive light-island__panel">
           <p class="light-island__title">浅色玻璃 · 同一套令牌</p>
@@ -477,52 +467,14 @@ const cardDisabled = ref(false)
 }
 
 /* ===== 液态玻璃演示（仅在 /ui-kit 出现，业务页不要照抄这些 demo 类名） ===== */
-.glass-demo {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--glass-radius-control);
-}
-.glass-demo__brand {
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-strong);
-}
-.glass-demo__nav {
-  display: flex;
-  gap: var(--space-1);
-  margin-left: auto;
-}
-.glass-demo__nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px; /* 点击区域 ≥44px */
-  padding: 0 var(--space-3);
-  border-radius: var(--glass-radius-control);
-  color: var(--color-text-muted);
-  text-decoration: none;
-  font-size: var(--font-size-aux);
-}
-.glass-demo__nav a:hover {
-  color: var(--color-text-strong);
-  background: var(--color-surface-raised);
-}
-.glass-demo__nav a.is-active {
-  color: var(--color-text-strong);
-  background: var(--color-surface-raised);
-  box-shadow: inset 2px 0 0 var(--color-primary-500);
-}
-.glass-demo__nav a:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-.glass-demo__meta {
-  margin-left: auto;
-  font-size: var(--font-size-cap);
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
-}
+
+
+
+
+
+
+
+
 
 .glass-toolbar {
   display: flex;

@@ -51,11 +51,6 @@
     inset -1px 0 0 var(--glass-edge);
 }
 
-/* 导航壳：文字少，用基础底（靠边一侧的描边由使用方覆盖） */
-.glass--nav {
-  background-color: var(--glass-bg);
-}
-
 /* 浮层/弹窗：可读性底更实 + 圆角 20 + 极轻投影表达悬浮 */
 .glass--panel {
   background-color: var(--glass-bg-strong);
@@ -78,20 +73,10 @@
     var(--glass-shadow);
 }
 
-/* 文字密集但仍需玻璃的浮层：用 scrim 档（比面板更实，保 AA） */
-.glass--scrim {
-  background-color: var(--glass-scrim);
-}
-
 /* 底部工具条/悬浮控件：圆角 12 */
 .glass--control {
   border-radius: var(--radius-material-sm);
   background-color: var(--glass-bg);
-}
-
-/* 大面板（抽屉/底部 sheet；若改实色就不要加这个类） */
-.glass--sheet {
-  border-radius: var(--radius-material-xl);
 }
 
 /* ---------- 动态高光：只在有鼠标 + 允许动效时轻微出现 ---------- */
@@ -202,11 +187,9 @@ html.no-backdrop-filter .glass--interactive::after {
   --glass-hover-glow: transparent;
 }
 .glass,
-.glass--nav,
 .glass--control,
 .glass--panel,
-.glass--popover,
-.glass--scrim {
+.glass--popover {
   background-color: var(--color-surface);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
