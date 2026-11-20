@@ -45,6 +45,12 @@ const profit = computed(() =>
   account.value ? account.value.total_asset - account.value.initial_balance : null,
 )
 const stats = computed(() => history.value?.stats ?? null)
+/** 资产结构：现金 vs 持仓市值占比（四舍五入到整数，合计保持 100%） */
+const cashPct = computed(() => {
+  if (!account.value || account.value.total_asset <= 0) return 0
+  return Math.round((account.value.balance / account.value.total_asset) * 100)
+})
+const positionPct = computed(() => (account.value ? 100 - cashPct.value : 0))
 const healthText = computed(() => {
   if (backend.value === null) return '检测后端连接…'
   if (backend.value === false) return '后端未连接'
@@ -147,6 +153,29 @@ onMounted(() => {
         </div>
         <div v-else class="asset-grid">
           <span class="sk sk-value"></span><span class="sk sk-value"></span><span class="sk sk-value"></span>
+        </div>
+        <!-- 资产结构：现金 / 持仓市值占比（一眼看清仓位轻重） -->
+        <div v-if="account" class="structure">
+          <div
+            class="structure-bar"
+            role="img"
+            :aria-label="`资产结构：现金 ${cashPct}%，持仓 ${positionPct}%`"
+          >
+            <span class="seg-cash" :style="{ width: `${cashPct}%` }"></span>
+            <span class="seg-pos" :style="{ width: `${positionPct}%` }"></span>
+          </div>
+          <div class="structure-legend">
+            <span class="item">
+              <i class="swatch cash" aria-hidden="true"></i>
+              现金 <b class="num">{{ money(account.balance) }}</b>
+              <span class="pct num">{{ cashPct }}%</span>
+            </span>
+            <span class="item">
+              <i class="swatch pos" aria-hidden="true"></i>
+              持仓 <b class="num">{{ money(account.position_value) }}</b>
+              <span class="pct num">{{ positionPct }}%</span>
+            </span>
+          </div>
         </div>
         <AssetChart v-if="history" :points="history.points" />
         <p v-else-if="loading" class="muted">资产曲线加载中…</p>
@@ -353,6 +382,59 @@ onMounted(() => {
 .sk-value {
   width: 100%;
   height: 30px;
+}
+/* 资产结构条 */
+.structure {
+  margin: 0 0 var(--space-4);
+}
+.structure-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--neutral-bg);
+  margin-bottom: var(--space-2);
+}
+.structure-bar span {
+  display: block;
+  height: 100%;
+}
+.seg-cash {
+  background: var(--color-border-strong);
+}
+.seg-pos {
+  background: var(--accent-text);
+}
+.structure-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--fs-cap);
+  color: var(--muted);
+}
+.structure-legend .item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.structure-legend b {
+  color: var(--text);
+  font-weight: 500;
+}
+.structure-legend .pct {
+  color: var(--faint);
+}
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.swatch.cash {
+  background: var(--color-border-strong);
+}
+.swatch.pos {
+  background: var(--accent-text);
 }
 /* 统计 */
 .stats {

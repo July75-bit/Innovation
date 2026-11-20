@@ -387,11 +387,6 @@ input[aria-invalid='true'] {
 .hint {
   font-size: var(--fs-cap);
 }
-.held-hint {
-  font-size: var(--fs-aux);
-  margin: 0;
-  color: var(--muted);
-}
 /* 「最大 / 清仓」都是两字中文，比数字档宽一点，避免窄屏挤成换行 */
 .chip-max,
 .chip-sell {
@@ -480,13 +475,6 @@ button.sell:disabled {
   background: var(--up-bg);
   color: var(--up-text);
 }
-.virtual-note {
-  margin: 0;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  border-top: 1px dashed var(--border);
-  padding-top: var(--space-2);
-}
 
 /* ===== 窄屏：买卖按钮改为整行，避免误触与换行错位 ===== */
 @media (max-width: 720px) {
@@ -510,13 +498,5 @@ button.sell:disabled {
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.kbd-hint kbd {
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  font-family: inherit;
-  font-size: var(--fs-cap);
 }
 </style>

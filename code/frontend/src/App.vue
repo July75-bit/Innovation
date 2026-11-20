@@ -3,7 +3,8 @@
  * 白话导读：全站唯一的"外壳"页面——侧栏、导航、账户卡片、后端连接徽标都在这里，
  * 中间的 <RouterView> 才是当前 URL 对应页面的出口（市场/详情/持仓/流水都渲染在那一块）。
  *
- * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped> 写样式（CSS）。
+ * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped>
+ 写样式（CSS）。
  * scoped 的意思是"这里的样式只管本组件"，不会污染别的页面。
  *
  * 本文件里的关键逻辑：
@@ -23,6 +24,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
+import { refreshAccount } from './composables/useAccount'
 import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
@@ -91,6 +93,11 @@ const healthText = computed(() => {
 
 onMounted(() => {
   checkBackendHealth()
+  // 余额/资产是交易面板的依赖（最大可买/预估金额），外壳启动时静默拉一次；
+  // 侧栏不再展示它，但也不该让详情页的交易面板缺数据。
+  refreshAccount().catch(() => {
+    /* 后端未启动时页面各自有错误提示 */
+  })
 })
 </script>
 
@@ -311,41 +318,10 @@ onMounted(() => {
 }
 
 /* 账户概览卡片 */
-.account-card {
-  /* 纸感：不套灰底卡片，直接是几行数字 + 一条细线 */
-  padding: var(--space-3) 0 var(--space-2);
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.acct-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
 .acct-row strong {
   color: var(--text);
   font-size: var(--fs-h3);
   font-variant-numeric: tabular-nums;
-}
-.acct-row strong.up {
-  color: var(--up-text);
-}
-.acct-row strong.down {
-  color: var(--down);
-}
-.acct-row strong.flat {
-  color: var(--muted);
-}
-.account-card.placeholder .sk-line {
-  height: 14px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
-  animation: sk-pulse 1.2s ease-in-out infinite;
 }
 @keyframes sk-pulse {
   0%,
@@ -371,13 +347,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.h-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
 .health.good {
   color: var(--down);
   background: var(--down-bg);
@@ -388,15 +357,6 @@ onMounted(() => {
 }
 .health.checking {
   color: var(--muted);
-}
-
-.side-note {
-  margin: auto 0 0;
-  padding: var(--space-3);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-  border-top: 1px solid var(--border);
-  line-height: 1.5;
 }
 
 /* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
@@ -418,46 +378,6 @@ onMounted(() => {
   border-color: var(--color-border-strong);
 }
 
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-family: inherit;
-  font-size: var(--fs-cap);
-  cursor: pointer;
-}
-.theme-toggle:hover {
-  color: var(--text);
-}
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.theme-toggle svg {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.topbar-theme {
-  min-height: 36px;
-  padding: 0 var(--space-2);
-}
-@media (max-width: 960px) {
-  .topbar-theme span {
-    display: none; /* 窄屏只留图标，省空间 */
-  }
-}
-
 /* ===== 顶栏（桌面 fixed / 移动 sticky；材质层：玻璃，内容从它下面滚过） ===== */
 .topbar {
   grid-area: topbar;
@@ -474,25 +394,7 @@ onMounted(() => {
 .brand-sm {
   padding: 0;
 }
-.balance {
-  margin-left: auto;
-  font-size: var(--fs-aux);
-  color: var(--muted);
-  white-space: nowrap;
-}
-.balance strong {
-  color: var(--text);
-  font-size: var(--fs-h3);
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 420px) {
-  .balance {
-    font-size: var(--fs-cap);
-  }
-  .balance strong {
-    font-size: var(--fs-body);
-  }
-}
+
 .menu-toggle {
   background: none;
   border: 1px solid var(--border);
@@ -508,51 +410,11 @@ onMounted(() => {
   .topbar {
     display: none;
   }
-  .topbar__title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-  .topbar__crumb {
-    font-size: var(--fs-cap);
-    color: var(--faint);
-    white-space: nowrap;
-  }
-  .topbar__crumb::after {
-    content: '/';
-    margin-left: var(--space-2);
-    color: var(--border-strong);
-  }
-  .topbar__h {
-    /* P1：顶栏标题降为"面包屑"级，页面大标题仍由页面自身负责，避免同屏重复两个大标题 */
-    margin: 0;
-    font-size: var(--fs-cap);
-    font-weight: var(--font-weight-medium);
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .topbar__right .balance {
-    margin-left: 0;
-  }
   .topbar__right {
     margin-left: auto;
     display: flex;
     align-items: center;
     gap: var(--space-3);
-  }
-  .topbar__health {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: var(--fs-cap);
-    color: var(--muted);
-  }
-  .topbar__health.good {
-    color: var(--down);
-  }
-  .topbar__health.bad {
-    color: var(--up-text);
   }
   /* 桌面内容区：大留白，视线从容 */
   .shell .content {
@@ -602,19 +464,6 @@ onMounted(() => {
 .foot-dot.bad {
   color: var(--up-text);
 }
-.foot-link {
-  border: 0;
-  background: none;
-  padding: 0;
-  font: inherit;
-  color: var(--faint);
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.foot-link:hover {
-  color: var(--text);
-}
 
 /* 遮罩（仅移动端抽屉用） */
 .scrim {
@@ -647,14 +496,6 @@ onMounted(() => {
     margin-left: auto;
     min-width: 0;
   }
-  .topbar__right .balance {
-    margin-left: 0;
-    font-size: var(--fs-cap);
-    line-height: 1.2;
-  }
-  .topbar__right .balance strong {
-    font-size: var(--fs-aux);
-  }
   .topbar .theme-toggle,
   .topbar .menu-toggle {
     flex: none;
@@ -662,9 +503,6 @@ onMounted(() => {
   .brand-sm {
     flex: none;
     min-width: 0;
-  }
-  .only-desktop {
-    display: none !important;
   }
   .only-mobile {
     display: inline-flex;
@@ -716,76 +554,14 @@ onMounted(() => {
 }
 
 /* ===== 本地账号卡片（会话来自 useAuth，只存浏览器） ===== */
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
-}
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  /* 实色主色底 + 白字：红字压在红色调底上只有 1.7:1，2026-11-14 实测不合格，改实心底 */
-  background: var(--color-action);
-  color: var(--color-action-text);
-  font-size: var(--fs-cap);
-  font-weight: 800;
-  flex-shrink: 0;
-}
-.who {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
 .who strong {
   font-size: var(--fs-aux);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.who small {
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.acct-action {
-  margin-left: auto;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-cap);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.acct-action:hover {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
-}
 
 /* 删除账号入口：刻意做成不起眼的文字链——低频高危操作，不该长得像主按钮 */
-.danger-link {
-  align-self: flex-start;
-  margin-top: calc(var(--space-2) * -1);
-  padding: 2px 4px;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-cap);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.danger-link:hover {
-  color: var(--accent-text);
-}
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar,

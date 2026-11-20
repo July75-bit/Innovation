@@ -723,23 +723,6 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-body);
 }
-.ai-loading .dots {
-  display: inline-flex;
-  gap: 4px;
-}
-.ai-loading .dots i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--warn);
-  animation: ai-blink 1.2s infinite ease-in-out;
-}
-.ai-loading .dots i:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.ai-loading .dots i:nth-child(3) {
-  animation-delay: 0.4s;
-}
 @keyframes ai-blink {
   0%,
   80%,
@@ -785,87 +768,12 @@ h3 {
   font-size: var(--fs-cap);
   color: var(--muted);
 }
-.ai-src-line {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.ai-reason {
-  margin: 0;
-  font-size: var(--fs-body);
-}
 
 /* ---- 决策卡（第一梯度） ---- */
 .plan {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px dashed var(--border);
-}
-.plan-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: var(--space-2);
-}
-.plan-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg, transparent);
-}
-.plan-grid span {
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.plan-grid strong {
-  font-size: var(--fs-body);
-}
-.plan-why {
-  margin: var(--space-2) 0 0;
-  padding-left: 1.1em;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  display: grid;
-  gap: 2px;
-}
-.plan-note {
-  margin: var(--space-2) 0 0;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.plan-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-top: var(--space-2);
-}
-.plan-accept,
-.plan-ignore,
-.tools-btn {
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-cap);
-  cursor: pointer;
-}
-.plan-accept {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
-}
-.plan-accept:disabled,
-.plan-ignore:disabled,
-.tools-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.plan-notice {
-  font-size: var(--fs-cap);
-  color: var(--muted);
 }
 
 /* ---- 叙事归因（第二梯度） ---- */
@@ -877,12 +785,6 @@ h3 {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.ai-narrative-tag {
-  display: inline-block;
-  margin-right: 6px;
-  color: var(--accent-text);
-  font-weight: 600;
 }
 
 /* ---- 多角色纪要（第二梯度） ---- */
@@ -903,36 +805,6 @@ h3 {
 .minutes span {
   color: var(--muted);
   line-height: 1.6;
-}
-.panel-final {
-  margin: var(--space-3) 0 0;
-  font-size: var(--fs-body);
-}
-.panel-note {
-  display: block;
-  margin-top: 4px;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.tools-box {
-  margin-top: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px dashed var(--border);
-}
-.tools-list {
-  margin: var(--space-2) 0 0;
-  padding-left: 1.1em;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  display: grid;
-  gap: 2px;
-}
-.tools-list code {
-  color: var(--accent-text);
-}
-.tools-args {
-  margin-left: 6px;
-  opacity: 0.85;
 }
 .disclaimer {
   margin: var(--space-2) 0 0;
@@ -961,14 +833,6 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-cap);
   cursor: pointer;
-}
-.ai-refresh:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--muted);
-}
-.ai-refresh:disabled {
-  cursor: default;
-  opacity: 0.7;
 }
 
 /* 交易列在长页面中保持可见 */
@@ -1208,26 +1072,6 @@ h3 {
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.chip {
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-size: var(--fs-cap);
-  background: var(--neutral-bg);
-  color: var(--muted);
-  white-space: nowrap;
-}
-.chip.risk.low {
-  color: var(--down);
-  background: var(--down-bg);
-}
-.chip.risk.medium {
-  color: var(--warn);
-  background: var(--warn-bg);
-}
-.chip.risk.high {
-  color: var(--up-text);
-  background: var(--up-bg);
 }
 .ai-facts {
   display: flex;

@@ -82,6 +82,11 @@ describe('个人主页', () => {
     expect(w.text()).toContain('买入 / 卖出')
     expect(w.text()).toContain('ZywOo')
     expect(w.text()).toContain('卖出')
+    // 资产结构：现金 4400/5300 ≈ 83%，持仓 900/5300 ≈ 17%
+    expect(w.findAll('.structure-legend .item').map((item) => item.text())).toEqual([
+      '现金 4,400.0083%',
+      '持仓 900.0017%',
+    ])
     w.unmount()
   })
 
