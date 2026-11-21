@@ -9,7 +9,7 @@
  *
  * 本文件里的关键逻辑：
  *   - 挂载时(onMounted)拉一次余额 + 检测后端；
- *   - ≤960px 时侧栏变成抽屉（CSS 媒体查询 + navOpen 控制）；
+ *   - ≤960px 时侧栏隐藏，移动端导航交给底部 Tab（4 项）+ 顶栏头像进「我的」；
  *   - 登录页 /auth 不套外壳，直接全屏渲染（isAuthPage）。
  */
 /**
@@ -21,7 +21,7 @@
  * - 登录 / 注册页（/auth）走独立全屏布局，isAuthPage 为真时不渲染侧栏与顶栏；
  * - 侧栏常驻本地账号卡片（用户名 / 本地账号或访客 / 退出），会话来自 useAuth，只存浏览器。
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
 import { refreshAccount } from './composables/useAccount'
@@ -53,13 +53,7 @@ function onTabSelect(key: string): void {
   if (path) void router.push(path)
 }
 
-/** 响应式：≤960px 时导航收进汉堡按钮，路由切换后自动收起 */
-const navOpen = ref(false)
 const route = useRoute()
-watch(
-  () => route.path,
-  () => (navOpen.value = false),
-)
 
 const { currentUser } = useAuth()
 const router = useRouter()
@@ -112,16 +106,14 @@ onMounted(() => {
     <div class="backdrop" aria-hidden="true"></div>
 
     <div class="shell">
-      <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） =====
-           材质层：桌面端是玻璃壳（导航属于材质层）；≤960px 的抽屉是实色 sheet——
-           抽屉占屏 78vw × 100dvh，玻璃面积会直接冲破 30% 配额，且里面是文字密集区。 -->
-      <aside :class="['sidebar', { open: navOpen }]">
+      <!-- ===== 侧栏（仅桌面端；≤960px 隐藏，移动端用底部 4 项导航 + 顶栏头像） ===== -->
+      <aside class="sidebar">
         <RouterLink to="/" class="brand">
           <span class="brand-mark" aria-hidden="true"></span>
           PlayerStock<span class="sub">虚拟选手股</span>
         </RouterLink>
 
-        <nav :class="{ open: navOpen }" aria-label="主导航">
+        <nav aria-label="主导航">
           <RouterLink to="/" class="nav-item">
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="M2 13h12M4 13V8m4 5V4m4 9v-6" />
@@ -155,9 +147,7 @@ onMounted(() => {
 
       </aside>
 
-      <!-- ===== 顶栏（材质层：玻璃）=====
-           桌面：fixed 在内容列上方，页面内容从它下面滚过 → 真模糊（这是桌面端唯一"有东西可糊"的位置）
-           移动：sticky 在页面顶部，内容同样从下面滚过 -->
+      <!-- ===== 顶栏（移动端：品牌 + 个人头像；底部 Tab 负责导航） ===== -->
       <header class="topbar">
         <RouterLink to="/" class="brand brand-sm only-mobile">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
@@ -172,15 +162,6 @@ onMounted(() => {
           >
             {{ userInitial }}
           </RouterLink>
-          <button
-            class="menu-toggle only-mobile"
-            type="button"
-            :aria-expanded="navOpen"
-            aria-label="打开导航菜单"
-            @click="navOpen = !navOpen"
-          >
-            {{ navOpen ? '关闭菜单' : '菜单' }}
-          </button>
         </div>
       </header>
 
@@ -200,12 +181,6 @@ onMounted(() => {
       <!-- 移动端底部 Tab（材质层：玻璃；≤960px 显示） -->
       <UiBottomTab :model-value="activeTab" :items="tabItems" @select="onTabSelect" />
     </div>
-
-    <!-- 抽屉遮罩（移动端）：淡入淡出，别让页面"啪"地变暗 -->
-    <Transition name="fade">
-      <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
-    </Transition>
-
   </template>
 </template>
 
@@ -395,15 +370,7 @@ onMounted(() => {
   padding: 0;
 }
 
-.menu-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  padding: 6px 10px;
-  font-size: var(--fs-aux);
-  cursor: pointer;
-}
+
 
 /* ===== 桌面（≥961px）：不要顶栏，把纵向空间还给内容 ===== */
 @media (min-width: 961px) {
@@ -465,12 +432,7 @@ onMounted(() => {
   color: var(--up-text);
 }
 
-/* 遮罩（仅移动端抽屉用） */
-.scrim {
-  display: none;
-}
-
-/* ===== ≤960px：侧栏转抽屉，顶栏出现 ===== */
+/* ===== ≤960px：侧栏隐藏，顶栏（品牌+头像）+ 底部 4 项导航 ===== */
 @media (max-width: 960px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
@@ -496,10 +458,6 @@ onMounted(() => {
     margin-left: auto;
     min-width: 0;
   }
-  .topbar .theme-toggle,
-  .topbar .menu-toggle {
-    flex: none;
-  }
   .brand-sm {
     flex: none;
     min-width: 0;
@@ -507,34 +465,9 @@ onMounted(() => {
   .only-mobile {
     display: inline-flex;
   }
+  /* 手机端不需要抽屉：导航由底部 Tab 承担，「我的」走顶栏头像 */
   .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    height: 100dvh;
-    width: min(78vw, 300px);
-    z-index: 30;
-    transform: translateX(-105%);
-    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
-    /* 抽屉=文字密集的浮层 sheet：实色，不用玻璃（玻璃面积 78vw×100dvh 会超配额，
-       而且导航/账户/合规声明这类文本直接坐在玻璃上不可读） */
-    background-color: var(--surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    box-shadow: var(--shadow-2);
-    border: 1px solid var(--border);
-    border-radius: 0 var(--glass-radius-sheet) var(--glass-radius-sheet) 0;
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  .scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 25;
+    display: none;
   }
   .content {
     padding: var(--space-4) var(--space-4) var(--space-5);

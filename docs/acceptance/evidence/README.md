@@ -195,6 +195,7 @@
 | `139-profile-structure-light.png` | **资产结构（浅色）**（2026-11-21） | 个人页资产区新增「现金 / 持仓」占比条：灰=现金、红=持仓，带金额与百分比图例 |
 | `140-profile-structure-dark.png` | **资产结构（深色）** | 深色下两段颜色与图例可辨；占比来自当前账户余额与持仓市值 |
 | `141-ui-kit-glass-after-cleanup.png` | **玻璃变体清理**（2026-11-21） | `/ui-kit` 玻璃展厅移除「导航壳」示例；`.glass--nav/--sheet/--scrim` 三个未使用变体删除，配额说明按纸感模式更新 |
+| `142-mobile-nav-light.png` | **手机端导航简化**（2026-11-21） | 顶栏只有品牌 + 个人头像（进「我的」）；无「菜单」按钮/抽屉；底部导航 4 项（市场/赛程/持仓/流水） |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
