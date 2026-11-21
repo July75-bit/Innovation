@@ -21,7 +21,7 @@
  * - 登录 / 注册页（/auth）走独立全屏布局，isAuthPage 为真时不渲染侧栏与顶栏；
  * - 侧栏常驻本地账号卡片（用户名 / 本地账号或访客 / 退出），会话来自 useAuth，只存浏览器。
  */
-import { computed, onMounted, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
 import { refreshAccount } from './composables/useAccount'
@@ -93,13 +93,66 @@ const healthText = computed(() => {
   return '服务正常'
 })
 
+/** 移动端顶栏：下滑收起、上滑出现（参考主流 App 的 hide-on-scroll 行为） */
+const topbarHidden = ref(false)
+let lastScrollY = 0
+let scrollTicking = false
+
+function updateTopbarVisibility(): void {
+  if (window.innerWidth > 960) {
+    topbarHidden.value = false
+    lastScrollY = window.scrollY
+    return
+  }
+  const y = Math.max(window.scrollY, 0)
+  if (y < 24) {
+    topbarHidden.value = false // 回到顶部一定显示
+  } else if (y > lastScrollY + 6) {
+    topbarHidden.value = true // 下滑：收起
+  } else if (y < lastScrollY - 6) {
+    topbarHidden.value = false // 上滑：出现
+  }
+  lastScrollY = y
+}
+
+function onScroll(): void {
+  if (scrollTicking) return
+  scrollTicking = true
+  requestAnimationFrame(() => {
+    updateTopbarVisibility()
+    scrollTicking = false
+  })
+}
+
+function onResize(): void {
+  updateTopbarVisibility()
+}
+
+// 换页后回到顶部时顶栏必须可见
+watch(
+  () => route.path,
+  () => {
+    topbarHidden.value = false
+    lastScrollY = window.scrollY
+  },
+)
+
 onMounted(() => {
+  lastScrollY = window.scrollY
+  updateTopbarVisibility()
+  window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('resize', onResize)
   checkBackendHealth()
   // 余额/资产是交易面板的依赖（最大可买/预估金额），外壳启动时静默拉一次；
   // 侧栏不再展示它，但也不该让详情页的交易面板缺数据。
   refreshAccount().catch(() => {
     /* 后端未启动时页面各自有错误提示 */
   })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('resize', onResize)
 })
 </script>
 
@@ -174,7 +227,7 @@ onMounted(() => {
       </aside>
 
       <!-- ===== 顶栏（移动端：品牌 + 个人头像；底部 Tab 负责导航） ===== -->
-      <header class="topbar">
+      <header :class="['topbar', { 'is-hidden': topbarHidden }]">
         <RouterLink to="/" class="brand brand-sm only-mobile">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
@@ -522,19 +575,34 @@ onMounted(() => {
 @media (max-width: 960px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'topbar'
-      'content';
+    grid-template-rows: 1fr;
+    /* 顶栏改为 fixed 覆盖层：不再占网格行，否则收起后会留下一条空白 */
+    grid-template-areas: 'content';
   }
   .topbar {
     display: flex;
-    /* 移动端顶栏单行：品牌 / 余额 / 主题 / 菜单 全部垂直居中，余额不再独占一行 */
+    /* fixed 覆盖在内容之上：实色底，内容从下面滚过不会透出文字叠字 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
     align-items: center;
     flex-wrap: nowrap;
     gap: var(--space-2);
     min-height: 56px;
     height: auto;
-    padding: 8px 12px;
+    /* 顶部安全区（刘海屏） */
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    background: var(--color-canvas);
+    border-bottom: 1px solid var(--color-border);
+    transform: translateY(0);
+    /* 丝滑收起/出现：与主流 App 同款 ease-out 曲线 */
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .topbar.is-hidden {
+    transform: translateY(calc(-100% - 1px));
   }
   .topbar__right {
     display: flex;
@@ -556,9 +624,17 @@ onMounted(() => {
     display: none;
   }
   .content {
-    padding: var(--space-4) var(--space-4) var(--space-5);
+    /* 给 fixed 顶栏让出位置（56 + 安全区），换页/滚动时内容不会被遮住 */
+    padding: calc(56px + env(safe-area-inset-top, 0px) + var(--space-4)) var(--space-4)
+      var(--space-5);
     /* 给底部玻璃 Tab 栏留出空间（12px 底距 + 56 高度 + 安全区） */
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar {
+    transition: none;
   }
 }
 

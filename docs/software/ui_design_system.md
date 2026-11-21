@@ -432,7 +432,8 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
 
 用户要求「手机端不要右上角菜单，只要导航栏和个人头像，导航栏是除『我的』之外的四个模块」。
 
-- 顶栏（≤960px）：左侧品牌 + 右侧**个人头像**（点击进 `/me`），**不再有「菜单」按钮**
+- 顶栏（≤960px）：左侧品牌 + 主题图标 + 右侧**个人头像**（点击进 `/me`），**不再有「菜单」按钮**；
+  顶栏是 fixed 覆盖层，实色底，下滑收起 / 上滑出现（见 §11.20）
 - 导航：底部 Tab 固定 4 项（市场 / 赛程 / 持仓 / 流水），「我的」只从顶栏头像进
 - 简化掉整套移动抽屉：`navOpen` 状态、抽屉遮罩、±260ms 滑入动画、侧栏 `.open` 态全部删除；
   ≤960px 时侧栏 `display: none`，桌面端侧栏（5 项导航）不变
@@ -450,3 +451,17 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
 - 外壳开关是显式二选一（切到浅色或深色会写入偏好），不影响 `prefers-color-scheme` 的自动模式
 
 证据：`143-theme-toggle-desktop.png`、`144-theme-toggle-mobile.png`。
+
+### 11.20 移动端顶栏下滑隐藏 / 上滑出现（2026-11-21）
+
+用户反馈：手机上向下滑内容时，顶栏不消失、只是半透明，文字会和内容叠在一起。
+
+- **改为 fixed 覆盖层**（不再占网格行）：背景用画布实色 `--color-canvas` + 底部细边，内容从下面滚过不会透出文字
+- **hide-on-scroll**：下滑超过 6px → `translateY(-100%)` 收起；上滑超过 6px → 回位；
+  距顶部 <24px 一定显示（回到列表顶部不会「顶栏不见了」）；换路由强制显示
+- **丝滑动画**：`transform` 240ms `cubic-bezier(0.22, 1, 0.36, 1)`；`will-change: transform`；
+  `prefers-reduced-motion: reduce` 时不加动画
+- 用 `requestAnimationFrame` 合并滚动事件，避免高频重排
+- 内容区顶部 padding = 56px + 安全区 + 原间距，顶栏收起时内容不会被遮住；底部 4 Tab 不变
+
+证据：`145-mobile-topbar-hidden.png`、`146-mobile-topbar-revealed.png`。
