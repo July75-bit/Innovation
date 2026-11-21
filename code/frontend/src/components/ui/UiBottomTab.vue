@@ -92,7 +92,8 @@ function pick(key: string): void {
   gap: 2px;
   padding: 6px 4px;
   border: 0;
-  border-radius: var(--radius-material-sm);
+  /* 与外层 28px 大圆角同心：28 - 6px 内边距 = 22px，选中/悬停底色边缘才和导航栏外沿一致 */
+  border-radius: calc(var(--radius-device) - 6px);
   background: transparent;
   color: var(--color-text-muted);
   font-family: inherit;
