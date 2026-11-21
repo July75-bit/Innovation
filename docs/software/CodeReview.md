@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-21 复测）**：pytest **335 passed / 0 skipped**（单元 281 / 集成 21 / 评测 33）· 前端 Vitest 用例数见 `test_report.md` §4 · 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖）· push 后最新一轮 CI 三 job · 已修复缺陷 **15 条**（P0/P1 清零）。
+> **当前基线（2026-11-21 复测）**：pytest **335 passed / 0 skipped**（单元 281 / 集成 21 / 评测 33）· 前端 Vitest **182 passed / 22 文件**（2026-11-21 本机）· 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖）· push 后最新一轮 CI **4 个 job** · 已修复缺陷 **15 条**（P0/P1 清零）。
 
 ---
 

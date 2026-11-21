@@ -91,14 +91,14 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
 > CI 前端 job 实际是 `eslint + vitest + build`（run #205 的 job 名可直接看到）；下面三步是本地等价复跑。
-> 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
+> 2026-10-24 首跑（Node v24.20.0 / npm 11.19.0）；**2026-11-21 全量复跑**（Node v24.21.0 / pnpm 11.28.5，本机无 npm）：`vitest run` → **22 文件 / 182 passed**（原始输出见 `evidence/frontend-vitest-2026-11-21.txt`）。
 
 | 步骤 | 命令 | 结果 |
 | --- | --- | --- |
 | 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `npx vitest run`（**CI 已纳入**；本行仅为 `format.spec.ts` 抽样补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **182 passed / 22 文件**（2026-11-21 本机；`format.spec.ts` 的 4 条是其中一部分） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
