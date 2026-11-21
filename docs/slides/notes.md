@@ -25,7 +25,7 @@
 
 ## P06 · 技术选型
 
-【30 秒】选型就一个原则：轻、能复现、我们四个人 hold 得住。前端 Vue + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek，留规则兜底；部署交给 Render 和 GitHub Actions。
+【30 秒】选型就一个原则：够用、稳定、我们熟。前端 Vue + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek，留规则兜底；部署交给 Render 和 GitHub Actions。
 
 ## P07 · 仓库与协作
 

@@ -77,7 +77,6 @@ layout: default
   </div>
 </div>
 
-
 </div>
 
 <!--
@@ -189,20 +188,20 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.2 技术选型</div>
 
-# 技术选型：够用、稳定、我们熟
+# 技术选型：够用、稳定
 
 <div class="body">
 
 <div v-click>
 
-| 层 | 选型与版本（完整版本表在 README） | 为什么选它 |
-| --- | --- | --- |
-| 前端 | Vue 3.5 · Vue Router 5.4 · Vite 8.3 · TS 6.0 · Vitest 4.1 | 轻、快、类型安全 |
-| 后端 | Python 3.12 · FastAPI 0.161 · SQLAlchemy 2.1 · Pydantic 2.14 | 自动文档、路由清晰 |
-| 数据 | 本地 SQLite / 线上 Render Postgres（psycopg2） | 本地零配置、线上持久化 |
-| AI | DeepSeek API（OpenAI 兼容）+ rule_fallback | 能说人话，挂了走规则兜底 |
-| 部署 | Render：Static Site + Web Service + Cron + Postgres | 免费、HTTPS、可复现 |
-| 质量工具 | GitHub Actions · ruff · oxlint · eslint · vue-tsc · pytest | 4 个 job 门禁，CI 同口径 |
+| 层    | 选型与版本（完整版本表在 README）                                         | 为什么选它             |
+| ---- | ------------------------------------------------------------ | ----------------- |
+| 前端   | Vue 3.5 · Vue Router 5.4 · Vite 8.3 · TS 6.0 · Vitest 4.1    | 轻、快、类型安全          |
+| 后端   | Python 3.12 · FastAPI 0.161 · SQLAlchemy 2.1 · Pydantic 2.14 | 自动文档、路由清晰         |
+| 数据   | 本地 SQLite / 线上 Render Postgres（psycopg2）                     | 本地零配置、线上持久化       |
+| AI   | DeepSeek API（OpenAI 兼容）+ rule_fallback                       | 能说人话，挂了走规则兜底      |
+| 部署   | Render：Static Site + Web Service + Cron + Postgres           | 免费、HTTPS、可复现      |
+| 质量工具 | GitHub Actions · ruff · oxlint · eslint · vue-tsc · pytest   | 4 个 job 门禁，CI 同口径 |
 
 </div>
 
@@ -211,7 +210,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】选型就一个原则：轻、能复现、我们四个人 hold 得住。前端 Vue + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek，留规则兜底；部署交给 Render 和 GitHub Actions。
+【30 秒】选型就一个原则：够用、稳定、我们熟。前端 Vue + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek，留规则兜底；部署交给 Render 和 GitHub Actions。
 -->
 
 ---
@@ -220,7 +219,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.3 代码仓库与协作</div>
 
-# 466 次提交、5 位贡献者、4 道 CI 门禁
+# 466 次提交、4 位贡献者、4 道 CI 门禁
 
 <div class="body">
 
@@ -260,14 +259,14 @@ layout: default
 
 <div v-click>
 
-| 问题 | 原因 | 解决办法（都已验证） |
-| --- | --- | --- |
-| 部署后数据全丢 | 免费实例临时盘 + SQLite | 迁 Postgres，连接串归一化 |
-| 线上启动 No module psycopg | SQLAlchemy 2.1 驱动变了 | 补 psycopg2，加单测 |
-| 前端全站 CORS 失败 | CORS_ORIGINS 未填 / 带尾斜杠 | 精确 origin，线上验证 |
-| 简报把模型 JSON 透传 | 模型输出没清洗 | 后端清洗，前端兜底 |
-| CI 后端 14 秒红 | ruff C901 圈复杂度 11 > 10 | 拆成 6 个 helper |
-| 首次打开 33.6 秒 | 免费实例 15 分钟休眠 | 保温 cron + 骨架屏 + 重试 |
+| 问题                     | 原因                     | 解决办法（都已验证）         |
+| ---------------------- | ---------------------- | ------------------ |
+| 部署后数据全丢                | 免费实例临时盘 + SQLite       | 迁 Postgres，连接串归一化  |
+| 线上启动 No module psycopg | SQLAlchemy 2.1 驱动变了    | 补 psycopg2，加单测     |
+| 前端全站 CORS 失败           | CORS_ORIGINS 未填 / 带尾斜杠 | 精确 origin，线上验证     |
+| 简报把模型 JSON 透传          | 模型输出没清洗                | 后端清洗，前端兜底          |
+| CI 后端 14 秒红            | ruff C901 圈复杂度 11 > 10 | 拆成 6 个 helper      |
+| 首次打开 33.6 秒            | 免费实例 15 分钟休眠           | 保温 cron + 骨架屏 + 重试 |
 
 </div>
 
@@ -369,25 +368,25 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.4 数据库设计</div>
 
-# 9 张表：交易有记录，AI 有审计
+# 9 张表：交易记录，AI 审计
 
 <div class="body">
 
 <div v-click>
 
-| 分组 | 表 | 关键的不可变 / 一致性设计 |
-| --- | --- | --- |
-| 账号 | users / auth_tokens | 余额与初始本金；令牌 30 天、可撤销 |
-| 市场 | players / price_history | 价格历史只追加；每条 reason 必填 |
-| 交易 | positions / trades | 流水只追加、带 balance_after；持仓唯一(user, player) |
-| 智能体 | agent_traces / decision_logs / price_narratives | 每次调用/采纳/归因都留审计，只读业务 |
+| 分组  | 表                                               | 关键的不可变 / 一致性设计                           |
+| --- | ----------------------------------------------- | ---------------------------------------- |
+| 账号  | users / auth_tokens                             | 余额与初始本金；令牌 30 天、可撤销                      |
+| 市场  | players / price_history                         | 价格历史只追加；每条 reason 必填                     |
+| 交易  | positions / trades                              | 流水只追加、带 balance_after；持仓唯一(user, player) |
+| 智能体 | agent_traces / decision_logs / price_narratives | 每次调用/采纳/归因都留审计，只读业务                      |
 
 </div>
 
 <div class="grid2">
   <div v-click>
 
-```mermaid {scale: 0.46}
+```mermaid
 erDiagram
   USERS ||--o{ POSITIONS : "持有"
   USERS ||--o{ TRADES : "产生"
@@ -397,7 +396,7 @@ erDiagram
   PLAYERS ||--o{ PRICE_HISTORY : "有历史"
 ```
 
-  </div>
+</div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click><div class="accent small font-bold">交易一致性</div><div class="small muted">余额、持仓、流水一起写；14 条交易测试。</div></div>
     <div class="card" v-click><div class="accent small font-bold">为什么不用缓存/队列？</div><div class="small muted">这门课的量级不用缓存，先保证数据对得上。</div></div>
@@ -422,13 +421,13 @@ layout: default
 
 <div v-click>
 
-| 分组 | 能做什么 | 一个例子 |
-| --- | --- | --- |
-| 行情 | 看选手列表、选手详情、价格历史 | GET /api/players |
-| 交易 | 看账户、买入、卖出、持仓、流水 | POST /api/trades/buy |
-| 身份 | 注册、登录、退出、删号 | POST /api/auth/login |
-| AI | 看建议、简报、决策记录 | GET /api/analysis/\{id\} |
-| 运维 | 健康检查、数据库自检、日志 | GET /api/health |
+| 分组  | 能做什么            | 一个例子                     |
+| --- | --------------- | ------------------------ |
+| 行情  | 看选手列表、选手详情、价格历史 | GET /api/players         |
+| 交易  | 看账户、买入、卖出、持仓、流水 | POST /api/trades/buy     |
+| 身份  | 注册、登录、退出、删号     | POST /api/auth/login     |
+| AI  | 看建议、简报、决策记录     | GET /api/analysis/\{id\} |
+| 运维  | 健康检查、数据库自检、日志   | GET /api/health          |
 
 </div>
 
@@ -492,20 +491,20 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.7 代码统计</div>
 
-# 3.4 万行代码，重点在结构
+# 3.4 万行代码
 
 <div class="body">
 
 <div v-click>
 
-| 语言 | 文件数 | 行数 |
-| --- | --- | --- |
-| Python | 111 | 16,790 |
-| Vue | 20 | 8,848 |
-| TypeScript | 47 | 6,348 |
-| CSS | 4 | 968 |
-| HTML | 3 | 1,082 |
-| Markdown（文档） | 70 | 8,275 |
+| 语言           | 文件数 | 行数     |
+| ------------ | --- | ------ |
+| Python       | 111 | 16,790 |
+| Vue          | 20  | 8,848  |
+| TypeScript   | 47  | 6,348  |
+| CSS          | 4   | 968    |
+| HTML         | 3   | 1,082  |
+| Markdown（文档） | 70  | 8,275  |
 
 </div>
 
@@ -555,7 +554,7 @@ layout: default
 
 <div class="kicker">演示</div>
 
-# 现场演示：从判断到下单，2 分钟
+# 现场演示：2 分钟从判断到下单
 
 <div class="body">
 
