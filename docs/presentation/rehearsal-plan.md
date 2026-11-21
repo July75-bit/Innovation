@@ -14,7 +14,7 @@
 | 1 | 线上预热：打开 `/api/health` 连点 3 次 | B | 三次都 200（冷启动约 49s） |
 | 2 | **演示数据重置**：`python scripts/bootstrap_demo_data.py --reset` | B | 市场页余额 **5000.00**、持仓空、流水干净 |
 | 3 | 确认 AI 走真模型：`GET /api/analysis/1` | D | `source: "llm"`（不是 `rule_fallback`） |
-| 4 | PDF 与 md 同版：今天改过稿就重导 `defense.pdf` | D | 16 页，首页有 01B/01C/01D |
+| 4 | PDF 与 md 同版：改过稿就重跑 Actions（Slidev **17 页**；`defense.pdf` 是历史产物，不用重导） | D | Actions 产物 17 页，01B/01C/01D 内容在对应页 |
 | 5 | 打印件：本手册 + `demo-script.md` + 计时表 | D | 每人手上有一份各自那段的页面 |
 | 6 | 设备：计时器（手机秒表）、投屏分辨率、翻页笔、转接头 | A | 投屏无黑边、PDF 可翻页 |
 | 7 | **录屏兜底**：2 分钟演示录一遍存本地 | A | 文件能在演示机上播放 |
