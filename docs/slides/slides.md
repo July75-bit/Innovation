@@ -460,7 +460,7 @@ layout: default
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">330</div><div class="small font-bold">后端测试</div><div class="small muted">pytest（6 条 live 默认排除）</div></div>
+  <div class="card" v-click><div class="metric">333</div><div class="small font-bold">后端测试</div><div class="small muted">pytest（6 条 live 默认排除）</div></div>
   <div class="card" v-click><div class="metric">182</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 22 个文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine，1956 语句 / 45 未覆盖</div></div>
   <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生 / 后端 / 前端 / 交付物</div></div>
@@ -492,7 +492,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】质量用数字说话：后端 330 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一异常、契约校验、事务并发和降级路径，工具链和 CI 同口径。
+【30 秒】质量用数字说话：后端 333 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一异常、契约校验、事务并发和降级路径，工具链和 CI 同口径。
 -->
 
 ---
