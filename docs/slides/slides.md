@@ -495,12 +495,12 @@ layout: default
   <div v-click class="card"><div class="metric">38 req/s</div><div class="small font-bold">只读压测</div><div class="sage small font-bold">≈190 人同时在线 · 0 错误</div><div class="tiny faint">瓶颈是免费档 0.1 vCPU，不是代码</div></div>
 </div>
 
-<div class="small muted mt-4">说清边界：交叉测试样本还小，也没有真实赛事数据，所以不吹预测准确率，也不承诺长期留存。</div>
+<div class="small muted mt-4">说清边界：交叉测试双向各 33 题、样本仍小；没有真实赛事数据，所以不吹预测准确率，也不承诺长期留存。</div>
 
 <div class="card mt-3" v-click><div class="tiny">证据索引：docs/acceptance/evidence（147 张截图）· test_report.md · agent_eval_report.md · load_test_report.md</div></div>
 
 <!--
-【20 秒】三条证据链：33 项用户测试（32 通过、1 部分通过）、AI 契约 16/16、红队 11/11；压测 38 req/s、190 并发、0 错误。也说清边界：交叉测试样本还小，没有真实赛事数据，所以不吹准确率。
+【20 秒】三条证据链：33 项用户测试（32 通过、1 部分通过）、AI 契约 16/16、红队 11/11；压测 38 req/s、190 并发、0 错误。说清边界：交叉测试双向各 33 题，我方测 Tome 9/17/6/1，他组测我方 28/4/0/1；没有真实赛事数据，所以不吹准确率。
 -->
 
 ---
@@ -544,5 +544,5 @@ layout: default
 <div class="mt-8 text-2xl font-bold accent" v-click>谢谢，欢迎提问。</div>
 
 <!--
-【5 分钟】回答时先给结论，再给证据，最后承认边界：交叉测试样本小、没有真实赛果，不做准确率承诺。
+【5 分钟】回答时先给结论，再给证据，最后承认边界：交叉测试双向各 33 题（Tome 9/17/6/1；他组测我方 28/4/0/1），没有真实赛果，不做预测准确率承诺。
 -->

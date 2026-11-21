@@ -68,7 +68,7 @@
 | **L4 评测（真模型 + 黄金集）** | `acceptance/agent_eval_report.md`、`tests/eval/` | ✅ 线上 16/16 走真模型、契约 100%、理由含数字 100%、P95 3.4s |
 | **L5 红队（注入/越权/隐私/输出越界）** | `acceptance/agent_redteam.md`、`tests/eval/test_agent_redteam.py` | ✅ 11/11 通过；无自由输入 → 注入面为 0 |
 | **33 项用户测试检查表（P1–P5 / I1–I4 / V1–V4 / H1–H9 / A1–A11）** | `tests/playerstock_agent_demo_user_test.md`（**正式提交版**，学生版表格逐格填满）、`tests/agent_demo_user_test.md`（内部自查版） | ✅ **32 通过 / 1 部分通过 / 0 不通过**（首轮 5 项部分通过已修复 4 项） |
-| 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
+| 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §3（我方测 Tome）/ §4（他组测我方） | ✅ 双向完成（2026-11-14；他组那份属材料评审） |
 | 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
 
 > 📄 **已备好可直接粘贴的 Issue 标题 + 正文**：[`bug-issues.md`](bug-issues.md)（14 条，含两种建法）。
@@ -93,7 +93,7 @@
 | --- | --- | --- |
 | 真实赛事数据接口 | 不做 | HLTV 反爬；用模拟数据 + 适配器预留 |
 | 充值 / 提现 / 兑换 | 不做 | 合规红线 |
-| 外部交叉原型测试 | 延期 | 已写延期说明 + 补救方案（`cross_test.md` §4），不伪造记录 |
+| 外部交叉原型测试 | ✅ 已完成 | 双向：我方测 Tome 9/17/6/1；他组测我方 28/4/0/1（材料评审），见 `cross_test.md` §3/§4 |
 | 依赖漏洞扫描（pip-audit） | 未接 | 冻结期不加门禁，列入下一步 |
 | 回测重跑（16 人种子） | 未重跑 | `pricing_model.md` §7 已加注：结论说明机制特性，非绝对收益 |
 | 彩排 | **0 次** | 唯一硬缺口，方案见 `rehearsal-plan.md` |
