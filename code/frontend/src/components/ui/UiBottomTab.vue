@@ -74,7 +74,8 @@ function pick(key: string): void {
   padding: 6px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  /* 与手机屏幕边框同量级的大圆角，保证"屏幕内圆角"与"设备圆角"观感一致 */
+  border-radius: var(--radius-device);
   box-shadow: var(--shadow-overlay);
 }
 .ui-tab {
