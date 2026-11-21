@@ -461,12 +461,12 @@ layout: default
 
 </div>
 
-<div class="dark-band small" v-click>统一响应包装格式与中文错误提示，Swagger 在线文档可直接调试：playerstock-backend-mdlk.onrender.com/api/docs</div>
+<div class="dark-band small" v-click>统一响应包装格式与中文错误提示，Swagger 在线文档可直接调试：playerstock-backend-mdlk.onrender.com/docs</div>
 
 </div>
 
 <!--
-【20 秒】前后端一共定义了 23 个接口，按行情、交易、身份、AI 和运维五组划分。返回结构统一包装，异常情况直接返回中文提示，部署在 Render 的 /api/docs 可以直接调测。
+【20 秒】前后端一共定义了 23 个接口，按行情、交易、身份、AI 和运维五组划分。返回结构统一包装，异常情况直接返回中文提示，部署在 Render 的 /docs 可以直接调测。
 -->
 
 ---
@@ -540,13 +540,13 @@ layout: default
 
 <div class="grid2">
   <div class="card" v-click><div class="accent small font-bold">模块规模</div><div class="small muted">前端包含 8 个视图、12 个组件；后端包含 11 个路由模块、9 个 AI 模块。</div></div>
-  <div class="dark-band small" v-click><b>团队协作与 AI 辅助</b><br>未对代码做逐行归因统计。开发中使用 AI 辅助编写部分测试用例与文档，核心交易逻辑与架构均由团队手写并互相 Review。</div>
+  <div class="dark-band small" v-click><b>团队协作与 AI 辅助</b><br>按提交记录归因（含合并提交，B 两个 GitHub 账号合并）：D 197 / B 114 / C 81 / A 74。AI 辅助编写部分测试用例与文档，核心交易逻辑与架构由团队手写并互相 Review。</div>
 </div>
 
 </div>
 
 <!--
-【15 秒】整个仓库可执行代码大约 3.4 万行，另有 70 份约 8,300 行的项目文档。开发过程中有用 AI 辅助生成部分测试用例和文档初稿，核心的交易和架构代码都是团队成员手写并交叉 Review 的。
+【15 秒】整个仓库可执行代码大约 3.4 万行，另有 70 份约 8,300 行的项目文档。提交按作者归因：D 197、B 114、C 81、A 74（含合并提交，B 两个账号合并）；AI 辅助生成部分测试用例和文档初稿，核心交易与架构代码由团队手写并交叉 Review。
 -->
 
 ---

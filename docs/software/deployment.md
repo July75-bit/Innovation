@@ -284,7 +284,7 @@ psql "<External Database URL>" -f backup.sql      # 恢复前确认目标库
 | --- | --- |
 | 前端 | <https://playerstock-frontend-mdlk.onrender.com> |
 | 后端 | <https://playerstock-backend-mdlk.onrender.com> |
-| API 文档 | <https://playerstock-backend-mdlk.onrender.com/api/docs> |
+| API 文档 | <https://playerstock-backend-mdlk.onrender.com/docs> |
 | 部署源 | 分支 `develop` + `render.yaml` |
 
 **已知限制**：冷启动 30–60 s；免费 Postgres 约 30 天到期；无灰度 / 自动备份 / 自定义告警；0.1 vCPU 不适合真实高并发。

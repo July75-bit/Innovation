@@ -24,7 +24,7 @@
 | 内容 | 地址 |
 | --- | --- |
 | 前端 | <https://playerstock-frontend-mdlk.onrender.com> |
-| 后端 API 文档 | <https://playerstock-backend-mdlk.onrender.com/api/docs> |
+| 后端 API 文档 | <https://playerstock-backend-mdlk.onrender.com/docs> |
 | 答辩幻灯片 | <https://july75-bit.github.io/Innovation/> |
 | 幻灯片 PDF | <https://july75-bit.github.io/Innovation/playerstock_defense.pdf> |
 
