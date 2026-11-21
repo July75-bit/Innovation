@@ -27,7 +27,7 @@ fonts:
 <div class="mt-8 flex gap-2 flex-wrap">
   <span class="pill pill-accent">纯积分制 · 无充值 / 提现 / 兑换</span>
   <span class="pill">16 名选手 · 8 支战队</span>
-  <span class="pill">AI 辅助分析（不代客下单）</span>
+  <span class="pill">AI 智能体（只读建议，不代客下单）</span>
 </div>
 
 <div class="mt-10 small muted">
@@ -127,15 +127,15 @@ layout: default
   <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">结论前置</div><div class="font-bold">首页直接给出当前行情判断</div><div class="small">减少多层跳转，需要看具体数据时再展开。</div></div></div></div>
   <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">单屏闭环</div><div class="font-bold">同屏完成看曲线、读建议与下单</div><div class="small">避免在详情页和交易页之间反复切换。</div></div></div></div>
   <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">信息降噪</div><div class="font-bold">控制单屏卡片数量与字号</div><div class="small">桌面端一屏展示 6 张选手卡，突出核心涨跌幅。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">核心写死</div><div class="font-bold">定价与撮合用确定性代码，AI 仅做旁路</div><div class="small">外部模型异常时，不影响正常买卖。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">核心写死</div><div class="font-bold">定价与撮合用确定性代码，智能体只读建议</div><div class="small">外部模型异常时，不影响正常买卖。</div></div></div></div>
 </div>
 
-<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">权限隔离</div><div class="font-bold">无真钱流转，AI 无交易写入权限</div><div class="small">AI 模块只读行情并输出建议文本，不触碰账户余额与下单接口。</div></div></div></div>
+<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">权限隔离</div><div class="font-bold">无真钱流转，智能体无交易写入权限</div><div class="small">AI 模块只读行情并输出建议文本，不触碰账户余额与下单接口。</div></div></div></div>
 
 </div>
 
 <!--
-【30 秒】设计上我们定了五条边界：首页结论前置、详情页单屏完成交易闭环、页面控制信息密度；最关键的是把定价和交易规则做成确定性代码，AI 只作为只读旁路提供分析建议，不拥有下单或修改余额的权限。
+【30 秒】设计上我们定了五条边界：首页结论前置、详情页单屏完成交易闭环、页面控制信息密度；最关键的是把定价和交易规则做成确定性代码，智能体只作为只读旁路提供分析建议，不拥有下单或修改余额的权限。
 -->
 
 ---
@@ -163,7 +163,7 @@ layout: default
   <div class="flex flex-col gap-2">
     <div v-click>
       <img class="shot" src="./assets/detail-light.png" alt="详情页" />
-      <div class="small muted mt-2">详情页：历史曲线 + AI 分析 + 下单面板</div>
+      <div class="small muted mt-2">详情页：历史曲线 + 智能体建议 + 下单面板</div>
     </div>
     <ul class="clean" v-click>
       <li>左侧看价格走势，右侧直接买入/卖出</li>
@@ -176,7 +176,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】页面主要分为市场总览和选手详情两块。市场页顶部是简报，下面三列放选手卡片，筛选排序都在当前页完成；详情页左边放价格曲线，右边把 AI 建议和下单表单放在一起，手机端也做了 4-Tab 适配和深浅色切换。
+【30 秒】页面主要分为市场总览和选手详情两块。市场页顶部是简报，下面三列放选手卡片，筛选排序都在当前页完成；详情页左边放价格曲线，右边把智能体建议和下单表单放在一起，手机端也做了 4-Tab 适配和深浅色切换。
 -->
 
 ---
@@ -342,13 +342,13 @@ flowchart LR
 <div class="grid3">
   <div class="card" v-click><div class="accent small font-bold">部署架构</div><div class="small muted">Render 四件套组合，支持 Blueprint 一键复现</div></div>
   <div class="card" v-click><div class="accent small font-bold">可观测性</div><div class="small muted">请求日志、健康检查接口、定时巡检简报状态</div></div>
-  <div class="card" v-click><div class="accent small font-bold">架构解耦</div><div class="small muted">交易与定价基于确定性规则，AI 仅作旁路建议</div></div>
+  <div class="card" v-click><div class="accent small font-bold">架构解耦</div><div class="small muted">交易与定价基于确定性规则，智能体只读建议</div></div>
 </div>
 
 </div>
 
 <!--
-【30 秒】整体架构分四层：Vue 前端、FastAPI 网关层、确定性的交易与定价内核、以及 Postgres 数据库。AI 模块放在旁路，只读数据、不参与交易结算。线上通过 Render 四件套部署。
+【30 秒】整体架构分四层：Vue 前端、FastAPI 网关层、确定性的交易与定价内核、以及 Postgres 数据库。智能体放在旁路，只读数据、不参与交易结算。线上通过 Render 四件套部署。
 -->
 
 ---
@@ -357,7 +357,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 算法与 AI</div>
 
-# 定价公式与 AI 辅助链路
+# 定价公式与智能体链路
 
 <div class="body">
 
@@ -374,13 +374,13 @@ layout: default
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click>
-      <div class="accent small font-bold">AI 分析链路（仅输出建议）</div>
-      <div class="small mt-2">流程：读取行情 → 分析师 → 风控 → 交易员 → 用户手动确认采纳，全程落库审计。</div>
-      <div class="small muted mt-2">调用 DeepSeek 接口设 20 秒超时；无 Key、超时或格式异常时自动回退本地规则模板。</div>
+      <div class="accent small font-bold">智能体执行链路（只读建议）</div>
+      <div class="small mt-2">流程：拉行情 / 持仓 / 赛程 → 分析师 → 风控 → 交易员 → 你手动采纳，全程落库审计。</div>
+      <div class="small muted mt-2">7 个 agent 接口 + 3 张审计表；DeepSeek 20 秒超时，无 Key / 超时 / 坏 JSON 自动回退规则模板。</div>
       <div class="small mt-2">输出固定 6 个字段；线上 16/16 校验通过，P95 延迟 3.39 秒。</div>
     </div>
     <div class="dark-band small" v-click>
-      <b>为何不由 AI 直接定价？</b><br>
+      <b>为什么不让智能体直接定价？</b><br>
       确定性公式计算稳定、零调用成本；且能保证外部模型不可用时交易主流程不受影响。
     </div>
   </div>
@@ -389,11 +389,43 @@ layout: default
 </div>
 
 <!--
-【40 秒】定价用的是一套确定性公式，根据选手本轮相对于自身均值的表现分来调价，单轮涨跌幅卡在正负 20%，最低 1 块，每次变动都附带原因。AI 这边走分析师、风控、交易员三个角色生成建议，最终由用户决定是否采纳，全程记录审计日志；如果模型超时或无 Key，会自动切到规则兜底。
+【40 秒】定价用的是一套确定性公式，根据选手本轮相对于自身均值的表现分来调价，单轮涨跌幅卡在正负 20%，最低 1 块，每次变动都附带原因。智能体这边走分析师、风控、交易员三个角色生成建议，最终由用户决定是否采纳，全程记录审计日志；如果模型超时或无 Key，会自动切到规则兜底。
 -->
 
 ---
 layout: default
+---
+
+<div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
+
+# 智能体：会拉数据、会给建议、会留记录
+
+<div class="body">
+
+<div class="dark-band text-base font-bold leading-relaxed" v-click>
+它不只会聊天：会拉行情、算风险、给动作，最后让人来拍板。
+</div>
+
+<div class="grid3" v-click>
+  <div class="card"><div class="accent small font-bold">工具调用</div><div class="small mt-1">7 个 agent 接口，能读行情、持仓、赛程、价格，不用手工整理数据。</div></div>
+  <div class="card"><div class="accent small font-bold">多角色协作</div><div class="small mt-1">分析师给观点 → 风控压风险 → 交易员出动作，三个角色串成一条链。</div></div>
+  <div class="card"><div class="accent small font-bold">人在环</div><div class="small mt-1">采纳还是忽略由你点；AI 不自动下单，也不替你改余额。</div></div>
+</div>
+
+<div class="grid3" v-click>
+  <div class="card"><div class="accent small font-bold">可审计</div><div class="small mt-1">每次调用、采纳、归因都写进 3 张审计表，事后能回放。</div></div>
+  <div class="card"><div class="accent small font-bold">只读红线</div><div class="small mt-1">不碰交易事务、不改余额；交易和定价始终由确定性代码执行。</div></div>
+  <div class="card"><div class="accent small font-bold">失败可降级</div><div class="small mt-1">没 Key、超时或返回坏 JSON，自动用规则版，接口仍返回 200。</div></div>
+</div>
+
+<div class="sage small font-bold" v-click>一句话：建议是它出的，动作是人点的，记录是库里的。</div>
+
+</div>
+
+<!--
+【30 秒】这页专门讲智能体，因为它不是个聊天框：它会调用 7 个接口拉行情、持仓和赛程；内部按分析师、风控、交易员三个角色串起来；最后把采纳权交给人。每次调用和采纳都落审计表，AI 全程只读，不碰余额和下单；模型挂了就自动走规则版。
+-->
+
 ---
 
 <div class="kicker">03 产品实现 · 3.5.4 数据库设计</div>
@@ -588,7 +620,7 @@ layout: default
 
 <div class="grid3">
   <div class="card" v-click><div class="accent font-bold">01 市场页</div><div class="small muted mt-1">查看顶部简报与 3 列选手行情、停牌状态</div></div>
-  <div class="card" v-click><div class="accent font-bold">02 详情页</div><div class="small muted mt-1">查看历史价格曲线、AI 建议与停牌提示</div></div>
+  <div class="card" v-click><div class="accent font-bold">02 详情页</div><div class="small muted mt-1">查看历史价格曲线、智能体建议与停牌提示</div></div>
   <div class="card" v-click><div class="accent font-bold">03 买入下单</div><div class="small muted mt-1">模拟买入 2 股，验证余额、持仓与流水同步更新</div></div>
   <div class="card" v-click><div class="accent font-bold">04 资产复盘</div><div class="small muted mt-1">进入个人页查看资产曲线与成交统计</div></div>
   <div class="card" v-click><div class="accent font-bold">05 降级演示</div><div class="small muted mt-1">验证停牌拦截与无 Key 时的规则兜底</div></div>
@@ -600,7 +632,7 @@ layout: default
 </div>
 
 <!--
-【5 秒】下面进入两分钟的现场演示，依次展示市场总览、详情分析、买入成交、个人复盘，以及停牌拦截和 AI 降级兜底。
+【5 秒】下面进入两分钟的现场演示，依次展示市场总览、详情分析、买入成交、个人复盘，以及停牌拦截和智能体降级兜底。
 -->
 
 ---
