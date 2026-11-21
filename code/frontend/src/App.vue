@@ -29,6 +29,7 @@ import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
+import { useSwipeNav } from './composables/useSwipeNav'
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -58,6 +59,9 @@ const route = useRoute()
 
 const { currentUser } = useAuth()
 const router = useRouter()
+
+// 移动端：左右滑动切换底部 4 个 Tab（桌面/弹窗/抽屉/横滑条里不生效）
+useSwipeNav()
 
 /** 桌面玻璃顶栏的页面标题（来自路由 meta.title；必须放在 useRoute/useRouter 之后——
     immediate watch 会在 setup 阶段立刻执行，早于 const route 声明会报 TDZ） */
