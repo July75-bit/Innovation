@@ -25,3 +25,5 @@
 .formula { font-family:'Consolas', monospace; font-size:1.35rem; font-weight:700; color:#221f1b; }
 ul.clean { padding-left:1.1rem; } ul.clean li { margin:.18rem 0; font-size:.82rem; }
 .slidev-layout table th:first-child, .slidev-layout table td:first-child { white-space: nowrap; }
+.pdf-link { display:inline-flex; align-items:center; gap:.35rem; padding:.35rem .75rem; border:1px solid #d9d3c7; border-radius:999px; color:#a62b2f !important; text-decoration:none !important; font-weight:600; background:#fcfbf8; }
+.pdf-link:hover { background:#f0ebe2; }

@@ -35,6 +35,10 @@ fonts:
   软件创新工程实践 · 2026-11 · 15 分钟（8′ 介绍 + 2′ 演示 + 5′ 问答）
 </div>
 
+<div class="mt-4 small">
+  <a class="pdf-link" href="./playerstock_defense.pdf">📄 下载答辩 PDF</a>
+</div>
+
 <!--
 【15 秒】各位老师好，我们是「有请下一组」，作品是 PlayerStock：用信用点交易 CS2 职业选手虚拟股，
 把观众对选手的判断变成一条可交易、可解释、没有真实资金风险的价格曲线。

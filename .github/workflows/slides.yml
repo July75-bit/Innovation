@@ -1,31 +1,29 @@
 name: 答辩幻灯片 (Slidev)
 
-# 用 GitHub Actions 完成 Slidev 幻灯片：不依赖本机 Node/Slidev/Playwright，
-# 由 Actions 安装依赖、构建静态站、导出 PDF，并上传可下载的 artifact。
-# 幻灯片源文件与构建配置都在 docs/slides/。
+# 用 GitHub Actions 完成 Slidev 幻灯片，并发布到 GitHub Pages：
+# - 在线网页直接放映幻灯片
+# - PDF 放在站点根目录，网页上可直接查看/下载
+# 参考课程示例：https://github.com/bettermorn/ACMWDevHubPPT/blob/master/.github/workflows/deploy-slides.yml
 on:
   push:
     branches: [main, develop]
     paths:
       - "docs/slides/**"
       - ".github/workflows/slides.yml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "docs/slides/**"
-      - ".github/workflows/slides.yml"
   workflow_dispatch:
-
-concurrency:
-  group: slides-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
-  build-slides:
-    name: 构建 Slidev 与 PDF
+  build:
+    name: 构建 Slidev / 导出 PDF
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -48,24 +46,51 @@ jobs:
       - name: 安装 Chromium 系统依赖
         run: npx playwright install --with-deps chromium
 
-      - name: 构建静态站
-        run: npm run build
+      # 导出 PDF 需要中文字体，否则 Linux runner 上会变方块
+      - name: 安装中文字体（PDF 不乱码）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
 
-      - name: 导出 PDF（供投屏/提交）
+      # 项目页地址是 /<repo>/，Slidev 的资源路径必须带这个 base
+      - name: 构建静态站（GitHub Pages 子路径）
+        run: npm run build -- --base /${{ github.event.repository.name }}/
+
+      - name: 导出 PDF
         run: npm run export
 
-      - name: 校验产物
+      - name: 把 PDF 放进静态站（网页可直接查看/下载）
         run: |
-          test -s playerstock_defense.pdf
+          cp playerstock_defense.pdf dist/playerstock_defense.pdf
+          test -s dist/playerstock_defense.pdf
           test -f dist/index.html
-          echo "PDF 大小：$(du -h playerstock_defense.pdf | cut -f1)"
-          echo "静态站文件数：$(find dist -type f | wc -l)"
+          echo "PDF 大小：$(du -h dist/playerstock_defense.pdf | cut -f1)"
 
-      - name: 上传 artifact（可下载）
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: 上传 Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/slides/dist
+
+      - name: 上传 PDF artifact（备份）
         uses: actions/upload-artifact@v4
         with:
-          name: playerstock-defense-slides
-          path: |
-            docs/slides/playerstock_defense.pdf
-            docs/slides/dist/
+          name: playerstock-defense-pdf
+          path: docs/slides/playerstock_defense.pdf
           retention-days: 30
+
+  deploy:
+    name: 部署到 GitHub Pages
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -4,8 +4,9 @@
 > → `docs/software/deployment.md`（课程 PDF 第 5 天 211–217 页、271–278 页）
 > **负责人 / 发布负责人**：D ｜ **验证负责人**：D（交叉验证：B）
 > **部署源**：GitHub `July75-bit/Innovation` 的 `develop` 分支 ｜ **CI**：GitHub Actions（4 个 job）
-> **最后实测**：2026-11-21 08:45（UTC+8）｜ **线上状态**：运行中（`/api/health` 200）
-> **最近一次 CI**：commit `ccf6447` → run `44845160203`，**4/4 全绿**（卫生 / 后端 / 前端 / 交付物）
+> **最后实测**：2026-11-21 11:30（UTC+8）｜ **线上状态**：运行中（`/api/health` 200，冷启动 28.2s；前端首页 200，1.92s）
+> **最近一次已验证全绿 CI**：commit `5ae6a4c` → run **#188**，4/4（卫生 / 后端 / 前端 / 交付物）
+> **待复核**：`2175d6c` 起答辩稿迁到 `docs/slides/`，交付物检查路径已同步修改；push 后以新的 CI run 为准
 
 ---
 
@@ -20,6 +21,10 @@
 | 使用上线前、上线中、上线后的检查单 | §5.1–§5.7（A–G 七张单） |
 | 健康检查与可观测性 | §4.8、§3.7 |
 | 发布完成记录、复盘与回滚路径 | §11、附录 A、§8 |
+| 服务器规格、容量与资源边界 | §4.10 |
+| 上线前账号、演示数据与密钥处理 | §4.11 |
+| 最终发布检查卡（一页版） | §5.9 |
+| 参考案例对照（Linux 自建 vs Render 托管） | §1.6 |
 
 **「部署」在本文对应的十步**（PDF 215 页）：获取源码（GitHub `develop`）→ 安装依赖（`pip install` / `npm ci`）→
 执行测试（CI 4 个 job）→ 构建软件包（`npm run build` → `dist/`）→ 配置运行环境（Render 环境变量）→
@@ -97,6 +102,29 @@ Render Cron（playerstock-agent-patrol，*/10 0-15 * * *）
 3. Render 自动申请 Let's Encrypt 证书（约 1–5 分钟），HTTPS 强制跳转
 4. 同步修改前端 `VITE_API_BASE_URL`、后端 `CORS_ORIGINS` 为新域名后重新部署
 > 课程演示使用 `*.onrender.com` 已满足 HTTPS 与可访问性，未申请域名以免引入额外不确定性。
+
+### 1.6 参考部署案例对照（WindOnMAgent / Linux 云服务器）
+
+参考案例：<https://github.com/bettermorn/AIAgent/blob/main/code/IndustryAgent/WindOnMAgent/deployment.md>
+（FastAPI + 原生 JS + PostgreSQL，部署到 Ubuntu 22.04 / Debian 12 云服务器，使用 Nginx + systemd + certbot）。
+本项目按课程「6 天上线 + 免费额度」约束选择 Render 托管；两者的检查单思想一致，但基础设施不同：
+
+| 维度 | 参考案例（Linux 自建） | 本项目（Render 托管） | 本项目处理 |
+| --- | --- | --- | --- |
+| 运行环境 | Ubuntu 22.04/24 + Nginx + systemd + uvicorn | Render Static Site + Web Service + Cron + Postgres | 不引入 Nginx/systemd；平台托管进程与证书 |
+| 前端 | 原生 JS 静态文件由后端直接托管 | Vue 3 SPA，独立 Static Site + SPA fallback | 前后端分离，前端构建产物 `dist/` |
+| 数据库 | 同机 PostgreSQL 14+，手工备份 | Render 托管 Postgres（免费 30 天） | 迁移到托管库，避免临时盘丢数据 |
+| HTTPS | certbot + ufw + 安全组 | Render 自动签发 `*.onrender.com` 证书 | 不配置 certbot；域名/证书由平台负责 |
+| 配置 | `/etc/windom/windom.env`（640） | Render Environment（秘密 `sync: false`） | 密钥只在控制台，不进仓库 |
+| 健康检查 | `/health` 存活 + `/ready` 就绪 | `/api/health`（覆盖依赖探测） | 未单独提供 `/ready`，见 §5.5 N/A 说明 |
+| 进程模型 | `uvicorn --workers 1`，避免进程内状态分裂 | 免费档单实例，天然 1 worker | 不涉及多 worker 粘性会话问题 |
+| 运维入口 | `systemctl` / `journalctl` / `nginx -t` | Render Dashboard（Logs/Metrics/Deploys） | 用平台日志与部署历史 |
+| 适用场景 | 需完全控制 OS、内网/离线、长期自建 | 课程 6 天、免费额度、快速回滚 | 本项目选 Render |
+
+**吸收进本文的内容**：部署架构图（§1.1）、容量与资源边界（§4.10）、上线前账号与数据处理（§4.11）、
+一页版最终发布检查卡（§5.9）；参考案例中的 A–G 检查单与回滚思路已体现在 §5、§8。
+**明确不照搬**：Nginx/SSE/WebSocket 配置、systemd 托管、certbot、Linux 用户与目录权限——本项目由 Render 托管，
+这些组件不存在；如未来改为自建 Linux，可按参考案例补回，但需要重新验证前端静态托管与 CORS。
 
 ---
 
@@ -297,7 +325,8 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com
 - Postgres 免费实例 **约 2026-11-23 到期**：到期前升级付费或迁移到备用库；
 - `DEBUG_ENDPOINTS` 验收期开着（`/api/debug/db` 截图用），验收完成后关掉；
 - `RESEED_TOKEN` 线上已覆盖默认值（默认值仅课程演示用）；
-- `render.yaml` 的 LLM 默认值与线上控制台不一致（见 §9）。
+- `render.yaml` 的 LLM 配置（`LLM_MODEL=deepseek-flash`、`LLM_BASE_URL=https://api.deepseek.com/v1`）
+  已在 2026-11-21 与线上控制台同步；`LLM_PROVIDER` 仅作标识，不参与请求路由。
 
 ### 4.6 保温 cron（免费实例）
 
@@ -354,12 +383,48 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 - **演示数据**本身可重建：`python scripts/bootstrap_demo_data.py`（固定 seed，16 人 / 演示账户 / 价格历史）。
 - 恢复演练：至少验证一次「备份文件能导入临时库并起服务」，记录到 §11 发布记录或附录 A。
 
+### 4.10 服务器规格、容量与资源边界
+
+参考案例给出了服务器的 CPU/内存/磁盘建议；本项目使用 Render 托管，资源边界如下（以 Render 控制台实际为准）：
+
+| 资源 | 配置 / 限制 | 实测或结论 |
+| --- | --- | --- |
+| Web Service | 免费档，约 **0.1 vCPU**；单实例 | 只读压测饱和 **~38 req/s**，约 **190 人同时在线**、0 错误；瓶颈是 CPU 而非代码 |
+| 内存 | 免费档小内存（以控制台为准） | 空闲/处理请求的内存峰值在 Render Metrics 观察；无深度学习框架，常驻开销低 |
+| 磁盘 | Web Service 文件系统**临时**，不能放 SQLite/上传文件 | 业务数据全部进 Postgres；前端静态资源在 Static Site |
+| Static Site | 免费、全球 CDN、HTTPS | 首页 TTFB 暖态约 **1.1s**（含 DNS/TLS）；构建产物 `dist/` |
+| Postgres | 免费实例，**30 天到期（约 2026-11-23）** | 9 张表；演示数据可重建；到期前必须升级/迁移并 `pg_dump` |
+| Cron | 免费，`*/10 0-15 * * *` | 约 16h/天 ≈ **496h/月**，在免费 750h 额度内 |
+| 冷启动 | 闲置 15 分钟休眠 | 冷启动 **30–60s**（首次 `/api/players` 曾实测 **33.6s**）；暖态 API **0.88s** |
+| AI 延迟 | DeepSeek API 外部依赖 | 线上中位 **~2.0–2.5s**；L4 评测 P95 **3.39s**（门禁 10s） |
+
+**容量结论**：当前配置满足课程演示与 ~200 人只读访问；需要更高并发时优先升级 Render plan / 增加实例，
+而不是改业务代码。数据库容量与连接数在 Render Postgres 控制台查看；免费档不做连接池压测。
+
+### 4.11 上线前账号、演示数据与密钥处理
+
+参考案例把「演示账号口令/演示数据」单列一节；本项目对应处理如下（每次答辩/发布前执行）：
+
+| 项 | 操作 | 验收 |
+| --- | --- | --- |
+| 演示数据重置 | `DATABASE_URL="<External URL>" python scripts/bootstrap_demo_data.py` | 16 名选手、8 支战队、11 个价格点、演示账户 5000 信用点 / 0 持仓 / 0 流水 |
+| 注册账号保护 | `bootstrap_demo_data.py` 不重置私人账号（BUG-15 已修） | 重新灌数据后私人账号仍可登录、余额不被覆盖 |
+| LLM 密钥 | Render Environment `LLM_API_KEY`（`sync: false`），不写仓库/日志 | `/api/analysis/1` 返回 `source=llm`；删掉 Key 时自动 `rule_fallback` 且仍 200 |
+| LLM 端点/模型 | `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash` | `/api/debug` 或启动日志不打印 Key；请求走 DeepSeek |
+| 调试接口 | 验收期 `DEBUG_ENDPOINTS=1`，验收完成后改 `0` 并重新部署 | `/api/debug/*` 关闭后返回 404/403（按实现），业务不受影响 |
+| 重灌令牌 | `RESEED_TOKEN` 使用随机值，不用示例默认值 | 未带令牌的 `reseed` 请求被拒绝 |
+| 数据库到期 | 到期前 `pg_dump` 导出 + 迁移到新库/付费档；恢复后跑冒烟 | 新库 `/api/debug/db` 方言 `postgresql`、players=16，交易记录可读 |
+| 合规声明 | README、页面、演示开场声明「纯信用点、不可充值/提现/兑换、非官方、不构成投资建议」 | 演示时主动说明，避免被误认为真钱产品 |
+
+> 参考案例的「演示口令只在首次 seed 生效」提醒同样适用：本项目演示账户是公共账户；私人注册账号的口令由
+> PBKDF2 哈希存储，重灌演示数据不会改私人账号口令。
+
 ---
 
 ## 5. 上线检查单（A–G，按课程 PDF 271–277 页）
 
 > 用法：每次发布复制一份到 §11 或 Issue；`[x]` 表示本次已确认，`N/A` 表示本项目无此组件（附原因）。
-> 当前状态基于 **2026-11-21** 的线上实测与 CI（commit `ccf6447`）。
+> 当前状态基于 **2026-11-21** 的线上实测；CI 全绿基线为 commit `5ae6a4c`（run #188），`2175d6c` 起的交付物路径迁移已在 CI 中同步。
 
 ### 5.1 A. 发布准备检查单
 
@@ -507,6 +572,25 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 - [x] 移动端（390px）无横向溢出、底部 4 Tab + 顶栏头像可用
 - [x] 首页简报可见且非空（AI/规则均可）
 - [x] 404 页正常（访问 `/ui-kit` 等已移除路由 → 「页面不存在」）
+
+### 5.9 最终发布检查卡（一页版）
+
+> 参考案例末尾的「最终发布检查卡」；每次发布只带这一页，细节回查 A–G。
+
+| # | 必须确认 | 证据 / 命令 |
+| --- | --- | --- |
+| 1 | CI 4 个 job 全绿 | GitHub Actions 最新 run；红则不发布 |
+| 2 | 线上版本 = 预期 commit | Render Deploys 的 commit SHA；`git rev-parse --short HEAD` |
+| 3 | 服务存活 | `curl -fsS …/api/health` → `{"status":"ok"}` |
+| 4 | 数据库是 Postgres 且非空 | `curl -fsS …/api/debug/db` → `是否 SQLite: false`、players=16 |
+| 5 | 前端首页 + SPA 刷新 | 打开 `/`、直接刷新 `/players/1`、`/me` 均 200 |
+| 6 | 交易闭环 | 行情 → 详情 → 买入 → 持仓 → 卖出 → 流水；刷新后数据仍在 |
+| 7 | AI 正常 + 降级 | `/api/analysis/1` `source=llm`；无 Key 场景 `source=rule_fallback` 且仍 200 |
+| 8 | 简报新鲜 | `/api/agent/brief` `generated_at` 不超过 30 分钟 |
+| 9 | 移动端 / 深浅色 | 390px 无横向溢出；深/浅主题可切换；底部 4 Tab 正常 |
+| 10 | 回滚点与备份 | 记录上一版 commit/Deploy；数据变更前 `pg_dump` 成功；异常按 §8 回滚 |
+
+**发布签名**：发布负责人 D ｜ 验证负责人 D + B ｜ 时间 ｜ 结果（通过 / 回滚）。
 
 ---
 
