@@ -149,3 +149,38 @@ ul.clean { padding-left:1.1rem; } ul.clean li { margin:.18rem 0; font-size:.82re
   .slidev-vclick-hidden { opacity: 1 !important; transform: none !important; }
 }
 
+
+/* ============================================================
+   版式（2026-11-21 v2）：标题固定在上，正文在剩余空间垂直居中；
+   两栏内容起点对齐，间距放宽；字号整体加大一档。
+   ============================================================ */
+.slidev-layout { display:flex; flex-direction:column; height:100%; justify-content:center; }
+.slidev-layout h1 { margin-bottom:.55rem; }
+.body { flex:0 0 auto; min-height:0; display:flex; flex-direction:column; justify-content:center; gap:.9rem; }
+.body > * { margin-top:0 !important; margin-bottom:0 !important; }
+.grid2 { gap:2rem; align-items:start; }
+.grid3 { gap:1.2rem; align-items:start; }
+.grid4 { gap:1rem; align-items:stretch; }
+.card { padding:1rem 1.2rem; }
+.small { font-size:.9rem; line-height:1.6; }
+.tiny { font-size:.8rem; line-height:1.55; }
+ul.clean li { font-size:.9rem; margin:.25rem 0; }
+.slidev-layout table { font-size:.8rem; }
+.slidev-layout th { padding:.5rem .65rem; }
+.slidev-layout td { padding:.42rem .65rem; }
+.pill { font-size:.82rem; padding:.3rem .75rem; }
+.cover-title { font-size:3.4rem; }
+.body .flex.flex-col { min-width:0; }
+
+
+.formula { font-size:1.15rem; white-space:nowrap; }
+
+.body { padding:.4rem 0 .55rem; }
+
+.slidev-layout th { padding:.44rem .6rem; }
+.slidev-layout td { padding:.34rem .6rem; }
+.body { gap:.8rem; }
+
+.small { font-size:.95rem; line-height:1.6; }
+.muted { color:#5c574d; }
+.sage.small { font-size:.95rem; }

@@ -57,6 +57,9 @@
    | 44 | −5.11% | −4.41% | **−1.18%** | 9.71% |
    | **均值** | **+2.34%** | −0.74% | −1.06% | **11.05%**（随机 6.50% / 持有 8.56%） |
 
+> 三个 seed 的完整明细：seed 42 → `backtest_result.json`；seed 43/44 → `backtest_result_seed43.json` / `backtest_result_seed44.json`。
+> 复跑：`python scripts/backtest.py --seed 43 --rounds 28 --output docs/algorithm/backtest_result_seed43.json`。
+
    - 收益：规则版**均值最高**（+2.34%），对随机与持有都是 **3 局 2 胜**（seed 44 两负）；
    - 回撤：规则版 **3 个 seed 全部最差**（均值 11.05% vs 6.50% / 8.56%）——它靠更高频的择时（约 50 次交易）换来收益，也换来波动；
    - 所以能说的只有："**本阈值规则在多数 seed 下收益更好，但风险更大、优势不稳定**"，不能宣称"风控更好"或"稳定跑赢"。

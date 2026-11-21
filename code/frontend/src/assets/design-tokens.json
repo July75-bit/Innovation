@@ -40,6 +40,7 @@
     "color.business",
     "material.glass",
     "radius.material",
+    "radius.device",
     "typography",
     "spacing",
     "shadow"
@@ -694,6 +695,13 @@
       "dark": "24px",
       "purpose": "抽屉 / 底部 sheet",
       "requirement": "材质层专用；与内容层 4/6/8 互不混用"
+    },
+    "--radius-device": {
+      "group": "radius.device",
+      "light": "28px",
+      "dark": "28px",
+      "purpose": "移动端底部导航栏圆角：对齐手机屏幕边框的大圆角",
+      "requirement": "只用于贴近屏幕边缘的固定导航；内容卡片仍用 4/6/8"
     },
     "--font-size-h1": {
       "group": "typography",

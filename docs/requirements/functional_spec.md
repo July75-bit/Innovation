@@ -199,20 +199,6 @@ classDiagram
 
 **设计边界**：AI 只产出 `Action` 建议，不进入 `TradingService`；交易正确性由 `TradingService` 的规则与事务保证（见 `docs/software/architecture.md` §5 ADR）。
 
-## 4. 非核心/可选功能（有余力再做）
-
-- 每日签到补信用点
-- 收益率排行榜
-- 赛季结算奖励
-- 资产净值时间序列图
-- LMSR 做市商（方案 C 彩蛋）
-
 ## 5. 需求 ↔ 测试 追溯
 
 每个 FR 编号必须能在 `docs/acceptance/test_plan.md` 找到至少一条对应用例，验收时逐条勾选。
-
-## 6. TODO
-
-- [x] B 补全 M1 的异常分支（余额不足/持仓不足/非法数量/无效选手/暂停交易）——已实现并有 7 条异常矩阵（`tests/unit/test_core_exceptions.py`、`test_trades_rule.py`）
-- [x] C 补全 M2 的参数范围与 clamp 策略（见 M2 章节后的「参数范围与 clamp 策略」表 + 三层 clamp 顺序；与 `pricing_model.md` §2/§3 一致）
-- [x] D 补全 M3 的降级链路时序——超时/脏输出/无密钥三条路径均有用例（`tests/unit/test_api_ai.py`、`test_llm_agent.py`）

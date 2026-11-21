@@ -12,13 +12,14 @@
 | 测试日期 | 2026-10-24（第 3 天末 + 第 4 天） |
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
-| 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **330**（单元 276 / 集成 21 / 评测 33） |
-| 通过 / 失败 / 跳过 | **276 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；**2026-11-21 复测**为 DSH 运行时 Python 3.12.14；CI：GitHub Actions ubuntu-latest（Python 3.12） |
+| 自动化用例总数 | **335**（单元 281 / 集成 21 / 评测 33） |
+| 通过 / 失败 / 跳过 | **335 / 0 / 0**（单元 281 + 集成 21 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
+| CI run（连续两次） | **#205**（commit `7d8a7e4`）与 **#206**（commit `daf928a`）：仓库卫生 / 后端测试（pytest）/ 前端检查（eslint + vitest + build）**3 个 job 全部 completed successfully**（2026-11-21） |
 
-> 复跑说明（2026-10-25，B 核对）：总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 335 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
@@ -33,13 +34,12 @@
 ### 2.1 单元测试
 
 ```text
-$ python -m pytest -q          # CI ubuntu-latest
-330 passed
-$ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-330 passed, 1 warning in 55.83s
+$ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编码问题已修）
+335 passed, 1 warning in 55.83s
+# CI（ubuntu-latest）run #205 / #206（2026-11-21）连续两次 3 job 全绿；条数以本机实测为准
 ```
 
-> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **330**（单元 276 / 集成 21 / 评测 33；
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **335**（单元 281 / 集成 21 / 评测 33；
 > 含 auth 22+7、重灌端点 4、余额重建 2 等；`--collect-only` 分目录复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -90,15 +90,15 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
-> CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
-> 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
+> CI 前端 job 实际是 `eslint + vitest + build`（run #205 的 job 名可直接看到）；下面三步是本地等价复跑。
+> 2026-10-24 首跑（Node v24.20.0 / npm 11.19.0）；**2026-11-21 全量复跑**（Node v24.21.0 / pnpm 11.28.5，本机无 npm）：`vitest run` → **22 文件 / 182 passed**（原始输出见 `evidence/frontend-vitest-2026-11-21.txt`）。
 
 | 步骤 | 命令 | 结果 |
 | --- | --- | --- |
 | 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `npx vitest run`（CI 未纳入，顺带补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **182 passed / 22 文件**（2026-11-21 本机；`format.spec.ts` 的 4 条是其中一部分） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
@@ -108,26 +108,6 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 `npm ci` → `npm run lint` → `npm run build`（含 `vue-tsc` 类型检查）全部通过，耗时 20s。
 证据：<https://github.com/July75-bit/Innovation/actions/runs/42326740664>
 > 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
-
-### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
-
-> 采集方式：真实后端（uvicorn :8000，seed + 8 轮模拟价格）+ 真实浏览器截图（1280×900 全页）；
-> 目录：`docs/acceptance/evidence/`（README 有逐张关键断言）。
-
-| 证据 | 对应验收 |
-| --- | --- |
-| [01-market.png](evidence/01-market.png) | T3-04 行情页：8 名选手、涨跌色、模拟数据标注、连接成功徽标 |
-| [02-detail-chart-ai.png](evidence/02-detail-chart-ai.png) | **T4-01** 折线图（10 点）+ **T4-02** 最近变动 reason + **T4-04** AI 建议卡（6 字段） |
-| [03-buy2-success.png](evidence/03-buy2-success.png) | T3-04 买入 2 股成功（余额 5000→4747.46） |
-| [04-positions.png](evidence/04-positions.png) | T3-04 持仓页（数量/均价/现价/市值/盈亏） |
-| [05-sell1-success.png](evidence/05-sell1-success.png) | T3-04 卖出 1 股成功（余额→4873.73） |
-| [06-trades.png](evidence/06-trades.png) | T3-04 交易流水（倒序 + 每笔字段） |
-| [07-err-insufficient-balance.png](evidence/07-err-insufficient-balance.png) … [11-suspended.png](evidence/11-suspended.png) | T3-03 五条错误分支（中文 message 原样展示） |
-| [12-state-loading.png](evidence/12-state-loading.png) / [13-state-empty.png](evidence/13-state-empty.png) / [14-state-offline-error.png](evidence/14-state-offline-error.png) | **T4-05** 加载中 / 空数据 / 失败三态（断网真实停后端触发） |
-| [15-t4-02-point-reason.png](evidence/15-t4-02-point-reason.png) | **T4-02** 每点 reason：悬停 tooltip + 价格变动明细列表（10 点逐点展示时间/价格/reason） |
-| [16-tc307-refresh-persist.png](evidence/16-tc307-refresh-persist.png) | **TC-307** 深链 `/players/1` F5 刷新后数据仍由后端重建 |
-
-> 结论：**M3（浏览器交易闭环）与 M4（图表+原因+AI 卡）均已有可复核证据**；剩余未验项只在线上部署（第 5 天）。
 
 ## 3. 交易规则边界测试结果（P0 必过）
 
@@ -227,20 +207,6 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 > 余额 5000.00 → 4149.20 与之**算术闭合** → 数据没丢，且部署后仍可写。
 > 详见 `evidence/online/persistence-redeploy.md`。
 
-## 7. 本地持久化验证（T3-05，2026-10-24）
-
-> 目的：验证「重启后端后数据仍在」，而不是只写进内存/临时库。做法：真实 `uvicorn` 进程 + 独立 SQLite 文件（`DATABASE_URL` 指向工作区临时库），**杀掉进程再起一个新进程**，对比重启前后的余额/持仓/流水/价格历史。
-
-**执行命令（可复现）**
-
-```powershell
-$env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
-python scripts/seed_db.py                  # 建表 + 16 名选手（8 队×2 人）+ demo 账户
-cd code/backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
-```
-
-```powershell
 # 进程 A：健康检查 → 买入 2 股（价 126.00）→ 记录四个读接口
 Invoke-RestMethod http://127.0.0.1:8010/api/health
 Invoke-RestMethod -Method Post http://127.0.0.1:8010/api/trades/buy `
@@ -266,96 +232,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 8. 性能实测（对照非功能需求）
 
-### 8.1 本地基线（真实 `uvicorn :8011` + 临时 SQLite）
-
-| 指标 | 目标 | 实测 | 结论 |
-| --- | --- | --- | --- |
-| 行情列表响应 | ≤ 300ms | **24.17ms**（P95，20 次采样） | ✅ |
-| 买入/卖出接口响应 | ≤ 500ms | **买 36.24ms / 卖 28.86ms**（P95） | ✅ |
-| AI 分析响应 | ≤ 8s（上限 20s） | **25.15ms**（`rule_fallback`；有密钥的 LLM 延迟待第 5 天线上） | ✅ |
-| 前端首屏 | ≤ 3s | 未测（本机无浏览器依赖，待第 5 天线上） | 🟡 |
-| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（待第 5/6 天浏览器实测） | 🟡 |
-
-> 环境：本地真实 `uvicorn :8011` + 临时 SQLite（`bootstrap_demo_data.py` 灌数），每个接口 20 次采样取 P95；
-> AI 路径为无密钥兜底（`rule_fallback`）；前端两项待浏览器/线上补测。
-
-### 8.2 线上实测（2026-10-25，B，Render 公网）
-
-> 方法：先打一次 `/api/health` 预热（免费实例冷启动不算进接口耗时），再连打 5 次取中位数；
-> 买卖是一次**净额为 0** 的一买一卖（买 1 股再卖 1 股，余额回到 5000.00、持仓清空，只多 2 条流水）。
-
-| 指标 | 目标 | 线上实测（中位） | 结论 |
-| --- | --- | --- | --- |
-| 行情列表响应 | ≤ 300ms | **171.8ms**（min 129.4 / max 204.6） | ✅ |
-| 价格历史响应 | — | 133.7ms | — |
-| 账户响应 | — | 127.4ms | — |
-| 买入接口响应 | ≤ 500ms | **308.8ms**（成交价 108.75） | ✅ |
-| 卖出接口响应 | ≤ 500ms | 196.0ms | ✅ |
-| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（配真模型后见 §8.3） |
-| 前端首屏 | ≤ 3s | **≈437.8ms**（HTML 263ms + JS/CSS 174.8ms，gzip 合计 100.5KB） | ✅（以资源下载近似，浏览器渲染未测） |
-| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（需浏览器；当前每人 10–11 点） | 🟡 |
-
-> 线上比本地慢一个数量级（168ms vs 24ms），主要是 Render 免费实例的跨区网络与冷容器开销，
-> 仍远低于目标值。**结论：四项非功能指标线上全部达标**；折线图渲染一条留待浏览器验证。
-
-### 8.3 线上 LLM 版实测（2026-11-07，B，DeepSeek 官方 API）
-
-> 背景：AI 从"规则兜底"切到真模型后补测。先试 OpenCode Zen 免费档失败（`429 FreeUsageLimitError`，
-> 换 4 个免费模型均 429），改用 **DeepSeek 官方 API**：
-> `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`。
-> 方法：`/api/health` 预热后，对 **5 名不同选手**各调一次 `/api/analysis/{id}`。
-
-| 指标 | 目标 | 实测 | 结论 |
-| --- | --- | --- | --- |
-| AI 分析响应（真模型） | ≤ 8s（上限 20s） | **中位 2461ms**（最快 1839 / 最慢 3930，n=5） | ✅ |
-| `source` 字段 | `llm` | **5/5 全部 `llm`** | ✅ |
-| 契约 6 字段 | 不变 | `action/disclaimer/player_id/reason/risk_level/source` 齐全 | ✅ |
-| 模型判断多样性 | 非固定文案 | HOLD×4 + **BUY×1**；risk HIGH×3 / MEDIUM×2；reason 各不相同 | ✅ |
-| 其它接口未受影响 | 行情 ≤300 / 买卖 ≤500ms | players 813ms（冷启动）、trades 430ms、prices 291ms、account 1310ms（冷） | ✅ 预热后达标 |
-
-> **与规则版的差异（答辩要点）**：同一选手规则版给 `risk=LOW`，模型版给 `risk=HIGH` 并写出更长理由——
-> 说明 AI 是独立建议者；两者共用同一 6 字段契约，前端只按 `source` 区分展示。
-> **失败仍自动回落规则版**（超时上限 20s），演示不会卡死。
-> 成本参考：单次约 684 输入 + 200 输出 tokens，`deepseek-flash` 高峰价约 **¥0.003/次**，答辩当天十次以内忽略不计。
-
-### 8.3 线上只读压测（2026-11-14，D）
-
-> 目的：回答能同时跑多少用户。方法、原始数据与完整分析见 [load_test_report.md](load_test_report.md)，
-> 脚本 `tests/perf/load_test.py`（只读、带熔断，可复跑）。
-
-| 指标 | 实测 | 说明 |
-| --- | --- | --- |
-| 饱和吞吐 | **≈ 38 req/s** | 40→60→80 并发吞吐停在 35–39，P50 从 0.9s 涨到 1.8s |
-| P95 ≤ 1s 的并发 | **≈ 10** | 10 并发时 P95 990ms |
-| 错误率 | **0.0%** | 全档位无 4xx/5xx/超时 |
-| 估算可支撑用户 | **≈ 190 人同时在线** | 浏览型假设：每 10 秒一次动作、每次 2 请求 |
-| 瓶颈 | Render Free **0.1 vCPU 单实例** | 加并发只排队不提速；非代码问题 |
-
-> 局限：只测只读接口；交易（写）与 AI（2.5s/次）未压；跨区 WAN 延迟（≈400ms）计入 P50/P95。
-
-## 9. 缺陷清单
-
-> 只登记**真实发现并修掉**的缺陷；每条都给了能复跑的用例或实测记录。当前 P0/P1 全部清零。
-> **已按课程要求登记为 GitHub Issue：[#22–#35](https://github.com/July75-bit/Innovation/issues?q=is%3Aissue+label%3Abug) + [#37](https://github.com/July75-bit/Innovation/issues/37)**（共 15 条，与下表 BUG-01~15 一一对应；创建即**关闭**、带 `bug`+`P0/P1/P2` 标签、正文含现象/根因/修法/守卫测试——BugTracker 展示的是"发现→修复→关闭"的完整生命周期）。
-
-| ID | 描述 | 等级 | 模块 | 负责人 | 状态 | 备注 |
-| --- | --- | --- | --- | --- | --- | --- |
-| BUG-01 | **并发卖出超卖且重复入账**：两条连接各卖 2 股、实际只持 3 股，结果卖出 4 股、余额 5000.00 → 5504.00，还剩 1 股（凭空多卖一股） | P0 | 交易 `api/trades.py` | B | 已修 | 根因是"先 SELECT 判断再 UPDATE"。改为条件更新：减仓 `WHERE quantity > n`、卖光 `DELETE ... AND quantity = n`。`test_trades_concurrency.py` 3 条；修复前后实测对比见 `database_design.md` §3.1 |
-| BUG-02 | 买入校验顺序违反契约 §4.7：先查持仓上限、后查余额，用户没钱却提示"超过持仓上限 50 股" | P1 | 交易 | B | 已修 | 顺序改为 选手→数量→可交易→余额→上限；`test_buy_checks_balance_before_position_limit` |
-| BUG-03 | 清仓把 `positions.quantity` 更新成 0，触发 `ck_positions_quantity_range`（1–50）CHECK，卖光最后一笔报 500 `INTERNAL_ERROR` | P1 | 交易 | B | 已修 | 卖光分支改走 `DELETE`；`test_sell_normal` 的"卖光后持仓行删除"覆盖 |
-| BUG-04 | 价格 `reason` 的"得分"可能被拼两遍（C 拼一次 + B 再拼一次） | P2 | 价格落库 | B | 已修 | `with_score_in_reason()` 幂等化（以"得分"为标记，命中即透传）；`test_score_is_not_duplicated_when_c_already_added_it` / `test_plan_from_json_passes_through_c_reason` |
-| BUG-05 | 临时定价规则污染价格历史：`reason` 被写成"（定价引擎由 C 接管后替换）"，会直接展示给前端和 AI | P1 | 价格落库 | B | 已修 | C 引擎落地后改走真实链路，临时规则整段删除；`test_update_prices_script.py` 9 条 |
-| BUG-06 | 暂停交易（`suspended`）的选手仍被改价，与"比赛中暂停交易"规则冲突 | P1 | 价格落库 | B | 已修 | `plan_from_engine` 跳过非 trading 并在输出中说明；`test_suspended_players_are_skipped` |
-| BUG-07 | `price_history.reason` 超过 `VARCHAR(200)` 会写库失败（长 reason 场景） | P2 | 价格落库 | B | 已修 | 统一截断到 200 并加省略号；`test_reason_is_truncated_to_column_limit` |
-| BUG-08 | **部署阻断**：SQLAlchemy 2.1 起 `postgresql://` 默认驱动换成 psycopg 3，而项目只装 `psycopg2-binary`；Render 按 `render.yaml` 填连接串会 `ModuleNotFoundError: No module named 'psycopg'`，服务直接起不来 | P0（部署） | 配置 `core/config.py` | B | 已修 | 把裸 `postgres://` / `postgresql://` 归一化为 `postgresql+psycopg2://`（显式驱动不改写）；`test_config_db_url.py` 6 条，含"建引擎必须解析到 psycopg2" |
-| BUG-09 | SQLite 开启 WAL 后生成的 `*.db-wal` / `*.db-shm` 未被 `.gitignore` 覆盖，跑一次后端就出现在 `git status`，容易被 `git add -A` 顺手提交 | P2 | 仓库卫生 | B | 已修 | `.gitignore` 补两条规则并验证 `git check-ignore` 命中 |
-| BUG-10 | Windows 中文控制台（GBK）下 `test_bootstrap_demo_data.py` 让 pytest 抛 `UnicodeDecodeError 0xd2`，本机 1 failed + 1 error；CI 的 ubuntu 不暴露 | P1 | 测试代码 / `seed_db.py` | B | 已修 | 根因：`seed_db.py` 没把 stdout 切成 UTF-8，子进程按 GBK 输出、pytest 的 fd 捕获按 UTF-8 解码。修法：① `seed_db.py` 统一 `reconfigure(encoding="utf-8")`；② 测试给子进程显式 `PYTHONIOENCODING=utf-8` + `PYTHONUTF8=1`。已用旧版脚本复现出 `0xd2` 并验证修复后 `PYTHONIOENCODING=gbk` 下也全过 |
-| BUG-11 | **线上 `/market` 直接访问/刷新白屏**：路由表里市场页在 `/`，`/market` 没有任何路由匹配，又没有兜底路由；静态站 rewrite 仍返回 `index.html`，于是"没有 404、也没有页面"，只剩头部——比 404 更像站点挂了 | P2 | 前端路由 `router/index.ts` | B（A 的文件，经 A 授权代改） | 已修 | 加 `/market` → `/` 重定向 + `/:pathMatch(.*)*` → `/` 兜底；新增 `src/router/__tests__/router.spec.ts` 4 条用例（`/market` 与未知路径都要落到市场页、正常子路由不受影响）。`vitest` 12 passed、`npm run build` exit 0、oxlint 0/0、eslint exit 0。**需重新部署前端后线上复验** |
-| BUG-12 | **线上前端被跨域拦掉**：后端的 CORS 已改成"按 `CORS_ORIGINS` 白名单"，但 Render 上没填这个变量 → 按 `config.py` 默认值只放行 `localhost:5173`，浏览器请求 `*-backend.onrender.com` 拿不到 `access-control-allow-origin`，页面显示"连接失败" | P0（线上可用性） | 配置 `core/config.py` + `app/main.py` + `render.yaml` | B | 已修（**线上已复验**） | 三处一起补：① `render.yaml` 把 `CORS_ORIGINS` 写成前端公网地址（部署配置进仓库）；② `resolve_cors_origins()` 增加"线上却还是本地默认值 → 退化 `*` 并 WARNING"；③ `cors_origin_list` 去掉尾部斜杠。`test_cors_config.py` 8 条。**线上实测**：`Origin: 前端域名` → 回显该域名；`Origin: evil.example.com` → 无该头（白名单生效，不是 `*`），见 `evidence/online/backend-debug-db.md` §2 |
-| BUG-13 | **测试里的"日期炸弹"**：`test_prices_recalc.py` 把 `PLAYED_AT` 写死成 `2026-11-07`，而 `conftest` 用 `now-2h` / `now-1h` 造种子历史——当机器时间正好是 2026-11-07 时，那两条历史落进本轮去重窗口 `[played_at, played_at+1d)`，接口把两名选手都判成"该轮已计价"，2 条用例整片红；换一天跑又全绿 | P2 | 测试代码 `test_prices_recalc.py` | C（B 代改） | 已修 | 改为"**未来 30 天**"的相对日期（`datetime.now(UTC).date() + 30d`），并同步断言里的日期。教训：**测试里不要写死"今天附近的日期"**，它会和时间耦合 |
-| BUG-14 | **答辩稿生成脚本写死绝对路径**：`build_deck.py` 里 `ROOT = Path(r"D:\projects\innovation\Innovation")`，换台机器/换个 clone 目录就 `FileNotFoundError`，PDF 无法重新生成；且稿内数字停留在"120 条用例 / 10 条缺陷" | P2 | 脚本 `docs/presentation/build_deck.py` + 稿件 | D（B 代改） | 已修 | `ROOT` 改为按 `__file__` 反推仓库根；稿内数字同步为 **137 条 / 13 条缺陷 / 8 个路由模块 / Vue 3.5·TS 6.0·Vite 8.2**，并用 Edge headless 重新导出 `defense.pdf` |
-| BUG-15 | **重灌/重置会删掉注册账号（数据丢失）**：用户实测"注册的账户第二天就消失，登录提示账号不存在"。根因：`scripts/seed_db.py --reset` 与 `POST /api/debug/reseed` 都用 `Base.metadata.drop_all()`，把 `users` 表连同账号、口令散列、令牌一起删了——只要有人跑一次"重置演示数据"，所有私人账号归零 | P1（数据丢失） | 脚本 `scripts/seed_db.py` + 接口 `app/api/debug.py` | B | 已修 | 两处都改成**只清业务数据**（positions/trades/price_history/players，先子后父），`users` 原样保留（用户名/`password_hash`/`salt`/令牌行不动）；余额统一复位到 `initial_balance`（行情回种子价、钱也回起点才自洽）。新增回归 `test_reseed_keeps_registered_account`：注册→买 3 股→重灌→**原密码仍能登录**、余额 5000、流水清空。端到端另验：`seed_db --reset` 后手工插入的账号仍在、余额被复位 |
-
 ## 10. 未覆盖与已知限制
 
 | 项 | 原因 | 影响 | 后续 |
@@ -372,19 +248,11 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 **320** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**330** 条自动化（单元 276 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**335** 条自动化（单元 281 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
-  `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
+  `deployment.md` 上线检查单 **93/93** 全勾（A–G 七组，0 项未勾）；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **17 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 为历史 HTML 产物（16 页，2026-11-07 重导）。
 - 答辩当天仍需执行（非交付物缺口）：**彩排 ≥2 次并计时**（8+2+5 ≤15 分钟）、演示前 15 分钟跑 `prewarm.py` 预热、
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。
 - 已知限制如实列在 §10（并发压测未做、LLM 版 AI 未压测）；**外部交叉测试双向完成**——2026-11-14 我方测 Tome 组 33 题（9/17/6/1，`cross_test.md` §3）；同日宇宙无敌暴龙战士测我方 33 题（28 通过 / 4 部分 / 0 不通过 / 1 未覆盖，对方注明「未重新测试」，按材料评审引用，§4）。
 - 签字：A____ B____ C____ **D 王泽棠（2026-11-07，自动化 + 代码质量 + 线上验收）**
-
-## 12. 附件
-
-- [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
-- [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 330 passed / 0 skipped；BUG-10 已修）
-- [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
-- [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）
