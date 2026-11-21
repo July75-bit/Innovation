@@ -219,10 +219,6 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 ---
 
-## 5. 复跑命令（给评委/同学）
-
-```powershell
-cd D:\projects\innovation\Innovation
 # 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
 conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
 python -m pytest                                     # 335 passed

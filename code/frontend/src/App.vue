@@ -29,6 +29,8 @@ import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
+import MobileTabPager from './components/MobileTabPager.vue'
+import { TAB_PATHS } from './core/tabPager'
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -73,6 +75,16 @@ watch(
 
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
+
+/** 四个主页面（市场/赛程/持仓/流水）：移动端用横向滑动容器，桌面仍走 RouterView */
+const isTabRoute = computed(() => (Object.values(TAB_PATHS) as string[]).includes(route.path))
+
+/** 是否是移动端断点（与底部 Tab / 侧栏隐藏的 960px 一致） */
+const isMobile = ref(false)
+let mobileQuery: MediaQueryList | null = null
+function onMobileQueryChange(event: MediaQueryListEvent): void {
+  isMobile.value = event.matches
+}
 
 /** 深浅色快捷开关：外壳里一键切换（/me 仍保留「自动/浅色/深色」三档偏好） */
 const { theme, setTheme } = useTheme()
@@ -142,6 +154,11 @@ onMounted(() => {
   updateTopbarVisibility()
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('resize', onResize)
+  if (typeof window.matchMedia === 'function') {
+    mobileQuery = window.matchMedia('(max-width: 960px)')
+    isMobile.value = mobileQuery.matches
+    mobileQuery.addEventListener('change', onMobileQueryChange)
+  }
   checkBackendHealth()
   // 余额/资产是交易面板的依赖（最大可买/预估金额），外壳启动时静默拉一次；
   // 侧栏不再展示它，但也不该让详情页的交易面板缺数据。
@@ -153,6 +170,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('resize', onResize)
+  mobileQuery?.removeEventListener('change', onMobileQueryChange)
 })
 </script>
 
@@ -260,7 +278,9 @@ onBeforeUnmount(() => {
       </header>
 
       <main id="main" class="content">
-        <RouterView v-slot="{ Component, route: current }">
+        <!-- 移动端四个主页面：并排挂载，滑动时相邻页同时可见，松手吸附后同步 URL -->
+        <MobileTabPager v-if="isMobile && isTabRoute" />
+        <RouterView v-else v-slot="{ Component, route: current }">
           <Transition name="page" mode="out-in">
             <component :is="Component" :key="current.path" />
           </Transition>

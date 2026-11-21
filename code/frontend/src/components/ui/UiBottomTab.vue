@@ -74,7 +74,8 @@ function pick(key: string): void {
   padding: 6px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  /* 与手机屏幕边框同量级的大圆角，保证"屏幕内圆角"与"设备圆角"观感一致 */
+  border-radius: var(--radius-device);
   box-shadow: var(--shadow-overlay);
 }
 .ui-tab {
@@ -91,7 +92,8 @@ function pick(key: string): void {
   gap: 2px;
   padding: 6px 4px;
   border: 0;
-  border-radius: var(--radius-material-sm);
+  /* 与外层 28px 大圆角同心：28 - 6px 内边距 = 22px，选中/悬停底色边缘才和导航栏外沿一致 */
+  border-radius: calc(var(--radius-device) - 6px);
   background: transparent;
   color: var(--color-text-muted);
   font-family: inherit;

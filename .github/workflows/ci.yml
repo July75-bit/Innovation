@@ -156,6 +156,7 @@ jobs:
             docs/algorithm/pricing_model.md \
             docs/algorithm/ai_agent_prompt.md \
             docs/algorithm/backtest_report.md \
+            docs/algorithm/research.md \
             docs/software/architecture.md \
             docs/software/api_contract.md \
             docs/software/database_design.md \
@@ -164,8 +165,8 @@ jobs:
             docs/software/agent_workflow_design.md \
             docs/software/CodeReview.md \
             docs/software/prototype/index.html \
-            docs/mgmt/communication_plan.md \
-            docs/mgmt/risk_plan.md \
+            docs/mgmt/communication_mgmt_plan.md \
+            docs/mgmt/risk_mgmt_plan.md \
             docs/mgmt/milestones.md \
             docs/mgmt/code_review_template.md \
             docs/mgmt/day6.md \
