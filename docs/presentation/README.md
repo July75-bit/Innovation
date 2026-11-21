@@ -1,35 +1,31 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（新增 **`playerstock_defense.html` 16 页 HTML 答辩稿**，按课程 wiki「项目汇报内容」1.1–3.7 检查点重做；← → 翻页 / N 讲稿 / F 全屏 / Ctrl+P 打印；旧 `slides.md` + `defense.pdf` 16 页保留）；待**全员彩排**
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（`slides.md` 已按课程 wiki「项目汇报内容」1.1–3.7 检查点重写为 **17 页 Slidev 源稿**，含 Mermaid 架构/ER 图与逐页讲稿；`defense.pdf` / `defense.html` 为旧版，导出命令见下）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
 
 ## 文件清单（已产出）
 
 | 文件 | 内容 | 负责人 | 状态 |
 | --- | --- | --- | --- |
-| [`slides.md`](slides.md) | 8 分钟幻灯片源稿（Slidev markdown，15 页，含逐页讲稿与 8:00 时间轴） | D 主笔 | ✅ |
-| [`defense.pdf`](defense.pdf) | **可直接投屏的 PDF（16 页，1280×720 横版）** | D | ✅ |
-| [`defense.html`](defense.html) | PDF 的源文件（自包含，浏览器打开即可放映） | D | ✅ |
-| [`build_deck.py`](build_deck.py) | 重新生成 `defense.html` 的脚本（离线，无 Slidev 依赖） | D | ✅ |
+| [`slides.md`](slides.md) | **17 页 Slidev 答辩源稿**（按课程 wiki 1.1–3.7 重写；含 Mermaid 架构/ER 图、逐页讲稿、8 分钟时间轴；`npx @slidev/cli slides.md` 启动） | D 主笔 | ✅ |
+| [`defense.pdf`](defense.pdf) | 旧版 PDF（16 页，上一版 HTML 流程产物；新版请用 Slidev 导出） | D | 历史 |
+| [`defense.html`](defense.html) | 旧版 HTML 源文件（历史；本次答辩主材料为 Slidev） | D | 历史 |
+| [`build_deck.py`](build_deck.py) | 旧版 `defense.html` 的生成脚本（历史） | D | 历史 |
 | [`demo-script.md`](demo-script.md) | 2 分钟现场演示脚本（逐秒操作 + 话术 + 失败预案） | D / A 执行 | ✅ |
 | [`qa.md`](qa.md) | 5 分钟问答（20 问，七类，含"救命句式"） | D 汇总 / 全员认领 | ✅ |
 | [`pricing_slides.pptx`](pricing_slides.pptx) | 定价模块 **3 页素材**（公式推导 / 参数理由 / 100 seed 稳定性与下行风险），每页含口播备注，可直接拷进主稿；文字数据与 `docs/algorithm/pricing_model.md` §2/§3/§7/§8 一致 | C | ✅ |
-| [`playerstock_defense.html`](playerstock_defense.html) | **新答辩 HTML（单文件、离线、16 页，16:9）**：按课程 wiki 汇报内容 1.1–3.7 重做，覆盖使命口号策略 / 产品定义与用户故事 / 设计原则 / UX / 技术选型 / 仓库协作 / 生命周期问题 / 架构 / 定价与 AI / 数据库 / 接口 / 质量 / 代码统计 / 用户测试 / 演示与 QA；← → 翻页、N 讲稿、F 全屏、Ctrl+P 打印 | D | ✅ |
-| [`build_defense_html.py`](build_defense_html.py) | 重新生成 `playerstock_defense.html` 的脚本（内嵌截图，离线） | D | ✅ |
-| [`assets/`](assets/) | 新答辩 HTML 用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
+| [`assets/`](assets/) | Slidev 源稿引用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
 
-**重新生成 PDF**（改了 `slides.md` 之后）：
+**用 Slidev 放映 / 导出**（Slidev 官方推荐；需要 Node.js 20+）：
 
 ```powershell
-python docs/presentation/build_deck.py          # → defense.html
-& "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" `
-  --headless=new --disable-gpu --no-pdf-header-footer --allow-file-access-from-files `
-  --print-to-pdf="docs\presentation\defense.pdf" `
-  "file:///D:/projects/innovation/Innovation/docs/presentation/defense.html"
+cd docs/presentation
+npx @slidev/cli slides.md                 # 本地放映（浏览器打开）
+npx @slidev/cli export slides.md          # 导出 PDF（默认 slides-export.pdf）
 ```
 
-> 当前 PDF 与 `slides.md` 内容一致（16 页 = 封面 + 01 / 01B / 01C / 01D + 02–10 共 9 页 + 演示页 + 致谢页）。
-> 若老师要求 Slidev 原生导出：`npx @slidev/cli slides.md --export defense.pdf`。
+> 课程允许直接用 Slidev 写幻灯片、用 Mermaid 画图；本稿架构图与 ER 图都是 Mermaid 代码块，改数据直接改 markdown。
+> 旧的 `defense.pdf` / `defense.html` 是上一版 HTML 流程产物，不作为本次答辩主材料。
 
 ## 工具建议（课程推荐）
 
@@ -39,14 +35,17 @@ python docs/presentation/build_deck.py          # → defense.html
 
 ## 时间分配（老师要求：介绍 8 分钟 + 演示 2 分钟 + 问答 5 分钟）
 
-| 环节 | 时长 | 内容 | 主讲 |
-| --- | --- | --- | --- |
-| 开场 | 30s | 项目名、一句话介绍、**合规声明** | D |
-| 问题与需求 | 1.5min | 5W1H、痛点、目标用户、做了什么不做什么 | D |
-| 系统架构 | 1.5min | 架构图、四层结构、技术选型与版本号 | B |
-| 核心机制 | 2min | 交易规则、价格公式、可解释性归因 | C |
-| 智能体 | 1.5min | Prompt 设计、输出契约、降级方案、回测结论 | D |
-| 工程实践 | 1min | 测试、CI、部署、风险管理、复盘 | D |
+| 页 | 内容 | 目标时长 |
+| --- | --- | --- |
+| 1–2 | 封面、使命 / 口号 / 目标用户 / 差异化 | 55s |
+| 3–4 | 产品定义、用户故事、设计原则 | 75s |
+| 5–7 | UX 界面、技术选型、仓库与协作 | 90s |
+| 8–10 | 生命周期复盘、系统架构、定价与 AI | 115s |
+| 11–13 | 数据库、接口、软件质量 | 75s |
+| 14–15 | 代码统计、用户测试与容量 | 35s |
+| 16–17 | 演示衔接 + Q&A 提示 | 10s |
+
+合计约 7′30″，留 30 秒缓冲；2 分钟演示与 5 分钟问答单独计时。
 | 演示 | 2min | 现场操作完整交易闭环 + AI 分析 | A |
 | 分工与反思 | 30s | 四人贡献、踩过的坑、如果重做会怎么改 | 全员 |
 

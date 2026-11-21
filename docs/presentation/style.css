@@ -1,0 +1,27 @@
+:root { --slidev-theme-primary: #a62b2f; }
+.slidev-layout { background: #f6f4ef; color: #221f1b; }
+.slidev-layout h1 { color: #221f1b; font-weight: 800; letter-spacing: -0.01em; font-size: 1.85rem !important; line-height: 1.22; }
+.cover-title { font-size: 3.6rem; font-weight: 800; letter-spacing: -0.02em; color:#221f1b; margin-bottom:.4rem; }
+.slidev-layout h2 { color: #221f1b; font-weight: 700; }
+.slidev-layout p, .slidev-layout li { color: #4a463f; }
+.kicker { color: #a62b2f; font-size: .78rem; font-weight: 700; letter-spacing: .05em; display:flex; align-items:center; gap:.55rem; }
+.kicker::before { content:""; width:20px; height:3px; background:#a62b2f; border-radius:2px; }
+.muted { color:#6b665c; } .faint { color:#9a9487; } .accent { color:#a62b2f; } .sage { color:#2e6b4f; }
+.small { font-size:.82rem; line-height:1.5; } .tiny { font-size:.7rem; line-height:1.45; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+.grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:.9rem; }
+.grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; }
+.card { background:#fcfbf8; border:1px solid #e3ded4; border-radius:10px; padding:.8rem 1rem; }
+.dark-band { background:#141310; color:#f3efe6; border-radius:10px; padding:.85rem 1.1rem; }
+.dark-band, .dark-band p, .dark-band li { color:#f3efe6; }
+.metric { font-size:1.9rem; font-weight:800; color:#a62b2f; line-height:1.1; }
+.pill { display:inline-flex; align-items:center; padding:.28rem .65rem; border-radius:999px; background:#eee8dc; color:#221f1b; font-size:.75rem; font-weight:600; }
+.pill-accent { background:#a62b2f; color:#fff; }
+.slidev-layout table { width:100%; border-collapse:collapse; font-size:.72rem; }
+.slidev-layout th { background:#a62b2f; color:#fff; text-align:left; padding:.42rem .55rem; font-weight:700; }
+.slidev-layout td { border-bottom:1px solid #e3ded4; padding:.3rem .5rem; vertical-align:top; color:#5a554c; }
+.slidev-layout td:first-child { color:#221f1b; font-weight:600; }
+.shot { border:1px solid #e3ded4; border-radius:8px; width:100%; }
+.formula { font-family:'Consolas', monospace; font-size:1.35rem; font-weight:700; color:#221f1b; }
+ul.clean { padding-left:1.1rem; } ul.clean li { margin:.18rem 0; font-size:.82rem; }
+.slidev-layout table th:first-child, .slidev-layout table td:first-child { white-space: nowrap; }
