@@ -31,10 +31,14 @@ services:
         # ⚠️ 含密码，所以用 sync: false 在控制台填写，绝不提交明文。
         # ⚠️ 若忘记填：代码会回落到本地 SQLite（临时文件系统），数据会随部署丢失。
         sync: false
+      # 大模型：DeepSeek 官方 API（OpenAI 兼容协议）。
+      # LLM_PROVIDER 目前只作标识，不参与请求；真正决定端点的是 LLM_BASE_URL + LLM_MODEL。
       - key: LLM_PROVIDER
         value: openai
       - key: LLM_MODEL
-        value: gpt-4o-mini
+        value: deepseek-flash
+      - key: LLM_BASE_URL
+        value: https://api.deepseek.com/v1
       - key: LLM_API_KEY
         sync: false # 在 Render 控制台手工填写，绝不提交明文
       - key: CORS_ORIGINS

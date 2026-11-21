@@ -126,8 +126,8 @@ Render Cron（playerstock-agent-patrol，*/10 0-15 * * *）
 | `INITIAL_BALANCE` / `MAX_POSITION_PER_PLAYER` | `5000` / `50` | 否 |
 | `PRICING_ALPHA` / `BETA` / `FLOOR` | `0.15` / `0.0` / `1.0` | 否 |
 
-> ⚠️ `render.yaml` 里 `LLM_PROVIDER/LLM_MODEL` 仍是历史默认值（`openai/gpt-4o-mini`），且未声明 `LLM_BASE_URL`；
-> **线上实际以 Render 控制台 Environment 为准**。这是已知不一致，见 §9 TODO。
+> ✅ `render.yaml` 已于 2026-11-21 同步为 DeepSeek 配置（`LLM_MODEL=deepseek-flash` +
+> `LLM_BASE_URL=https://api.deepseek.com/v1`，`LLM_API_KEY` 仍由控制台填写）；`code/backend/.env.example` 同口径。
 > 密钥类变量全部 `sync: false`，由控制台填写，不进入仓库、不写进日志。
 
 ### 2.3 前端环境变量（Render Static Site → Environment，构建期）
@@ -527,7 +527,7 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 3. 免费档无灰度/Preview 环境（§4.7 给设计方案）；
 4. 无自动备份告警体系，靠手工备份 + 演示数据可重建；
 5. 单实例 0.1 vCPU 级别，压测饱和约 38 req/s，不适合真实高并发；
-6. `render.yaml` 的 LLM 默认值与线上控制台不一致（§9）。
+6. `render.yaml` 与 `.env.example` 已同步 DeepSeek 配置（2026-11-21），`LLM_API_KEY` 仍由控制台保管。
 
 ---
 
@@ -594,16 +594,15 @@ git push origin develop          # 触发 CI + Render 重新部署
 
 ---
 
-## 9. 部署侧 TODO / 已知不一致
+## 9. 部署侧 TODO / 已知限制
 
 | # | 事项 | 影响 | 计划 |
 | --- | --- | --- | --- |
 | 1 | Render 免费 Postgres 约 2026-11-23 到期 | 到期后线上数据不可用 | 答辩前升级/迁移，或导出备份 |
-| 2 | `render.yaml` 的 `LLM_PROVIDER/LLM_MODEL` 是历史默认值，且未声明 `LLM_BASE_URL` | Blueprint 重同步可能覆盖控制台配置 | 下次同步 `render.yaml`（`LLM_MODEL=deepseek-flash` + `LLM_BASE_URL`） |
-| 3 | `DEBUG_ENDPOINTS` 验收后应关闭 | `/api/debug/*` 暴露运维面 | 验收完成后设 `0` 并重新部署 |
-| 4 | 无自动化依赖漏洞扫描 | 供应链风险 | 发布前手工 `pip-audit` / `npm audit`，或接入 CI |
-| 5 | 免费档无灰度/告警 | 只能发布后人工观察 | 课程答辩够用；生产化再按 §4.7 升级 |
-| 6 | 无自定义域名/WAF/CDN 独立配置 | 依赖 `onrender.com` | 课程不要求，保持现状 |
+| 2 | `DEBUG_ENDPOINTS` 验收后应关闭 | `/api/debug/*` 暴露运维面 | 验收完成后设 `0` 并重新部署 |
+| 3 | 无自动化依赖漏洞扫描 | 供应链风险 | 发布前手工 `pip-audit` / `npm audit`，或接入 CI |
+| 4 | 免费档无灰度/告警 | 只能发布后人工观察 | 课程答辩够用；生产化再按 §4.7 升级 |
+| 5 | 无自定义域名/WAF/CDN 独立配置 | 依赖 `onrender.com` | 课程不要求，保持现状 |
 
 ---
 
