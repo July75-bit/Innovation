@@ -1,0 +1,954 @@
+{
+  "generated_at": "2026-11-21T07:30:39+00:00",
+  "config": {
+    "seeds": 100,
+    "rounds": 28,
+    "window": 5,
+    "warmup": 3,
+    "alphas": [
+      0.15,
+      0.08,
+      0.05
+    ],
+    "seed_file": "data\\seed_players.json",
+    "schedule_file": "data\\match_schedule.json"
+  },
+  "aggregate": {
+    "median_avg_return_pct": -3.8629,
+    "mean_avg_return_pct": -4.1022,
+    "min_avg_return_pct": -12.7668,
+    "max_avg_return_pct": 8.0799,
+    "median_profitable_players": 6.0,
+    "min_profitable_players": 2,
+    "max_profitable_players": 11,
+    "pct_seeds_with_4plus_profitable": 93.0,
+    "median_mean_abs_step_pct": 5.77,
+    "min_mean_abs_step_pct": 5.3353,
+    "max_mean_abs_step_pct": 6.0657,
+    "max_step_pct": 15.01,
+    "min_consistency_pct": 99.7,
+    "mean_consistency_pct": 99.99,
+    "points_per_seed": [
+      336
+    ]
+  },
+  "per_seed": [
+    {
+      "seed": 1,
+      "points": 336,
+      "avg_return_pct": -9.3956,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 5.3671,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 2,
+      "points": 336,
+      "avg_return_pct": -2.6697,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.8559,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 3,
+      "points": 336,
+      "avg_return_pct": -1.0867,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.8519,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 4,
+      "points": 336,
+      "avg_return_pct": -8.9123,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.535,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 5,
+      "points": 336,
+      "avg_return_pct": -0.694,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.713,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 6,
+      "points": 336,
+      "avg_return_pct": -8.676,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.7861,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 7,
+      "points": 336,
+      "avg_return_pct": -7.7923,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.5615,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 8,
+      "points": 336,
+      "avg_return_pct": -6.5016,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.6909,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 9,
+      "points": 336,
+      "avg_return_pct": -3.2466,
+      "profitable_players": 9,
+      "mean_abs_step_pct": 5.6516,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 10,
+      "points": 336,
+      "avg_return_pct": -6.8132,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.7026,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 11,
+      "points": 336,
+      "avg_return_pct": -3.4019,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.7035,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 12,
+      "points": 336,
+      "avg_return_pct": -12.0356,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.7419,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 13,
+      "points": 336,
+      "avg_return_pct": -3.3195,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.6662,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 14,
+      "points": 336,
+      "avg_return_pct": -5.9402,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.7793,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 15,
+      "points": 336,
+      "avg_return_pct": -9.4849,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 6.0465,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 16,
+      "points": 336,
+      "avg_return_pct": -3.3742,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 6.04,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 17,
+      "points": 336,
+      "avg_return_pct": -3.8591,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.8391,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 18,
+      "points": 336,
+      "avg_return_pct": -4.1305,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8222,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 19,
+      "points": 336,
+      "avg_return_pct": -5.5887,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.569,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 20,
+      "points": 336,
+      "avg_return_pct": 0.5589,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.7335,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 21,
+      "points": 336,
+      "avg_return_pct": -3.9875,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.7899,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 22,
+      "points": 336,
+      "avg_return_pct": 0.0213,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.6645,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 23,
+      "points": 336,
+      "avg_return_pct": -2.7537,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8718,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 24,
+      "points": 336,
+      "avg_return_pct": 2.8995,
+      "profitable_players": 9,
+      "mean_abs_step_pct": 5.7513,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 25,
+      "points": 336,
+      "avg_return_pct": 0.3657,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.7842,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 26,
+      "points": 336,
+      "avg_return_pct": 1.0819,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.7994,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 27,
+      "points": 336,
+      "avg_return_pct": -10.8292,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.8891,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 28,
+      "points": 336,
+      "avg_return_pct": -8.0162,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 5.864,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 29,
+      "points": 336,
+      "avg_return_pct": -0.0154,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7783,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 30,
+      "points": 336,
+      "avg_return_pct": -4.5372,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8258,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 31,
+      "points": 336,
+      "avg_return_pct": -3.9614,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8252,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 32,
+      "points": 336,
+      "avg_return_pct": 0.7795,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 6.0275,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 33,
+      "points": 336,
+      "avg_return_pct": -0.1623,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 6.0069,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 34,
+      "points": 336,
+      "avg_return_pct": -5.5451,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6205,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 35,
+      "points": 336,
+      "avg_return_pct": -6.5751,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.6356,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 36,
+      "points": 336,
+      "avg_return_pct": -10.2353,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.6898,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 37,
+      "points": 336,
+      "avg_return_pct": -9.6592,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.862,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 38,
+      "points": 336,
+      "avg_return_pct": -4.1929,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6325,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 39,
+      "points": 336,
+      "avg_return_pct": 2.0418,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7965,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 40,
+      "points": 336,
+      "avg_return_pct": -3.8667,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.733,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 41,
+      "points": 336,
+      "avg_return_pct": -1.0369,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8005,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 42,
+      "points": 336,
+      "avg_return_pct": -3.6262,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.7937,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 43,
+      "points": 336,
+      "avg_return_pct": -4.1592,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.9795,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 44,
+      "points": 336,
+      "avg_return_pct": -1.3933,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6864,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 45,
+      "points": 336,
+      "avg_return_pct": -1.5015,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.869,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 46,
+      "points": 336,
+      "avg_return_pct": -3.0088,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.439,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 47,
+      "points": 336,
+      "avg_return_pct": -8.6933,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 5.6318,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 48,
+      "points": 336,
+      "avg_return_pct": 0.2184,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.5441,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 49,
+      "points": 336,
+      "avg_return_pct": -7.1306,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.6587,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 50,
+      "points": 336,
+      "avg_return_pct": -0.8136,
+      "profitable_players": 9,
+      "mean_abs_step_pct": 5.8156,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 51,
+      "points": 336,
+      "avg_return_pct": -0.5101,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6943,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 52,
+      "points": 336,
+      "avg_return_pct": -4.6243,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.6754,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 53,
+      "points": 336,
+      "avg_return_pct": -8.5005,
+      "profitable_players": 2,
+      "mean_abs_step_pct": 5.7326,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 54,
+      "points": 336,
+      "avg_return_pct": 2.3078,
+      "profitable_players": 11,
+      "mean_abs_step_pct": 5.9129,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 55,
+      "points": 336,
+      "avg_return_pct": -5.1701,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.7136,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 56,
+      "points": 336,
+      "avg_return_pct": 2.9598,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.659,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 57,
+      "points": 336,
+      "avg_return_pct": -4.8589,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.3353,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 58,
+      "points": 336,
+      "avg_return_pct": -3.9642,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.829,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 59,
+      "points": 336,
+      "avg_return_pct": -2.0198,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6963,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 60,
+      "points": 336,
+      "avg_return_pct": -7.3947,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 5.8236,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 61,
+      "points": 336,
+      "avg_return_pct": -2.824,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.7785,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 62,
+      "points": 336,
+      "avg_return_pct": -3.0632,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.981,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 63,
+      "points": 336,
+      "avg_return_pct": -2.2673,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.7759,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 64,
+      "points": 336,
+      "avg_return_pct": -6.7855,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.5999,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 65,
+      "points": 336,
+      "avg_return_pct": -9.4633,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.9094,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 66,
+      "points": 336,
+      "avg_return_pct": -7.0659,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.591,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 67,
+      "points": 336,
+      "avg_return_pct": 0.2643,
+      "profitable_players": 9,
+      "mean_abs_step_pct": 5.7143,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 68,
+      "points": 336,
+      "avg_return_pct": -5.5277,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.7832,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 69,
+      "points": 336,
+      "avg_return_pct": 0.0002,
+      "profitable_players": 8,
+      "mean_abs_step_pct": 5.6307,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 70,
+      "points": 336,
+      "avg_return_pct": -5.0357,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8312,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 71,
+      "points": 336,
+      "avg_return_pct": -1.2232,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.4203,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 72,
+      "points": 336,
+      "avg_return_pct": 8.0799,
+      "profitable_players": 10,
+      "mean_abs_step_pct": 5.5952,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 73,
+      "points": 336,
+      "avg_return_pct": -4.9436,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8787,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 74,
+      "points": 336,
+      "avg_return_pct": -8.2618,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.4852,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 75,
+      "points": 336,
+      "avg_return_pct": -3.2243,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7941,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 76,
+      "points": 336,
+      "avg_return_pct": -11.9855,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 6.0373,
+      "max_step_pct": 15.01,
+      "consistent_points": 335
+    },
+    {
+      "seed": 77,
+      "points": 336,
+      "avg_return_pct": -9.4322,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.994,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 78,
+      "points": 336,
+      "avg_return_pct": -2.0248,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.6571,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 79,
+      "points": 336,
+      "avg_return_pct": -3.846,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.9092,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 80,
+      "points": 336,
+      "avg_return_pct": -8.0286,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 6.0657,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 81,
+      "points": 336,
+      "avg_return_pct": 0.5738,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7341,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 82,
+      "points": 336,
+      "avg_return_pct": 2.651,
+      "profitable_players": 10,
+      "mean_abs_step_pct": 5.8327,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 83,
+      "points": 336,
+      "avg_return_pct": -2.9837,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.713,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 84,
+      "points": 336,
+      "avg_return_pct": -11.2289,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.7641,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 85,
+      "points": 336,
+      "avg_return_pct": -8.0389,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.5491,
+      "max_step_pct": 15.0,
+      "consistent_points": 336
+    },
+    {
+      "seed": 86,
+      "points": 336,
+      "avg_return_pct": -5.916,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.6748,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 87,
+      "points": 336,
+      "avg_return_pct": -7.8406,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 5.7083,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 88,
+      "points": 336,
+      "avg_return_pct": -3.2865,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.7887,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 89,
+      "points": 336,
+      "avg_return_pct": -4.4681,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.5349,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 90,
+      "points": 336,
+      "avg_return_pct": -8.1584,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.8172,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 91,
+      "points": 336,
+      "avg_return_pct": -3.2225,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7364,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 92,
+      "points": 336,
+      "avg_return_pct": -2.2669,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.6341,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 93,
+      "points": 336,
+      "avg_return_pct": -2.4321,
+      "profitable_players": 5,
+      "mean_abs_step_pct": 5.8601,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 94,
+      "points": 336,
+      "avg_return_pct": -2.296,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.785,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 95,
+      "points": 336,
+      "avg_return_pct": -0.6482,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7369,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 96,
+      "points": 336,
+      "avg_return_pct": -2.0721,
+      "profitable_players": 7,
+      "mean_abs_step_pct": 5.7851,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 97,
+      "points": 336,
+      "avg_return_pct": -6.7209,
+      "profitable_players": 4,
+      "mean_abs_step_pct": 6.0085,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 98,
+      "points": 336,
+      "avg_return_pct": 0.3952,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8558,
+      "max_step_pct": 15.01,
+      "consistent_points": 335
+    },
+    {
+      "seed": 99,
+      "points": 336,
+      "avg_return_pct": -12.7668,
+      "profitable_players": 3,
+      "mean_abs_step_pct": 5.7592,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    },
+    {
+      "seed": 100,
+      "points": 336,
+      "avg_return_pct": -6.4041,
+      "profitable_players": 6,
+      "mean_abs_step_pct": 5.8696,
+      "max_step_pct": 15.01,
+      "consistent_points": 336
+    }
+  ],
+  "alpha_sensitivity": [
+    {
+      "alpha": 0.15,
+      "median_return_pct": -5.7054,
+      "mean_abs_step_pct": 5.7537
+    },
+    {
+      "alpha": 0.08,
+      "median_return_pct": -1.7863,
+      "mean_abs_step_pct": 3.0687
+    },
+    {
+      "alpha": 0.05,
+      "median_return_pct": -0.7497,
+      "mean_abs_step_pct": 1.9179
+    }
+  ]
+}

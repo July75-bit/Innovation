@@ -1,0 +1,9 @@
+前端 Vitest 全量复跑（2026-11-21 15:43 CST）
+环境：Windows；Node v24.21.0；本机无 npm，用 pnpm 11.28.5 按 package.json 安装依赖
+命令：cd code/frontend && node node_modules/vitest/vitest.mjs run
+
+ Test Files  22 passed (22)
+      Tests  182 passed (182)
+   Duration  10.47s
+
+说明：CI 前端 job 用 `npm ci` 后跑同一套 vitest（job 名：eslint + vitest + build），用例数一致。

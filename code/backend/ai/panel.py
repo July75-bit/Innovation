@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from ai.fallback import rule_based_advice
@@ -37,8 +38,36 @@ ROLE_PROMPTS = {
 }
 
 
+_JSON_KEY_RE = re.compile(r'"(?:reason|summary|text|narrative|analysis|view)"\s*:\s*"((?:[^"\\]|\\.)*)')
+_JSON_FIELD_RE = re.compile(r"\b(action|risk_level|reason|summary|text|narrative|analysis|view)\s*[:：]\s*")
+
+
+def _humanize(text: str) -> str:
+    """把模型的原始输出清洗成"一句人话"。
+
+    2026-11-21 用户反馈：三个角色那栏直接显示了
+    `{"action":"HOLD","reason":"…"}`。原因是模型在这三个角色里沿用"只输出 JSON"
+    的习惯（系统提示里有这条）。这里统一兜底（与简报、叙事同一套路）：
+    1) 去 markdown 围栏；2) 是 JSON 就取 reason/summary/analysis 等字段；
+    3) 取不到就剥掉花括号/引号/字段名；4) 合并空白。
+    """
+    text = (text or "").strip()
+    if not text:
+        return ""
+    text = re.sub(r"^```\w*\s*", "", text)
+    text = re.sub(r"\s*```$", "", text).strip()
+    if text.startswith("{"):
+        match = _JSON_KEY_RE.search(text)
+        if match:
+            text = match.group(1).replace('\\"', '"').replace("\\n", " ")
+        else:
+            text = re.sub(r'[{}"]', "", text)
+            text = _JSON_FIELD_RE.sub("", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def _clip(text: str, limit: int = 220) -> str:
-    text = (text or "").strip().replace("\n", " ")
+    text = _humanize(text).replace("\n", " ")     # 先清洗 JSON，再限长
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 

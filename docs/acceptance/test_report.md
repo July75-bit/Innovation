@@ -13,13 +13,13 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；**2026-11-21 复测**为 DSH 运行时 Python 3.12.14；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **330**（单元 276 / 集成 21 / 评测 33） |
-| 通过 / 失败 / 跳过 | **330 / 0 / 0**（单元 276 + 集成 21 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **335**（单元 281 / 集成 21 / 评测 33） |
+| 通过 / 失败 / 跳过 | **335 / 0 / 0**（单元 281 + 集成 21 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 | CI run（连续两次） | **#205**（commit `7d8a7e4`）与 **#206**（commit `daf928a`）：仓库卫生 / 后端测试（pytest）/ 前端检查（eslint + vitest + build）**3 个 job 全部 completed successfully**（2026-11-21） |
 
-> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 330 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 335 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
@@ -35,11 +35,11 @@
 
 ```text
 $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编码问题已修）
-330 passed, 1 warning in 55.83s
+335 passed, 1 warning in 55.83s
 # CI（ubuntu-latest）run #205 / #206（2026-11-21）连续两次 3 job 全绿；条数以本机实测为准
 ```
 
-> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **330**（单元 276 / 集成 21 / 评测 33；
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **335**（单元 281 / 集成 21 / 评测 33；
 > 含 auth 22+7、重灌端点 4、余额重建 2 等；`--collect-only` 分目录复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -91,14 +91,14 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
 > CI 前端 job 实际是 `eslint + vitest + build`（run #205 的 job 名可直接看到）；下面三步是本地等价复跑。
-> 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
+> 2026-10-24 首跑（Node v24.20.0 / npm 11.19.0）；**2026-11-21 全量复跑**（Node v24.21.0 / pnpm 11.28.5，本机无 npm）：`vitest run` → **22 文件 / 182 passed**（原始输出见 `evidence/frontend-vitest-2026-11-21.txt`）。
 
 | 步骤 | 命令 | 结果 |
 | --- | --- | --- |
 | 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `npx vitest run`（**CI 已纳入**；本行仅为 `format.spec.ts` 抽样补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **182 passed / 22 文件**（2026-11-21 本机；`format.spec.ts` 的 4 条是其中一部分） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
@@ -372,7 +372,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 **320** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**330** 条自动化（单元 276 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**335** 条自动化（单元 281 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
@@ -385,6 +385,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 330 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 335 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）

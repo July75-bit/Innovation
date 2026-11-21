@@ -62,7 +62,12 @@ def build_plan(
     confidence = confidence_score(source=source, rating=rating, change_pct=change_pct)
 
     quantity = 0
-    stop_loss: float | None = None
+    # 参考止损与动作无关：只要拿得到现价就算一条"跌破这里就该重新评估"的线。
+    # 2026-11-21 修：以前只有 BUY 才给，导致 HOLD/SELL 时前端显示"参考止损 —"，
+    # 每个选手都是同一句、没有信息量。
+    stop_loss: float | None = (
+        _floor_money(current_price * (1 - stop_ratio)) if current_price > 0 else None
+    )
     rationale: list[str] = []
 
     if action == "BUY" and current_price > 0:
@@ -70,7 +75,6 @@ def build_plan(
         risk_budget = int((balance * budget_ratio) // current_price)
         room = max(0, position_limit - held_quantity)
         quantity = max(0, min(affordable, risk_budget, room))
-        stop_loss = _floor_money(current_price * (1 - stop_ratio))
         rationale.append(f"可用 {balance:.2f} 币 × 风险预算 {int(budget_ratio * 100)}% → {risk_budget} 股")
         rationale.append(f"单选手上限 {position_limit} 股、已持 {held_quantity} 股 → 还能买 {room} 股")
         if held_quantity > 0:
@@ -83,10 +87,14 @@ def build_plan(
         rationale.append(f"当前持有 {held_quantity} 股，卖出建议按全部可卖计算")
         if held_quantity == 0:
             rationale.append("当前无持仓，卖出建议仅作行情提示")
+        if stop_loss is not None:
+            rationale.append(f"若选择继续持有，止损参考 {stop_loss:.2f}")
     else:
         rationale.append("HOLD：不建议新增仓位，继续观察")
         if held_quantity:
-            rationale.append(f"已有 {held_quantity} 股，止损参考 {_floor_money(current_price * (1 - stop_ratio)):.2f}")
+            rationale.append(f"已有 {held_quantity} 股，止损参考 {stop_loss:.2f}" if stop_loss else f"已有 {held_quantity} 股")
+        elif stop_loss is not None:
+            rationale.append(f"未持仓；若后续买入，止损参考 {stop_loss:.2f}")
 
     return {
         "suggested_quantity": int(quantity),

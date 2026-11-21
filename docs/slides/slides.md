@@ -455,7 +455,7 @@ layout: default
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">330</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，live 默认不跑</div></div>
+  <div class="card" v-click><div class="metric">335</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，live 默认不跑</div></div>
   <div class="card" v-click><div class="metric">182</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 22 个文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine</div></div>
   <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生、后端、前端、交付物</div></div>
@@ -487,7 +487,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】质量拿数字说话：后端 330 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一错误码、契约校验和降级。
+【30 秒】质量拿数字说话：后端 335 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一错误码、契约校验和降级。
 -->
 
 ---
