@@ -1,0 +1,96 @@
+name: 答辩幻灯片 (Slidev)
+
+# 用 GitHub Actions 完成 Slidev 幻灯片，并发布到 GitHub Pages：
+# - 在线网页直接放映幻灯片
+# - PDF 放在站点根目录，网页上可直接查看/下载
+# 参考课程示例：https://github.com/bettermorn/ACMWDevHubPPT/blob/master/.github/workflows/deploy-slides.yml
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "docs/slides/**"
+      - ".github/workflows/slides.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构建 Slidev / 导出 PDF
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/slides
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      # Slidev 53 的 engines 要求 Node >= 22.22.0
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: docs/slides/package-lock.json
+
+      - name: 安装依赖（含 Playwright Chromium）
+        run: npm ci
+
+      - name: 安装 Chromium 系统依赖
+        run: npx playwright install --with-deps chromium
+
+      # 导出 PDF 需要中文字体，否则 Linux runner 上会变方块
+      - name: 安装中文字体（PDF 不乱码）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-noto-cjk
+
+      # 项目页地址是 /<repo>/，Slidev 的资源路径必须带这个 base
+      - name: 构建静态站（GitHub Pages 子路径）
+        run: npm run build -- --base /${{ github.event.repository.name }}/
+
+      - name: 导出 PDF
+        run: npm run export
+
+      - name: 把 PDF 放进静态站（网页可直接查看/下载）
+        run: |
+          cp playerstock_defense.pdf dist/playerstock_defense.pdf
+          test -s dist/playerstock_defense.pdf
+          test -f dist/index.html
+          echo "PDF 大小：$(du -h dist/playerstock_defense.pdf | cut -f1)"
+
+      - name: 配置 GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: 上传 Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/slides/dist
+
+      - name: 上传 PDF artifact（备份）
+        uses: actions/upload-artifact@v4
+        with:
+          name: playerstock-defense-pdf
+          path: docs/slides/playerstock_defense.pdf
+          retention-days: 30
+
+  deploy:
+    name: 部署到 GitHub Pages
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v4

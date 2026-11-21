@@ -2,7 +2,7 @@
  * 设计令牌守卫测试：CSS（tokens.css）与 JSON（design-tokens.json）必须同源同值。
  *
  * 为什么要有这条：设计交付物最怕"文档一份、代码一份，慢慢不一样"。
- * 这里把两份文件对齐 + 结构要求（9/5/3 阶、玻璃令牌、降级规则、正文 16/1.6）当测试跑。
+ * 这里把两份文件对齐 + 结构要求（9/5/3 阶、玻璃令牌、降级规则、正文 16/1.7）当测试跑。
  */
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
@@ -126,9 +126,9 @@ describe('设计令牌 · 结构要求（对应规范条目）', () => {
     expect(spacing).toEqual(['4px', '8px', '12px', '16px', '24px', '32px', '48px', '64px'])
   })
 
-  it('正文 16px / 行高 1.6；辅助最小 13px', () => {
+  it('正文 16px / 行高 1.7；辅助最小 13px', () => {
     expect(tok('--font-size-body').dark).toBe('16px')
-    expect(tok('--line-height-body').dark).toBe('1.6')
+    expect(tok('--line-height-body').dark).toBe('1.7')
     expect(tok('--font-size-cap').dark).toBe('13px')
   })
 

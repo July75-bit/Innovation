@@ -10,6 +10,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import App from '../App.vue'
 import router from '../router'
+import { enterAsGuest } from '../composables/useAuth'
 
 beforeAll(async () => {
   // 外壳会拉账户/健康检查；这里给一个最小 fetch 假实现，避免真实网络
@@ -22,13 +23,9 @@ beforeAll(async () => {
       text: async () => '{}',
     })),
   )
-  try {
-    sessionStorage.setItem('playerstock.auth.guest.v1', '1')
-  } catch {
-    /* jsdom 里可用 */
-  }
-  // /ui-kit 是 public 路由：不依赖登录态，能进外壳（/ 会被守卫拦去 /auth）
-  await router.push('/ui-kit')
+  // 以「访客」身份进市场页：外壳需要登录态，/auth 不套外壳
+  enterAsGuest()
+  await router.push('/')
   await router.isReady()
 })
 
@@ -40,8 +37,21 @@ describe('App 外壳', () => {
     expect(wrapper.find('.shell').exists()).toBe(true)
     expect(wrapper.find('.sidebar').exists()).toBe(true)
     expect(wrapper.find('.topbar').exists()).toBe(true)
-    expect(wrapper.find('.topbar').classes()).toContain('glass')
+    // 2026-11-18 纸感重构：外壳不再用玻璃，顶栏保留但应为实色
+    expect(wrapper.find('.topbar').classes()).not.toContain('glass')
     expect(wrapper.find('.content').exists()).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('外壳常驻深浅色快捷开关（侧栏底部 + 手机顶栏）', async () => {
+    const wrapper = mount(App, {
+      global: { plugins: [router], stubs: { RouterView: true } },
+    })
+    expect(wrapper.find('.sidebar-theme').exists()).toBe(true)
+    expect(wrapper.find('.topbar-theme').exists()).toBe(true)
+    const before = document.documentElement.dataset.theme
+    await wrapper.find('.sidebar-theme').trigger('click')
+    expect(document.documentElement.dataset.theme).not.toBe(before)
     wrapper.unmount()
   })
 })

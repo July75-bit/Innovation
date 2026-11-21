@@ -22,6 +22,11 @@
  * 渲染统一走 `src/components/TeamLogo.vue`：认不到队伍或图加载失败就退成队名首字母。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { money, pct, trendClass } from '../utils/format'
+import { api } from '../api'
+import { ApiError } from '../api/client'
+import type { PlayerSummary } from '../api/types'
 import TeamLogo from '../components/TeamLogo.vue'
 import {
   DEFAULT_BLOCK,
@@ -30,6 +35,7 @@ import {
   phaseOf,
   playingTeams,
   roundMatch,
+  resolveTeamId,
   roundOfDate,
   rounds,
   schedule,
@@ -53,7 +59,20 @@ const lastPlayedAt = schedule.matches[totalRounds - 1]?.played_at ?? ''
 /** 默认停在今天这一轮；休赛日停在"最近可看的一轮"（赛季结束后就停在最后一轮） */
 const todayRound = liveRoundNo ?? (today > lastPlayedAt ? totalRounds : roundOfDate(today))
 
-const selected = ref(todayRound)
+const SCHEDULE_ROUND_KEY = 'playerstock.schedule.round.v1'
+/** 上次浏览到第几轮（从比赛详情/其它页返回时接着看，而不是跳回今天） */
+function readSelectedRound(): number | null {
+  try {
+    const raw = sessionStorage.getItem(SCHEDULE_ROUND_KEY)
+    const value = raw ? Number(JSON.parse(raw)) : NaN
+    return Number.isInteger(value) && value >= 1 && value <= totalRounds ? value : null
+  } catch {
+    return null
+  }
+}
+const selected = ref(readSelectedRound() ?? todayRound)
+// 测试环境没有 router 注入（返回 undefined），所以下面统一做可用性判断
+const router = useRouter() as ReturnType<typeof useRouter> | undefined
 
 /* -------------------------------------------------------------- 选中轮次派生 */
 
@@ -190,14 +209,27 @@ function onViewportChange(): void {
 }
 
 /** 换轮次就重新居中：左右翻页、点 chip、点列表行、回到今日，全走同一个 `selected` */
-watch(selected, () => void centerSelectedRound())
+watch(selected, (value) => {
+  try {
+    sessionStorage.setItem(SCHEDULE_ROUND_KEY, JSON.stringify(value))
+  } catch {
+    /* 隐私模式存不下：只影响「回来时接不接着看」，不影响当前操作 */
+  }
+  void centerSelectedRound()
+})
 onMounted(() => {
   void centerSelectedRound('auto')
   window.addEventListener('resize', onViewportChange)
+  window.addEventListener('keydown', onDrawerKeydown)
+  // 从选手详情点「返回赛程」回来时 URL 带 ?round=N：恢复该场抽屉
+  const round = Number(new URLSearchParams(window.location.search).get('round'))
+  if (Number.isInteger(round) && round >= 1 && round <= totalRounds) openMatchDrawer(round)
 })
 onBeforeUnmount(() => {
   cancelAnimationFrame(resizeRaf)
   window.removeEventListener('resize', onViewportChange)
+  window.removeEventListener('keydown', onDrawerKeydown)
+  document.body.style.overflow = ''
 })
 
 function prevRound(): void {
@@ -206,6 +238,106 @@ function prevRound(): void {
 function nextRound(): void {
   selected.value = Math.min(totalRounds, selected.value + 1)
 }
+
+/* ------------------------------------------------------------ 比赛详情抽屉 */
+
+/**
+ * 点任意一行比赛 → 右侧抽屉显示这场两队 4 名选手（名字/位置/现价/涨跌/交易状态），
+ * 点选手进详情页看图表、AI 建议并下单（赛程页只做"看人"，不做交易，避免误操作）。
+ *
+ * 数据懒加载：赛程本身是纯静态派生（离线也能看），只有真正点开时才请求 /api/players；
+ * 成功后缓存，反复点不同场次不再重复请求；失败给"重试"，不影响赛程本身。
+ */
+const drawerRound = ref<number | null>(null)
+const drawerMatch = computed(() =>
+  drawerRound.value === null ? null : roundMatch(drawerRound.value),
+)
+const drawerPhase = computed(() =>
+  drawerMatch.value ? phaseOf(drawerMatch.value, today) : null,
+)
+/** 只有"正在打的那一轮"这两队才是此刻停牌；看历史/未来场次不能误标成停牌 */
+const drawerHalted = computed(
+  () => drawerRound.value !== null && drawerRound.value === liveRoundNo,
+)
+const drawerNote = computed(() => {
+  if (drawerPhase.value === 'played') return '这场比赛已结束；选手现在可正常交易。'
+  if (drawerHalted.value) return '这两支队伍本轮停牌（比赛期间不可交易），其余选手照常买卖。'
+  return '这场比赛还没打；到这一轮时，这两队选手会暂停交易。'
+})
+
+const drawerTeamIds = computed(() => {
+  const m = drawerMatch.value
+  return m ? [Number(m.team_a), Number(m.team_b)] : []
+})
+const players = ref<PlayerSummary[]>([])
+const playersLoading = ref(false)
+const playersError = ref<string | null>(null)
+let playersLoaded = false
+
+const drawerTeams = computed(() =>
+  drawerTeamIds.value.map((id) => ({
+    id,
+    name: names.get(id) ?? String(id),
+    players: players.value.filter((p) => resolveTeamId(p.team ?? '') === id),
+  })),
+)
+
+async function loadPlayers(force = false): Promise<void> {
+  if (playersLoading.value || (playersLoaded && !force)) return
+  playersLoading.value = true
+  playersError.value = null
+  try {
+    players.value = await api.listPlayers()
+    playersLoaded = true
+  } catch (err) {
+    playersError.value = err instanceof ApiError ? err.message : '选手数据加载失败'
+  } finally {
+    playersLoading.value = false
+  }
+}
+
+const closeBtn = ref<HTMLButtonElement | null>(null)
+
+/**
+ * 抽屉状态与 URL 同步（replace，不新增历史记录）：
+ * 走 router.replace 而不是裸 history.replaceState —— 后者不更新 vue-router 的内部状态，
+ * 浏览器后退时 URL 会被 router 恢复成旧值（实测抽屉丢失）。测试环境没有 router，退回 replaceState。
+ */
+function syncDrawerUrl(round: number | null): void {
+  const query = round === null ? {} : { round: String(round) }
+  if (router) {
+    void router.replace({ path: '/schedule', query })
+    return
+  }
+  if (typeof window === 'undefined' || !window.history.replaceState) return
+  const url = round === null ? window.location.pathname : `${window.location.pathname}?round=${round}`
+  window.history.replaceState(window.history.state, '', url)
+}
+
+function openMatchDrawer(round: number): void {
+  selected.value = round
+  drawerRound.value = round
+  syncDrawerUrl(round)
+  void loadPlayers()
+}
+function closeMatchDrawer(): void {
+  drawerRound.value = null
+  syncDrawerUrl(null)
+}
+
+function onDrawerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Escape' && drawerRound.value !== null) closeMatchDrawer()
+}
+
+watch(drawerRound, async (value) => {
+  document.body.style.overflow = value === null ? '' : 'hidden'
+  if (value !== null) {
+    await nextTick()
+    closeBtn.value?.focus()
+  } else {
+    document.body.style.overflow = ''
+  }
+})
 
 function shortDate(iso: string): string {
   return `${Number(iso.slice(5, 7))}月${Number(iso.slice(8, 10))}日`
@@ -267,11 +399,14 @@ function shortDate(iso: string): string {
             type="button"
             :class="['chip', item.phase, { on: item.round === selected }]"
             :aria-pressed="item.round === selected"
+            :aria-label="`第 ${item.round} 轮 ${item.day}，${phaseText[item.phase]}`"
             @click="selected = item.round"
           >
             <span class="chip-r num">{{ item.round }}</span>
             <span class="chip-d num"
-              >{{ item.day }}<i v-if="item.featured" title="焦点局">★</i></span
+              >{{ item.day
+              }}<i v-if="item.phase === 'today'" class="chip-now" title="今天开打">今</i
+              ><i v-if="item.featured" title="焦点局">★</i></span
             >
           </button>
         </div>
@@ -286,9 +421,9 @@ function shortDate(iso: string): string {
         </button>
       </div>
       <p class="legend">
-        <span class="lg"><span class="dot played"></span>已结束</span>
-        <span class="lg"><span class="dot today"></span>今天</span>
-        <span class="lg"><span class="dot upcoming"></span>未开始</span>
+        <span class="lg"><span class="dot played"></span>已结束（灰底）</span>
+        <span class="lg"><span class="dot today"></span>今天开打（暖色）</span>
+        <span class="lg"><span class="dot upcoming"></span>未开始（空心）</span>
         <span class="mini">★ 焦点局 · 点一轮，对阵与列表高亮跟着切换</span>
       </p>
       <div class="match">
@@ -331,7 +466,7 @@ function shortDate(iso: string): string {
           <span class="lg"
             ><span class="dot played"></span>已结束 {{ playedCount }} 场 · 时间逆序在下</span
           >
-          <span class="mini">点任意一行，上面就切到那一轮</span>
+          <span class="mini">点任意一行，展开这场比赛的选手</span>
         </p>
       </div>
       <table>
@@ -352,7 +487,12 @@ function shortDate(iso: string): string {
               v-for="match in section.matches"
               :key="match.round"
               :class="['row', { on: match.round === selected }]"
-              @click="selected = match.round"
+              tabindex="0"
+              role="button"
+              :aria-label="`第 ${match.round} 轮：查看这场比赛的选手`"
+              @click="openMatchDrawer(match.round)"
+              @keydown.enter.prevent="openMatchDrawer(match.round)"
+              @keydown.space.prevent="openMatchDrawer(match.round)"
             >
               <td data-label="轮次" class="num c-round">
                 {{ match.round }}<i v-if="match.round === featuredRound" class="star">★</i>
@@ -390,6 +530,100 @@ function shortDate(iso: string): string {
         </tbody>
       </table>
     </section>
+
+    <!-- ====== 比赛抽屉：两队 4 名选手 + 进详情页入口 ====== -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="drawerMatch" class="drawer-scrim" @click="closeMatchDrawer"></div>
+      </Transition>
+      <Transition name="drawer">
+        <aside
+          v-if="drawerMatch && drawerPhase"
+          class="match-drawer"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="`第 ${drawerRound} 轮比赛选手`"
+        >
+          <header class="drawer-head">
+            <div>
+              <p class="drawer-kicker num">
+                第 {{ drawerRound }} 轮
+                <span :class="['tag', drawerPhase]">{{ phaseText[drawerPhase] }}</span>
+              </p>
+              <h3 class="drawer-title num">
+                <TeamLogo
+                  :team="drawerTeams[0]?.id"
+                  :name="drawerTeams[0]?.name"
+                  size="xs"
+                />
+                {{ drawerTeams[0]?.name }}
+                <span class="vs">vs</span>
+                {{ drawerTeams[1]?.name }}
+                <TeamLogo
+                  :team="drawerTeams[1]?.id"
+                  :name="drawerTeams[1]?.name"
+                  size="xs"
+                />
+              </h3>
+            </div>
+            <button
+              ref="closeBtn"
+              type="button"
+              class="drawer-close"
+              aria-label="关闭"
+              @click="closeMatchDrawer"
+            >
+              ✕
+            </button>
+          </header>
+
+          <p class="drawer-note">{{ drawerNote }}</p>
+
+          <div v-if="playersLoading" class="drawer-skeleton" aria-busy="true" aria-label="加载选手">
+            <div v-for="i in 4" :key="i" class="sk-row">
+              <span class="sk sk-name"></span><span class="sk sk-mid"></span
+              ><span class="sk sk-num"></span>
+            </div>
+          </div>
+          <div v-else-if="playersError" class="drawer-error">
+            <p>{{ playersError }}</p>
+            <button type="button" @click="loadPlayers(true)">重试</button>
+          </div>
+          <div v-else class="drawer-body">
+            <section v-for="team in drawerTeams" :key="team.id" class="drawer-team">
+              <h4 class="drawer-team-name num">
+                <TeamLogo :team="team.id" :name="team.name" size="xs" />{{ team.name }}
+              </h4>
+              <ul class="p-list">
+                <li
+                  v-for="p in team.players"
+                  :key="p.player_id"
+                  :class="['p-row', { 'is-halted': drawerHalted }]"
+                >
+                  <RouterLink
+                    class="p-link"
+                    :to="{
+                      path: `/players/${p.player_id}`,
+                      query: { from: 'schedule', round: String(drawerRound) },
+                    }"
+                  >
+                    <span class="p-name">{{ p.display_name || p.name }}</span>
+                    <span class="p-role">{{ p.role || '—' }}</span>
+                    <span class="p-price num">{{ money(p.current_price) }}</span>
+                    <span :class="['p-chg', 'num', trendClass(p.change_pct)]">{{
+                      pct(p.change_pct)
+                    }}</span>
+                    <span class="p-go" aria-hidden="true">→</span>
+                  </RouterLink>
+                </li>
+                <li v-if="!team.players.length" class="p-empty">这队暂无在册选手</li>
+              </ul>
+            </section>
+            <p class="drawer-foot">点选手进入详情页：看价格历史、AI 建议，并下单。</p>
+          </div>
+        </aside>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -715,12 +949,14 @@ tr.row.on td {
   gap: var(--space-3);
   flex-wrap: wrap;
 }
-/* 列表头的两个圆点跟着区块底色走：未开始=暖色，已结束=冷灰 */
+/* 列表头图例与轮次图例保持同一套含义：已结束=灰实心，未开始=空心 */
 .list-head .dot.upcoming {
-  background: var(--warn);
+  background: transparent;
+  border: 1.5px solid var(--color-border-strong);
 }
 .list-head .dot.played {
-  background: var(--muted);
+  background: var(--neutral-bg);
+  border: 1px solid var(--color-border);
 }
 td .star {
   font-style: normal;
@@ -897,4 +1133,450 @@ td .weekday {
     border-radius: var(--radius-sm);
   }
 }
+
+/* ============================================================
+ * 纸感覆盖（2026-11-18）：只调视觉重量，不动轮次逻辑与结构
+ * ============================================================ */
+.page {
+  /* 页头两行文字与轮次条之间收紧（原来 32px 太松） */
+  gap: var(--space-4);
+}
+.page-head h2 {
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sub {
+  color: var(--faint);
+  max-width: 68ch;
+}
+.sub-halt {
+  color: var(--halt);
+  font-weight: 500;
+}
+.ghost {
+  border: 0;
+  background: none;
+  padding: var(--space-2) 0;
+  color: var(--muted);
+}
+.ghost:hover:not(:disabled) {
+  color: var(--text);
+}
+.page-head .today {
+  color: var(--faint);
+}
+
+/* 卡片：一个容器 + 大留白，不再是"卡片里套卡片" */
+.card {
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  gap: var(--space-4);
+}
+.card-title {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+}
+
+/* 轮次条：去掉底色，只留细边与文字 */
+.chip .chip-d {
+  color: var(--muted);
+}
+/* 已结束：灰底、弱化但仍可读（不再只靠 opacity 压暗） */
+.chip.played {
+  opacity: 1;
+  background: var(--neutral-bg);
+  border-color: transparent;
+}
+.chip.played .chip-r {
+  color: var(--muted);
+  font-weight: 600;
+}
+.chip.played .chip-d {
+  color: var(--faint);
+}
+/* 今天开打：暖色底 + 暖色边框 + 日期加「今」，一眼能找到 */
+.chip.today {
+  background: var(--warn-bg);
+  border-color: var(--warn);
+}
+.chip.today .chip-r {
+  color: var(--text);
+}
+.chip.today .chip-d {
+  color: var(--warn);
+  font-weight: 600;
+}
+.chip-now {
+  font-style: normal;
+  margin-left: 2px;
+  font-weight: 700;
+}
+.step {
+  border: 0;
+  background: none;
+  color: var(--faint);
+  width: 24px;
+}
+.step:hover:not(:disabled) {
+  color: var(--text);
+}
+.chip {
+  background: transparent;
+  border-color: var(--color-border);
+  padding: 6px 10px;
+}
+.chip:hover {
+  border-color: var(--color-border-strong);
+}
+.chip.on {
+  /* 选中 = 深色描边 + 内描边；状态底色继续保留（今天=暖底、已结束=灰底、未开始=空） */
+  border-color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-text);
+}
+.chip.today .chip-d {
+  color: var(--halt);
+}
+.chip-d i {
+  color: var(--halt);
+}
+.legend {
+  color: var(--muted);
+  gap: var(--space-3);
+  font-size: var(--fs-aux);
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.dot.played {
+  background: var(--neutral-bg);
+  border: 1px solid var(--color-border);
+}
+.dot.today {
+  background: var(--halt);
+}
+.dot.upcoming {
+  background: transparent;
+  border: 1.5px solid var(--color-border-strong);
+}
+.legend .mini {
+  display: none;
+}
+
+/* 对阵：字号降一档，vs 用弱化颜色 */
+.match-main {
+  font-size: var(--fs-h2);
+  font-weight: 600;
+}
+.match-main .vs {
+  color: var(--faint);
+  font-size: var(--fs-aux);
+  font-weight: 400;
+}
+.phase {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: var(--fs-cap);
+}
+.phase.played {
+  color: var(--faint);
+}
+.phase.today {
+  background: none;
+  color: var(--halt);
+}
+.phase.upcoming {
+  background: none;
+  color: var(--down);
+}
+
+/* 表：行高加大、分组行不抢眼 */
+th,
+td {
+  padding: var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+th {
+  padding-top: 0;
+  color: var(--faint);
+  font-weight: 400;
+}
+tr.row:hover {
+  background: transparent;
+}
+tr.row.on {
+  background: var(--neutral-bg);
+}
+.group-row td {
+  background: transparent;
+  padding-top: var(--space-5);
+  color: var(--faint);
+  font-weight: 400;
+}
+.mini {
+  color: var(--faint);
+}
+
+/* 轮次条：隐藏滚动条但保留横向滚动 */
+.strip {
+  scrollbar-width: none;
+}
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* 分组行与状态标签：去掉底色，只留文字 */
+.group-row td,
+.group-row.up td,
+.group-row.down td {
+  background: transparent;
+  color: var(--faint);
+  font-weight: 400;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: var(--fs-cap);
+}
+/* 状态点用文字同色：灰=已结束、暖色=今天、绿=未开始 */
+.tag::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.tag.played {
+  background: none;
+  color: var(--faint);
+}
+.tag.today {
+  background: none;
+  color: var(--halt);
+}
+.tag.upcoming {
+  background: none;
+  color: var(--down);
+}
+.row.on td,
+.row.on .c-round {
+  color: var(--text);
+}
+.row.on .star {
+  color: var(--halt);
+}
+
+/* ==================== 比赛抽屉（右侧滑出） ==================== */
+.drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgba(0, 0, 0, 0.38);
+}
+.match-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: calc(var(--z-overlay) + 1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(420px, 100vw);
+  height: 100dvh;
+  padding: var(--space-5);
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-overlay);
+}
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.drawer-enter-from,
+.drawer-leave-to {
+  transform: translateX(100%);
+}
+.drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.drawer-kicker {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: var(--fs-h2);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.drawer-title .vs {
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-close {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-aux);
+  cursor: pointer;
+}
+.drawer-close:hover {
+  color: var(--text);
+  background: var(--neutral-bg);
+}
+.drawer-note {
+  margin: 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-cap);
+  line-height: 1.6;
+  color: var(--muted);
+}
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.drawer-team-name {
+  margin: 0 0 var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  color: var(--text);
+}
+.p-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.p-row + .p-row {
+  border-top: 1px solid var(--color-border);
+}
+.p-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 14px;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: 10px 2px;
+  color: inherit;
+  text-decoration: none;
+}
+.p-link:hover .p-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.p-name {
+  font-size: var(--fs-body);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.p-role {
+  grid-column: 1;
+  grid-row: 2;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.p-row .p-link {
+  grid-template-rows: auto auto;
+  row-gap: 0;
+}
+.p-price,
+.p-chg {
+  font-size: var(--fs-aux);
+  align-self: center;
+}
+.p-chg.up {
+  color: var(--up-text);
+}
+.p-chg.down {
+  color: var(--color-down);
+}
+.p-chg.flat {
+  color: var(--faint);
+}
+.p-go {
+  color: var(--faint);
+  font-size: var(--fs-cap);
+}
+.p-row.is-halted .p-name::after {
+  content: '停牌';
+  margin-left: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--halt);
+  border-radius: var(--radius-pill);
+  color: var(--halt);
+  font-size: var(--fs-cap);
+  font-weight: 500;
+  vertical-align: 1px;
+}
+.p-empty {
+  padding: 10px 2px;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-foot {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.drawer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--fs-aux);
+}
+.drawer-error p {
+  margin: 0;
+}
+.drawer-error button {
+  padding: 6px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+.drawer-skeleton .sk-row:last-child {
+  border-bottom: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawer-enter-active,
+  .drawer-leave-active {
+    transition: none;
+  }
+}
+
 </style>

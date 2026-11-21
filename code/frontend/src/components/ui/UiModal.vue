@@ -86,7 +86,8 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" class="ui-modal-overlay" @click.self="close">
+    <Transition name="modal">
+      <div v-if="open" class="ui-modal-overlay" @click.self="close">
       <section
         ref="panel"
         class="ui-modal glass glass--panel"
@@ -115,7 +116,8 @@ onBeforeUnmount(() => {
           <slot name="footer" />
         </footer>
       </section>
-    </div>
+      </div>
+    </Transition>
   </Teleport>
 </template>
 
@@ -200,5 +202,45 @@ onBeforeUnmount(() => {
   gap: var(--space-2);
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--color-border);
+}
+
+/* 弹窗进出：遮罩淡入，面板从 8px 下方轻抬（不做夸张缩放） */
+.modal-enter-active {
+  transition: opacity 180ms ease;
+}
+.modal-leave-active {
+  transition: opacity 140ms ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-active .ui-modal {
+  transition:
+    transform 220ms cubic-bezier(0.2, 0, 0.2, 1),
+    opacity 180ms ease;
+}
+.modal-leave-active .ui-modal {
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease;
+}
+.modal-enter-from .ui-modal,
+.modal-leave-to .ui-modal {
+  transform: translateY(10px) scale(0.985);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-enter-active,
+  .modal-leave-active,
+  .modal-enter-active .ui-modal,
+  .modal-leave-active .ui-modal {
+    transition: none !important;
+  }
+  .modal-enter-from .ui-modal,
+  .modal-leave-to .ui-modal {
+    transform: none;
+    opacity: 1;
+  }
 }
 </style>

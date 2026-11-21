@@ -17,12 +17,11 @@ import { onMounted, ref } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PositionItem } from '../api/types'
-import { money, pct, trendClass } from '../utils/format'
+import { money, pct, trendClass, clockTime } from '../utils/format'
 import { useAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
 
 const positions = ref<PositionItem[]>([])
 const loading = ref(true)
@@ -60,7 +59,8 @@ async function rebuildBalance() {
   }
 }
 
-async function load() {
+async function load(fresh = false) {
+  if (fresh) api.invalidate?.()
   loading.value = true
   error.value = null
   checkBackendHealth()
@@ -68,7 +68,7 @@ async function load() {
     // 余额刷新是 best-effort：失败不应把已能拿到的持仓列表也打成错误态
     const [list] = await Promise.all([api.getPositions(), refreshAccount().catch(() => {})])
     positions.value = list
-    updatedAt.value = new Date().toLocaleTimeString()
+    updatedAt.value = clockTime()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载持仓失败'
   } finally {
@@ -79,279 +79,270 @@ async function load() {
 onMounted(load)
 </script>
 
+
 <template>
-  <div>
-    <div class="page-head">
+  <article class="page">
+    <header class="page-head">
       <div>
-        <h2>我的持仓</h2>
-        <p class="updated" v-if="updatedAt && !loading && !error">更新于 {{ updatedAt }}</p>
+        <h1>持仓</h1>
+        <p v-if="updatedAt && !loading && !error" class="meta">更新于 {{ updatedAt }}</p>
       </div>
       <div class="head-actions">
-        <button class="refresh" :disabled="loading" @click="load">刷新</button>
-        <button class="rebuild" :disabled="rebuilding || loading" @click="rebuildBalance">
-          {{ rebuilding ? '重建中…' : '余额重建' }}
+        <button class="quiet-btn" :disabled="loading" @click="load(true)">
+          {{ loading ? '刷新中' : '刷新' }}
+        </button>
+        <button class="quiet-btn danger" :disabled="rebuilding || loading" @click="rebuildBalance">
+          {{ rebuilding ? '重建中' : '余额重建' }}
         </button>
       </div>
-    </div>
+    </header>
 
-    <p v-if="rebuildNotice" class="rebuild-notice">{{ rebuildNotice }}</p>
+    <p v-if="rebuildNotice" class="notice">{{ rebuildNotice }}</p>
 
-    <!-- 总览：四个关键指标一屏可见 -->
-    <div v-if="account" class="summary num">
-      <div class="stat">
-        <span>余额（信用点）</span><strong>{{ money(account.balance) }}</strong>
+    <dl v-if="account" class="summary num">
+      <div>
+        <dt>余额</dt>
+        <dd>{{ money(account.balance) }}</dd>
       </div>
-      <div class="stat">
-        <span>持仓市值</span><strong>{{ money(account.position_value) }}</strong>
+      <div>
+        <dt>持仓市值</dt>
+        <dd>{{ money(account.position_value) }}</dd>
       </div>
-      <div class="stat">
-        <span>总资产</span><strong>{{ money(account.total_asset) }}</strong>
+      <div>
+        <dt>总资产</dt>
+        <dd>{{ money(account.total_asset) }}</dd>
       </div>
-      <div class="stat">
-        <span>总收益</span>
-        <strong :class="trendClass(account.total_asset - account.initial_balance)">
+      <div>
+        <dt>总收益</dt>
+        <dd :class="trendClass(account.total_asset - account.initial_balance)">
           {{ (account.total_asset - account.initial_balance >= 0 ? '+' : '') + money(account.total_asset - account.initial_balance) }}
-        </strong>
+        </dd>
+      </div>
+    </dl>
+
+    <div v-if="loading" class="sk-list" aria-busy="true" aria-label="加载持仓">
+      <div v-for="i in 4" :key="i" class="sk-row">
+        <span class="sk sk-name"></span><span class="sk sk-mid"></span
+        ><span class="sk sk-num"></span>
       </div>
     </div>
-
-    <LoadingState v-if="loading" />
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="positions.length === 0">
       暂无持仓，去 <RouterLink to="/">市场</RouterLink> 看看。
     </EmptyState>
 
-    <table v-else>
+    <table v-else class="list">
       <thead>
         <tr>
           <th>选手</th>
-          <th class="num">持仓</th>
-          <th class="num">买入均价</th>
+          <th class="num">持仓 / 均价</th>
           <th class="num">现价</th>
-          <th class="num">市值</th>
           <th class="num">盈亏</th>
-          <th class="num">盈亏率</th>
-          <th></th>
+          <th class="op"></th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="p in positions" :key="p.player_id">
-          <td data-label="选手">{{ p.name }}</td>
-          <td data-label="持仓" class="num">{{ p.quantity }}</td>
-          <td data-label="买入均价" class="num">{{ money(p.avg_cost) }}</td>
+          <td data-label="选手">
+            <RouterLink class="name" :to="`/players/${p.player_id}`">{{ p.name }}</RouterLink>
+          </td>
+          <td data-label="持仓 / 均价" class="num">{{ p.quantity }} 股 · {{ money(p.avg_cost) }}</td>
           <td data-label="现价" class="num">{{ money(p.current_price) }}</td>
-          <td data-label="市值" class="num">{{ money(p.market_value) }}</td>
-          <td data-label="盈亏" :class="['num', trendClass(p.profit)]">{{ money(p.profit) }}</td>
-          <td data-label="盈亏率" :class="['num', trendClass(p.profit_pct)]">{{ pct(p.profit_pct) }}</td>
-          <td data-label="操作"><RouterLink class="go" :to="`/players/${p.player_id}`">交易 →</RouterLink></td>
+          <td data-label="盈亏" :class="['num', trendClass(p.profit_pct)]">
+            {{ money(p.profit) }}（{{ pct(p.profit_pct) }}）
+          </td>
+          <td class="op">
+            <RouterLink class="go" :to="`/players/${p.player_id}`">交易</RouterLink>
+          </td>
         </tr>
       </tbody>
     </table>
-  </div>
+  </article>
 </template>
 
 <style scoped>
-.page-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-.page-head h2 {
-  margin: 0;
-  font-size: var(--fs-h2);
-}
-.updated {
-  margin: 4px 0 0;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.refresh {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-body);
-  cursor: pointer;
-}
-.refresh:hover {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
-}
-.refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 头部按钮组：刷新 + 余额重建 */
-.head-actions {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-.rebuild {
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--fs-body);
-  cursor: pointer;
-}
-.rebuild:hover {
-  border-color: var(--danger, #d9534f);
-  color: var(--danger, #d9534f);
-}
-.rebuild:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.rebuild-notice {
-  margin: var(--space-2) 0 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-size: var(--fs-cap);
-  color: var(--text);
-}
-
-/* 总览卡片：统一间距/圆角/层级 */
-.summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-4);
-  margin-top: var(--space-5);
-}
-.stat {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-4);
+/* 持仓页（纸感）：总览只做排版，不套四张卡；明细表只留 5 列、行高 64 */
+.page {
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
-.stat span {
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.page-head h1 {
+  margin: 0;
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.meta {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+.quiet-btn {
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-aux);
+  cursor: pointer;
+}
+.quiet-btn:hover {
+  color: var(--text);
+}
+.quiet-btn.danger:hover {
+  color: var(--up-text);
+}
+.quiet-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.notice {
+  margin: 0 0 var(--space-4);
   font-size: var(--fs-cap);
   color: var(--muted);
 }
-.stat strong {
-  font-size: var(--fs-h2);
-  font-variant-numeric: tabular-nums;
+
+/* 总览：四个数字一行，靠留白分开 */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin: 0 0 var(--space-6);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
 }
-.stat strong.up {
+.summary dt {
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.summary dd {
+  margin: var(--space-2) 0 0;
+  font-size: 24px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.summary dd.up {
   color: var(--up-text);
 }
-.stat strong.down {
+.summary dd.down {
   color: var(--down);
 }
-.stat strong.flat {
+.summary dd.flat {
   color: var(--muted);
 }
 
-table {
+/* 明细表：无外框、无斑马纹，只有行分割线 */
+.list {
   width: 100%;
   border-collapse: collapse;
-  margin-top: var(--space-5);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
-th,
-td {
-  padding: 11px var(--space-4);
-  border-bottom: 1px solid var(--border);
+.list th {
+  padding: 0 0 var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-cap);
+  font-weight: 400;
+  color: var(--faint);
   text-align: left;
+}
+.list th.num {
+  text-align: right;
+}
+.list td {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
   font-size: var(--fs-body);
+  color: var(--text);
+  vertical-align: baseline;
 }
-tbody tr:last-child td {
-  border-bottom: none;
-}
-tbody tr:hover {
-  background: var(--surface-2);
-}
-th {
-  color: var(--muted);
-  font-weight: 600;
-  font-size: var(--fs-aux);
-  background: var(--surface-2);
-}
-.num {
+.list td.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-.up {
+.list .name {
+  color: var(--text);
+  font-weight: 500;
+  text-decoration: none;
+}
+.list .name:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.list td.up {
   color: var(--up-text);
 }
-.down {
+.list td.down {
   color: var(--down);
 }
-.flat {
+.list td.flat {
   color: var(--muted);
 }
-.go {
-  color: var(--accent-text);
-  text-decoration: none;
-  font-size: var(--fs-aux);
-  font-weight: 600;
-  white-space: nowrap;
+.list .op {
+  text-align: right;
 }
-.go:hover {
+.list .go {
+  color: var(--faint);
+  font-size: var(--fs-aux);
+  text-decoration: none;
+}
+.list .go:hover {
+  color: var(--text);
   text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-/* 响应式（≤720px）：表格转卡片，杜绝横向滚动 */
 @media (max-width: 720px) {
-  table {
-    display: block;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    margin-top: var(--space-3);
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-4);
   }
-  thead {
+  .summary dd {
+    font-size: 20px;
+  }
+  /* 窄屏：表格转成"标签 + 值"的行，一行一件事，便于扫读 */
+  .list thead {
     display: none;
   }
-  tbody {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  .list tr {
+    display: block;
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--color-border);
   }
-  tr {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2px var(--space-4);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-3) var(--space-4);
-  }
-  td {
-    border: none;
-    padding: 3px 0;
+  .list td {
     display: flex;
-    justify-content: space-between;
     align-items: baseline;
-    gap: 10px;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: 3px 0;
+    border: 0;
     font-size: var(--fs-aux);
   }
-  td::before {
+  .list td[data-label]::before {
     content: attr(data-label);
-    color: var(--muted);
+    flex: none;
+    color: var(--faint);
     font-size: var(--fs-cap);
-    flex-shrink: 0;
   }
-  td:first-child {
-    grid-column: 1 / -1;
-    font-weight: 700;
-    font-size: var(--fs-h3);
-    padding-bottom: 6px;
-  }
-  .num {
+  .list td.num {
     text-align: right;
+  }
+  .list td.op {
+    justify-content: flex-end;
+  }
+  .list .name {
+    font-size: var(--fs-body);
   }
 }
 </style>

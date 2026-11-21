@@ -8,10 +8,11 @@ import { describe, expect, it } from 'vitest'
 import { dateTime, money, pct, trendClass } from '../format'
 
 describe('展示层格式化', () => {
-  it('money 固定两位小数（后端数值不再二次截断，只补零）', () => {
-    expect(money(4748)).toBe('4748.00')
+  it('money 两位小数 + 千分位（4,748.00 比裸数字更像行情软件）', () => {
+    expect(money(4748)).toBe('4,748.00')
     expect(money(126.5)).toBe('126.50')
     expect(money(126.12)).toBe('126.12')
+    expect(money(1234567.8)).toBe('1,234,567.80')
   })
 
   it('pct 正数带 + 号，负数保留 - 号', () => {

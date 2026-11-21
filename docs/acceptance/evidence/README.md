@@ -2,6 +2,8 @@
 
 > 采集时间：2026-10-24（第 4 天）｜ 采集方式：真实后端（uvicorn :8000，seed 重置 + 8 轮模拟价格）
 > + 真实浏览器（Chromium headless，1280×900 全页截图）｜ 环境：`VITE_USE_MOCK=false` 真实接口模式
+>
+> ⚠️ 历史说明：编号 53–55、61–64、141 涉及 `/ui-kit` 展示页，该页已于 2026-11-21 整体移除；截图保留为历史验收证据。
 
 ## T3-04 全链路（查行情 → 买 2 股 → 持仓 → 卖 1 股 → 流水）
 
@@ -68,8 +70,16 @@
 | `online/persistence-redeploy.md` | 逐项对账记录 + 复跑命令 | `scripts/persistence_check.py --diff` 退出码 0；含"余额变了为何不等于丢数据"的算术闭合 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
-  > **现状（2026-11-14 重灌后）**：16 名选手 / 8 队；每人 11 价格点（ropz 10，种子仅 1 条）/ 余额 5000.00 / 持仓 0 / 流水 0；暂停交易改为**队伍级派生**——每轮 2 队（4 人）停牌，第 12 轮为 Vitality vs Spirit。
-  > **待补三张整队停牌证据**（A/B 截）：① 市场页第 12 轮 Vitality/Spirit 四人置灰；② 任一停牌选手详情页「比赛中，暂停交易」；③ 同轮可交易选手（如 huNter-）可买作对照。
+  > **现状（2026-11-21 实测）**：16 名选手 / 8 队；每人 11 价格点（ropz 10，种子仅 1 条）/ 余额 5000.00 / 持仓 0 / 流水 0；暂停交易按赛程**队伍级派生**——当前第 21 轮 **Vitality vs FaZe Clan** → **4 人停牌**（ZywOo / flameZ / ropz / broky）。
+  > 三张整队停牌证据已补（2026-11-21，无头浏览器 + 游客态实拍，1440×900）：
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `online/team-suspended-market.png` | 市场页 | 顶部横幅「第 21 轮 · Vitality vs FaZe Clan · 4 人停牌」；卡片状态出现「停牌」徽章；筛选含「停牌」 |
+| `online/team-suspended-detail.png` | 停牌选手详情（ZywOo） | 徽章「暂停交易」+「Vitality vs FaZe Clan 比赛中，暂停交易」；买卖按钮置灰为「暂停交易中」 |
+| `online/team-suspended-contrast.png` | 同轮可交易选手（sh1ro） | 徽章「交易中」、交易面板可用 → 证明停牌按**队伍**而不是全局 |
+
+> 说明：第 12 轮（Vitality vs Spirit）的停牌证据以接口为准（`pricing_model.md` §12.3：recalc 返回 `applied=0` + 暂停原因）；页面显示的是**当天**映射到的轮次（2026-11-21 → 第 21 轮），二者口径一致、只是轮次不同。
 > 上面 `online-*` 截图是重置前后的历史留档，数字以本行为准。
 
 ## 汇报证据（3.6 / 3.7 / 3.3）
@@ -77,7 +87,7 @@
 | 文件 | 内容 | 关键断言 |
 | --- | --- | --- |
 | `18-quality-pylint-pep8.png` | Pylint 语义分析 + PEP8 + 格式化体检 | Pylint 9.74/10（无 E/F 级）；`ruff check --select E,W` 25 项全为 E501；`ruff format --check` 31 待格式化 / 39 已格式化 |
-| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **320 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1823 语句 / 45 未覆盖 / 98%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖 |
+| `37-pytest-coverage.png` | 3.6 质量工具：回归 + 覆盖率（2026-11-07 本机复跑） | `pytest -q` → **320 passed / 0 skipped**；`--cov=app --cov=core_engine` → **TOTAL 1823 语句 / 45 未覆盖 / 98%**（要求 ≥60%）；pricing / simulator / database / price_update / rules 与 5 张表模型均 100%，仅 trades 的 3 处 rowcount 竞态兜底与少量平台分支未覆盖（**截图时点**：320 条 / 1823 语句；2026-11-21 复测为 **330 条 / 1956 语句 / 98%**，见 `test_report.md` §2） |
 | `19-complexity-stats.png` | 认知复杂度 + 代码统计（3.7） | complexipy 48 文件 / 149 函数，最大 27、均值 3.31；Python 70 文件 8342 行、Vue 10 / 1737、TS 12 / 852、MD 41 / 6489，合计 133 文件 / 17420 行 |
 | `20-commit-stats.png` | 3.3 提交统计：本地准数 × pulse 按账号数 | 全周期（develop，排除合并）137 次：D 50 / B 41 / C 26 / A 20，合计 +36072 / −4257；pulse 近一月 49 / 41 / 28 / 20。B 的 41 = 以 `Hu De Hao` 提交 38 条 + 以账号名 `July75-bit` 提交 3 条（B 本人确认） |
 | `21-pulse-overview.png` | GitHub Pulse 总览（2026-10-06 → 11-06，1 month） | `4 authors have pushed … 138 commits to all branches`；`On main, 0 files changed`（main 只走 PR 合并，非异常） |
@@ -106,18 +116,18 @@
 | `50-ui-v2-after-login.png` | **UI v2 · 登录页** | 渐变背景与发光全部清除，改为扁平底色 + 1px 边框 |
 | `51-design-tokens-after-detail.png` | **设计 Token 接入后 · 详情页**（2026-11-14 15:58） | 买入/卖出改用 AA 合规底色（`#c23438` 白字 5.47:1、`#1a7f4b` 白字 5.02:1）；间距/圆角/字号全部走 `tokens.css`，组件零改动（兼容层映射） |
 | `52-design-tokens-after-market.png` | **设计 Token 接入后 · 市场页** | 简报与卡片沿用统一样式令牌；4/6/8 圆角、1px 边框、无阴影 |
-| `53-ui-kit-full.png` | **UI 组件库预览页**（`/ui-kit`，2026-11-14 16:10） | 按钮 4 变体 × 3 尺寸 × loading/disabled；输入框含 hint/error/后缀/禁用；下拉；5 种标签；卡片 3 态；表格（排序）；分页 96 条；导航选中态 |
-| `54-ui-kit-modal.png` | **危险确认弹窗** | 无 ✕（dismissible=false）、取消在左、红色确认在右、遮罩 72% |
-| `55-ui-kit-375.png` | **组件库 375px** | 无横向滚动（375/375），按钮/输入框/表格均可用 |
+| `53-ui-kit-full.png` | （历史，/ui-kit 已移除）**UI 组件库预览页**（`/ui-kit`，2026-11-14 16:10） | 按钮 4 变体 × 3 尺寸 × loading/disabled；输入框含 hint/error/后缀/禁用；下拉；5 种标签；卡片 3 态；表格（排序）；分页 96 条；导航选中态 |
+| `54-ui-kit-modal.png` | （历史，/ui-kit 已移除）**危险确认弹窗** | 无 ✕（dismissible=false）、取消在左、红色确认在右、遮罩 72% |
+| `55-ui-kit-375.png` | （历史，/ui-kit 已移除）**组件库 375px** | 无横向滚动（375/375），按钮/输入框/表格均可用 |
 | `56-liquid-glass-desktop-market.png` | **液态玻璃 · 桌面市场页**（2026-11-14 16:40，1280×900） | 唯一玻璃 = 侧栏壳（232×900，**可见玻璃 18.13%** ≤30%）；内容层卡片/简报/筛选全实色扁平；侧栏内账户卡与合规声明仍为实色（玻璃+实色两层） |
 | `57-liquid-glass-detail-tooltip.png` | **液态玻璃 · 图表 tooltip** | 悬停折线数据点 → 玻璃浮层（tint 0.74 / blur 22 / 圆角 20 / 极轻投影）；同屏玻璃 18.13%+tooltip=**19.97%** |
 | `58-liquid-glass-mobile-topbar-blur.png` | **液态玻璃 · 移动顶栏（滚动中）** | 375×667 滚动 460px：内容从玻璃顶栏下方穿过并**真实模糊**（简报卡文字在玻璃后可见但柔和）；玻璃仅顶栏 375×55 = **8.25%** |
 | `59-liquid-glass-mobile-drawer-solid.png` | **移动抽屉 = 实色 sheet** | 抽屉 293×667 若做玻璃会到 78% 配额，且是导航+账户+合规文字密集区 → 实色 + 圆角 24 + 轻投影 |
 | `60-liquid-glass-modal-desktop.png` | **液态玻璃 · 模态框** | 玻璃面板 400×263（圆角 20，内高光+极轻投影）；遮罩 0.66 **无 blur**（模糊只由玻璃层承担，避免玻璃叠玻璃）；弹窗单独占屏 **9.10%** |
-| `61-liquid-glass-kit-gallery.png` | **/ui-kit 材质展厅** | 导航壳 / 悬浮工具条 / Popover / 浅色玻璃 / 配额读数 / 降级开关 / 主题切换；展厅同屏多块属演示性质（38–44%），业务页见 56–58 |
-| `62-liquid-glass-fallback.png` | **降级实测（不支持 backdrop-filter）** | 点「模拟降级」→ `<html class="no-backdrop-filter">`：全部玻璃变不透明实色（`blur=none`、底 `rgb(23,26,33)`），可见玻璃面积 **0%**，圆角/描边/内高光保留 |
-| `63-liquid-glass-mobile-modal-solid.png` | **移动端弹窗 = 实色底部 sheet** | ≤600px 弹窗接近全屏 → 实色、上沿圆角 24、无模糊（玻璃配额与表单可读性双重要求） |
-| `64-liquid-glass-focus-ring.png` | **玻璃上的键盘焦点环** | 工具条按钮 `:focus-visible` → `solid 2px rgb(239,115,119)`，圆角保持控件值；玻璃面板圆角 20 不再被全局焦点样式打成 6（本轮修掉的 bug） |
+| `61-liquid-glass-kit-gallery.png` | （历史，/ui-kit 已移除）**/ui-kit 材质展厅** | 导航壳 / 悬浮工具条 / Popover / 浅色玻璃 / 配额读数 / 降级开关 / 主题切换；展厅同屏多块属演示性质（38–44%），业务页见 56–58 |
+| `62-liquid-glass-fallback.png` | （历史，/ui-kit 已移除）**降级实测（不支持 backdrop-filter）** | 点「模拟降级」→ `<html class="no-backdrop-filter">`：全部玻璃变不透明实色（`blur=none`、底 `rgb(23,26,33)`），可见玻璃面积 **0%**，圆角/描边/内高光保留 |
+| `63-liquid-glass-mobile-modal-solid.png` | （历史，/ui-kit 已移除）**移动端弹窗 = 实色底部 sheet** | ≤600px 弹窗接近全屏 → 实色、上沿圆角 24、无模糊（玻璃配额与表单可读性双重要求） |
+| `64-liquid-glass-focus-ring.png` | （历史，/ui-kit 已移除）**玻璃上的键盘焦点环** | 工具条按钮 `:focus-visible` → `solid 2px rgb(239,115,119)`，圆角保持控件值；玻璃面板圆角 20 不再被全局焦点样式打成 6（本轮修掉的 bug） |
 | `65-liquid-glass-reduced-transparency.png` | **prefers-reduced-transparency: reduce** | Edge 157 模拟该偏好：`backdrop-filter: none` + 实色底 `rgb(23,26,33)`，hover 半透明高光同时关闭（对比度反而更高） |
 | `66-tokens-light-market.png` | **设计令牌 v2 · 浅色模式市场页**（2026-11-14 17:08） | `[data-theme="light"]` 全量令牌生效：画布 `#f4f6f9`、表面 `#fff`、正文 `#1a1d23`；侧栏玻璃 `rgba(255,255,255,.62)` + 描边 `.72`；同屏玻璃 18.13%（≤30%） |
 | `67-tokens-light-mobile.png` | **设计令牌 v2 · 浅色模式移动顶栏** | 375px 滚动中：浅色玻璃顶栏（`--glass-bg` `.62`）压在内容上；玻璃面积 8.25%，无横向溢出 |
@@ -151,6 +161,55 @@
 | `95-auth-theme-light.png` | **登录页 · 主题按钮（浅色）**（2026-11-14 19:15） | 登录页右上角新增主题按钮（自动/浅色/深色三档循环，与全站同一 `useTheme`）；当前「自动·系统浅色」→ 实际浅色；按钮 76×44、与品牌区不重叠 |
 | `96-auth-theme-dark.png` | **登录页 · 主题按钮（深色）** | 切到深色后整页立即变深，按钮显示「深色」+ 月亮图标；表单/标题/链接对比度实测达标 |
 | `97-auth-theme-mobile-light.png` | **登录页 · 主题按钮 375px** | 窄屏按钮收成图标（34×44，文字进 aria-label），不遮挡品牌与表单；无横向溢出 |
+| `98-paper-light-market.png` | **纸感重构 · 市场（浅色）**（2026-11-18） | 一句话简报 + 要点折叠 + 3×2 卡片；首屏可见节点 247→165、文字块 115→72 |
+| `99-paper-dark-market.png` | **纸感重构 · 市场（深色）** | 暖中性深色底（#141310 / #1b1a17），无模糊无高光；卡片 hover 只改边框 |
+| `100-paper-light-detail.png` | **纸感重构 · 选手详情** | 头部不套卡片；交易面板 3 行小字合一行；风险色改语义令牌（浅色对比度 1.96:1 → 达标） |
+| `101-paper-light-positions.png` | **纸感重构 · 持仓** | 总览 4 卡 → 一行排版；明细 8 列 → 5 列、行高 64 |
+| `102-paper-light-trades.png` | **纸感重构 · 交易记录** | 7 列 → 5 列；方向只用文字颜色 |
+| `103-paper-light-schedule.png` | **纸感重构 · 赛程** | 轮次条去底色/滚动条；分组行与状态标签去彩色底 |
+| `104-paper-mobile-market.png` | **纸感重构 · 移动端市场 390px** | 单列卡片、留白优先；无横向溢出 |
+| `105-paper-mobile-positions.png` | **纸感重构 · 移动端持仓 390px** | 表格转「标签 + 值」堆叠行；总览 2×2 |
+| `106-brief-clean-summary.png` | **简报总述清洗（2026-11-18）** | 模型返回的整句引号已剥离、中文与数字间补空格：`sh1ro 涨 13.96% 报 136.43，bLitz 报 48.48，第 18 轮四人停牌` |
+| `107-market-top-icons-light.png` | **市场页顶部改版（浅色）**（2026-11-18） | 「展开要点」文字按钮 → 星标（来源）+ 箭头图标；比赛长句 → 轮次 + 两队队标/队名 + 暂停图标「4 人」+ 日历图标 |
+| `108-market-top-icons-dark.png` | **市场页顶部改版（深色）** | 同结构深色；图标按钮 40px 点击区，sr-only 文案保留可读替代 |
+| `109-market-top-icons-390.png` | **市场页顶部改版（390px）** | 移动端一行放得下（轮次 + 队标对阵 + 停牌人数 + 赛程图标），无横向溢出 |
+| `110-brief-items-light.png` | **展开要点 · 紧凑版（1440）**（2026-11-18） | 三条要点改成「小图标 + 短标题 + 一行值」：`最该看 / 低价区 / 停牌`；轮次与对阵不再重复；摘要行宽屏一行放下 |
+| `111-brief-items-1920.png` | **展开要点 · 紧凑版（1920）** | 宽屏下摘要不提前折行（`max-width: 56em`），要点三行共 74px |
+| `112-brief-items-390.png` | **展开要点 · 紧凑版（390）** | 窄屏标题与值自动换行，无横向溢出 |
+| `113-highlights-light-1920.png` | **简报改重点数字条（浅色 1920）**（2026-11-18） | 三组「图标 + 名字 + 大号数字 + 小字补充」一行放下：`sh1ro +13.96%`（红 24px）/`bLitz 48.48`/`4 人停牌`（琥珀）；长句默认收起 |
+| `114-highlights-dark-1440.png` | **重点数字条（深色）** | 深色下涨红/跌绿与琥珀都保持可读；无换行、无横向溢出 |
+| `115-highlights-open-1440.png` | **重点数字条 · 展开态** | 展开只多两行小字：AI 原话 + 停牌名单（ropz、jL、broky、w0nderful） |
+| `116-highlights-mobile-390.png` | **重点数字条（390）** | 窄屏自动折两行，图标与数值仍成组；无横向溢出 |
+| `117-market-state-restored.png` | **返回保留状态 · 市场**（2026-11-18） | 排序改成「价格从高到低」、搜索填 `a`、筛选「交易中」、滚动到 420px 后点进选手详情再返回：四项全部还原（`sessionStorage`），滚动位置也回到原处 |
+| `118-schedule-round-restored.png` | **返回保留状态 · 赛程** | 点第 20 轮 → 去市场 → 从导航回赛程：仍停在第 20 轮（原来是跳回今天第 18 轮） |
+| `119-pro-market-light.png` | **专业化打磨 · 市场**（2026-11-18） | 金额千分位（5,000.00）、涨幅优先排序、品牌 favicon/manifest 就位；数字列等宽对齐 |
+| `120-pro-positions-dark.png` | **专业化打磨 · 持仓（深色）** | 深色下金额/空态/表头对比度正常，主题色随深浅切换 |
+| `121-pro-notfound.png` | **404 页** | 未知路径不再静默重定向：明确「这个页面不存在」+ 回到市场按钮 |
+| `122-pro-skeleton.png` | **加载骨架（持仓）** | 加载时按版式占位（4 行、`aria-busy`），不再转圈后内容跳动 |
+| `123-pro-chart.png` | **价格图表打磨**（2026-11-18） | Y 轴改成整齐刻度 80/100/120/140 + 4 条网格线；X 轴改「月/日」；卡片圆角统一到内容层 |
+| `124-pro-trades.png` | **交易流水时间格式** | 时间统一 `2026-11-18 19:32:42`（短横线，不再斜杠），金额千分位、右对齐 |
+| `125-dark-market.png` | **深色适配根因修复**（2026-11-19） | 声明 `color-scheme: dark` 后，原生下拉/滚动条/自动填充跟随主题；排序下拉透明底 + 自绘箭头 + option 上色 |
+| `126-drawer-desktop.png` | **赛程 · 比赛抽屉（桌面）** | 点任意一轮比赛 → 右侧抽屉显示两队 4 名选手（队标/位置/现价/涨跌），点选手进详情页 |
+| `127-drawer-mobile.png` | **赛程 · 比赛抽屉（390）** | 抽屉占满宽度，4 名选手与入口完整可读；无横向溢出 |
+| `128-dark-auth.png` | **深色登录页** | 输入框/文字/滚动条均跟随深色，`color-scheme: dark` 让自动填充不再刷白底 |
+| `129-detail-skeleton.png` | **详情页骨架屏**（2026-11-19） | 加载时先出标题/价格/图表/交易面板占位（实测 160ms 出现），不再整页转圈 |
+| `130-detail-slow-hint.png` | **慢加载提示** | 超过 4 秒显示「服务可能在唤醒中（免费实例休眠后首次访问约 30 秒）」，配合 GET 自动重试 |
+| `131-detail-back-schedule.png` | **详情页返回赛程**（2026-11-19） | 从赛程抽屉点进选手后，返回链接变成「← 返回赛程」并带回 `?round=18` |
+| `132-schedule-drawer-restored.png` | **返回后抽屉恢复** | 点「返回赛程」/浏览器后退/刷新，都回到赛程并重新打开该场（第 18 轮）选手抽屉 |
+| `133-schedule-status-light.png` | **赛程状态可读性（浅色）**（2026-11-19） | 页头与轮次条间距 32→16px；已结束=灰底、今天=暖底+「今」、未开始=空心；图例改成同款方块并写明含义 |
+| `134-schedule-status-dark.png` | **赛程状态可读性（深色）** | 深色下三种状态同样可辨；列表状态标签改为「状态点 + 文字」（灰/暖/绿） |
+| `135-profile-light.png` | **个人主页（浅色）**（2026-11-21） | `/me`：身份卡、余额/总资产/总收益、资产曲线、交易统计与最近交易、主题偏好、关于入口 |
+| `136-profile-dark.png` | **个人主页（深色）** | 深色下资产数字/曲线/统计可读，卡片与纸感一致 |
+| `137-sidebar-slim.png` | **侧栏瘦身** | 侧栏只剩品牌 + 5 个导航（新增「我的」），身份/资产/主题/关于全部移入个人页 |
+| `138-profile-mobile.png` | **个人主页（390）** | 移动端顶栏头像进入 `/me`，底部 Tab 仍 4 项；两列资产/统计，无横向溢出 |
+| `139-profile-structure-light.png` | **资产结构（浅色）**（2026-11-21） | 个人页资产区新增「现金 / 持仓」占比条：灰=现金、红=持仓，带金额与百分比图例 |
+| `140-profile-structure-dark.png` | **资产结构（深色）** | 深色下两段颜色与图例可辨；占比来自当前账户余额与持仓市值 |
+| `141-ui-kit-glass-after-cleanup.png` | （历史，/ui-kit 已移除）**玻璃变体清理**（2026-11-21） | `/ui-kit` 玻璃展厅移除「导航壳」示例；`.glass--nav/--sheet/--scrim` 三个未使用变体删除，配额说明按纸感模式更新 |
+| `142-mobile-nav-light.png` | **手机端导航简化**（2026-11-21） | 顶栏只有品牌 + 个人头像（进「我的」）；无「菜单」按钮/抽屉；底部导航 4 项（市场/赛程/持仓/流水） |
+| `143-theme-toggle-desktop.png` | **深浅色快捷开关（桌面）**（2026-11-21） | 侧栏底部常驻「深色/浅色」按钮（太阳/月亮图标 + 文案），不必进「我的」即可切换 |
+| `144-theme-toggle-mobile.png` | **深浅色快捷开关（手机）** | 顶栏头像左侧新增圆形主题图标，点一下切深浅色；底部仍 4 Tab、无菜单 |
+| `145-mobile-topbar-hidden.png` | **移动端顶栏下滑隐藏**（2026-11-21） | 下滑 >6px 顶栏上移收起（fixed + translateY -100%，240ms ease-out）；实色底，内容不再透字 |
+| `146-mobile-topbar-revealed.png` | **上滑顶栏出现** | 上滑时顶栏平滑落下并保持实色不透明；回到顶部必显示；底部 4 Tab 不受影响 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 

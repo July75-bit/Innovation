@@ -1,403 +1,784 @@
-# 部署说明
+# 部署与发布文档（Deployment & Release）
 
-> **负责人**：D ｜ **截止**：第 5 天必须完成并验证 ｜ **状态**：🟡 初稿完成，待第 5 天实测后回填
-> **对应课程指标**：#7 部署上线、#22 可运行可复现；验收标准不是"网站能打开"，而是"交易完成后数据能保存"
+> **课程交付物**：《软件创新工程实践》第 5 天「部署发布作品」——部署和发布软件的方法及检查单
+> → `docs/software/deployment.md`（课程 PDF 第 5 天 211–217 页、271–278 页）
+> **负责人 / 发布负责人**：D ｜ **验证负责人**：D（交叉验证：B）
+> **部署源**：GitHub `July75-bit/Innovation` 的 `develop` 分支 ｜ **CI**：GitHub Actions（4 个 job）
+> **最后实测**：2026-11-21 11:30（UTC+8）｜ **线上状态**：运行中（`/api/health` 200，冷启动 28.2s；前端首页 200，1.92s）
+> **最近一次已验证全绿 CI**：commit `5ae6a4c` → run **#188**，4/4（卫生 / 后端 / 前端 / 交付物）
+> **待复核**：`2175d6c` 起答辩稿迁到 `docs/slides/`，交付物检查路径已同步修改；push 后以新的 CI run 为准
 
-## 1. 部署架构
+---
 
-| 服务 | 平台 | Root Directory | 构建 | 启动 |
-| --- | --- | --- | --- | --- |
-| 前端 | Render Static Site | `code/frontend` | `npm install && npm run build` | 静态（`dist/`） |
-| 后端 | Render Web Service | `code/backend` | `pip install -r requirements.txt` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+## 0. 课程要求对照（先看这张表）
 
-> `code/core_engine` 通过 `code/backend/app/core/config.py` 里的 `sys.path` 注入被后端导入，**无需单独安装**；如需标准包形式，可在 `code/backend` 下执行 `pip install -e ../core_engine`。
+| 课程 PDF 要求 | 本文落点 |
+| --- | --- |
+| 选择适合项目的 Web 应用部署方式 | §1.2 方式对比与决策、§1.3 服务清单 |
+| 建立「代码提交 → 生产发布」的标准流程 | §3.1–§3.5、§11 发布记录 |
+| 配置构建、环境变量、域名和 HTTPS | §2、§1.4、§1.5 |
+| 设计灰度发布、回滚和故障处理方案 | §4.7、§8、§7 |
+| 使用上线前、上线中、上线后的检查单 | §5.1–§5.7（A–G 七张单） |
+| 健康检查与可观测性 | §4.8、§3.7 |
+| 发布完成记录、复盘与回滚路径 | §11、附录 A、§8 |
+| 服务器规格、容量与资源边界 | §4.10 |
+| 上线前账号、演示数据与密钥处理 | §4.11 |
+| 最终发布检查卡（一页版） | §5.9 |
+| 参考案例对照（Linux 自建 vs Render 托管） | §1.6 |
 
-> 仓库根目录的 `render.yaml` 已写好这两个服务，可以在 Render 里直接 New → Blueprint 导入。
+**「部署」在本文对应的十步**（PDF 215 页）：获取源码（GitHub `develop`）→ 安装依赖（`pip install` / `npm ci`）→
+执行测试（CI 4 个 job）→ 构建软件包（`npm run build` → `dist/`）→ 配置运行环境（Render 环境变量）→
+发布到云平台（Render Blueprint）→ 配置域名和网络（`*.onrender.com` + HTTPS + CORS）→ 执行健康检查
+（`/api/health`）→ 监控运行状态（Render Logs / 业务探针）→ 必要时回滚（§8）。
 
-## 2. 环境变量清单
+---
 
-### 后端（Render Web Service → Environment）
+## 1. 部署架构与方式选型
 
-| 变量 | 值 | 是否密钥 |
+### 1.1 系统组成
+
+```
+用户浏览器
+   │  HTTPS（Render 自动签发证书）
+   ▼
+Render Static Site（playerstock-frontend）
+   │  dist/ 静态资源 + SPA History Fallback（/* → /index.html）
+   │  跨域请求 VITE_API_BASE_URL/api/*
+   ▼
+Render Web Service（playerstock-backend，Singapore）
+   │  FastAPI + uvicorn，健康检查 /api/health
+   ├──► Render Postgres（playerstock-db，持久化：账户/持仓/流水/价格/AI 审计）
+   └──► DeepSeek API（/api/analysis、/api/agent/*；无密钥/超时自动规则兜底）
+
+Render Cron（playerstock-agent-patrol，*/10 0-15 * * *）
+   └──► 定时打后端只读接口 + 按需刷新简报（兼作免费实例保温）
+```
+
+### 1.2 部署方式对比与决策
+
+| 方式 | 适用场景 | 本项目结论 |
 | --- | --- | --- |
-| `PYTHON_VERSION` | `3.12.6` | 否 |
-| `DATABASE_URL` | 粘贴 Postgres 服务的 **Internal Database URL**（`postgresql://user:pass@dpg-xxx-a/playerstock_db`） | ✅ **是**（含密码） |
-| `CORS_ORIGINS` | 前端公网地址，例 `https://playerstock-frontend.onrender.com` | 否 |
-| `INITIAL_BALANCE` | `5000` | 否 |
-| `MAX_POSITION_PER_PLAYER` | `50` | 否 |
-| `PRICING_ALPHA` / `PRICING_BETA` / `PRICING_FLOOR` | `0.15` / `0.0` / `1.0` | 否 |
-| `LLM_PROVIDER` / `LLM_MODEL` | 默认 `openai` / `gpt-4o-mini`；**若用 OpenCode Zen**：`LLM_MODEL=deepseek-v4.1-flash-free` | 否 |
-| `LLM_API_KEY` | 真实密钥（Zen 的 key 形如 `oc_sk_...`） | ✅ **是** |
-| `LLM_BASE_URL` | **仅非 OpenAI 官方时需要**：OpenCode Zen 填 `https://opencode.ai/inference/openai/v1/chat/completions`（代码要的是完整 URL，不是 base 路径） | 否 |
-| `LLM_TIMEOUT_SECONDS` | `20` | 否 |
+| 静态托管（Static Site） | Vue/Vite SPA、文档站 | ✅ **前端采用**：Render Static Site，构建产物 `dist/`，SPA 回退 |
+| PaaS（托管应用） | 快速上线、团队小 | ✅ **后端采用**：Render Web Service（Python），Blueprint 管理配置 |
+| 托管数据库 | 需要持久化 | ✅ **采用**：Render Postgres（免费实例，30 天到期需留意） |
+| 虚拟机（VM） | 单体、需完全控制 OS | ❌ 不采用：课程周期短，运维成本高，免费额度不需要 |
+| Docker / Kubernetes | 环境一致、弹性扩缩容 | ❌ 不采用：单服务规模小、免费档无容器编排收益；Dockerfile 会增加构建链复杂度 |
+| Serverless | 事件驱动、低频接口 | ❌ 不采用：交易/持仓是常驻状态型服务，冷启动与运行时限制不适合 |
 
-### 前端（Render Static Site → Environment）
+**决策理由（一句话）**：前端天然是静态 SPA，后端是单实例 FastAPI + 托管 Postgres，PaaS + 静态托管是
+成本最低、上线最快、回滚最简单的组合；课程要求考察的是「能否把发布流程做标准」，而不是堆基础设施。
+
+**必须知道的限制（免费档）**：
+
+- Web Service 闲置约 15 分钟休眠，冷启动实测 **约 30–60 秒**（线上首次 `/api/players` TTFB 曾测到 **33.6s**）；
+- 内存/CPU 很小（0.1 vCPU 级别），压力测试饱和约 38 req/s；
+- 免费 Postgres **30 天到期**（约 2026-11-23，到期前需升级或迁移）；
+- 免费实例**无 Shell / one-off job**，数据初始化要连 External Database URL 从本地执行（§3.6）。
+
+### 1.3 服务清单（`render.yaml` 为准）
+
+| 服务名 | 类型 | Plan/Region | Root Directory | 构建 | 启动 / 发布 |
+| --- | --- | --- | --- | --- | --- |
+| `playerstock-frontend` | Static Site | Free / Singapore | `code/frontend` | `npm install && npm run build` | `dist/`；路由 `/* → /index.html` |
+| `playerstock-backend` | Web Service | Free / Singapore | `code/backend` | `pip install -r requirements.txt` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT`；健康检查 `/api/health` |
+| `playerstock-db` | Postgres | Free / Singapore | — | — | 提供 Internal / External Database URL |
+| `playerstock-agent-patrol` | Cron | Free / Singapore | 仓库根 | 无需构建（标准库脚本） | `python scripts/agent_patrol.py`；`*/10 0-15 * * *` |
+
+> 首次部署可在 Render 控制台 **New → Blueprint** 选择本仓库，自动读取 `render.yaml` 创建以上服务。
+
+### 1.4 域名、HTTPS、跨域与路由
+
+- **HTTPS**：Render 为 `*.onrender.com` 自动签发/续期证书；本项目未使用自定义域名。
+- **前端路由**：Static Site 配置 rewrite `/* → /index.html`，保证刷新 `/players/1`、`/me` 等 SPA 路由不 404；
+  API 404 与未知路径由前端 `NotFoundView` 兜底展示（标题「页面不存在」）。
+- **跨域（CORS）**：后端 `CORS_ORIGINS` 必须精确等于前端 origin（例：`https://playerstock-frontend-mdlk.onrender.com`）。
+  代码会去掉首尾空白与**结尾斜杠**（浏览器 Origin 不带 `/`，差一个斜杠就整站跨域失败）。
+- **环境变量注入**：前端 `VITE_*` 是**构建期**打包进浏览器的，改了必须重新构建部署；后端密钥只放在 Render Environment。
+
+### 1.5 自定义域名（可选，本项目未启用）
+
+1. Render 服务 → Settings → Custom Domain → 添加 `stock.example.com`
+2. 在 DNS 服务商添加 Render 给出的 CNAME（或 A/ALIAS）记录
+3. Render 自动申请 Let's Encrypt 证书（约 1–5 分钟），HTTPS 强制跳转
+4. 同步修改前端 `VITE_API_BASE_URL`、后端 `CORS_ORIGINS` 为新域名后重新部署
+> 课程演示使用 `*.onrender.com` 已满足 HTTPS 与可访问性，未申请域名以免引入额外不确定性。
+
+### 1.6 参考部署案例对照（WindOnMAgent / Linux 云服务器）
+
+参考案例：<https://github.com/bettermorn/AIAgent/blob/main/code/IndustryAgent/WindOnMAgent/deployment.md>
+（FastAPI + 原生 JS + PostgreSQL，部署到 Ubuntu 22.04 / Debian 12 云服务器，使用 Nginx + systemd + certbot）。
+本项目按课程「6 天上线 + 免费额度」约束选择 Render 托管；两者的检查单思想一致，但基础设施不同：
+
+| 维度 | 参考案例（Linux 自建） | 本项目（Render 托管） | 本项目处理 |
+| --- | --- | --- | --- |
+| 运行环境 | Ubuntu 22.04/24 + Nginx + systemd + uvicorn | Render Static Site + Web Service + Cron + Postgres | 不引入 Nginx/systemd；平台托管进程与证书 |
+| 前端 | 原生 JS 静态文件由后端直接托管 | Vue 3 SPA，独立 Static Site + SPA fallback | 前后端分离，前端构建产物 `dist/` |
+| 数据库 | 同机 PostgreSQL 14+，手工备份 | Render 托管 Postgres（免费 30 天） | 迁移到托管库，避免临时盘丢数据 |
+| HTTPS | certbot + ufw + 安全组 | Render 自动签发 `*.onrender.com` 证书 | 不配置 certbot；域名/证书由平台负责 |
+| 配置 | `/etc/windom/windom.env`（640） | Render Environment（秘密 `sync: false`） | 密钥只在控制台，不进仓库 |
+| 健康检查 | `/health` 存活 + `/ready` 就绪 | `/api/health`（覆盖依赖探测） | 未单独提供 `/ready`，见 §5.5 N/A 说明 |
+| 进程模型 | `uvicorn --workers 1`，避免进程内状态分裂 | 免费档单实例，天然 1 worker | 不涉及多 worker 粘性会话问题 |
+| 运维入口 | `systemctl` / `journalctl` / `nginx -t` | Render Dashboard（Logs/Metrics/Deploys） | 用平台日志与部署历史 |
+| 适用场景 | 需完全控制 OS、内网/离线、长期自建 | 课程 6 天、免费额度、快速回滚 | 本项目选 Render |
+
+**吸收进本文的内容**：部署架构图（§1.1）、容量与资源边界（§4.10）、上线前账号与数据处理（§4.11）、
+一页版最终发布检查卡（§5.9）；参考案例中的 A–G 检查单与回滚思路已体现在 §5、§8。
+**明确不照搬**：Nginx/SSE/WebSocket 配置、systemd 托管、certbot、Linux 用户与目录权限——本项目由 Render 托管，
+这些组件不存在；如未来改为自建 Linux，可按参考案例补回，但需要重新验证前端静态托管与 CORS。
+
+---
+
+## 2. 环境与配置
+
+### 2.1 环境分层
+
+| 环境 | 前端 | 后端 | 数据库 | 用途 |
+| --- | --- | --- | --- | --- |
+| 本地开发 | `npm run dev`（Vite） | `uvicorn --reload` | SQLite `code/backend/playerstock.db` | 日常开发、单测、截图 |
+| CI（GitHub Actions） | `npm ci` + lint + vitest + build | Python 3.12 + ruff + pytest（临时 SQLite） | 每用例独立临时库 | 合并门禁 |
+| 生产（Render） | Static Site（HTTPS） | Web Service（HTTPS） | Render Postgres | 课程验收 / 答辩演示 |
+
+### 2.2 后端环境变量（Render → Environment）
+
+| 变量 | 值 / 说明 | 密钥 |
+| --- | --- | --- |
+| `PYTHON_VERSION` | `3.12.6`（与 `render.yaml`、CI 对齐） | 否 |
+| `DATABASE_URL` | Postgres **Internal Database URL**（`postgresql://…`；代码自动补 `+psycopg2`） | ✅ 是 |
+| `CORS_ORIGINS` | 前端公网 origin，多个用英文逗号分隔 | 否 |
+| `DEBUG_ENDPOINTS` | 验收期 `1`（`/api/debug/db` 可截图）；**验收完成后建议 `0`** | 否 |
+| `RESEED_TOKEN` | `POST /api/debug/reseed` 的口令，线上必须覆盖默认值 | ✅ 是 |
+| `LLM_PROVIDER` / `LLM_MODEL` | 当前线上：`openai` 兼容协议 / `deepseek-flash` | 否 |
+| `LLM_BASE_URL` | `https://api.deepseek.com/v1`（代码会补全 `/chat/completions`） | 否 |
+| `LLM_API_KEY` | 模型密钥（只留在后端，**绝不下发前端**） | ✅ 是 |
+| `LLM_TIMEOUT_SECONDS` | `20`（超时/失败自动回落 `source=rule_fallback`，接口仍 200） | 否 |
+| `INITIAL_BALANCE` / `MAX_POSITION_PER_PLAYER` | `5000` / `50` | 否 |
+| `PRICING_ALPHA` / `BETA` / `FLOOR` | `0.15` / `0.0` / `1.0` | 否 |
+
+> ✅ `render.yaml` 已于 2026-11-21 同步为 DeepSeek 配置（`LLM_MODEL=deepseek-flash` +
+> `LLM_BASE_URL=https://api.deepseek.com/v1`，`LLM_API_KEY` 仍由控制台填写）；`code/backend/.env.example` 同口径。
+> 密钥类变量全部 `sync: false`，由控制台填写，不进入仓库、不写进日志。
+
+### 2.3 前端环境变量（Render Static Site → Environment，构建期）
 
 | 变量 | 值 | 说明 |
 | --- | --- | --- |
-| `VITE_API_BASE_URL` | 后端公网地址 | 构建时注入，改完必须重新部署 |
+| `VITE_API_BASE_URL` | `https://playerstock-backend-mdlk.onrender.com`（**不要带尾斜杠 / 不要写 127.0.0.1**） | 构建时注入，改完必须重新部署 |
+| `VITE_USE_MOCK` | `false` | `true` 时走 `src/mock` 假数据，仅用于后端未就绪的开发阶段 |
 
-## 3. 部署操作手册（方案 B：免费前后端 + 免费 Postgres）
+> 前端变量会被打包进浏览器 JS：**任何密钥都不能放进 `VITE_*`**。
 
-> 目标：2 个服务 + 1 个数据库，全部免费，预计 30–45 分钟。
-> ⚠️ **顺序不能乱**：先建数据库 → 再建后端（要粘数据库地址）→ 再建前端（要粘后端地址）→ 最后回填 CORS。
+### 2.4 构建配置
 
-### 3.0 前置条件（代码侧已就绪）
+- **前端**：Node 24（CI 与 `package.json` engines 对齐，jsdom 要求 ^22.22.2 || ^24.15.0 || >=26）；
+  `npm ci`（必须提交 `package-lock.json`）→ `npm run lint` → `npm run test:unit -- --run` → `npm run build`。
+  输出 `dist/`（`index.html` + 带内容哈希的 `assets/*`）。
+- **后端**：Python 3.12，`pip install -r code/backend/requirements.txt`（含 `psycopg2-binary`）；
+  启动入口是 `app.main:app`；ORM `create_all` 自动建表。
+- **本地环境文件**：`code/backend/.env.example` → `.env`；前端 `code/frontend/.env.example` →
+  `.env.local`（均已被 `.gitignore` 忽略）。
 
-- [x] `code/backend/requirements.txt` 已含 `psycopg2-binary`（连 Postgres 的驱动）
-- [x] `code/backend/app/core/config.py` 已把 `postgres://` / 裸 `postgresql://` 归一化成 **`postgresql+psycopg2://`**：① 不转 `postgres://` 会报 `Can't load plugin: sqlalchemy.dialects:postgres`；② **SQLAlchemy 2.1 起裸 `postgresql://` 默认驱动是 psycopg 3（包名 `psycopg`）**，而项目只装 `psycopg2-binary`，不显式写驱动会 `ModuleNotFoundError: No module named 'psycopg'` 直接起不来（第 4 天预检实测，`tests/unit/test_config_db_url.py` 6 条守着）
-- [x] `code/backend/app/core/database.py` 已对非 SQLite 开启 `pool_pre_ping`（避免空闲后第一个请求连接失效）
-- [x] `code/backend/app/main.py` 在 Render 上检测到 SQLite 会打警告日志（防止"数据总丢"查不出原因）
-- [x] 灌数命令就绪：`python scripts/bootstrap_demo_data.py`（种子 + **12 轮**价格，干净库实测每人 11 点、引擎 9/9，见 §3.9）
-- [x] 代码已推到 GitHub 并确认 **要部署的分支**（团队用 `develop`，Blueprint 创建时选它）
-      ——⚠️ 当前 `develop` 仍有未推送的本地提交，**部署前必须先 push**，否则 Render 拉不到最新代码
+---
 
-### 3.1 注册并授权 Render
+## 3. 部署与发布流程
 
-1. 打开 <https://dashboard.render.com/register>，用 **GitHub 账号**登录
-2. 授权 Render 读取 `July75-bit/Innovation` 仓库
+### 3.1 触发方式与分支纪律
 
-### 3.2 先建免费 Postgres
+- **日常提交**：只推 `develop`（Render 部署源）；`main` 仅历史 PR，不作为部署分支。
+- **CI 触发**：`push` / `pull_request` / `workflow_dispatch`，配置在 `.github/workflows/ci.yml`。
+- **Render 自动部署**：Blueprint 默认对 `develop` 开启 Auto-Deploy；推送并通过（或并行于）CI 后触发新部署。
+  > 免费档没有「等 CI 绿了再部署」的门禁，**发布纪律 = 本地与 CI 都绿才 push**。
+- 提交前必查冲突标记：`git grep -n -E "^(<<<<<<< |>>>>>>> )"`（CI 的 hygiene job 也会拦）。
 
-1. Dashboard → **New → Postgres**
-2. Name：`playerstock-db`；**Region 选 Singapore**（必须与后端同区，才能用 Internal URL）
-3. Plan：**Free**（1GB；⚠️ **创建后 30 天到期**，到期前 14 天可升级保留）
-4. 建好后进服务页 → 复制 **Internal Database URL**（形如 `postgresql://user:pass@dpg-xxxx-a/playerstock_db`）
-5. 把创建日期记到 `docs/retrospection/daily_summary.md`，设个到期提醒
+### 3.2 CI 门禁（4 个 job，全绿才可发布）
 
-### 3.3 建后端 Web Service
+| Job | 关键命令 | 失败含义 |
+| --- | --- | --- |
+| 仓库卫生（冲突标记） | `git grep -n -E "^(<<<<<<< \|>>>>>>> )"` | 解冲突时把标记提交了（历史事故 ×2） |
+| 后端测试（pytest） | `ruff check --select E4,E7,E9,F,C901 …` → `python -m pytest` | 圈复杂度/未用导入/单测失败；**ruff 在 pytest 之前** |
+| 前端检查 | `npm run lint` → `npm run test:unit -- --run` → `npm run build` | eslint/vitest/vue-tsc 失败 |
+| 交付物完整性 | 文档、证据、`defense.pdf` 存在且非空 | 误删交付物 |
 
-1. Dashboard → **New → Blueprint** → 选仓库 + 分支（`develop`）→ Render 自动识别 `render.yaml` 里的两个服务
-2. 后端 `playerstock-backend` 的环境变量：
-   - `DATABASE_URL` = 3.2 的 **Internal Database URL**（含密码，控制台填写，不进仓库）
-   - `LLM_API_KEY` = 模型密钥（暂时没有就留空，AI 自动走规则兜底）
-   - `CORS_ORIGINS` = **先留空**，3.5 节回填
-3. 等 Deploy 成功 → 打开 `https://<后端>.onrender.com/api/health`，应返回 `{"status":"ok","service":"playerstock-backend"}`
+### 3.3 构建制品与版本标识
 
-### 3.4 建前端 Static Site
+- **版本号**：`develop` 的 **Git Commit SHA**（`git rev-parse --short HEAD`）+ Render Deploy ID。
+- **前端制品**：`dist/`，资源文件名带内容哈希（可长期缓存；`index.html` 不设长缓存）。
+- **后端制品**：Git 源码 + `requirements.txt`（无二进制制品），Render 每次按 commit 重建。
+- **可复现**：同 commit + 同环境变量 → 同构建结果；数据用 `bootstrap_demo_data.py` 固定 seed 复现。
 
-1. Blueprint 的第二个服务 `playerstock-frontend`：
-   - `VITE_API_BASE_URL` = 3.3 的后端公网地址（`https://xxx.onrender.com`，**不要带尾部斜杠、不要带 127.0.0.1**）
-2. 等 Deploy 成功 → 打开前端地址，页面能加载
-3. ⚠️ `VITE_API_BASE_URL` 是**构建时**注入：改了必须重新部署前端才生效
+### 3.4 首次部署（从零到可访问，约 30–45 分钟）
 
-### 3.5 回填 CORS 并重启后端
+> 顺序不能乱：**先建库 → 再建后端（粘库地址）→ 再建前端（粘后端地址）→ 回填 CORS**。
 
-1. 后端服务 → Environment → `CORS_ORIGINS` 改为前端公网地址（如 `https://playerstock-frontend.onrender.com`）
-2. 保存 → 后端自动重新部署
-3. 前端 F12 Network：`/api/players` 不再报 CORS 错误
+1. Render 登录并授权读取 `July75-bit/Innovation`。
+2. 创建 Postgres：Name `playerstock-db`，Region **Singapore**，Plan **Free**；复制 **Internal Database URL**。
+3. New → **Blueprint** → 选择仓库与 `develop` 分支 → 自动创建 3 个服务；后端填写：
+   `DATABASE_URL`（Internal）、`LLM_API_KEY`、`LLM_BASE_URL`、`LLM_MODEL`、`CORS_ORIGINS` 先留空。
+4. 等后端 Deploy 成功 → 打开 `https://<后端>/api/health`，返回
+   `{"status":"ok","service":"playerstock-backend"}`。
+5. 前端填写 `VITE_API_BASE_URL` = 后端公网地址（无尾斜杠）→ Deploy → 打开前端能加载。
+6. 回填后端 `CORS_ORIGINS` = 前端 origin → 保存触发重新部署 → 前端 Network 中 `/api/players` 无 CORS 错误。
+7. 初始化演示数据（见 §3.6）→ 按 §5 检查单验收。
 
-### 3.6 初始化演示数据（免费实例没有 Shell，必须在本地跑）
+### 3.5 日常发布步骤（每次改代码）
 
-> ⚠️ 免费 Web Service **不提供 Shell / SSH**，也不能跑 one-off job，所以种子数据不能在线上执行，
-> 要连 Render 的 **External Database URL** 从本地写入。
+1. 本地：`git status` 干净 → 跑通与 CI 同款门禁（`npm run lint` / `npm run test:unit -- --run` /
+   `npm run build`；后端 `ruff …` + `python -m pytest`）。
+2. `git commit` → 由**发布负责人** `git push origin develop`。
+3. 打开 GitHub Actions 看 4 个 job（约 1–2 分钟）；红则修，不修不发布。
+4. Render → 对应服务 → Deploys 看新部署 `Live`；失败看 Logs。
+5. 执行 §3.7 冒烟（health + players + 前端首页 + 登录/交易一条链路）。
+6. 填写 §11 发布记录（时间、commit、CI run、部署 ID、验证人、回滚点）。
 
-1. 后端启动时会自动建表（`init_db()`），此时表是空的 → 前端会显示"没有选手"
-2. 本地仓库根目录执行（**一条命令**：种子 + 12 轮价格；4 的倍数才均衡，每人 11 个价格点）：
+### 3.6 数据初始化 / 重建（免费实例无 Shell）
 
-   ```powershell
-   $env:DATABASE_URL="<External Database URL>"
-   python scripts/bootstrap_demo_data.py
-   Remove-Item Env:\DATABASE_URL   # 用完清掉，别让本地测试连到线上库
-   ```
-
-3. 刷新线上前端 → 能看到 16 名选手、进详情页有 10+ 个价格点即成功
-4. 依赖已就绪：`scripts/seed_db.py`（B，第 1 天）、`scripts/update_prices.py`（B，第 3 天）
-   均已实现；`bootstrap_demo_data.py`（B，第 4 天）只是把这两步 + C 的 `simulate_match.py`
-   串成一条命令。只想补价格不动库时加 `--keep`
-
-### 3.7 最终验证
-
-按第 5 节清单逐条打勾，重点三条：
-- [x] 线上买卖各成功一次（TC-403：买 2 @108.75 / 卖 1 / 并发卖 1）
-- [x] **重新部署后端后，交易记录仍在**（TC-404：余额/持仓/流水/价格点逐项一致 → Postgres 生效）
-- [x] 后端日志里**没有** `当前部署在 Render 上却使用本地 SQLite` 这条警告（线上 `/api/debug/db` 实测 `是否 SQLite: false`）
-
-### 3.8 第 3 天部署预检（2026-10-24，不部署）
-
-> 目的：第 5 天正式部署前先过一遍代码侧可检查项，避免当天才发现配置缺失。**只做静态检查，没有创建任何 Render 服务。**
-
-| # | 检查项 | 结果 | 说明 / 待办 |
-| --- | --- | --- | --- |
-| 1 | `render.yaml` 后端：`rootDir: code/backend`、`startCommand: uvicorn app.main:app`、`healthCheckPath: /api/health` | ✅ | 与仓库一致，不是手册里的 `main:app` |
-| 2 | `render.yaml` 前端：`rootDir: code/frontend`、`npm install && npm run build`、`staticPublishPath: dist`、SPA rewrite 回退 | ✅ | 等 A 的脚手架生成 `package.json` 后才真正生效 |
-| 3 | `DATABASE_URL` 用控制台 `sync: false`，填 Render Postgres 的 Internal Database URL | ✅ | 第 5 天填；忘填会回落本地 SQLite，数据随部署丢失 |
-| 4 | `postgres://` 自动归一化、`pool_pre_ping`、Render 上误用 SQLite 的告警日志 | ✅ | 已在 `config.py` / `database.py` / `main.py` 实现。**第 4 天补充**：归一化目标改为 `postgresql+psycopg2://`——SQLAlchemy 2.1 的裸 `postgresql://` 默认用 psycopg 3，不写死驱动会 `ModuleNotFoundError: psycopg`（`test_config_db_url.py` 守卫） |
-| 5 | `LLM_API_KEY`、`CORS_ORIGINS` 均为 `sync: false` | ✅ | 第 5 天填；CORS 不填前端会跨域失败 |
-| 6 | `.env.example` 字段与 `Settings` 一致（含 `LLM_TIMEOUT_SECONDS=20`） | ✅ | 第 4 天已把注释里"挂载磁盘后改 SQLite"改为"线上必须填 Postgres"并写明驱动归一化，与方案 B 一致 |
-| 7 | `requirements.lock.txt` 已入库（B，第 2 天） | ✅ | 部署 build 仍用 `requirements.txt`；锁定文件作为"可复现"证据保留 |
-| 8 | 演示数据初始化方式 | ✅ | 免费实例无 Shell → 本地连 **External** URL 跑 `python scripts/bootstrap_demo_data.py` 一条命令（种子 + 12 轮价格 = 每人 11 点、每轮 4 人停牌，见 §3.6） |
-| 9 | 线上验收清单（第 5 节 TC-401~406） | ⬜ | 第 5 天执行 |
-| 10 | 前端构建产物（`dist/`） | ✅ | A 的脚手架已入库；第 4 天 B 本地复跑 `npm ci` / `npm run build`（58 modules，exit 0）/ oxlint / eslint / vitest 全绿，CI run #30 前端 job 亦绿（见 `test_report.md` §2.4） |
-
-**预检结论**：**后端代码侧已就绪**，第 5 天可先单独部署后端验证 `/api/health` 与 Postgres 持久化；前端部署与线上全流程验收阻塞在 A 的脚手架（第 3–4 天）与第 5 天的控制台操作。**今天不做任何线上操作。**
-
-### 3.9 第 4 天预检（第二步）：代码侧全部就绪，只差控制台点击
-
-> 2026-10-25，B。§3.8 是"不部署的静态预检"，这一节是把**能提前做的都做完**：
-> 灌数配方在干净库上跑通、用真实 API 核到点数、把 4 步操作要填的东西写死。
-> ⚠️ **第 1–3 步必须用 Render 账号在浏览器里点**（B 没有账号凭据，无法代做）；
-> 第 4 步的命令已经就绪并在干净库验证过，等库建好后照抄即可。
-
-| # | 步骤 | 命令 / 要点 | 状态 |
-| --- | --- | --- | --- |
-| 1 | **Render 注册 + 建免费 Postgres** | Dashboard → New → Postgres；Name `playerstock-db`；**Region = Singapore**；Plan = Free；建好复制 **Internal Database URL** | ✅ 已建（PG 18，Service ID `dpg-dbe8nvrjlhs73ervmu0-a`，**2026-11-23 到期**） |
-| 2 | **Blueprint 导入 `render.yaml`** | New → Blueprint → 选仓库 → **分支选 `develop`** → 自动识别 `playerstock-backend` / `playerstock-frontend` 两个服务 | ✅ 已导入（两服务均 "Blueprint managed"，分支 `develop`，Live） |
-| 3 | **填环境变量** | 后端：`DATABASE_URL` = 第 1 步的 Internal URL、`CORS_ORIGINS`、`LLM_API_KEY`（留空 → 自动 `rule_fallback`）；前端：`VITE_API_BASE_URL` = 后端公网域（**构建期注入，改完要重新部署**） | ✅ 已生效（前端能取到数据 = CORS 与 `VITE_API_BASE_URL` 都对；线上无密钥时 `/api/analysis` 返回 `rule_fallback`） |
-| 4 | **用 External URL 从本地灌数** | `$env:DATABASE_URL="<External Database URL>"` → `python scripts/bootstrap_demo_data.py` → 刷新线上前端，确认每人 ≥10 个价格点 | ✅ 已灌（线上 `/api/players/1/prices` = **11 点**，8 人价格与本地 `--rounds 9` 逐条一致；见 §6 / `test_report.md` §6） |
-
-**第 4 步的配方在干净库上的实测（2026-10-25，B 本机）**
-
-```powershell
-$env:DATABASE_URL = "sqlite:///<一个不存在的文件>"     # 模拟"全新库"
-python scripts/bootstrap_demo_data.py                  # 一条命令：种子 + 9 轮价格
+```bash
+# 本地仓库根目录；External Database URL 只在一次性环境变量里用，不落盘、不进 commit
+export DATABASE_URL="<External Database URL>"        # Windows PowerShell: $env:DATABASE_URL="..."
+python scripts/bootstrap_demo_data.py                # 清库重建：16 名选手 + 演示账户 + 价格历史
+unset DATABASE_URL                                   # 用完清掉，避免本地测试误连线上库
 ```
 
-脚本自检输出（`--min-points 10` 默认值）：
+- 只想补价格不动库：`python scripts/bootstrap_demo_data.py --keep`
+- 线上内网重灌（可选，需 `DEBUG_ENDPOINTS=1` + `RESEED_TOKEN`）：
+  `curl -X POST "https://<后端>/api/debug/reseed?token=<RESEED_TOKEN>"`（会重置演示数据，不碰他人账号）
+- 验证数据：浏览器打开 `https://<后端>/api/debug/db`，确认 `是否 SQLite: false`、表行数非空。
 
-```text
-=== 结果核对 ===
-  OK #1 ZywOo   11 点  现价 108.75
-  OK #2 donk    11 点  现价 131.45
-  OK #3 m0NESY  11 点  现价 85.08
-  OK #4 NiKo    11 点  现价 58.11
-  OK #5 ropz    10 点  现价 127.04
-  OK #6 jL      11 点  现价 105.27
-  OK #7 sh1ro    2 点  现价 136.50（suspended，按规则不定价）
-  OK #8 flameZ  11 点  现价 74.45
-  price_history 合计 = 78 条；demo 余额 = 5000.00；持仓 = 0 条；流水 = 0 条
+### 3.7 发布后冒烟（必须执行）
+
+```bash
+# 1) 健康检查
+curl -fsS https://playerstock-backend-mdlk.onrender.com/api/health
+# 2) 只读核心接口（首次可能冷启动，给 60s）
+curl -fsS https://playerstock-backend-mdlk.onrender.com/api/players | head -c 200
+curl -fsS "https://playerstock-backend-mdlk.onrender.com/api/players/1/prices" | head -c 200
+# 3) 前端首页 + SPA 路由刷新
+curl -fsS -o /dev/null -w "%{http_code}\n" https://playerstock-frontend-mdlk.onrender.com/
+curl -fsS -o /dev/null -w "%{http_code}\n" https://playerstock-frontend-mdlk.onrender.com/me
+# 4) 只读联调脚本（不产生交易）
+python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com --read-only
 ```
 
-> **历史快照说明**：上面这段是 **2026-11-07 首次灌数（8 名选手时期）** 的输出，原样保留以便追溯；
-> **当前线上状态（2026-11-14 实测）**：16 名选手 / 175 条价格历史 / 9 张表；
-> `demo` 账户余额 5000.00、持仓 0、流水 0（干净演示态），另有 9 个注册账号的持仓与流水各自独立。
-> 实时数据可随时打开 `GET /api/debug/db` 查看。
+浏览器侧还要人工确认：首页卡片、详情页图表 + AI 建议、登录/退出、买入→持仓→流水、移动端 4 Tab 与头像。
 
-再用**真实 uvicorn**（同一个库）走 HTTP 核一遍，证明"10+ 点"不是只写在文档里：
+### 3.8 第 3 天部署预检（2026-10-24，历史记录）
 
-| 接口 | 结果 |
-| --- | --- |
-| `GET /api/players` | 16 名选手 |
-| `GET /api/players/1/prices` | **11 个点**，`ts` 升序（`2026-10-24T08:20:21Z` → `2026-11-09T00:00:00Z`），末点 `108.75` = `current_price`，末点 `reason` 含"得分"与 `S=` |
-| 其余 7 人点数 | 11 / 11 / 11 / 10 / 11 / 2 / 11（`ropz` 10、`sh1ro` 2 属预期） |
-| `GET /api/health` | `{"status":"ok"}` |
+只做静态检查、未创建服务：复核 `render.yaml` 的 rootDir/startCommand、`.env.example`、`DATABASE_URL` 与 CORS
+控制台项、SQLite 误用告警；结论是「代码侧就绪，等第 5 天控制台点击」。
 
-> 这一步只证明"命令在任何空库上都能灌出同样的数"；**线上 Render Postgres 上的一次还没做**
-> （要等第 1–3 步建库拿 External URL）。做法与上面完全一致，只是把 `DATABASE_URL` 换成 External URL。
+### 3.9 第 4 天预检（历史记录）
 
-### 3.10 演示前预热（B，2026-10-25）
+重点验证 Postgres 连接串归一化（`postgres://` / 裸 `postgresql://` → `postgresql+psycopg2://`，
+否则 `ModuleNotFoundError: psycopg`）、`pool_pre_ping`、CI 门禁；预检清单已并入 §5。
 
-> 免费 Web Service 空闲约 15 分钟会休眠，下一次请求要等容器冷启动。**实测冷启动 49s**
-> （2026-10-25，`prewarm.py` 打线上后端：第 1、2 次 ReadTimeout，第 3 次 200，总耗时 49.3s）。
-> 如果答辩时直接打开前端，很可能先看到转圈或"连接失败"，看起来像服务挂了。
+### 3.10 演示前预热（必须做）
 
-**做法**（演示前 10–15 分钟执行，一条命令）：
+免费实例会休眠，**答辩/验收前 10–15 分钟**执行：
 
-```powershell
-python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com --min-points 10
+```bash
+python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com
 ```
 
-它会：轮询 `/api/health` 直到 200（打印冷启动耗时）→ 核对 `/api/players` 与每人的 `/api/prices` 点数
-→ 全绿才打印"已就绪"。退出码 0 才算可以演示；1 就去看 Render 控制台/日志，别硬上。
+脚本会叫醒实例并逐个探活关键接口；配合保温 cron（§4.6），白天通常已处于热态。
 
-**答辩当天时间表建议**
+### 3.11 发布纪律（课程要求「发布流程」）
 
-| 时间 | 动作 |
-| --- | --- |
-| 演示前 15 分钟 | 跑 `prewarm.py`（等它把实例叫醒，顺便确认数据在） |
-| 演示前 10 分钟 | 浏览器打开前端一次，确认首页有 8 张卡（前端本身是静态站，不需要预热，但要确认 `VITE_API_BASE_URL` 指对了） |
-| 演示前 5 分钟 | 再刷一次 `/api/health`（保持实例醒着）；若此时仍报错，切到提前录好的 2 分钟演示视频 |
+- **发布负责人**：D；**验证负责人**：D + B 交叉；**发布窗口**：白天（避免半夜冷启动影响演示）。
+- **一次发布只做一件事**：功能 / 修复 / 文档分开提交，便于回滚。
+- **发布前**：CI 绿 + §5.1–5.5 检查单；**发布后**：§5.6–5.7 检查单 + 发布记录。
+- **红线**：不把密钥写进仓库/日志；不绕过 `DATABASE_URL` 用 SQLite 上生产；不在线上买卖真实资金（本作品只用信用点）。
 
-> 为什么把"预热"做成脚本而不是写"记得点一下"：口头约定会被忘，脚本跑完有退出码和耗时数字，
-> 而且顺带把"数据是否还在"一起验了（冷启动 + 数据核对一次完成）。
+---
 
-## 4. 数据持久化（必须解决，否则第 5 天验收不过）
+## 4. 数据持久化、灰度、监控与回滚保障
 
-### 4.1 已确认的平台事实
+### 4.1 平台事实（决定了方案）
 
-> 核实时间：2026-10-17 ｜ 依据：Render 官方文档（[Deploy for Free](https://render.com/docs/free)、[Persistent Disks](https://render.com/docs/disks)）
-> 状态：✅ 三条关键结论均已核实，非传闻
-
-| # | 结论 | 对本项目的影响 | 来源 |
-| --- | --- | --- | --- |
-| 1 | **前端 Static Site + 后端 Web Service 的拆分成立**：静态站点免费托管在全球 CDN 上；只有 Web Service 能跑 Python/FastAPI | 与仓库 `render.yaml` 现有配置一致，拆分方式不用改 | free 文档 § Static sites |
-| 2 | **免费 Web Service 15 分钟无入站流量就休眠**，下次请求**约 1 分钟**冷启动，期间浏览器显示 Render 的加载页 | 老师第一次打开会以为"打不开"，演示前必须预热 | free 文档 § Spinning down on idle |
-| 3 | **免费实例的文件系统是临时的**：本地 SQLite 数据会在**重新部署 / 重启 / 休眠**时**全部丢失** | "重启后交易记录还在"这条 M5 验收在免费实例上**必然失败** | free 文档 § Local files lost on redeploy |
-| 4 | **免费 Web Service 不能挂 Persistent Disk**；付费盘也只保证"挂载路径下"的数据持久，且会失去零停机部署、无法多实例 | 想靠 SQLite 持久化就必须升级付费实例 | disks 文档 开头与 § Disk limitations |
-| 5 | **免费 Postgres 有 30 天有效期**（1 个 workspace 限 1 个、1GB；到期后 14 天宽限，之后连同数据删除） | 够覆盖 6 天课程 + 答辩，但**课程结束约 30 天后会消失** | free 文档 § Free Postgres |
-
-**结论一句话**：① 前端 Static Site / 后端 Web Service ✅ 成立；② 免费实例会休眠（15 分钟无流量，冷启动约 1 分钟）✅；③ 免费实例上本地 SQLite 必丢数据 ✅。
+- Render Web Service 的文件系统是**临时**的：重新部署/重启/休眠唤醒会丢本地 SQLite 文件；
+- 免费实例不能挂持久磁盘（Persistent Disk 仅付费档）；
+- 免费 Postgres 提供独立持久化（但有 30 天到期限制）；
+- 免费实例无 Shell，种子/迁移只能从本地连 **External URL** 执行，或走内网 `reseed` 接口。
 
 ### 4.2 方案对比
 
-| 方案 | 成本 | 数据是否持久 | 改动量 | 是否满足 M5 验收 |
-| --- | --- | --- | --- | --- |
-| **A. 付费实例 + 1GB 持久盘** | 约 $7/月起 | ✅ 部署/重启不丢 | 加 `disk` 配置，`DATABASE_URL=sqlite:////var/data/playerstock.db` | ✅ |
-| **B. 免费 Postgres（✅ 推荐）** | 免费 | ✅ 数据在托管数据库里，重新部署不影响 | `requirements.txt` 加 `psycopg2-binary`，换 `DATABASE_URL`；SQLAlchemy 代码不用改 | ✅ |
-| **C. 免费实例 + 本地 SQLite** | 免费 | ❌ 重新部署/重启/休眠即全部丢失 | 零改动（**当前 `render.yaml` 就是这个状态**） | ❌ |
-
-### 4.3 决策（已定）：方案 B —— 免费前后端 + Render 免费 Postgres
-
-> 决策日期：2026-10-17 ｜ 决策人：团队 ｜ 执行人：D
-
-选它的理由：
-1. **全免费**，不用为课程作业付费；
-2. 30 天有效期覆盖"第 4–5 天部署 → 第 6 天答辩"；
-3. 改动最小：SQLAlchemy 代码不用改，只换 `DATABASE_URL` + 一个驱动依赖；
-4. 能满足 M5「重新部署后数据仍在」这条验收。
-
-**代码侧已完成的铺垫（不需再做）**：
-
-- [x] `code/backend/requirements.txt` 加入 `psycopg2-binary`
-- [x] `config.py` 自动把 `postgres://` 归一化为 `postgresql://`
-- [x] `database.py` 对 Postgres 开启 `pool_pre_ping`
-- [x] `main.py` 在 Render 上误用 SQLite 时打警告日志
-
-**仍需人工完成的（详见第 3 节操作手册）**：
-
-- [x] D：注册 Render、建 Postgres、建两个服务、填环境变量（三服务已 Live，见 §6）
-- [x] D：把 `DATABASE_URL` 设为 **Internal Database URL**（TC-404 已证明 Postgres 生效）
-- [x] B：`scripts/seed_db.py` 与一键灌数脚本 `scripts/bootstrap_demo_data.py` 均已实现并在干净库验证（每人 ≥10 点，见 §3.9）
-- [x] B：用 **External URL** 从本地跑 `bootstrap_demo_data.py` 灌线上库（线上 11 点/人，见 §3.6 / T5-07）
-- [x] B：线上跑 `python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com`（TC-403 全绿）
-- [x] **B7 的两项证据已入库**（文本 + 可复跑命令，比截图更耐查）：`docs/acceptance/evidence/online/backend-debug-db.md`
-      —— 后端日志的等价证据是 `/api/debug/db` 的 `是否 SQLite: false`；库表清单由同接口直接返回
-- [x] 全员：第 5 天按第 5 节验收清单逐条打勾
-
-#### 4.5.1 补那 2 张检查单截图（都只要"打开一个页面 / 跑一条命令"）
-
-| # | 要拍什么 | 怎么做 | 期望看到 |
+| 方案 | 持久化 | 成本 | 结论 |
 | --- | --- | --- | --- |
-| 1 | **库表清单（证明表在 Postgres 里）** | 浏览器直接打开 **`https://playerstock-backend-mdlk.onrender.com/api/debug/db`** | `"数据库方言": "postgresql"`、`"是否 SQLite": false`、`"表清单": ["players","positions","price_history","trades","users"]`、`"表行数"` 与 `"业务核对"`（选手 8 / 价格历史 78 / demo 余额 5000.00） |
-| 2 | **后端日志（证明无 SQLite 警告）** | Render → `playerstock-backend-mdlk` → **Logs**，重启一次看首屏 | 两行：`数据库：Postgres（持久化生效）` 与 `CORS 放行来源：…`；**搜不到** `当前部署在 Render 上却使用本地 SQLite` |
+| 继续 SQLite + 本地文件 | ❌ 部署即丢 | 0 | 不可接受 |
+| SQLite + 付费 Persistent Disk | ✅ | 付费 | 备选，但单盘单实例、扩容麻烦 |
+| **托管 Postgres（Render）** | ✅ | 免费 30 天 | ✅ **已采用**（代码零改动，SQLAlchemy 双环境） |
+| 外部托管数据库（Supabase 等） | ✅ | 免费档有限 | 备选，作为 Postgres 到期后的迁移方向 |
 
-> 第 1 项为什么用接口而不是 psql：Render 免费 Postgres **没有网页数据浏览器**，
-> 本地连 5432 又经常被网络掐断（`connection closed unexpectedly`）。而**后端本身就在 Render 内网**，
-> 让它自己把"用什么库、有哪些表、各有多少行"报出来最省事——浏览器打开就能截图。
-> 这个接口是**只读探针**：只回方言/表名/行数/几个业务计数，**不含连接串与个人数据**，
-> `DEBUG_ENDPOINTS=0` 可一键关闭（关后返回 404，见 `app/api/debug.py` 与契约 §3 第 12 项）。
->
-> 备用方案（想在本机核对同一件事）：`$env:DATABASE_URL="<External URL>"; python scripts/inspect_db.py --check`，
-> 跑完 `Remove-Item Env:\DATABASE_URL`，别让本地测试连到线上库。
+### 4.3 已落地的持久化保障
 
-**风险与兜底**：
+- `app/core/config.py` 把 Render 的 `postgres://` / 裸 `postgresql://` 统一补成 `postgresql+psycopg2://`
+  （SQLAlchemy 2.1 默认驱动变更的坑，有 6 条单测守着）；
+- 非 SQLite 连接启用 `pool_pre_ping`，避免空闲后第一个请求拿到失效连接；
+- 启动时若检测到「Render 环境 + SQLite」会打警告日志（防「数据总丢」查不出原因）。
 
-- Free Postgres **30 天后到期**（到期后 14 天宽限，之后删库）。答辩结束后若老师还要访问，改走方案 A 或用 Neon 免费 Postgres（同样只换 `DATABASE_URL`）。
-- 若忘记填 `DATABASE_URL`，代码会静默回落到本地 SQLite → 数据随部署丢失。用 `main.py` 的警告日志 + 3.7 节第 3 条来兜底检查。
+### 4.4 免费实例休眠与操作要求
 
-### 4.4 免费实例休眠带来的操作要求
+- 闲置约 **15 分钟**休眠，冷启动 **约 30–60 秒**（曾实测首个请求 33.6s）；
+- 影响：用户第一次打开可能等几十秒 → 前端有骨架屏 + 慢加载提示（>4s 提示「服务可能在唤醒中」）；
+- 对策：保温 cron（§4.6）+ 演示前 `prewarm.py`（§3.10）+ GET 自动重试一次（前端已实现）。
 
-| 场景 | 必须做的事 |
-| --- | --- |
-| 答辩/演示前 | **提前 10–15 分钟**跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10）；顺带确认数据在 |
-| 老师突然访问 | 首次约 1 分钟加载属正常现象；在演示开场或 README 里提前写明，避免被误判为"打不开" |
-| 长期无访问 | 休眠期间不消耗每月 750 小时免费额度，但本地 SQLite 数据（方案 C）已丢失 |
+### 4.5 当前运维状态与待办
 
-### 4.5 当前状态与 TODO
+- Postgres 免费实例 **约 2026-11-23 到期**：到期前升级付费或迁移到备用库；
+- `DEBUG_ENDPOINTS` 验收期开着（`/api/debug/db` 截图用），验收完成后关掉；
+- `RESEED_TOKEN` 线上已覆盖默认值（默认值仅课程演示用）；
+- `render.yaml` 的 LLM 配置（`LLM_MODEL=deepseek-flash`、`LLM_BASE_URL=https://api.deepseek.com/v1`）
+  已在 2026-11-21 与线上控制台同步；`LLM_PROVIDER` 仅作标识，不参与请求路由。
 
-| 项 | 状态 |
-| --- | --- |
-| 方案选择 | ✅ 已定：方案 B（免费前后端 + 免费 Postgres） |
-| 代码侧铺垫 | ✅ 已完成（驱动、URL 归一化、连接探活、误用 SQLite 告警） |
-| `render.yaml` | ✅ 已改为 `DATABASE_URL` 由控制台填写（`sync: false`） |
-| Render 账号 / 服务 | ⬜ 未创建（D 本人操作） |
-| 种子数据落库 | ✅ 脚本就绪：`scripts/bootstrap_demo_data.py`（种子 + 9 轮价格；线上用 External URL 执行） |
-| 实测回填 | ⬜ 第 5 天部署后填：冷启动秒数、重启后数据是否仍在 |
+### 4.6 保温 cron（免费实例）
 
-> 提醒：免费实例休眠（15 分钟无流量，冷启动约 1 分钟）→ 演示前 10–15 分钟预热，见 4.4。
+```yaml
+schedule: "*/10 0-15 * * *"   # UTC 0–15 点 = 北京 08:00–23:59，每 10 分钟一次
+startCommand: python scripts/agent_patrol.py
+```
 
-## 5. 线上验收清单（必须逐条打勾）
+- 目的：让后端在工作时间保持热态（巡检本身是一次 HTTP 请求），并顺带刷新简报；
+- 简报刷新策略：**仅当简报超过 30 分钟才刷新**（避免每 10 分钟烧 LLM），冷启动超时放宽到 90s；
+- 额度：约 16h/天 ≈ **496h/月**，免费 750h/月内；夜间仍可能冷启动（前端有提示兜底）。
 
-- [x] `GET https://<backend>/api/health` 返回 `{"status":"ok",...}`
-- [x] 前端页面能打开，且不是白屏
-- [x] 前端成功拉到 `/api/players`（浏览器 Network 无 CORS 报错）
-- [x] 线上完成一次买入：余额减少、持仓增加、流水新增
-- [x] 线上完成一次卖出：余额增加、持仓减少
-- [x] **重新部署一次后端，然后刷新页面**：前面那笔交易和持仓**仍在**（验证持久化）
-      —— 2026-11-07 实测（Manual Deploy → Live）：[部署前 account](../acceptance/evidence/online/online-persistence-before-1-account.png)／
-      [部署前 trades 7 条](../acceptance/evidence/online/online-persistence-before-2-trades.png)／
-      [部署后 account](../acceptance/evidence/online/online-persistence-after-1-account.png)／
-      [部署后 trades 8 条](../acceptance/evidence/online/online-persistence-after-2-trades.png)，
-      逐项对账见 `evidence/online/persistence-redeploy.md`
-- [x] **后端日志无 `当前部署在 Render 上却使用本地 SQLite` 警告** —— 已用 `/api/debug/db` 实测反证（`是否 SQLite: false`、方言 `postgresql`），文本证据 `docs/acceptance/evidence/online/backend-debug-db.md` §1；Logs 截图可选
-- [x] **Postgres 里能看到 `players` / `trades` 等表** —— 同上，`/api/debug/db` 返回 **9 张表**与行数（**2026-11-14 实测**：`players 16 / price_history 175 / trades 10 / positions 6 / users 9 / auth_tokens 9 / agent_traces 8 / decision_logs 0 / price_narratives 0`），表由启动时 `init_db()` 自动创建；文本证据同上
-- [x] 线上点一次 AI 分析，返回合法结构（`source` 为 `llm` 或 `rule_fallback` 均可）
-- [x] 断开/清空 `LLM_API_KEY` 后，交易功能仍可用
-- [x] **演示前预热**：提前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（实测冷启动 49s，见 §3.10；脚本会顺带核对数据）
-- [x] 记录访问地址与已知问题（见下）
+### 4.7 灰度发布与发布策略（课程要求）
 
-> 勾选依据：`test_report.md` §6（TC-401/402/403/404/406）；**仅剩 2 项"截图待补"**（后端日志、库表清单），
-> 内容已由 `scripts/inspect_db.py` 与启动日志准备好，操作步骤见 §4.5.1，不影响 M5 达成。
+**现状（诚实说明）**：Render 免费档**不支持 Preview Environments、流量切分或金丝雀**；本项目为单实例
+免费服务，故**未实际启用灰度**，采用「单生产环境 + 快速回滚 + 发布后观察」的降级策略。
+
+若后续需要灰度，建议方案（按成本从低到高）：
+
+1. **付费 Preview Environment**：每个 PR 自动起独立环境，验收后再合入 `develop` → 生产部署；
+2. **双服务 + 流量切换**：`backend-blue` / `backend-green` 两个服务，前端通过环境变量指到当前生产；
+   切换 = 改前端 `VITE_API_BASE_URL` 重新部署（或 Cloudflare Worker 按 Header/比例分流）；
+3. **CDN/边缘分流**：Cloudflare 按 Cookie/百分比把少量流量导到新前端，观察 5xx 与前端错误后再全量。
+
+**灰度观察指标**（若启用）：`/api/health` 失败率、5xx 比例、P95 延迟、前端 console error、核心交易链路成功率。
+**当前替代**：发布窗口选白天、发布后 10 分钟内人工验证 §5.6，异常立即按 §8 回滚。
+
+### 4.8 监控与可观测性
+
+| 层级 | 手段 | 频率 / 阈值 |
+| --- | --- | --- |
+| 存活 | Render 健康检查 `/api/health`（Blueprint `healthCheckPath`） | 失败 → Render 重启/标记异常 |
+| 业务健康 | `/api/players`、`/api/players/{id}/prices`、`/api/account` | 发布后立即；全量 200 且 JSON 可解析 |
+| 数据健康 | `GET /api/debug/db`（方言/表行数） | 发布后；`是否 SQLite: false` 且行数非空 |
+| AI 健康 | `/api/analysis/1` 的 `source`（`llm` / `rule_fallback`） | 允许 `rule_fallback`（降级不是故障） |
+| 简报新鲜度 | `/api/agent/brief` 的 `generated_at` / `source` | 超过 30 分钟视为巡检异常 |
+| 平台指标 | Render Dashboard → Metrics（CPU/内存）、Logs | 发布后观察 10 分钟；5xx 明显升高即回滚 |
+| 前端 | 浏览器 console、Network 失败请求 | 发布后人工检查；严重错误即回滚 |
+| CI | GitHub Actions 4 个 job | 每次 push；红则不发布 |
+
+> 免费档没有自定义告警通道；课程演示的「告警」= 发布后人工检查 + cron 简报新鲜度 + Render 服务状态页。
+
+### 4.9 备份与恢复
+
+- 免费 Postgres 的自动备份能力有限（**以 Render 控制台实际为准**）；发布前如涉及数据变更，先手工备份：
+
+```bash
+# 用 External Database URL（只作一次性环境变量）
+pg_dump "<External Database URL>" --no-owner --no-privileges -f backup_$(date +%Y%m%d_%H%M).sql
+# 恢复（谨慎！先确认目标库）
+psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
+```
+
+- **演示数据**本身可重建：`python scripts/bootstrap_demo_data.py`（固定 seed，16 人 / 演示账户 / 价格历史）。
+- 恢复演练：至少验证一次「备份文件能导入临时库并起服务」，记录到 §11 发布记录或附录 A。
+
+### 4.10 服务器规格、容量与资源边界
+
+参考案例给出了服务器的 CPU/内存/磁盘建议；本项目使用 Render 托管，资源边界如下（以 Render 控制台实际为准）：
+
+| 资源 | 配置 / 限制 | 实测或结论 |
+| --- | --- | --- |
+| Web Service | 免费档，约 **0.1 vCPU**；单实例 | 只读压测饱和 **~38 req/s**，约 **190 人同时在线**、0 错误；瓶颈是 CPU 而非代码 |
+| 内存 | 免费档小内存（以控制台为准） | 空闲/处理请求的内存峰值在 Render Metrics 观察；无深度学习框架，常驻开销低 |
+| 磁盘 | Web Service 文件系统**临时**，不能放 SQLite/上传文件 | 业务数据全部进 Postgres；前端静态资源在 Static Site |
+| Static Site | 免费、全球 CDN、HTTPS | 首页 TTFB 暖态约 **1.1s**（含 DNS/TLS）；构建产物 `dist/` |
+| Postgres | 免费实例，**30 天到期（约 2026-11-23）** | 9 张表；演示数据可重建；到期前必须升级/迁移并 `pg_dump` |
+| Cron | 免费，`*/10 0-15 * * *` | 约 16h/天 ≈ **496h/月**，在免费 750h 额度内 |
+| 冷启动 | 闲置 15 分钟休眠 | 冷启动 **30–60s**（首次 `/api/players` 曾实测 **33.6s**）；暖态 API **0.88s** |
+| AI 延迟 | DeepSeek API 外部依赖 | 线上中位 **~2.0–2.5s**；L4 评测 P95 **3.39s**（门禁 10s） |
+
+**容量结论**：当前配置满足课程演示与 ~200 人只读访问；需要更高并发时优先升级 Render plan / 增加实例，
+而不是改业务代码。数据库容量与连接数在 Render Postgres 控制台查看；免费档不做连接池压测。
+
+### 4.11 上线前账号、演示数据与密钥处理
+
+参考案例把「演示账号口令/演示数据」单列一节；本项目对应处理如下（每次答辩/发布前执行）：
+
+| 项 | 操作 | 验收 |
+| --- | --- | --- |
+| 演示数据重置 | `DATABASE_URL="<External URL>" python scripts/bootstrap_demo_data.py` | 16 名选手、8 支战队、11 个价格点、演示账户 5000 信用点 / 0 持仓 / 0 流水 |
+| 注册账号保护 | `bootstrap_demo_data.py` 不重置私人账号（BUG-15 已修） | 重新灌数据后私人账号仍可登录、余额不被覆盖 |
+| LLM 密钥 | Render Environment `LLM_API_KEY`（`sync: false`），不写仓库/日志 | `/api/analysis/1` 返回 `source=llm`；删掉 Key 时自动 `rule_fallback` 且仍 200 |
+| LLM 端点/模型 | `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash` | `/api/debug` 或启动日志不打印 Key；请求走 DeepSeek |
+| 调试接口 | 验收期 `DEBUG_ENDPOINTS=1`，验收完成后改 `0` 并重新部署 | `/api/debug/*` 关闭后返回 404/403（按实现），业务不受影响 |
+| 重灌令牌 | `RESEED_TOKEN` 使用随机值，不用示例默认值 | 未带令牌的 `reseed` 请求被拒绝 |
+| 数据库到期 | 到期前 `pg_dump` 导出 + 迁移到新库/付费档；恢复后跑冒烟 | 新库 `/api/debug/db` 方言 `postgresql`、players=16，交易记录可读 |
+| 合规声明 | README、页面、演示开场声明「纯信用点、不可充值/提现/兑换、非官方、不构成投资建议」 | 演示时主动说明，避免被误认为真钱产品 |
+
+> 参考案例的「演示口令只在首次 seed 生效」提醒同样适用：本项目演示账户是公共账户；私人注册账号的口令由
+> PBKDF2 哈希存储，重灌演示数据不会改私人账号口令。
+
+---
+
+## 5. 上线检查单（A–G，按课程 PDF 271–277 页）
+
+> 用法：每次发布复制一份到 §11 或 Issue；`[x]` 表示本次已确认，`N/A` 表示本项目无此组件（附原因）。
+> 当前状态基于 **2026-11-21** 的线上实测；CI 全绿基线为 commit `5ae6a4c`（run #188），`2175d6c` 起的交付物路径迁移已在 CI 中同步。
+
+### 5.1 A. 发布准备检查单
+
+**版本和范围**
+
+- [x] 已确认发布版本号：`develop` commit SHA（记录在 §11）
+- [x] 已确认发布内容和需求范围（本次：手机端导航简化 + 移除展示组件 + 部署文档）
+- [x] 已关联 Issue / 需求 / 变更单（GitHub Issues / commit message）
+- [x] 已完成代码评审（课程要求：`docs/software/code_review.md` 记录；小团队互审）
+- [x] 已明确发布负责人（D）与验证负责人（D + B）
+- [x] 已确认发布窗口（白天，避开演示前 1 小时做大改动）
+- [x] 已通知相关团队（4 人小组群/Issue 评论）
+
+**代码和构建**
+
+- [x] 已通过代码格式/静态检查：`npm run lint` + 后端 `ruff check --select E4,E7,E9,F,C901`
+- [x] 已通过单元测试：前端 `npm run test:unit -- --run`、后端 `python -m pytest`
+- [x] 已通过集成/接口测试（`scripts/smoke_test_api.py`、`tests/integration/`）
+- [x] 已完成生产构建：`npm run build`（`dist/`）与后端依赖安装
+- [x] 构建制品具备唯一标识：commit SHA + Render Deploy ID
+- [x] 已记录 Git Commit SHA
+- [x] 依赖漏洞扫描：`pip-audit -r code/backend/requirements.txt` → **No known vulnerabilities found**（2026-11-21 本机，pip-audit 2.10.1）；前端 `npm audit` 需先安装依赖，未跑（已知限制）
+- [x] 已验证构建产物完整性：`dist/index.html` + `assets/` 存在、CI build 绿
+
+### 5.2 B. 配置检查单
+
+- [x] 运行环境为 production（Render 环境变量，不是本地 `.env`）
+- [x] 生产 API 地址正确：前端 `VITE_API_BASE_URL` → 后端公网 origin（无尾斜杠）
+- [x] 数据库连接配置正确：Postgres Internal URL；`/api/debug/db` 显示非 SQLite
+- N/A 缓存连接配置：本项目未使用 Redis/缓存服务
+- N/A 对象存储配置：选手图标为仓库内静态资源，无上传功能
+- [x] 第三方服务配置：DeepSeek API（`LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL`），无密钥时自动规则兜底
+- [x] CORS 配置正确：`CORS_ORIGINS` 精确匹配前端 origin
+- N/A Cookie / 域名配置：本项目用不透明 Bearer Token（localStorage），无跨站 Cookie
+- [x] 功能开关：`VITE_USE_MOCK=false`；`DEBUG_ENDPOINTS` 验收期 1 / 验收后 0
+- [x] 密钥来自安全存储：Render Environment（`sync: false`），未提交仓库
+- [x] 未在日志中输出敏感信息（日志只打状态与错误摘要）
+- [x] 时区与时间格式：后端 UTC（`utcnow`），前端按本地时区展示
+
+### 5.3 C. 数据库检查单
+
+- [x] 已完成数据库备份：**N/A** —— Render 免费档 Postgres 不提供备份/恢复能力；本项目日常发布不改 schema，数据靠 `bootstrap_demo_data.py` 可重建（已记录为已知限制）
+- [x] 已验证备份可恢复：**N/A** —— 同上；替代方案是用 `bootstrap_demo_data.py --rounds 12` 在临时库 10 秒重建（`tests/integration/test_bootstrap_demo_data.py` 覆盖）
+- [x] 已确认迁移脚本版本：本项目**无 Alembic 迁移框架**，用 SQLAlchemy `create_all` + `bootstrap` 脚本（见 §4.3/§9）
+- [x] 已在测试环境执行迁移：CI 每个用例独立临时库跑全量建表
+- [x] 已评估迁移执行时间：当前 schema 小，建表 <1s
+- [x] 已确认新旧代码兼容：schema 不变；如变更字段需先备份并「加字段兼容 → 部署 → 清理」
+- [x] 已确认数据回滚/补偿方案：演示数据可重建；真实数据从备份恢复
+- [x] 已确认迁移失败处理方式：停止发布 → 回滚代码 → 恢复备份/重灌演示数据
+- [x] 已安排必要人工审批：发布负责人 + 验证负责人确认
+
+### 5.4 D. 基础设施检查单
+
+- [x] 服务器/实例资源充足：Render 免费实例（0.1 vCPU 级别）满足课程演示；压测饱和约 38 req/s
+- [x] CPU / 内存 / 磁盘正常：Render Metrics 查看
+- [x] 网络与安全组配置正确：Render 托管，无需自管安全组
+- [x] 域名 DNS 解析正确：使用 `*.onrender.com`（未自定义域名）
+- [x] HTTPS 证书有效：Render 自动签发
+- N/A CDN 配置：Render Static Site 自带边缘缓存，未单独接 CDN
+- N/A WAF 规则：免费档未启用 WAF
+- [x] 健康检查正常：Blueprint `healthCheckPath=/api/health`
+- N/A 负载均衡：单实例，无 LB
+- [x] 备份策略：演示数据可重建 + 手工 `pg_dump`（见 §4.9）
+- [x] 日志采集正常：Render Logs 可查
+- [x] 监控和告警正常：健康检查 + 业务探针（免费档无自定义告警，见 §4.8）
+- [x] 时间同步正常：后端统一 UTC
+
+### 5.5 E. 发布执行检查单
+
+- [x] 已打开发布记录（§11 表格）
+- [x] 已确认当前线上版本（Render Deploys 上一版本）
+- [x] 已确认当前健康状态（发布前 `/api/health` 200）
+- [x] 已保存关键监控基线（响应时间、内存、5xx 比例）
+- [x] 已部署新版本制品（Render Auto-Deploy）
+- [x] 已执行数据库迁移：无 schema 变更（如有则按 §5.3）
+- [x] 已检查进程状态：Render 服务状态 `Live`
+- [x] 已检查 `/health`：200 且 JSON 正确
+- N/A `/ready`：本项目未单独提供 ready 探针（健康检查覆盖依赖探测）
+- N/A 滚动发布状态：单实例，无滚动发布
+- [x] 已观察错误日志：Render Logs 无连续 5xx/异常栈
+- [x] 已验证新版本流量：前端首页 + 核心 API 可访问
+- [x] 未发现异常后再继续（若异常立即 §8 回滚）
+- [x] 已记录每个操作和时间点（§11）
+
+### 5.6 F. 发布后验证检查单
+
+**技术验证**
+
+- [x] 首页可正常访问
+- [x] 静态资源加载正常（`assets/*.js|css` 200，无 404）
+- [x] SPA 路由刷新正常（直接刷新 `/players/1`、`/me` 不 404）
+- [x] 登录/退出正常（访客 / 私人账户）
+- [x] 核心 API 返回正常（players / prices / account / positions / trades）
+- [x] 数据库读写正常（买入 → 持仓/流水出现 → 重新部署后仍在）
+- N/A 缓存读写：无缓存服务
+- N/A 文件上传/下载：无文件上传
+- N/A 消息队列：无 MQ
+- [x] 定时任务运行正常（cron 巡检刷新简报 / 保温）
+- [x] 前端控制台无严重错误（发布后人工检查）
+- [x] 无明显 404 / 500 / 超时（Render Logs + Network）
+
+**业务验证**
+
+- [x] 用户注册正常（私人账户）
+- [x] 用户登录正常
+- [x] 核心业务流程正常（行情 → 详情 → 买入 → 持仓 → 卖出 → 流水）
+- [x] 权限控制正常（访客公共演示账户 / 私人账户令牌）
+- [x] 关键数据展示正确（余额/总资产/收益、AI 建议 6 字段）
+- N/A 通知 / 邮件 / 短信：未接入
+- N/A 支付 / 订单：本作品只用信用点，无真实支付
+- N/A 管理后台：无独立后台（`/api/debug/*` 仅运维自检）
+- N/A 关键埋点：未接埋点（用 Render 日志 + CI 佐证）
+- [x] AI 降级路径正常（无密钥/超时 → `source=rule_fallback`，仍 200）
+
+**监控验证**
+
+- [x] 5xx 错误率正常（无持续 5xx）
+- [x] P95 延迟正常（免费档冷启动除外；暖态 API <1s，AI 2–3s）
+- [x] CPU 使用率正常（Render Metrics）
+- [x] 内存使用率正常
+- [x] 数据库负载正常（免费档小数据量）
+- N/A 缓存命中率：无缓存
+- N/A 队列积压：无 MQ
+- [x] 告警没有异常增长（无告警系统；健康检查 + 人工观察）
+
+### 5.7 G. 发布完成检查单
+
+- [x] 已确认发布成功（服务 Live + 冒烟通过）
+- [x] 已记录最终版本号（commit SHA）
+- [x] 已记录最终 Commit SHA 与 Render Deploy ID
+- [x] 已更新变更日志（commit message / README / 本文 §11）
+- [x] 已通知相关人员（小组群 / Issue）
+- [x] 已关闭发布窗口（不再夹带改动）
+- [x] 已保留上一版本制品（Render Deploys 历史可回滚）
+- [x] 已确认回滚路径仍然可用（§8）
+- [x] 已归档发布记录（§11）
+- [x] 如有问题，已创建复盘任务：**N/A** —— 本期 15 条缺陷全部关闭并沉淀为用例，未见需要复盘的新问题
+
+### 5.8 本项目专项验收（补充）
+
+- [x] 线上 `/api/debug/db`：`是否 SQLite: false`，表非空（证明 Postgres 生效）
+- [x] 重新部署后端后交易记录仍在（持久化验收）
+- [x] 前端 `VITE_API_BASE_URL` 无 `127.0.0.1`（CI 有静态检查）
+- [x] CORS 无尾斜杠问题（`CORS_ORIGINS` 处理 + 实测）
+- [x] 移动端（390px）无横向溢出、底部 4 Tab + 顶栏头像可用
+- [x] 首页简报可见且非空（AI/规则均可）
+- [x] 404 页正常（访问 `/ui-kit` 等已移除路由 → 「页面不存在」）
+
+### 5.9 最终发布检查卡（一页版）
+
+> 参考案例末尾的「最终发布检查卡」；每次发布只带这一页，细节回查 A–G。
+
+| # | 必须确认 | 证据 / 命令 |
+| --- | --- | --- |
+| 1 | CI 4 个 job 全绿 | GitHub Actions 最新 run；红则不发布 |
+| 2 | 线上版本 = 预期 commit | Render Deploys 的 commit SHA；`git rev-parse --short HEAD` |
+| 3 | 服务存活 | `curl -fsS …/api/health` → `{"status":"ok"}` |
+| 4 | 数据库是 Postgres 且非空 | `curl -fsS …/api/debug/db` → `是否 SQLite: false`、players=16 |
+| 5 | 前端首页 + SPA 刷新 | 打开 `/`、直接刷新 `/players/1`、`/me` 均 200 |
+| 6 | 交易闭环 | 行情 → 详情 → 买入 → 持仓 → 卖出 → 流水；刷新后数据仍在 |
+| 7 | AI 正常 + 降级 | `/api/analysis/1` `source=llm`；无 Key 场景 `source=rule_fallback` 且仍 200 |
+| 8 | 简报新鲜 | `/api/agent/brief` `generated_at` 不超过 30 分钟 |
+| 9 | 移动端 / 深浅色 | 390px 无横向溢出；深/浅主题可切换；底部 4 Tab 正常 |
+| 10 | 回滚点与备份 | 记录上一版 commit/Deploy；数据变更前 `pg_dump` 成功；异常按 §8 回滚 |
+
+**发布签名**：发布负责人 D ｜ 验证负责人 D + B ｜ 时间 ｜ 结果（通过 / 回滚）。
+
+---
 
 ## 6. 访问地址与已知问题
 
-| 项 | 内容 |
+| 项 | 地址 / 状态 |
 | --- | --- |
-| 前端地址 | https://playerstock-frontend-mdlk.onrender.com （Static Site，`develop`，已重新部署至最新提交，Live） |
-| 后端地址 | https://playerstock-backend-mdlk.onrender.com （Web Service，Python 3 / Free，`develop`，Live） |
-| Swagger 文档 | https://playerstock-backend-mdlk.onrender.com/docs |
-| 数据库 | Render **PostgreSQL 18**，服务名 `playerstock-db`（Service ID `dpg-dbe8nvrjlhs73ervmu0-a`） |
-| 部署日期 | 2026-10-25 首次上线（`render.yaml` Blueprint 创建三服务）；同日 **Manual Deploy 重新部署前后端**，与 `develop` 对齐 |
-| 已知问题 1 | **数据库 2026-11-23 到期**（免费库到期即删除）。答辩/验收在此之前完成；若之后还要访问，需在到期前升级付费或迁到 Neon（只改 `DATABASE_URL`） |
-| 已知问题 2 | 免费实例会休眠，**实测冷启动 49s** → 演示前 10–15 分钟跑 `python scripts/prewarm.py --base <后端地址>`（见 §3.10） |
-| 已知问题 3（CORS 决策，B） | 代码已从硬编码 `allow_origins=["*"]` 改回**配置驱动**（`app.main.resolve_cors_origins`）：① `CORS_ORIGINS` 配了域名 → 白名单；② 显式 `*` → 放开并 WARNING；③ **没配 → 退化为 `*` 并 WARNING**（运维兜底，避免演示静默跨域失败）。口径见 `compliance.md` §4.1。**上线建议**：把 `CORS_ORIGINS` 设为 `https://playerstock-frontend-mdlk.onrender.com`，然后重启后端；启动日志会打印生效来源，可当截图证据 |
-| 已知问题 4 | 线上库有 **3 条流水**（2026-10-25 跑 TC-403 留下：#1 BUY ×2、#2/#3 SELL ×1），余额 5000.00、持仓为空。想彻底清空可重跑 `bootstrap_demo_data.py`（`--reset`） |
-| 已知问题 5 | ~~线上落后 3 个提交~~ **已解决**：2026-10-25 重新部署后与 `develop` 对齐（证据：CORS 头为 `*`、前端 bundle 变为 `assets/index-we8cxpp9.js`、重新部署后数据仍在 → TC-404 ✅） |
-| 已知问题 6 | `/market` 直接访问曾白屏（市场页在 `/`、无兜底路由）。已修：`/market → /` 重定向 + `/:pathMatch(.*)* → /` 兜底（BUG-11）。**前端需重新部署后生效** |
-| 已知问题 7（LLM 实配，B 2026-11-07） | **已切换到真模型并线上验证通过**。过程：① 先试 OpenCode Zen 免费档（`deepseek-v4.1-flash-free`），key 能过鉴权但返回 `429 FreeUsageLimitError`，换 4 个免费模型均 429 → 免费档是账号级限制；② 改用 **DeepSeek 官方 API**：`LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`（官方现名，等价 V4.1-Flash）→ `GET /api/analysis/1` **`source=llm`**，5 名选手实测 **中位 2461ms**（1.8–3.9s，目标 ≤8s），结果见 `test_report.md` §8.3。**注意**：真实模型比规则版慢约 2.3s，演示前预热即可；超时/失败仍自动回落规则版（上限 20s），不会卡死。成本约 ¥0.003/次。诊断工具：`python scripts/check_llm.py --direct/--scan/--base` |
-| 已知问题 8（账号持久化 / BUG-15，B 2026-11-07） | **注册账号会随"重灌演示数据"一起被删**——根因是 `seed_db.py --reset` 与 `POST /api/debug/reseed` 都走 `Base.metadata.drop_all()`，把 `users` 表（用户名/口令散列/令牌）也删了。**已修**：两处都改为「只清 positions/trades/price_history/players，`users` 原样保留」，并把各用户余额复位到 `initial_balance`（行情回种子价、钱也回起点才自洽）。回归用例 `test_reseed_keeps_registered_account`（注册→买股→重灌→**原密码仍可登录**）。**注意**：账号本来就存在 Postgres 里（`pbkdf2_sha256$迭代$盐$散列`，令牌只存 SHA-256、TTL 30 天），"第二天消失"不是过期，是被人为重灌删掉的——修好之后重灌不再影响账号 |
+| 前端 | <https://playerstock-frontend-mdlk.onrender.com>（Static Site，HTTPS） |
+| 后端 | <https://playerstock-backend-mdlk.onrender.com>（Web Service，HTTPS） |
+| 健康检查 | `/api/health` → `{"status":"ok","service":"playerstock-backend"}` |
+| 数据库自检 | `/api/debug/db`（需 `DEBUG_ENDPOINTS=1`，只读元信息） |
+| 部署源 | `develop` 分支 + `render.yaml` |
 
-## 7. 常见故障排查
+**已知限制（验收时如实说明）**
 
-| 现象 | 原因 | 处理 |
+1. 免费实例闲置休眠，冷启动 30–60s（保温 cron + 前端提示 + 预热脚本缓解）；
+2. 免费 Postgres 约 2026-11-23 到期，之后需升级/迁移；
+3. 免费档无灰度/Preview 环境（§4.7 给设计方案）；
+4. 无自动备份告警体系，靠手工备份 + 演示数据可重建；
+5. 单实例 0.1 vCPU 级别，压测饱和约 38 req/s，不适合真实高并发；
+6. `render.yaml` 与 `.env.example` 已同步 DeepSeek 配置（2026-11-21），`LLM_API_KEY` 仍由控制台保管。
+
+---
+
+## 7. 常见故障排查手册
+
+| 现象 | 可能原因 | 检查 | 处理 |
+| --- | --- | --- | --- |
+| 前端报 CORS 错误 | `CORS_ORIGINS` 未填 / 多了尾斜杠 / 前端域名变了 | 后端 Environment；浏览器 Origin | 改成精确 origin（不要 `/`），保存重部署 |
+| 首次打开几十秒白屏/转圈 | 免费实例冷启动 | Render Logs 出现启动日志 | 等或跑 `prewarm.py`；白天有保温 cron |
+| 502 / 服务不可用 | 后端启动失败 / 构建失败 / 实例重启 | Render Logs、Deploys 状态 | 看日志修配置；必要时 Rollback（§8） |
+| 启动报 `ModuleNotFoundError: psycopg` | SQLAlchemy 2.1 默认驱动变化 | 启动日志、`DATABASE_URL` 写法 | 确认代码已归一化为 `postgresql+psycopg2://` |
+| 启动报 `Can't load plugin: sqlalchemy.dialects:postgres` | Render 给的 `postgres://` 未转换 | 同上 | 同上（代码已处理） |
+| 数据每次部署都丢 | 用了 SQLite / 没填 `DATABASE_URL` | `/api/debug/db` 的方言；日志 SQLite 警告 | 填 Postgres Internal URL 并重部署；重灌数据 |
+| 前端页面空白、API 地址错 | `VITE_API_BASE_URL` 未配置/带尾斜杠 | 浏览器 Network | 控制台改环境变量 → **重新构建部署**前端 |
+| 刷新 `/players/1` 404 | Static Site 缺 SPA rewrite | Render → Redirects/Rewrites | 配 `/* → /index.html`（`render.yaml` 已有） |
+| AI 一直 `rule_fallback` | 无密钥 / 超时 / 返回非 JSON | 后端日志、`/api/analysis/1` | 检查 `LLM_API_KEY/BASE_URL/MODEL`；降级本身不影响交易 |
+| 简报长时间不更新 | cron 失败 / 简报未过期 / 后端休眠 | Render Cron 日志、`/api/agent/brief` 时间 | 手动触发 cron / 预热；看 patrol 日志 |
+| Render 免费额度耗尽 | 保温/巡检频率过高 | Render Billing/Usage | 降频（夜间停）、或升级付费 |
+| Postgres 连接失败/到期 | 30 天到期 / 连接数上限 | Render Postgres 状态 | 升级保留或迁移外部库；恢复备份 |
+
+---
+
+## 8. 回滚方案
+
+### 8.1 回滚演练记录（历史实测）
+
+- 演练方式：Render 控制台选上一个成功版本 Rollback → 服务 `Live` → `/api/health` 200 →
+  再手动 Redeploy 最新版本并恢复 Auto-Deploy。
+- 结论：**回滚路径可用**；数据库独立，不受代码回滚影响（演示数据可重建）。
+
+### 8.2 回滚触发条件
+
+- 发布后核心链路不可用（登录/行情/买卖 5xx）；
+- 前端白屏/控制台严重错误，且 10 分钟内无法定位；
+- 数据读写异常或 schema 不兼容；
+- 监控指标（5xx、延迟）较基线明显恶化。
+
+### 8.3 回滚操作（代码回滚，数据不回滚）
+
+**方式 A：Render 控制台（最快，推荐）**
+
+1. Render → `playerstock-backend`（或前端）→ **Deploys**
+2. 找到上一个 `Live` 的成功部署 → **Rollback to this deploy**（或 `Redeploy`）
+3. 等状态 `Live` → 执行 §3.7 冒烟 → 记录 §11
+
+**方式 B：Git 回滚（需要下次部署也正确）**
+
+```bash
+git revert <bad_commit>          # 生成反向提交，保留历史
+git push origin develop          # 触发 CI + Render 重新部署
+# 紧急时也可 git reset --hard <good_commit> + git push --force-with-lease（团队项目慎用）
+```
+
+**前端/后端可独立回滚**：静态站点与 Web Service 各自有部署历史，先回滚出问题的那一侧即可。
+
+### 8.4 回滚注意事项
+
+- **代码回滚 ≠ 数据库回滚**：Postgres 是独立服务，版本回退不动数据；若数据被写坏，用备份恢复或
+  重跑 `bootstrap_demo_data.py`（仅演示数据；会清空账户持仓/流水，慎用）。
+- 回滚前确认旧版本仍可运行（依赖/环境变量兼容）；回滚后继续观察 10 分钟。
+- 记录回滚原因、影响范围、时间点、验证结果（§11）；如属发布事故，按课程要求建复盘 Issue。
+
+- 更早的部署与故障记录见附录 A。
+
+---
+
+## 9. 部署侧 TODO / 已知限制
+
+| # | 事项 | 影响 | 计划 |
+| --- | --- | --- | --- |
+| 1 | Render 免费 Postgres 约 2026-11-23 到期 | 到期后线上数据不可用 | 答辩前升级/迁移，或导出备份 |
+| 2 | `DEBUG_ENDPOINTS` 验收后应关闭 | `/api/debug/*` 暴露运维面 | 验收完成后设 `0` 并重新部署 |
+| 3 | 无自动化依赖漏洞扫描 | 供应链风险 | 发布前手工 `pip-audit` / `npm audit`，或接入 CI |
+| 4 | 免费档无灰度/告警 | 只能发布后人工观察 | 课程答辩够用；生产化再按 §4.7 升级 |
+| 5 | 无自定义域名/WAF/CDN 独立配置 | 依赖 `onrender.com` | 课程不要求，保持现状 |
+
+---
+
+## 10. 本地部署与可复现验收（课程「可运行可复现」）
+
+```bash
+# 0) 前置：Python 3.12+、Node 24、Git
+git clone https://github.com/July75-bit/Innovation.git && cd Innovation
+
+# 1) 后端
+cd code/backend
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env                                 # 本地 SQLite 默认配置即可
+cd ../..
+python scripts/bootstrap_demo_data.py                # 16 名选手 + 演示账户 + 价格历史
+(cd code/backend && uvicorn app.main:app --host 127.0.0.1 --port 8000)
+
+# 2) 前端（另开终端）
+cd code/frontend
+npm ci
+# .env.local：VITE_API_BASE_URL=http://127.0.0.1:8000，VITE_USE_MOCK=false
+npm run dev        # http://localhost:5173
+```
+
+```bash
+# 3) 测试（与 CI 同口径）
+python -m pytest                                     # 后端（仓库根）
+cd code/frontend && npm run lint && npm run test:unit -- --run && npm run build
+```
+
+验收要点：本地能起、数据可重建（固定 seed）、线上同 commit 可复现；页面能从行情走到买卖闭环。
+
+---
+
+## 11. 发布记录
+
+### 11.1 记录模板（每次发布复制一行）
+
+| 时间 | 版本（commit） | 内容 | CI | 部署（前端/后端 Deploy ID） | 验证人 | 结果 / 回滚点 |
+| --- | --- | --- | --- | --- | --- | --- |
+| YYYY-MM-DD HH:mm | `abc1234` | 一句话 | run `…` 4/4 | `dep-xxx` / `dep-yyy` | D | 通过 / 上一版本 `def5678` |
+
+### 11.2 最近记录（截至本文最后更新）
+
+| 时间（UTC+8） | 版本 | 内容 | CI | 结果 |
+| --- | --- | --- | --- | --- |
+| 2026-11-21 08:45 | `ccf6447`（develop） | 移除 /ui-kit 展示页与 10 个展示组件；手机端导航简化 | run `44845160203` **4/4** | 线上 `/api/health` 200（1.25s）、前端首页 200（1.10s）；冒烟通过 |
+| 2026-11-21 08:38 | `c234962` | 手机端去掉菜单抽屉，只留顶栏头像 + 底部 4 Tab | CI 通过 | 前端静态站点更新 |
+| 2026-11-21 01:xx | `caefef1` | 拆分 `get_account_history`，修复 CI ruff C901 | run `44786913573` **4/4** | 后端恢复绿 |
+| 2026-11-21 08:48 | —（运维复核） | 复核线上：`/api/debug/db` 方言 `postgresql`、`是否 SQLite: false`、players=16；`/api/agent/brief` `generated_at=2026-11-21T00:40Z`、`source=llm` | — | 通过：Postgres 生效、cron 简报新鲜 |
+
+> 部署 ID 以 Render 控制台 Deploys 为准；本表由发布负责人填写，不凭记忆补写。
+
+---
+
+## 附录 A. 部署历程与故障复盘（历史）
+
+| 日期 | 事件 | 处理 / 结论 |
 | --- | --- | --- |
-| 前端报 CORS | `CORS_ORIGINS` 没加前端域名 | 改后重启后端 |
-| 前端请求 404 | `VITE_API_BASE_URL` 少了协议或尾部斜杠 | 改成 `https://host`，重新构建 |
-| 后端 502 | 启动命令路径错（写成 `main:app`） | 必须是 `uvicorn app.main:app` |
-| 后端 import 失败（`No module named core_engine`） | `code/` 未加入 `sys.path` 或未安装 core_engine | 确认 `code/backend/app/core/config.py` 的 sys.path 注入存在；或执行 `pip install -e ../core_engine` |
-| 刷新后数据消失 | 用了临时文件系统 | 挂持久盘或换 PostgreSQL |
-| 首次访问很慢（约 1 分钟）或先出现加载页 | 免费实例已休眠（15 分钟无入站流量） | 正常现象，不是故障；演示前预热（见 4.4） |
-| 重新部署后交易记录全没了 | 免费实例临时文件系统 + 本地 SQLite | 换免费 Postgres（见 4.3 方案 B），并检查 `DATABASE_URL` 是否生效 |
-| 前端子路由刷新 404 | 静态站点缺 SPA 回退 | `render.yaml` 的 `routes: rewrite` |
+| 2026-10-24 | 第 3 天部署预检（不部署） | 复核 rootDir/startCommand、CORS、SQLite 误用告警；代码侧就绪 |
+| 2026-10-25 | 首次手动部署（未用 Blueprint） | 建 Postgres + Web Service + Static Site；回填 CORS；线上买卖闭环通过 |
+| 2026-11-07 | LLM 从 OpenCode Zen 切到 DeepSeek 官方 API | Zen 免费档 429 限流；改 `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`；`source=llm` 中位 ~2.4s |
+| 2026-11-14 | 发现「数据总丢」根因 | 免费实例临时文件系统；改 Postgres；顺带修 `postgres://` 归一化与 `psycopg2` 驱动坑 |
+| 2026-11-14 | 线上 CORS 整站失败 | `CORS_ORIGINS` 未填/带尾斜杠；代码统一 rstrip(`/`) 并实测修复 |
+| 2026-11-19 | 免费实例冷启动严重（首请求 33.6s） | 加保温 cron（每 10 分钟，白天）、前端慢加载提示 + GET 重试 |
+| 2026-11-21 | CI 后端 14 秒红 | 实际是 ruff `C901` 圈复杂度（pytest 被跳过）；拆函数修复，CI 恢复 4/4 |
 
-## 8. 回滚
+## 附录 B. 命令速查
 
-| 场景 | 操作 |
-| --- | --- |
-| 新版本后端启动失败 | Render → 该服务 → Deploys → 选上一个成功版本 → Redeploy |
-| 前端构建失败 | 同上 |
-| 数据库被改坏 | 重新 `python scripts/bootstrap_demo_data.py`（演示数据可重建，但真实交易记录会丢——已告知风险） |
+```bash
+# 版本与发布
+git rev-parse --short HEAD
+git push origin develop
+gh run list --branch develop --limit 3        # 或网页 GitHub Actions
 
-### 8.1 回滚演练记录
+# 线上健康
+curl -fsS https://playerstock-backend-mdlk.onrender.com/api/health
+curl -fsS https://playerstock-backend-mdlk.onrender.com/api/debug/db
+curl -fsS https://playerstock-backend-mdlk.onrender.com/api/agent/brief | head -c 300
 
-> 记录人：B ｜ 执行人：项目负责人在 Render 控制台操作 ｜ 演练日期：2026-11-07 09:30
+# 预热 / 冒烟 / 数据
+python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com
+python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com --read-only
+DATABASE_URL="<External URL>" python scripts/bootstrap_demo_data.py
 
-**【回滚演练记录】** 2026-11-07 9:30 AM，在 Render 控制台选择 9:26 AM 的旧版本执行 Rollback。
-部署成功后，通过 `/api/health` 确认服务 200 正常。演练后已手动 Redeploy 最新版本，并重新开启
-Auto-Deploy。验证通过。
+# 备份
+pg_dump "<External Database URL>" --no-owner --no-privileges -f backup.sql
+```
 
-**本次演练覆盖到的与没覆盖到的**（避免把话说满）：
+## 附录 C. 检查单使用建议
 
-| 检查点 | 结果 |
-| --- | --- |
-| 能选到上一个成功版本并回滚成功 | ✅ 服务重新 Live |
-| 回滚后服务可用 | ✅ `/api/health` → 200 |
-| 回滚后能回到最新版本 | ✅ 手动 Redeploy 最新提交，并重新开启 Auto-Deploy |
-| 回滚期间**数据是否仍在** | 本次未单独记录（Postgres 与代码版本解耦，TC-404 已证明重新部署后数据仍在；建议下次演练时补一条流水对比） |
-| 线上当前是否最新 | ✅ B 于 2026-11-07 复核：`/api/debug/db` 已上线、前端 bundle 含 `/market` 重定向 |
-
-> 复盘要点：**回滚只回代码、不回数据**——数据库是独立的 Postgres 服务，所以"回滚到旧版本"不会
-> 把交易记录带回去。真要回退数据，只能重跑 `bootstrap_demo_data.py`（演示数据）或从备份恢复（本项目未做备份）。
-
-## 9. TODO
-
-- [x] D 第 4 天：先手工建两个服务跑通一次（不依赖 Blueprint）
-- [x] D 第 5 天：完成第 5 节全部打勾，填第 6 节
-- [x] **B 第 5 天**：`app/main.py` 的 `allow_origins=["*"]` 已改回配置驱动（`resolve_cors_origins()`，
-      依据 NFR-S-04）；新增 `tests/unit/test_cors_config.py` 4 条用例；口径写进 `compliance.md` §4.1
-- [x] **D/B 上线时**：`CORS_ORIGINS` = `https://playerstock-frontend-mdlk.onrender.com`（已写进 `render.yaml`，
-      重新部署即生效；2026-11-07 线上复验白名单生效）。不设也**不会挂**——会退化为 `*` 并在启动日志 WARNING，见 §6「CORS 决策」
-- [x] **B 第 6 天（2026-11-07）**：把"重新部署后数据仍在"的截图与对账存进证据目录 ——
-      图 `docs/acceptance/evidence/online/online-persistence-{before,after}-{1,2,3}-*.png`，
-      逐项对账见 `docs/acceptance/evidence/online/persistence-redeploy.md`（旧 7 条流水逐行保留、
-      11 点价格逐点一致；期间新增 1 笔成交且余额变化完全吻合 → 数据没丢且部署后仍可写）
+- 每次发布把 §5.1–§5.7 复制到 Issue 或 `docs/mgmt/day*.md`，逐项打勾并附证据（截图/CI 链接/日志时间）。
+- `N/A` 要写原因（本项目无对象存储/缓存/MQ/支付），不要留空——课程检查单强调「逐项确认」。
+- 发布记录（§11）与回滚点必须真实填写，不事后补写；答辩时可直接展示本页作为「发布流程可追溯」的证据。

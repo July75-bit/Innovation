@@ -6,7 +6,7 @@
 > - CSS（变量定义）：[`code/frontend/src/assets/tokens.css`](../../code/frontend/src/assets/tokens.css)
 > - JSON（含用途与对比度标注）：[`code/frontend/src/assets/design-tokens.json`](../../code/frontend/src/assets/design-tokens.json)
 > - 玻璃材质实现与降级：[`liquid-glass.css`](../../code/frontend/src/assets/liquid-glass.css) + 规范 [liquid_glass_design.md](liquid_glass_design.md)
-> - 组件实现（Vue 9 组件 + 状态矩阵）：[ui_components.md](ui_components.md)；兼容层：[`main.css`](../../code/frontend/src/assets/main.css)
+> - 组件实现：业务组件见 `code/frontend/src/components/ui/`（`UiBottomTab` / `UiModal`）；兼容层：[`main.css`](../../code/frontend/src/assets/main.css)
 > **分层原则**：内容层（正文/表格/表单/长文）= 扁平实色 + 1px 边框；材质层（导航壳/浮层）= 液态玻璃，同屏面积 ≤30%。
 > **对比度口径**：WCAG 2.1；深色相对表面 `#181b22`、浅色相对表面 `#ffffff`；AA 正文 ≥4.5:1、大号文字 ≥3:1。
 
@@ -22,14 +22,14 @@
 | `--color-neutral-100` | `#e9eaee` | `#1a1d23` | 正文主文字 | 14.33:1 / 16.88:1 |
 | `--color-neutral-200` | `#c6c9d1` | `#2e333c` | 强调正文 | 10.40:1 / 12.69:1 |
 | `--color-neutral-300` | `#b6bac4` | `#454b56` | 次要文字 / 辅助说明 | 8.87:1 / 8.77:1 |
-| `--color-neutral-400` | `#8f949f` | `#5d6470` | 弱辅助（时间戳、占位提示） | 5.67:1 / 5.96:1 |
+| `--color-neutral-400` | `#918c7f` | `#6c675c` | 弱辅助（时间戳、占位提示） | 5.19:1 / 5.63:1（纸感 v3） |
 | `--color-neutral-500` | `#5c626e` | `#8b919d` | 禁用文字、占位符（仅装饰，不作正文） | 非文字（禁用态例外） |
-| `--color-neutral-600` | `#3a404c` | `#c3c8d2` | 强边框 / 分割线 | 非文字 |
-| `--color-neutral-700` | `#262b34` | `#e8ebf0` | 抬起面 / 悬停底色 | 非文字 |
-| `--color-neutral-800` | `#181b22` | `#ffffff` | 卡片 / 表面 | 非文字 |
+| `--color-neutral-600` | `#46423a` | `#cfcabd` | 强边框 / 分割线 | 非文字 |
+| `--color-neutral-700` | `#24221d` | `#f0ede6` | 抬起面 / 悬停底色 | 非文字 |
+| `--color-neutral-800` | `#1b1a17` | `#ffffff` | 卡片 / 表面 | 非文字 |
 
-**画布**：深色 `--color-canvas: #12141a` / 浅色 `#f4f6f9`（页面底色，不属于 9 阶；不用纯黑/纯白）。
-> 切换模式：`document.documentElement.dataset.theme = 'light'`（默认深色；<html> 不加属性即深色）。
+**画布**：深色 `--color-canvas: #141310` / 浅色 `#f6f4ef`（纸感暖中性；不属于 9 阶，不用纯黑/纯白）。
+> 切换模式：`document.documentElement.dataset.theme = 'light'`；偏好三档（自动/浅色/深色）存 localStorage，默认自动。
 
 ### 1.2 主色 5 阶（品牌红）
 
@@ -58,11 +58,11 @@
 --color-bg: var(--color-canvas);
 --color-surface: var(--color-neutral-800);
 --color-surface-raised: var(--color-neutral-700);
---color-surface-sunken: #14161c;        /* 输入框底，仍非纯黑 */
+--color-surface-sunken: #100f0d;        /* 输入框底，仍非纯黑 */
 --color-text: var(--color-neutral-100);
 --color-text-muted: var(--color-neutral-300);
 --color-text-faint: var(--color-neutral-400);
---color-border: #2c313b;
+--color-border: #2e2b25;
 --color-focus: var(--color-primary-300);
 /* 业务语义：涨=主色、跌=成功绿（国内行情习惯） */
 --color-up: var(--color-primary-500);
@@ -76,7 +76,7 @@
 > 中性 9 阶 + 主色 5 阶 + 4 组语义 × 3 阶 = 固定调色板，**不新增颜色**；
 > 需要透明度时用 `rgba()` 派生（如 `--color-up-subtle`），不再造新色值。
 
-### 1.6 材质层：液态玻璃令牌（7 个必需 + 2 个辅助）
+### 1.6 材质层：液态玻璃令牌（2026-11-18 起降级为纸感实色，见 §9）
 
 > 只给"会盖住其他内容的壳/浮层"用：导航壳、移动顶栏、模态框、Popover、tooltip、悬浮工具条。
 > **内容层（卡片/表格/表单/长文）永远不用玻璃**。玻璃面积 ≤30%（实测桌面 18.13% / 移动 8.25%）。
@@ -100,7 +100,7 @@
 | `--glass-hover-tint` | `rgba(255,255,255,.40)` | `rgba(255,255,255,.05)` | hover 时整块轻微提亮 | 仅桌面 hover；reduced-motion 关闭 |
 | `--glass-solid` | `#ffffff` | `#171a21` | 不支持 backdrop-filter / 降低透明时的回退底 | 回退后对比度不得下降 |
 
-**配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--nav` / `.glass--panel` / `.glass--control` / `.glass--scrim`
+**配套实现**：`liquid-glass.css` 里 `.glass` / `.glass--panel` / `.glass--popover` / `.glass--control`
 （旧类名 `--glass-tint-*`、`--glass-radius-*` 保留为别名，组件无需改）。
 
 ### 1.7 浅色模式覆盖（除中性 9 阶外的差异）
@@ -115,14 +115,14 @@
   --color-warning-base: #8a5a0f;  --color-warning-strong: #8a5a0f;
   --color-error-base:   #b41c1c;  --color-error-strong:   #b41c1c;
   --color-info-base:    #1d4ed8;  --color-info-strong:    #1d4ed8;
-  --color-border: #d7dbe3;  --color-focus: #e5484d;
+  --color-border: #e6e2d9;  --color-focus: #e5484d;
   --shadow-overlay: 0 8px 24px rgba(16,24,40,.12);
 }
 ```
 
 ### 1.8 主题切换（浅色 ↔ 深色）
 
-- 入口：侧栏底部「浅色/深色」按钮、移动端顶栏图标按钮（`App.vue`）；`/ui-kit` 也有同款按钮。
+- 入口：个人页 `/me` →「偏好与关于」的三档分段控件（自动 / 浅色 / 深色）。
 - 实现：`src/composables/useTheme.ts` 写 `<html data-theme="light|dark">` 并持久化到
   `localStorage['playerstock.theme.v1']`；`index.html` 用**同一 key** 的内联脚本在 CSS 之前定主题（防闪）。
 - 优先级：**已保存选择 > 系统 `prefers-color-scheme` > 深色**。
@@ -142,7 +142,7 @@
 | `--font-size-h1` | **24px / 700**（P1：原 28） | 页面主标题（每页最多 1 个） |
 | `--font-size-h2` | **20px / 700**（P1：原 22） | 区块标题 |
 | `--font-size-h3` | 18px / 600 | 三级标题（卡片标题统一 16/600） |
-| `--font-size-body` | **16px / 400–500，行高 1.6** | 正文（≥16 硬性） |
+| `--font-size-body` | **16px / 400–500，行高 1.7** | 正文（≥16 硬性；纸感 v3 行高 +0.1） |
 | `--font-size-aux` | 14px / 400，行高 1.5 | 辅助说明 |
 | `--font-size-cap` | 13px / 400，行高 1.5 | 标签、时间戳 |
 | `--font-size-min` | 12px | 仅非关键标注，禁止更小 |
@@ -164,7 +164,7 @@
 | 阴影 | `--shadow-none` / `--shadow-overlay` / `--glass-shadow` | `none` / 仅弹层 `0 8px 24px rgba(16,24,40,.12)`（浅）或 `0 1px 2px rgba(0,0,0,.3)`（深）/ 玻璃浮层见 §1.6 |
 | 控件高 | `--control-height-sm/md/lg` | 36 / 40 / 44 |
 | 图标 | `--icon-size-sm/md/lg` | 16 / 20 / 24 |
-| 布局 | `--layout-max-width` / `--layout-sidebar-width` | 1280 / 232 |
+| 布局 | `--layout-max-width` / `--layout-content-max` / `--layout-sidebar-width` | 1280 / **1040** / **220**（纸感 v3） |
 
 > **层级规则**：内容卡片一律 `1px 边框 + 背景色差`、**零阴影**；只有浮层（弹窗/Popover/tooltip）允许极轻投影。
 > **两套圆角不混用**：内容层 4/6/8、材质层 12/16/20/24；跨层混用会被 `design-tokens.spec.ts` 拦下。
@@ -351,7 +351,7 @@
   .glass--interactive::after { display: none; }
 }
 
-/* ③ 手动降级开关（/ui-kit「模拟降级」按钮 / 现场演示用） */
+/* ③ 手动降级开关（历史演示用；/ui-kit 展示页已移除） */
 html.no-backdrop-filter .glass {
   background-color: var(--glass-solid) !important;
   -webkit-backdrop-filter: none !important;
@@ -375,7 +375,6 @@ html.no-backdrop-filter .glass {
 
 ```css
 @import './tokens.css';
-@import './ui-kit.css';
 
 :root {
   --bg: var(--color-canvas);
@@ -391,7 +390,7 @@ html.no-backdrop-filter .glass {
 ```
 
 新组件直接用 `ui-btn` / `ui-input` / `ui-card` / `ui-table` / `ui-nav` / `ui-badge`
-（见 `ui-kit.css`），不要再写一套颜色/圆角/字号。
+（见 `tokens.css` / `liquid-glass.css`），不要再写一套颜色/圆角/字号。
 
 ---
 
@@ -402,7 +401,7 @@ html.no-backdrop-filter .glass {
 | 中性 9 阶 | ✅ n-0…n-800（双模式）+ 画布色 |
 | 主色 5 阶 | ✅ 50/100/300/500/700（浅色模式 300/700 加深以达 AA） |
 | 语义色各 3 阶 | ✅ success/warning/error/info × subtle/base/strong（双模式） |
-| 正文 16px/1.6、辅助 13px/1.5 | ✅ 令牌固定，页面无硬编码小字 |
+| 正文 16px/1.7、辅助 13px/1.5 | ✅ 令牌固定，页面无硬编码小字 |
 | H1–H3 层级 | ✅ 28/22/18 |
 | 间距 4…64 | ✅ 8 档（4/8/12/16/24/32/48/64） |
 | 圆角 | ✅ 内容层 4/6/8；材质层 12/16/20/24（两套不混用） |
@@ -414,7 +413,7 @@ html.no-backdrop-filter .glass {
 | 玻璃上文字 AA | ✅ 6 处直接坐在玻璃上的文字实测最低 **8.55:1**；坐在实色卡片/头像上的文字按实色对算 |
 | CSS + JSON 双版本 | ✅ 83 个令牌同源同值，`design-tokens.spec.ts` 12 条断言守护（含 9/5/3 阶、玻璃、降级、半径、正文） |
 | 令牌用途 + 对比度标注 | ✅ CSS 注释 + JSON 每个令牌带 `purpose` / `contrast` / `requirement` |
-| 组件规则（按钮/输入/卡片/表格/导航） | ✅ §4 + `ui-kit.css` |
+| 业务组件（底部 Tab / 模态框） | ✅ `components/ui/` |
 | AA 合规 | ✅ 正文 14.33:1（深）/16.88:1（浅）；按钮白字 5.02–6.72；品牌红文字统一走 `--accent-text`/`--up-text`（深 `#ef7377` / 浅 `#c23539`） |
 | 双模式全量回归 | ✅ 7 路由 × 深/浅 × 桌面/移动 = **24 组合，自动审计违规 0**；证据 69–78 |
 | P1 审美对齐（参考 KPL 小助手） | ✅ 表格行高 44→59 / 表头 49、卡片留白 16→24、选中态淡底 pill、H1 28→24 / H2 22→20、浅色边框与辅助灰更柔和；双模式审计仍 **违规 0**（证据 85–90） |
@@ -422,6 +421,20 @@ html.no-backdrop-filter .glass {
 
 **已知限制（如实记录）**
 
-1. 业务页**默认深色**；浅色模式已完整定义令牌并通过 `/ui-kit` 与市场页实拍验证，但**全站逐页浅色回归尚未做**（个别页面可能有硬编码色残留）。
+1. 业务页**默认深色**；浅色模式已完整定义令牌并通过市场页、详情页、个人页实拍验证，但**全站逐页浅色回归尚未做**（个别页面可能有硬编码色残留）。
 2. 玻璃"液态流动感"只做 hover 轻微斜向高光，没有跟随鼠标的折射/位移（性能与规范双重限制）。
-3. 配额统计口径：只算"真实生效的 backdrop-filter 元素"；被遮罩压暗的背景玻璃不计（`/ui-kit` 材质展厅例外，页面已标注）。
+3. 配额统计口径：只算"真实生效的 backdrop-filter 元素"；被遮罩压暗的背景玻璃不计（纸感模式下玻璃已统一为实色）。
+
+## 9. 纸感 v3 覆盖（2026-11-18）
+
+为「可读 / 低密度 / 克制」重建的视觉基线，**CSS 与 `design-tokens.json` 同步**（`design-tokens.spec.ts` 守卫）。
+
+| 类别 | 变化 |
+| --- | --- |
+| 中性色 | 从冷灰改为暖中性：画布 `#f6f4ef`（浅）/`#141310`（深），表面纯白/`#1b1a17`，细边 `#e6e2d9`/`#2e2b25` |
+| 正文行高 | 1.6 → **1.7** |
+| 布局 | 侧栏 232 → **220**；新增 `--layout-content-max: 1040px`（阅读行宽收窄） |
+| 玻璃令牌 | 仍在（`--glass-*`），但 `liquid-glass.css` 末尾统一覆盖为实色表面：无 blur、无高光、无边缘光、无悬停提亮 |
+| 选中态 | 彩色底 pill → 深色文字 + 2px 左竖线（侧栏）/ 深色文字 + 极淡中性底（底部 Tab） |
+
+回滚：删掉 `liquid-glass.css` 末尾「纸感模式」覆盖块即可恢复玻璃；中性色/行高按下表改回旧值即可。

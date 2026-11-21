@@ -5,7 +5,7 @@
  * 这样测试不需要真的后端在跑，也不会真的下单。
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import PlayerDetailView from '../PlayerDetailView.vue'
 
@@ -49,15 +49,60 @@ const h = vi.hoisted(() => {
       getPriceHistory: () => Promise.resolve({ player_id: 1, points: [] }),
       getPositions: () => Promise.resolve([]),
       getAnalysis: () => analysisPromise,
+      getAgentDecision: () => Promise.reject(new Error('not mocked')),
+      getAgentNarrative: () => Promise.reject(new Error('not mocked')),
     },
   }
 })
 
 vi.mock('../../api', () => ({ api: h.api }))
-vi.mock('vue-router', () => ({
-  useRoute: () => ({ params: { id: '1' } }),
-  RouterLink: { name: 'RouterLink', props: ['to'], template: '<a><slot /></a>' },
+const routeMock = vi.hoisted(() => ({
+  params: { id: '1' } as Record<string, string>,
+  query: {} as Record<string, string>,
 }))
+vi.mock('vue-router', () => ({
+  useRoute: () => routeMock,
+  RouterLink: {
+    name: 'RouterLink',
+    props: ['to'],
+    methods: {
+      href(to: string | { path?: string; query?: Record<string, string> }) {
+        if (typeof to === 'string') return to
+        const query = to.query
+          ? '?' +
+            Object.entries(to.query)
+              .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+              .join('&')
+          : ''
+        return `${to.path ?? ''}${query}`
+      },
+    },
+    template: '<a :href="href(to)"><slot /></a>',
+  },
+}))
+
+beforeEach(() => {
+  routeMock.query = {}
+})
+
+/** 模板里用的是全局 RouterLink（没有显式 import），测试要自己注册一个能渲染 href 的替身 */
+const RouterLinkStub = {
+  name: 'RouterLink',
+  props: ['to'],
+  methods: {
+    href(to: string | { path?: string; query?: Record<string, string> }) {
+      if (typeof to === 'string') return to
+      const query = to.query
+        ? '?' +
+          Object.entries(to.query)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join('&')
+        : ''
+      return `${to.path ?? ''}${query}`
+    },
+  },
+  template: '<a :href="href(to)"><slot /></a>',
+}
 
 describe('PlayerDetailView AI 分析中态（A5）', () => {
   it('AI 未返回时显示「AI 分析中…」，返回后显示建议卡', async () => {
@@ -71,5 +116,27 @@ describe('PlayerDetailView AI 分析中态（A5）', () => {
     await flushPromises()
     expect(w.text()).toContain('测试建议：估值合理')
     expect(w.text()).not.toContain('AI 分析中…')
+  })
+})
+
+describe('PlayerDetailView 返回链接', () => {
+  beforeEach(() => {
+    routeMock.query = {}
+  })
+
+  it('从市场直接打开 → 返回市场', async () => {
+    const w = mount(PlayerDetailView, { global: { components: { RouterLink: RouterLinkStub } } })
+    await flushPromises()
+    expect(w.get('.back').text()).toContain('返回市场')
+    expect(w.get('.back').attributes('href')).toBe('/')
+  })
+
+  it('从赛程抽屉打开 → 返回赛程并带回该轮（?round=18）', async () => {
+    routeMock.query = { from: 'schedule', round: '18' }
+    const w = mount(PlayerDetailView, { global: { components: { RouterLink: RouterLinkStub } } })
+    await flushPromises()
+
+    expect(w.get('.back').text()).toContain('返回赛程')
+    expect(w.get('.back').attributes('href')).toBe('/schedule?round=18')
   })
 })

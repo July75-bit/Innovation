@@ -12,7 +12,7 @@
  *   玻璃上的文字必须坐在 --glass-scrim（或 --glass-bg-strong）这层可读性底上。
  *
  * 开关：
- *   <html class="no-backdrop-filter">  → 强制走不透明回退（/ui-kit「模拟降级」按钮）
+ *   <html class="no-backdrop-filter">  → 强制走不透明回退（手动给 <html> 加 class；历史 /ui-kit 按钮已移除）
  *   <html data-theme="light">          → 浅色模式（令牌自动切换，本文件无需改动）
  * ============================================================ */
 
@@ -51,11 +51,6 @@
     inset -1px 0 0 var(--glass-edge);
 }
 
-/* 导航壳：文字少，用基础底（靠边一侧的描边由使用方覆盖） */
-.glass--nav {
-  background-color: var(--glass-bg);
-}
-
 /* 浮层/弹窗：可读性底更实 + 圆角 20 + 极轻投影表达悬浮 */
 .glass--panel {
   background-color: var(--glass-bg-strong);
@@ -78,20 +73,10 @@
     var(--glass-shadow);
 }
 
-/* 文字密集但仍需玻璃的浮层：用 scrim 档（比面板更实，保 AA） */
-.glass--scrim {
-  background-color: var(--glass-scrim);
-}
-
 /* 底部工具条/悬浮控件：圆角 12 */
 .glass--control {
   border-radius: var(--radius-material-sm);
   background-color: var(--glass-bg);
-}
-
-/* 大面板（抽屉/底部 sheet；若改实色就不要加这个类） */
-.glass--sheet {
-  border-radius: var(--radius-material-xl);
 }
 
 /* ---------- 动态高光：只在有鼠标 + 允许动效时轻微出现 ---------- */
@@ -142,7 +127,7 @@
  * 降级
  *   1) 浏览器不支持 backdrop-filter → 不透明实色底（保留描边/圆角/内高光）
  *   2) prefers-reduced-transparency: reduce → 同上，并关掉半透明高光
- *   3) html.no-backdrop-filter → 手动开关（/ui-kit 验收演示用）
+ *   3) html.no-backdrop-filter → 手动开关（历史 /ui-kit 验收演示用；该页已移除）
  * ============================================================ */
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
@@ -179,4 +164,45 @@ html.no-backdrop-filter .glass {
 html.no-backdrop-filter .glass--interactive::before,
 html.no-backdrop-filter .glass--interactive::after {
   display: none !important;
+}
+
+/* ============================================================
+ * 纸感模式（2026-11-18 重构试点）
+ *   方向：去掉模糊、内高光、边缘光、悬停提亮与投影，玻璃壳统一成
+ *   "实色表面 + 1px 细边 + 圆角 8"。类名保留，方便以后回滚。
+ * ============================================================ */
+:root {
+  --glass-bg: var(--color-surface);
+  --glass-bg-strong: var(--color-surface);
+  --glass-bg-popover: var(--color-surface);
+  --glass-border: var(--color-border);
+  --glass-blur: 0px;
+  --glass-saturate: 100%;
+  --glass-radius: var(--radius-md);
+  --glass-scrim: var(--color-surface);
+  --glass-shadow: none;
+  --glass-highlight: transparent;
+  --glass-edge: transparent;
+  --glass-hover-tint: transparent;
+  --glass-hover-glow: transparent;
+}
+.glass,
+.glass--control,
+.glass--panel,
+.glass--popover {
+  background-color: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+.glass--panel,
+.glass--popover {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+.glass--interactive::before,
+.glass--interactive::after {
+  content: none;
+  display: none;
 }

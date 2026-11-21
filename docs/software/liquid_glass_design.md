@@ -1,10 +1,21 @@
 # 液态玻璃材质层设计规范（Liquid Glass）
 
+> **状态（2026-11-18）**：本规范是历史设计记录。用户要求「克制、低密度」后，
+> 前台已改为**纸感**：`liquid-glass.css` 末尾统一覆盖 `.glass` 为实色表面 + 1px 细边，
+> 无模糊/高光/边缘光/悬停提亮（类名与降级逻辑保留，可回滚）。现行基线见
+> [`ui_design_system.md`](./ui_design_system.md) §11。
+>
+> **2026-11-21 清理**：`.glass--nav` / `.glass--sheet` / `.glass--scrim` 三个变体已删除
+> （业务与 /ui-kit 展厅都不再使用；仍在用的是 `.glass` / `.glass--panel` / `.glass--popover` /
+> `.glass--control` / `.glass--interactive`），展厅里对应「导航壳」示例已移除；
+> 同日 `/ui-kit` 展示页与整套组件库也已整体移除，文中的展厅描述仅作历史记录。
+
+
 > 对象：PlayerStock 虚拟选手股交易模拟（课程作品，答辩演示为主）
 > 技术栈：**Vue 3.5 + TypeScript + 原生 CSS 变量**（无 UI 库、无 Tailwind）
 > 落地提交：`src/assets/liquid-glass.css`（令牌 + 材质类 + 降级）、`App.vue`（侧栏/顶栏）、
 > `components/ui/UiModal.vue`、`components/DeleteAccountDialog.vue`、`components/PriceChart.vue`（tooltip）、
-> `views/UiKitView.vue`（/ui-kit 材质展厅）
+> `views/UiKitView.vue`（/ui-kit 材质展厅，2026-11-21 已移除）
 > 证据：`docs/acceptance/evidence/56~65-liquid-glass-*.png`
 > 验收实测：2026-11-14 16:40（Edge 157 headless + CDP 量算，不是"目测"）
 

@@ -3,12 +3,13 @@
  * 白话导读：全站唯一的"外壳"页面——侧栏、导航、账户卡片、后端连接徽标都在这里，
  * 中间的 <RouterView> 才是当前 URL 对应页面的出口（市场/详情/持仓/流水都渲染在那一块）。
  *
- * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped> 写样式（CSS）。
+ * 一个 .vue 文件固定三段：<script setup> 写逻辑（TS）、<template> 写结构（HTML）、<style scoped>
+ 写样式（CSS）。
  * scoped 的意思是"这里的样式只管本组件"，不会污染别的页面。
  *
  * 本文件里的关键逻辑：
  *   - 挂载时(onMounted)拉一次余额 + 检测后端；
- *   - ≤960px 时侧栏变成抽屉（CSS 媒体查询 + navOpen 控制）；
+ *   - ≤960px 时侧栏隐藏，移动端导航交给底部 Tab（4 项）+ 顶栏头像进「我的」；
  *   - 登录页 /auth 不套外壳，直接全屏渲染（isAuthPage）。
  */
 /**
@@ -20,29 +21,14 @@
  * - 登录 / 注册页（/auth）走独立全屏布局，isAuthPage 为真时不渲染侧栏与顶栏；
  * - 侧栏常驻本地账号卡片（用户名 / 本地账号或访客 / 退出），会话来自 useAuth，只存浏览器。
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
-import { money } from './utils/format'
-import { refreshAccount, useAccount } from './composables/useAccount'
 import { checkBackendHealth, useBackendHealth } from './composables/useBackendHealth'
-import DeleteAccountDialog from './components/DeleteAccountDialog.vue'
+import { refreshAccount } from './composables/useAccount'
 import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
 import { useTheme } from './composables/useTheme'
-
-const { account } = useAccount()
-
-/** 主题：自动（跟随系统）/ 浅色 / 深色 三档循环（令牌在 tokens.css；偏好记在 localStorage） */
-const { preference, theme, cycleTheme } = useTheme()
-const THEME_LABEL: Record<string, string> = { auto: '自动', light: '浅色', dark: '深色' }
-const themePreferenceLabel = computed(() => THEME_LABEL[preference.value] ?? '自动')
-const themeActionLabel = computed(() => {
-  const current = themePreferenceLabel.value
-  const next =
-    preference.value === 'auto' ? '浅色' : preference.value === 'light' ? '深色' : '自动'
-  return `主题：${current}${preference.value === 'auto' ? '（跟随系统）' : ''}，点击切换到${next}`
-})
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -59,6 +45,7 @@ const tabItems: UiTabItem[] = [
 ]
 const activeTab = computed(() => {
   if (route.path.startsWith('/players')) return 'market' // 详情页属于"市场"这条线
+  if (route.path === '/me') return '' // 个人页不在底部 Tab 里，不高亮任何一项
   const hit = Object.entries(TAB_ROUTES).find(([, path]) => path === route.path)
   return hit ? hit[0] : 'market'
 })
@@ -67,20 +54,13 @@ function onTabSelect(key: string): void {
   if (path) void router.push(path)
 }
 
-/** 响应式：≤960px 时导航收进汉堡按钮，路由切换后自动收起 */
-const navOpen = ref(false)
 const route = useRoute()
-watch(
-  () => route.path,
-  () => (navOpen.value = false),
-)
 
-const { currentUser, accountLabel: accountKind, isLoggedIn, logout } = useAuth()
+const { currentUser } = useAuth()
 const router = useRouter()
 
 /** 桌面玻璃顶栏的页面标题（来自路由 meta.title；必须放在 useRoute/useRouter 之后——
     immediate watch 会在 setup 阶段立刻执行，早于 const route 声明会报 TDZ） */
-const pageTitle = computed(() => route.meta.title ?? '选手市场')
 watch(
   () => route.meta.title,
   (title) => {
@@ -91,33 +71,19 @@ watch(
   { immediate: true },
 )
 
-/** 删除账号弹窗：只对私人账号开放（公共演示账户不属于任何个人，见契约 §4.16） */
-const deleteOpen = ref(false)
-
-/**
- * 删除成功后：弹窗内部已经清掉会话，这里只负责把人送回登录页，
- * 并用 ?deleted=1 让登录页显示一句结果说明（不带 message 进 query：
- * 后端回报的行数已经打在控制台，URL 里塞长文本既难看又会被收藏成怪链接）。
- */
-async function onAccountDeleted(): Promise<void> {
-  await router.push({ name: 'auth', query: { deleted: '1' } })
-}
-
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
 
-/** 私人账户只有用户名（注册不收昵称/邮箱），侧栏就用它；头像取首字母，比引一套图标库划算 */
+/** 深浅色快捷开关：外壳里一键切换（/me 仍保留「自动/浅色/深色」三档偏好） */
+const { theme, setTheme } = useTheme()
+const themeSwitchLabel = computed(() => (theme.value === 'light' ? '深色' : '浅色'))
+function toggleTheme(): void {
+  setTheme(theme.value === 'light' ? 'dark' : 'light')
+}
+
+/** 移动端顶栏头像：入口指向个人页（侧栏里也有「我的」） */
 const displayName = computed(() => currentUser.value?.nickname ?? '访客')
 const userInitial = computed(() => displayName.value.charAt(0).toUpperCase())
-
-/**
- * 侧栏账号按钮：私人账户 = 退出（撤销服务端令牌），访客 = 放弃访客态去登录页。
- * 两种情况都先清会话再跳 /auth——不清的话守卫会把"已登录"的用户从 /auth 弹回市场页。
- */
-async function onAccountAction(): Promise<void> {
-  await logout()
-  await router.push({ name: 'auth' })
-}
 
 const { service: backend } = useBackendHealth()
 
@@ -127,16 +93,66 @@ const healthText = computed(() => {
   return '服务正常'
 })
 
-/** 总收益 = 总资产 - 初始本金（后端字段，前端只做展示计算） */
-const profit = computed(() =>
-  account.value ? account.value.total_asset - account.value.initial_balance : null,
+/** 移动端顶栏：下滑收起、上滑出现（参考主流 App 的 hide-on-scroll 行为） */
+const topbarHidden = ref(false)
+let lastScrollY = 0
+let scrollTicking = false
+
+function updateTopbarVisibility(): void {
+  if (window.innerWidth > 960) {
+    topbarHidden.value = false
+    lastScrollY = window.scrollY
+    return
+  }
+  const y = Math.max(window.scrollY, 0)
+  if (y < 24) {
+    topbarHidden.value = false // 回到顶部一定显示
+  } else if (y > lastScrollY + 6) {
+    topbarHidden.value = true // 下滑：收起
+  } else if (y < lastScrollY - 6) {
+    topbarHidden.value = false // 上滑：出现
+  }
+  lastScrollY = y
+}
+
+function onScroll(): void {
+  if (scrollTicking) return
+  scrollTicking = true
+  requestAnimationFrame(() => {
+    updateTopbarVisibility()
+    scrollTicking = false
+  })
+}
+
+function onResize(): void {
+  updateTopbarVisibility()
+}
+
+// 换页后回到顶部时顶栏必须可见
+watch(
+  () => route.path,
+  () => {
+    topbarHidden.value = false
+    lastScrollY = window.scrollY
+  },
 )
 
 onMounted(() => {
+  lastScrollY = window.scrollY
+  updateTopbarVisibility()
+  window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('resize', onResize)
   checkBackendHealth()
+  // 余额/资产是交易面板的依赖（最大可买/预估金额），外壳启动时静默拉一次；
+  // 侧栏不再展示它，但也不该让详情页的交易面板缺数据。
   refreshAccount().catch(() => {
-    /* 后端未启动时侧栏显示占位即可，页面各自有错误提示 */
+    /* 后端未启动时页面各自有错误提示 */
   })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('resize', onResize)
 })
 </script>
 
@@ -145,20 +161,20 @@ onMounted(() => {
   <RouterView v-if="isAuthPage" />
 
   <template v-else>
+    <!-- 键盘用户第一个 Tab 就能跳过导航（专业站点的常规做法） -->
+    <a class="skip-link" href="#main">跳到主要内容</a>
     <!-- CS2 氛围背景（纯装饰）：雷达网格 + 红色氛围光 -->
     <div class="backdrop" aria-hidden="true"></div>
 
     <div class="shell">
-      <!-- ===== 侧栏（桌面端）/ 抽屉（移动端） =====
-           材质层：桌面端是玻璃壳（导航属于材质层）；≤960px 的抽屉是实色 sheet——
-           抽屉占屏 78vw × 100dvh，玻璃面积会直接冲破 30% 配额，且里面是文字密集区。 -->
-      <aside :class="['sidebar', 'glass', 'glass--nav', { open: navOpen }]">
+      <!-- ===== 侧栏（仅桌面端；≤960px 隐藏，移动端用底部 4 项导航 + 顶栏头像） ===== -->
+      <aside class="sidebar">
         <RouterLink to="/" class="brand">
           <span class="brand-mark" aria-hidden="true"></span>
           PlayerStock<span class="sub">虚拟选手股</span>
         </RouterLink>
 
-        <nav :class="{ open: navOpen }" aria-label="主导航">
+        <nav aria-label="主导航">
           <RouterLink to="/" class="nav-item">
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="M2 13h12M4 13V8m4 5V4m4 9v-6" />
@@ -181,157 +197,84 @@ onMounted(() => {
             <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6" /></svg>
             交易记录
           </RouterLink>
+          <RouterLink to="/me" class="nav-item">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="5.5" r="2.5" />
+              <path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4" />
+            </svg>
+            我的
+          </RouterLink>
         </nav>
 
-        <!-- 当前身份：私人账户（令牌）/ 公共演示账户（访客）/ 未登录 -->
-        <div class="user-card">
-          <span class="avatar" aria-hidden="true">{{ userInitial }}</span>
-          <span class="who">
-            <strong>{{ displayName }}</strong>
-            <small>{{ accountKind }}</small>
-          </span>
-          <button type="button" class="acct-action" @click="onAccountAction">
-            {{ currentUser ? '退出' : '登录' }}
-          </button>
-        </div>
-
-        <!-- 删除账号：只有私人账户能删，且要口令二次确认（契约 §4.16） -->
-        <button v-if="isLoggedIn" type="button" class="danger-link" @click="deleteOpen = true">
-          删除账号
-        </button>
-
-        <!-- 账户概览：系统状态可见——余额/总资产/收益常驻侧栏 -->
-        <div class="account-card" v-if="account">
-          <div class="acct-row">
-            <span>余额（信用点）</span>
-            <strong>{{ money(account.balance) }}</strong>
-          </div>
-          <div class="acct-row">
-            <span>总资产</span>
-            <strong>{{ money(account.total_asset) }}</strong>
-          </div>
-          <div class="acct-row">
-            <span>总收益</span>
-            <strong :class="(profit ?? 0) > 0 ? 'up' : (profit ?? 0) < 0 ? 'down' : 'flat'">
-              {{ profit === null ? '—' : (profit >= 0 ? '+' : '') + money(profit) }}
-            </strong>
-          </div>
-        </div>
-        <div class="account-card placeholder" v-else aria-busy="true">
-          <span class="sk sk-line"></span><span class="sk sk-line"></span
-          ><span class="sk sk-line"></span>
-        </div>
-
-        <div
-          :class="['health', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
-        >
-          <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
-        </div>
-
-        <!-- 主题：自动（跟随系统）→ 浅色 → 深色 三档循环，44px 点击区 -->
+        <!-- 深浅色快捷切换：常驻侧栏底部，不用再进「我的」 -->
         <button
           type="button"
-          class="theme-toggle"
-          :aria-label="themeActionLabel"
-          :title="themeActionLabel"
-          @click="cycleTheme"
+          class="sidebar-theme"
+          :aria-label="`切换到${themeSwitchLabel}主题`"
+          :title="`切换到${themeSwitchLabel}主题`"
+          @click="toggleTheme"
         >
-          <!-- 自动：半黑半白圆（跟随系统） -->
-          <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
-            <circle cx="8" cy="8" r="5.5" />
-            <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
+          <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
           </svg>
-          <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
             <circle cx="8" cy="8" r="3" />
             <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
           </svg>
-          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
-          </svg>
-          <span>{{ themePreferenceLabel }}</span>
+          <span>{{ themeSwitchLabel }}</span>
         </button>
 
-        <p class="side-note">
-          本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分均为模拟数据，与
-          Valve、HLTV 及相关俱乐部无关联，不构成投资建议。
-        </p>
       </aside>
 
-      <!-- ===== 顶栏（材质层：玻璃）=====
-           桌面：fixed 在内容列上方，页面内容从它下面滚过 → 真模糊（这是桌面端唯一"有东西可糊"的位置）
-           移动：sticky 在页面顶部，内容同样从下面滚过 -->
-      <header class="topbar glass glass--nav">
-        <div class="topbar__title only-desktop">
-          <span class="topbar__crumb">PlayerStock</span>
-          <h1 class="topbar__h">{{ pageTitle }}</h1>
-        </div>
+      <!-- ===== 顶栏（移动端：品牌 + 个人头像；底部 Tab 负责导航） ===== -->
+      <header :class="['topbar', { 'is-hidden': topbarHidden }]">
         <RouterLink to="/" class="brand brand-sm only-mobile">
           <span class="brand-mark" aria-hidden="true"></span>PlayerStock
         </RouterLink>
 
         <div class="topbar__right">
-          <span
-            class="topbar__health only-desktop"
-            :class="backend === null ? 'checking' : backend === false ? 'bad' : 'good'"
-          >
-            <i class="h-dot" aria-hidden="true"></i>{{ healthText }}
-          </span>
-          <div class="balance" v-if="account">
-            余额 <strong>{{ money(account.balance) }}</strong>
-          </div>
           <button
-            class="theme-toggle topbar-theme"
             type="button"
-            :aria-label="themeActionLabel"
-            :title="themeActionLabel"
-            @click="cycleTheme"
+            class="topbar-theme only-mobile"
+            :aria-label="`切换到${themeSwitchLabel}主题`"
+            :title="`切换到${themeSwitchLabel}主题`"
+            @click="toggleTheme"
           >
-            <svg v-if="preference === 'auto'" viewBox="0 0 16 16" aria-hidden="true">
-              <circle cx="8" cy="8" r="5.5" />
-              <path d="M8 2.5a5.5 5.5 0 0 1 0 11Z" fill="currentColor" stroke="none" />
+            <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
             </svg>
-            <svg v-else-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
               <circle cx="8" cy="8" r="3" />
               <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
             </svg>
-            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
-            </svg>
           </button>
-          <button
-            class="menu-toggle only-mobile"
-            type="button"
-            :aria-expanded="navOpen"
-            aria-label="打开导航菜单"
-            @click="navOpen = !navOpen"
+          <RouterLink
+            to="/me"
+            class="topbar-profile only-mobile"
+            :aria-label="`我的：${displayName}`"
+            :title="`我的：${displayName}`"
           >
-            {{ navOpen ? '关闭菜单' : '菜单' }}
-          </button>
+            {{ userInitial }}
+          </RouterLink>
         </div>
       </header>
 
-      <main class="content">
-        <RouterView />
+      <main id="main" class="content">
+        <RouterView v-slot="{ Component, route: current }">
+          <Transition name="page" mode="out-in">
+            <component :is="Component" :key="current.path" />
+          </Transition>
+        </RouterView>
+        <footer class="page-foot">
+          <span :class="['foot-dot', backend === null ? 'checking' : backend === false ? 'bad' : 'good']"
+            ><i aria-hidden="true"></i>{{ healthText }}</span
+          >
+        </footer>
       </main>
 
       <!-- 移动端底部 Tab（材质层：玻璃；≤960px 显示） -->
       <UiBottomTab :model-value="activeTab" :items="tabItems" @select="onTabSelect" />
     </div>
-
-    <!-- 抽屉遮罩（移动端） -->
-    <div v-if="navOpen" class="scrim" @click="navOpen = false"></div>
-
-    <!-- 删除账号确认弹窗（Teleport 到 body，不受侧栏 / 抽屉布局影响） -->
-    <!--
-      这里故意不写 v-if="currentUser"：删除成功时 useAuth 会清会话，
-      currentUser 立刻变 null，组件会在 emit('deleted') 之前被卸载，父层就再也收不到通知
-      （实测踩过：账号删掉了但页面停在市场页）。组件自己按 open 控制渲染。
-    -->
-    <DeleteAccountDialog
-      v-model="deleteOpen"
-      :nickname="currentUser?.nickname ?? ''"
-      @deleted="onAccountDeleted"
-    />
   </template>
 </template>
 
@@ -355,11 +298,10 @@ onMounted(() => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-3);
-  /* 底色/模糊由全局 .glass 提供；这里只留"靠边一侧"的描边，避免玻璃四周都描边显得像卡片 */
-  border: 0;
-  border-right: 1px solid var(--glass-border);
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-4);
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   overflow-y: auto;
 }
 .brand {
@@ -407,6 +349,11 @@ onMounted(() => {
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
 }
+.nav-item {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
+}
 .nav-item:hover {
   background: var(--neutral-bg);
   color: var(--text);
@@ -419,50 +366,31 @@ onMounted(() => {
   stroke-width: 1.6;
   stroke-linecap: round;
 }
+.nav-item {
+  position: relative;
+}
 .nav-item.router-link-active {
-  /* P1：选中态 = 淡主色底 pill + 主色文字 */
-  color: var(--color-selection-text);
+  /* 纸感：只用文字与一条 2px 竖线表示选中，不再用彩色底 */
+  color: var(--text);
   font-weight: 600;
-  background: var(--color-selection-bg);
+  background: transparent;
+}
+.nav-item.router-link-active::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--color-text);
 }
 
 /* 账户概览卡片 */
-.account-card {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.acct-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
 .acct-row strong {
   color: var(--text);
   font-size: var(--fs-h3);
   font-variant-numeric: tabular-nums;
-}
-.acct-row strong.up {
-  color: var(--up-text);
-}
-.acct-row strong.down {
-  color: var(--down);
-}
-.acct-row strong.flat {
-  color: var(--muted);
-}
-.account-card.placeholder .sk-line {
-  height: 14px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
-  animation: sk-pulse 1.2s ease-in-out infinite;
 }
 @keyframes sk-pulse {
   0%,
@@ -488,13 +416,6 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.h-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
 .health.good {
   color: var(--down);
   background: var(--down-bg);
@@ -507,56 +428,68 @@ onMounted(() => {
   color: var(--muted);
 }
 
-.side-note {
-  margin: auto 0 0;
-  padding: var(--space-3);
-  font-size: var(--fs-aux);
+/* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
+.sidebar-theme {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: none;
   color: var(--muted);
-  border-top: 1px solid var(--border);
-  line-height: 1.5;
+  font-size: var(--fs-aux);
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar-theme:hover {
+  color: var(--text);
+}
+.sidebar-theme svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
 
-/* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
-.theme-toggle {
+.topbar-theme {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--neutral-bg);
+  color: var(--text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--muted);
-  font-family: inherit;
-  font-size: var(--fs-cap);
   cursor: pointer;
 }
-.theme-toggle:hover {
+.topbar-theme:hover {
   color: var(--text);
-  border-color: var(--border-strong);
+  border-color: var(--color-border-strong);
+}
+.topbar-theme svg {
+  width: 16px;
+  height: 16px;
+}
+
+.topbar-profile {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
   background: var(--neutral-bg);
+  color: var(--text);
+  font-size: var(--fs-aux);
+  font-weight: 600;
+  text-decoration: none;
 }
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.theme-toggle svg {
-  width: var(--icon-sm);
-  height: var(--icon-sm);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-.topbar-theme {
-  min-height: 36px;
-  padding: 0 var(--space-2);
-}
-@media (max-width: 960px) {
-  .topbar-theme span {
-    display: none; /* 窄屏只留图标，省空间 */
-  }
+.topbar-profile:hover {
+  border-color: var(--color-border-strong);
 }
 
 /* ===== 顶栏（桌面 fixed / 移动 sticky；材质层：玻璃，内容从它下面滚过） ===== */
@@ -575,75 +508,13 @@ onMounted(() => {
 .brand-sm {
   padding: 0;
 }
-.balance {
-  margin-left: auto;
-  font-size: var(--fs-aux);
-  color: var(--muted);
-  white-space: nowrap;
-}
-.balance strong {
-  color: var(--text);
-  font-size: var(--fs-h3);
-  font-variant-numeric: tabular-nums;
-}
-@media (max-width: 420px) {
-  .balance {
-    font-size: var(--fs-cap);
-  }
-  .balance strong {
-    font-size: var(--fs-body);
-  }
-}
-.menu-toggle {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  padding: 6px 10px;
-  font-size: var(--fs-aux);
-  cursor: pointer;
-}
 
-/* ===== 桌面（≥961px）：顶栏 fixed 在内容列上方，内容从它下面滚过 ===== */
+
+
+/* ===== 桌面（≥961px）：不要顶栏，把纵向空间还给内容 ===== */
 @media (min-width: 961px) {
   .topbar {
-    display: flex;
-    position: fixed;
-    top: 0;
-    left: var(--layout-sidebar-width);
-    right: 0;
-    height: var(--layout-topbar-height);
-    padding: 0 var(--space-5);
-    border: 0;
-    border-bottom: 1px solid var(--glass-border);
-    z-index: var(--z-nav);
-  }
-  .topbar__title {
-    display: flex;
-    align-items: baseline;
-    gap: var(--space-2);
-    min-width: 0;
-  }
-  .topbar__crumb {
-    font-size: var(--fs-cap);
-    color: var(--faint);
-    white-space: nowrap;
-  }
-  .topbar__crumb::after {
-    content: '/';
-    margin-left: var(--space-2);
-    color: var(--border-strong);
-  }
-  .topbar__h {
-    /* P1：顶栏标题降为"面包屑"级，页面大标题仍由页面自身负责，避免同屏重复两个大标题 */
-    margin: 0;
-    font-size: var(--fs-cap);
-    font-weight: var(--font-weight-medium);
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  .topbar__right .balance {
-    margin-left: 0;
+    display: none;
   }
   .topbar__right {
     margin-left: auto;
@@ -651,23 +522,9 @@ onMounted(() => {
     align-items: center;
     gap: var(--space-3);
   }
-  .topbar__health {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: var(--fs-cap);
-    color: var(--muted);
-  }
-  .topbar__health.good {
-    color: var(--down);
-  }
-  .topbar__health.bad {
-    color: var(--up-text);
-  }
-  /* 桌面内容区给 fixed 顶栏让出高度（内容从顶栏下面滚过）
-     用 .shell .content 提高优先级：基础 .content 规则在文件更后面 */
+  /* 桌面内容区：大留白，视线从容 */
   .shell .content {
-    padding-top: calc(var(--layout-topbar-height) + var(--space-5));
+    padding: var(--space-7) var(--space-6) var(--space-6);
   }
 }
 .only-mobile {
@@ -677,35 +534,75 @@ onMounted(() => {
 /* ===== 主区 ===== */
 .content {
   grid-area: content;
-  padding: var(--space-5);
+  padding: var(--space-6) var(--space-5);
   width: 100%;
-  /* 宽屏修复：主区在侧栏右侧的剩余空间内居中，避免右侧大片空白 */
-  max-width: 1280px;
+  max-width: var(--layout-content-max);
   margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
-/* 遮罩（仅移动端抽屉用） */
-.scrim {
-  display: none;
+/* 页脚：服务状态 + 关于（低调，不抢内容） */
+.page-foot {
+  margin-top: auto;
+  padding-top: var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.foot-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.foot-dot i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.foot-dot.good {
+  color: var(--down);
+}
+.foot-dot.bad {
+  color: var(--up-text);
 }
 
-/* ===== ≤960px：侧栏转抽屉，顶栏出现 ===== */
+/* ===== ≤960px：侧栏隐藏，顶栏（品牌+头像）+ 底部 4 项导航 ===== */
 @media (max-width: 960px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      'topbar'
-      'content';
+    grid-template-rows: 1fr;
+    /* 顶栏改为 fixed 覆盖层：不再占网格行，否则收起后会留下一条空白 */
+    grid-template-areas: 'content';
   }
   .topbar {
     display: flex;
-    /* 移动端顶栏单行：品牌 / 余额 / 主题 / 菜单 全部垂直居中，余额不再独占一行 */
+    /* fixed 覆盖在内容之上：实色底，内容从下面滚过不会透出文字叠字 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
     align-items: center;
     flex-wrap: nowrap;
     gap: var(--space-2);
     min-height: 56px;
     height: auto;
-    padding: 8px 12px;
+    /* 顶部安全区（刘海屏） */
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    background: var(--color-canvas);
+    border-bottom: 1px solid var(--color-border);
+    transform: translateY(0);
+    /* 丝滑收起/出现：与主流 App 同款 ease-out 曲线 */
+    transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
+  }
+  .topbar.is-hidden {
+    transform: translateY(calc(-100% - 1px));
   }
   .topbar__right {
     display: flex;
@@ -715,61 +612,29 @@ onMounted(() => {
     margin-left: auto;
     min-width: 0;
   }
-  .topbar__right .balance {
-    margin-left: 0;
-    font-size: var(--fs-cap);
-    line-height: 1.2;
-  }
-  .topbar__right .balance strong {
-    font-size: var(--fs-aux);
-  }
-  .topbar .theme-toggle,
-  .topbar .menu-toggle {
-    flex: none;
-  }
   .brand-sm {
     flex: none;
     min-width: 0;
   }
-  .only-desktop {
-    display: none !important;
-  }
   .only-mobile {
     display: inline-flex;
   }
+  /* 手机端不需要抽屉：导航由底部 Tab 承担，「我的」走顶栏头像 */
   .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    height: 100dvh;
-    width: min(78vw, 300px);
-    z-index: 30;
-    transform: translateX(-105%);
-    transition: transform 0.2s ease;
-    /* 抽屉=文字密集的浮层 sheet：实色，不用玻璃（玻璃面积 78vw×100dvh 会超配额，
-       而且导航/账户/合规声明这类文本直接坐在玻璃上不可读） */
-    background-color: var(--surface);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-    box-shadow: var(--shadow-2);
-    border: 1px solid var(--border);
-    border-radius: 0 var(--glass-radius-sheet) var(--glass-radius-sheet) 0;
-  }
-  .sidebar.open {
-    transform: translateX(0);
-  }
-  .scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.55);
-    z-index: 25;
+    display: none;
   }
   .content {
-    padding: var(--space-4) var(--space-4) var(--space-5);
+    /* 给 fixed 顶栏让出位置（56 + 安全区），换页/滚动时内容不会被遮住 */
+    padding: calc(56px + env(safe-area-inset-top, 0px) + var(--space-4)) var(--space-4)
+      var(--space-5);
     /* 给底部玻璃 Tab 栏留出空间（12px 底距 + 56 高度 + 安全区） */
     padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topbar {
+    transition: none;
   }
 }
 
@@ -784,76 +649,42 @@ onMounted(() => {
 }
 
 /* ===== 本地账号卡片（会话来自 useAuth，只存浏览器） ===== */
-.user-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface-2);
-}
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  /* 实色主色底 + 白字：红字压在红色调底上只有 1.7:1，2026-11-14 实测不合格，改实心底 */
-  background: var(--color-action);
-  color: var(--color-action-text);
-  font-size: var(--fs-cap);
-  font-weight: 800;
-  flex-shrink: 0;
-}
-.who {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
 .who strong {
   font-size: var(--fs-aux);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.who small {
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.acct-action {
-  margin-left: auto;
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-cap);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.acct-action:hover {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
-}
 
 /* 删除账号入口：刻意做成不起眼的文字链——低频高危操作，不该长得像主按钮 */
-.danger-link {
-  align-self: flex-start;
-  margin-top: calc(var(--space-2) * -1);
-  padding: 2px 4px;
-  border: none;
-  background: none;
-  color: var(--muted);
-  font-size: var(--fs-cap);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .nav-item,
+  .icon-btn svg {
+    transition: none !important;
+  }
 }
-.danger-link:hover {
-  color: var(--accent-text);
+
+/* 跳转链接：默认藏在视口外，键盘聚焦时才出现 */
+.skip-link {
+  position: fixed;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: calc(var(--z-modal) + 10);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  color: var(--text);
+  font-size: var(--fs-aux);
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 </style>

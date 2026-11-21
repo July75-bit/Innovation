@@ -313,9 +313,9 @@ python scripts/update_prices.py --from-json data/price_updates.json
 - 暂停交易（`status != trading`）的选手不会被定价，`sh1ro` 会停在种子的 2 个点——这是预期行为，
   不是漏点。
 
-实测（2026-10-24，`--rounds 9`）：**6 人 11 个点、`ropz` 10 个点、`sh1ro` 2 个点**，
-合计 78 条 `price_history`；`ts` 严格升序、每点带中文 `reason`、最后一点等于 `current_price`，
-库为单个 `.db` 文件（WAL 已归并）。
+实测（2026-11-21，`--rounds 12`）：**15 人 11 个点、`ropz` 10 个点**（种子只有 1 条，初始价 = 现价），
+合计 **175 条** `price_history`（赛程派生：每轮 2 队 4 人停牌）；`ts` 严格升序、每点带中文 `reason`、
+最后一点等于 `current_price`，库为单个 `.db` 文件（WAL 已归并）。
 
 > 为什么是 9 轮而不是 8 轮：种子只给 `ropz` 1 条历史（它的 `initial_price` 与 `current_price` 相等，
 > 省掉了"当前价"那条），8 轮只能到 9 个点；9 轮才能让**所有可交易选手都 ≥10**。
@@ -392,7 +392,7 @@ python scripts/bootstrap_demo_data.py
 
 - [x] B 第 1 天：按本文建 models，跑通 `init_db()`
 - [x] B 第 1 天：补唯一索引与 CHECK 约束（提前于 D2 完成）
-- [ ] B 第 6 天：把实际表结构（`sqlite3 .schema` 输出）贴到附录，证明与文档一致
+- [x] B 第 6 天：把实际表结构（`sqlite3 .schema` 输出）贴到附录，证明与文档一致（见 §8 附录 B，2026-11-21 生成）
       —— 第 1 天已先贴一版实测结果，见 §7，第 6 天只做复核
 
 ## 7. 附录 A：第 1 天实测 `.schema`（`code/backend/playerstock.db`）
@@ -504,7 +504,169 @@ CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
 `positions` 唯一约束与 `quantity 1–50` CHECK、`trades(user_id, created_at)` 索引、
 `price_history(player_id, ts)` 索引均已实际生成。
 
-**第 2 天复核（2026-10-24）**：按本节命令重新生成 `code/backend/playerstock.db` 后，结果与上面逐条一致——
-恰好 5 张表、4 条索引，`players=8`（价格 126.00 / 143.50 / 91.20 / 74.40 / 105.00 / 90.20 / 136.50 / 63.00，
-其中 `sh1ro` 为 `suspended`）、`price_history=15`。表结构自第 1 天起**未变**，所以第 2 天的并发加固
-（§3.1）只改写入方式，不改 schema，A/C/D 无需适配。
+**最新复核（2026-11-21）**：按本节命令重新生成 `code/backend/playerstock.db` 后，结果为
+**9 张表、9 条索引**（最初 5 张业务表之外，新增 `auth_tokens` / `agent_traces` / `decision_logs` / `price_narratives`）、
+`players=16`（8 队 × 2）、`price_history=175`。表结构只在「账号体系」「智能体审计」两次迭代中**增量加表**，
+既有列未改，所以第 2 天的并发加固（§3.1）与后续接口都无需数据迁移。
+
+## 8. 附录 B：2026-11-21 最新 `.schema`（9 张表 / 9 条索引）
+
+生成方式（临时库跑 `bootstrap_demo_data.py --rounds 12` 后导出）：
+
+```python
+import sqlite3
+con = sqlite3.connect('playerstock.db')
+for t, n, s in con.execute("select type,name,sql from sqlite_master where sql is not null and name not like 'sqlite_%' order by type desc, name"):
+    print(s + ';')
+```
+
+```sql
+-- table: agent_traces
+CREATE TABLE agent_traces (
+	trace_id INTEGER NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	mode VARCHAR(16) NOT NULL, 
+	player_id INTEGER, 
+	source VARCHAR(16) NOT NULL, 
+	model VARCHAR(80), 
+	latency_ms INTEGER NOT NULL, 
+	fallback_reason VARCHAR(200), 
+	input_digest VARCHAR(120), 
+	output_json TEXT, 
+	PRIMARY KEY (trace_id), 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE SET NULL
+);
+-- table: auth_tokens
+CREATE TABLE auth_tokens (
+	token_hash VARCHAR(64) NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	expires_at DATETIME NOT NULL, 
+	PRIMARY KEY (token_hash), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE
+);
+-- table: decision_logs
+CREATE TABLE decision_logs (
+	decision_id INTEGER NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	advice_action VARCHAR(8) NOT NULL, 
+	advice_source VARCHAR(16) NOT NULL, 
+	decision VARCHAR(8) NOT NULL, 
+	trace_id INTEGER, 
+	note VARCHAR(200), 
+	PRIMARY KEY (decision_id), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+-- table: players
+CREATE TABLE players (
+	player_id INTEGER NOT NULL, 
+	name VARCHAR(50) NOT NULL, 
+	display_name VARCHAR(50), 
+	team VARCHAR(50), 
+	current_price NUMERIC(12, 2) NOT NULL, 
+	prev_price NUMERIC(12, 2) NOT NULL, 
+	role VARCHAR(20), 
+	rating INTEGER NOT NULL, 
+	status VARCHAR(20) DEFAULT 'trading' NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (player_id), 
+	CONSTRAINT ck_players_current_price_positive CHECK (current_price > 0), 
+	CONSTRAINT ck_players_prev_price_positive CHECK (prev_price > 0), 
+	CONSTRAINT ck_players_rating_range CHECK (rating >= 0 AND rating <= 100), 
+	UNIQUE (name)
+);
+-- table: positions
+CREATE TABLE positions (
+	position_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	avg_cost NUMERIC(12, 4) NOT NULL, 
+	updated_at DATETIME NOT NULL, 
+	PRIMARY KEY (position_id), 
+	CONSTRAINT uq_positions_user_player UNIQUE (user_id, player_id), 
+	CONSTRAINT ck_positions_quantity_range CHECK (quantity >= 1 AND quantity <= 50), 
+	CONSTRAINT ck_positions_avg_cost_non_negative CHECK (avg_cost >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+-- table: price_history
+CREATE TABLE price_history (
+	price_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	reason VARCHAR(200) NOT NULL, 
+	ts DATETIME NOT NULL, 
+	PRIMARY KEY (price_id), 
+	CONSTRAINT ck_price_history_price_positive CHECK (price > 0), 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+-- table: price_narratives
+CREATE TABLE price_narratives (
+	narrative_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	ts DATETIME NOT NULL, 
+	narrative TEXT NOT NULL, 
+	source VARCHAR(16) NOT NULL, 
+	model VARCHAR(80), 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (narrative_id), 
+	CONSTRAINT uq_narrative_player_ts UNIQUE (player_id, ts), 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+-- table: trades
+CREATE TABLE trades (
+	trade_id INTEGER NOT NULL, 
+	user_id INTEGER NOT NULL, 
+	player_id INTEGER NOT NULL, 
+	side VARCHAR(4) NOT NULL, 
+	quantity INTEGER NOT NULL, 
+	price NUMERIC(12, 2) NOT NULL, 
+	amount NUMERIC(12, 2) NOT NULL, 
+	balance_after NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	PRIMARY KEY (trade_id), 
+	CONSTRAINT ck_trades_side CHECK (side IN ('BUY', 'SELL')), 
+	CONSTRAINT ck_trades_quantity_positive CHECK (quantity > 0), 
+	CONSTRAINT ck_trades_price_positive CHECK (price > 0), 
+	CONSTRAINT ck_trades_amount_non_negative CHECK (amount >= 0), 
+	FOREIGN KEY(user_id) REFERENCES users (user_id) ON DELETE CASCADE, 
+	FOREIGN KEY(player_id) REFERENCES players (player_id) ON DELETE CASCADE
+);
+-- table: users
+CREATE TABLE users (
+	user_id INTEGER NOT NULL, 
+	nickname VARCHAR(50) NOT NULL, 
+	balance NUMERIC(12, 2) NOT NULL, 
+	initial_balance NUMERIC(12, 2) NOT NULL, 
+	created_at DATETIME NOT NULL, 
+	password_hash VARCHAR(255), 
+	salt VARCHAR(64), 
+	PRIMARY KEY (user_id), 
+	CONSTRAINT ck_users_balance_non_negative CHECK (balance >= 0), 
+	CONSTRAINT ck_users_initial_balance_non_negative CHECK (initial_balance >= 0), 
+	UNIQUE (nickname)
+);
+-- index: ix_agent_traces_created_at
+CREATE INDEX ix_agent_traces_created_at ON agent_traces (created_at);
+-- index: ix_auth_tokens_user_id
+CREATE INDEX ix_auth_tokens_user_id ON auth_tokens (user_id);
+-- index: ix_decision_logs_created_at
+CREATE INDEX ix_decision_logs_created_at ON decision_logs (created_at);
+-- index: ix_decision_logs_user_id
+CREATE INDEX ix_decision_logs_user_id ON decision_logs (user_id);
+-- index: ix_positions_player_id
+CREATE INDEX ix_positions_player_id ON positions (player_id);
+-- index: ix_positions_user_id
+CREATE INDEX ix_positions_user_id ON positions (user_id);
+-- index: ix_price_history_player_ts
+CREATE INDEX ix_price_history_player_ts ON price_history (player_id, ts);
+-- index: ix_price_narratives_player_id
+CREATE INDEX ix_price_narratives_player_id ON price_narratives (player_id);
+-- index: ix_trades_user_created
+CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
+```
+

@@ -61,6 +61,8 @@ def test_brief_returns_three_items_and_caches(client, monkeypatch):
     monkeypatch.setattr(settings, "llm_api_key", "")
     first = client.get("/api/agent/brief?refresh=true").json()
     assert len(first["items"]) == 3
+    assert {item["kind"] for item in first["items"]} == {"up", "low", "halt"}
+    assert all(item["value"] for item in first["items"]), "每条都要有可直接放大的数字"
     assert first["source"] in {"llm", "rule_fallback"}
     assert first["summary"]
 

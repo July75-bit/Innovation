@@ -31,10 +31,14 @@ services:
         # ⚠️ 含密码，所以用 sync: false 在控制台填写，绝不提交明文。
         # ⚠️ 若忘记填：代码会回落到本地 SQLite（临时文件系统），数据会随部署丢失。
         sync: false
+      # 大模型：DeepSeek 官方 API（OpenAI 兼容协议）。
+      # LLM_PROVIDER 目前只作标识，不参与请求；真正决定端点的是 LLM_BASE_URL + LLM_MODEL。
       - key: LLM_PROVIDER
         value: openai
       - key: LLM_MODEL
-        value: gpt-4o-mini
+        value: deepseek-flash
+      - key: LLM_BASE_URL
+        value: https://api.deepseek.com/v1
       - key: LLM_API_KEY
         sync: false # 在 Render 控制台手工填写，绝不提交明文
       - key: CORS_ORIGINS
@@ -59,7 +63,10 @@ services:
     runtime: python
     plan: free
     region: singapore
-    schedule: "0 * * * *" # 每小时整点（UTC）
+    # 每 10 分钟一次：Render 免费 Web Service 闲置 15 分钟就休眠，唤醒一次约 30 秒。
+    # 巡检本身也是一次 HTTP 请求 → 用来"保活"；只在 UTC 0–15 点（北京 08:00–23:59）跑，
+    # 避开整夜空转，免费 750 小时/月不会被打满（约 16h/天 ≈ 496h/月）。
+    schedule: "*/10 0-15 * * *"
     buildCommand: echo "patrol 脚本只用标准库，无需构建"
     startCommand: python scripts/agent_patrol.py
     envVars:

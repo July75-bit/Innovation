@@ -3,7 +3,7 @@
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《创新工程实践营项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
 > **状态**：✅ 已具备（有产物 + 可验证）｜🟡 有但不完整｜❌ 缺
-> 最后核对：2026-11-07 22:20（本机后端 320 passed / 前端 62 passed / 覆盖率 98%）
+> 最后核对：2026-11-21（本机后端 330 passed / 覆盖率 98%；前端用例数见 `test_report.md` §4）
 
 ## 一、汇报第一部分：产品设计（8 分钟 / 40%）
 
@@ -39,7 +39,7 @@
 | --- | --- | --- | --- |
 | **3.1 用户体验设计考虑的因素** | `prototype_review.md` §1.5（2026-11-07 补） | 9 类因素 × 取舍 × 落点 | ✅ |
 | **账号体系（第 7 轮新增）** | `api_contract.md` §3 #13–17、§4.11–4.15；`user_manual.md` §2.5；`compliance.md` §4.3 | 注册/登录/me/退出/删号 5 个接口；PBKDF2-HMAC-SHA256 加盐 10 万次、令牌 30 天可撤销；`test_api_auth.py` + `test_auth_multiuser.py` | ✅ |
-| **性能 / 容量（NFR-04/05）** | cceptance/load_test_report.md、	ests/perf/load_test.py | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 |
+| **性能 / 容量（NFR-04/05）** | `acceptance/load_test_report.md`、`tests/perf/load_test.py` | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 | ✅ |
 | **3.2 语言/IDE/框架 + 版本号，写在 README** | `README.md` 技术栈表、`architecture.md` §4 | Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6 | ✅ |
 | **3.3 仓库链接 + 每人提交次数截图** | `evidence/20~22`、`pulse-committers.csv` | pulse 截图 + 准数统计（49/41/28/21）+ 口径说明 | ✅ |
 | **3.4 生命周期问题汇总表** | `acceptance/lifecycle_issues.md` | 16 条 × 四列（类别/问题/原因/解决），每条带用例 | ✅ |
@@ -68,7 +68,7 @@
 | **L4 评测（真模型 + 黄金集）** | `acceptance/agent_eval_report.md`、`tests/eval/` | ✅ 线上 16/16 走真模型、契约 100%、理由含数字 100%、P95 3.4s |
 | **L5 红队（注入/越权/隐私/输出越界）** | `acceptance/agent_redteam.md`、`tests/eval/test_agent_redteam.py` | ✅ 11/11 通过；无自由输入 → 注入面为 0 |
 | **33 项用户测试检查表（P1–P5 / I1–I4 / V1–V4 / H1–H9 / A1–A11）** | `tests/playerstock_agent_demo_user_test.md`（**正式提交版**，学生版表格逐格填满）、`tests/agent_demo_user_test.md`（内部自查版） | ✅ **32 通过 / 1 部分通过 / 0 不通过**（首轮 5 项部分通过已修复 4 项） |
-| 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §4（延期说明 + 补救方案） | ❌ 未做（已如实记录） |
+| 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §3（我方测 Tome）/ §4（他组测我方） | ✅ 双向完成（2026-11-14；他组那份属材料评审） |
 | 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
 
 > 📄 **已备好可直接粘贴的 Issue 标题 + 正文**：[`bug-issues.md`](bug-issues.md)（14 条，含两种建法）。
@@ -80,12 +80,12 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 320 passed |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 330 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 98% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
-| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project（**2026-11-14 无痕窗口实测已 Public**，证据 evidence/38-projects-public-incognito.png） + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅ 匿名可见，无需登录 | |
+| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project（**2026-11-14 无痕窗口实测已 Public**，证据 evidence/38-projects-public-incognito.png） + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅ 匿名可见，无需登录 |
 
 ## 四、明确不做 / 已知限制（诚实清单）
 
@@ -93,7 +93,7 @@
 | --- | --- | --- |
 | 真实赛事数据接口 | 不做 | HLTV 反爬；用模拟数据 + 适配器预留 |
 | 充值 / 提现 / 兑换 | 不做 | 合规红线 |
-| 外部交叉原型测试 | 延期 | 已写延期说明 + 补救方案（`cross_test.md` §4），不伪造记录 |
+| 外部交叉原型测试 | ✅ 已完成 | 双向：我方测 Tome 9/17/6/1；他组测我方 28/4/0/1（材料评审），见 `cross_test.md` §3/§4 |
 | 依赖漏洞扫描（pip-audit） | 未接 | 冻结期不加门禁，列入下一步 |
 | 回测重跑（16 人种子） | 未重跑 | `pricing_model.md` §7 已加注：结论说明机制特性，非绝对收益 |
 | 彩排 | **0 次** | 唯一硬缺口，方案见 `rehearsal-plan.md` |

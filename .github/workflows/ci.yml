@@ -14,6 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ---------------- 仓库卫生：未解决的合并冲突标记 ----------------
+  # 历史事故（2 次）：手工解冲突后 git add -A，把 <<<<<<< 一起提交 → eslint 报 diff marker、
+  # Render 前端构建失败、页面白屏。检查只读、几秒钟，放在最前面先失败。
+  hygiene:
+    name: 仓库卫生 (冲突标记)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 检查未解决的合并冲突标记
+        run: |
+          if git grep -n -E "^(<<<<<<< |>>>>>>> )" -- . ; then
+            echo "::error::仓库里存在未解决的合并冲突标记（<<<<<<< / >>>>>>>），请先解冲突再提交"
+            exit 1
+          fi
+          echo "仓库无冲突标记。"
+
   # ---------------- 后端：pytest ----------------
   backend:
     name: 后端测试 (pytest)
@@ -165,7 +181,8 @@ jobs:
             docs/acceptance/evidence/README.md \
             docs/acceptance/evidence/online/backend-debug-db.md \
             docs/presentation/README.md \
-            docs/presentation/slides.md \
+            docs/slides/slides.md \
+            docs/slides/style.css \
             docs/presentation/demo-script.md \
             docs/presentation/qa.md \
             docs/presentation/defense.pdf \

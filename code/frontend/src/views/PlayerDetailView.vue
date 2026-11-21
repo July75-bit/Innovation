@@ -25,6 +25,7 @@
  * 决策所需信息在一屏内闭环，不必来回滚动。
  */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useSlowHint } from '../composables/useSlowHint'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import { ApiError } from '../api/client'
@@ -46,9 +47,22 @@ import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus
 import { refreshAccount } from '../composables/useAccount'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import ErrorState from '../components/ErrorState.vue'
-import LoadingState from '../components/LoadingState.vue'
 
 const route = useRoute()
+
+/**
+ * 返回链接：从赛程抽屉点进来的选手，返回到「赛程 + 该场抽屉」；
+ * 其余入口（市场卡片/直接打开）照旧返回市场。
+ */
+const backLink = computed(() => {
+  const q = (route.query ?? {}) as Record<string, string | string[] | undefined>
+  if (q.from !== 'schedule') return { to: '/', label: '返回市场' }
+  const raw = Array.isArray(q.round) ? q.round[0] : q.round
+  const round = Number(raw)
+  return Number.isInteger(round) && round > 0
+    ? { to: { path: '/schedule', query: { round: String(round) } }, label: '返回赛程' }
+    : { to: '/schedule', label: '返回赛程' }
+})
 const playerId = computed(() => Number(route.params.id))
 
 /** 路由参数非法（NaN / 非正整数）时不发请求，直接友好提示；
@@ -68,6 +82,8 @@ const points = ref<PricePoint[]>([])
 const analysis = ref<AnalysisResponse | null>(null)
 const held = ref<number | null>(null)
 const loading = ref(true)
+/** 加载超过 4 秒就解释一句"可能在唤醒服务" */
+const slowLoading = useSlowHint(loading)
 const error = ref<string | null>(null)
 /** AI 是独立请求：单独维护加载态，卡片位显示"AI 分析中…"而不是空白（课件「等待可感知」） */
 const analysisLoading = ref(false)
@@ -161,15 +177,23 @@ async function loadCore(silent = false) {
   checkBackendHealth()
   try {
     const id = playerId.value
-    const [detail, history, positions] = await Promise.all([
-      api.getPlayer(id),
-      api.getPriceHistory(id),
-      api.getPositions(),
-    ])
+    if (!silent) held.value = 0 // 换选手先清零，别让上一个选手的"已持有"短暂串台
+    // 持仓（已持有多少股）只影响交易面板提示，不影响首屏：并行发，但不阻塞 header/图表渲染
+    const positionsTask = api
+      .getPositions()
+      .then((positions: PositionItem[]) => {
+        if (token === requestToken) {
+          held.value = positions.find((p) => p.player_id === id)?.quantity ?? 0
+        }
+      })
+      .catch(() => {
+        /* 拿不到持仓就按 0 显示，交易时的最大可买由后端兜底 */
+      })
+    const [detail, history] = await Promise.all([api.getPlayer(id), api.getPriceHistory(id)])
     if (token !== requestToken) return // 已切走，丢弃过期响应
     player.value = detail
     points.value = history.points
-    held.value = positions.find((p: PositionItem) => p.player_id === id)?.quantity ?? 0
+    void positionsTask
   } catch (err) {
     if (token !== requestToken) return
     if (!silent) {
@@ -179,40 +203,53 @@ async function loadCore(silent = false) {
   } finally {
     if (token === requestToken) loading.value = false
   }
-  // AI 分析单独加载：慢/降级都不阻塞行情展示
+  // AI 分析 / 决策 / 叙事是三个独立接口，并行发出：慢的时候总耗时 = 最慢那个，而不是三份相加。
+  // analysisLoading 只跟"建议文本"绑定——建议先到就先显示，决策卡/叙事晚到再补，互不阻塞。
   analysisLoading.value = true
   plan.value = null
   decisionSent.value = false
   decisionNotice.value = ''
   reasonExpanded.value = false // 换选手时收起，避免上一个选手的展开状态带过来
-  try {
-    const a = await api.getAnalysis(playerId.value)
-    if (token === requestToken) analysis.value = a
-  } catch {
-    if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
-  } finally {
-    // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
-    if (token === requestToken) analysisLoading.value = false
-  }
-  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
-  try {
-    const d = await api.getAgentDecision(playerId.value)
-    if (token === requestToken) {
-      plan.value = d.plan
-      snapshot.value = d.snapshot
-      traceId.value = d.trace_id
-    }
-  } catch {
-    if (token === requestToken) plan.value = null
-  }
-  // 叙事归因：把规则 reason 讲成"为什么"，同样失败即静默
   narrative.value = null
-  try {
-    const n = await api.getAgentNarrative(playerId.value)
-    if (token === requestToken) narrative.value = n.narrative
-  } catch {
-    if (token === requestToken) narrative.value = null
-  }
+
+  const analysisTask = api
+    .getAnalysis(playerId.value)
+    .then((a) => {
+      if (token === requestToken) analysis.value = a
+    })
+    .catch(() => {
+      if (token === requestToken) analysis.value = null // 仅 404/500 会失败；详情已展示，静默即可
+    })
+    .finally(() => {
+      // 只有"当前这次请求"才有资格关掉加载态，避免快速切换选手时旧请求把新请求的占位关掉
+      if (token === requestToken) analysisLoading.value = false
+    })
+
+  // 决策卡（仓位/止损/置信度）是"增强层"：拿不到就不显示，绝不影响建议本身
+  const decisionTask = api
+    .getAgentDecision(playerId.value)
+    .then((d) => {
+      if (token === requestToken) {
+        plan.value = d.plan
+        snapshot.value = d.snapshot
+        traceId.value = d.trace_id
+      }
+    })
+    .catch(() => {
+      if (token === requestToken) plan.value = null
+    })
+
+  // 叙事归因：把规则 reason 讲成"为什么"，同样失败即静默
+  const narrativeTask = api
+    .getAgentNarrative(playerId.value)
+    .then((n) => {
+      if (token === requestToken) narrative.value = n.narrative
+    })
+    .catch(() => {
+      if (token === requestToken) narrative.value = null
+    })
+
+  await Promise.allSettled([analysisTask, decisionTask, narrativeTask])
   // 切选手时清掉上一个选手的纪要与工具记录，避免张冠李戴
   panel.value = null
   tools.value = null
@@ -247,6 +284,7 @@ async function refreshAnalysis() {
   if (analysisLoading.value || invalidId.value) return
   const token = requestToken // 沿用当前页面的令牌：切走选手后丢弃本次响应
   analysisLoading.value = true
+  api.invalidate?.(`analysis:${playerId.value}`) // 用户主动"重新分析"：必须拿新结果，不吃缓存
   try {
     const a = await api.getAnalysis(playerId.value)
     if (token === requestToken) analysis.value = a
@@ -351,13 +389,38 @@ watch(playerId, () => loadCore())
 
 <template>
   <div>
-    <RouterLink to="/" class="back">← 返回市场</RouterLink>
-    <LoadingState v-if="loading" />
+    <RouterLink :to="backLink.to" class="back">← {{ backLink.label }}</RouterLink>
+    <!-- 骨架屏：先把版式撑起来（标题/价格/图表/交易面板），数据到了再替换内容 -->
+    <div v-if="loading" class="detail-skeleton" aria-busy="true" aria-label="加载选手详情">
+      <div class="sk-head">
+        <div class="sk-lines">
+          <span class="sk sk-title"></span>
+          <span class="sk sk-meta"></span>
+          <span class="sk sk-rating"></span>
+        </div>
+        <span class="sk sk-price"></span>
+      </div>
+      <div class="sk-cols">
+        <div class="sk-panel">
+          <span class="sk sk-panel-title"></span>
+          <span class="sk sk-chart"></span>
+        </div>
+        <div class="sk-panel">
+          <span class="sk sk-panel-title"></span>
+          <span class="sk sk-para"></span>
+          <span class="sk sk-para short"></span>
+          <span class="sk sk-btn"></span>
+        </div>
+      </div>
+      <p v-if="slowLoading" class="slow-hint">
+        服务可能在唤醒中（免费实例休眠后首次访问约 30 秒），数据到了会自动显示…
+      </p>
+    </div>
     <ErrorState v-else-if="error" :message="error" @retry="loadCore()" />
 
     <template v-else-if="player">
       <!-- 行情头部：名称/状态 + 大字价格 -->
-      <header class="head card">
+      <header class="head">
         <div class="head-left">
           <h2>{{ player.display_name || player.name }}</h2>
           <p class="meta">
@@ -592,13 +655,15 @@ watch(playerId, () => loadCore())
   border-radius: var(--radius-md);
 }
 .head {
+  /* 纸感：头部不套卡片，直接用排版和一条细线分隔 */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-top: var(--space-3);
   gap: var(--space-4);
   flex-wrap: wrap;
-  padding: var(--space-5);
+  padding: 0 0 var(--space-5);
+  margin-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
 }
 .head h2 {
   margin: 0;
@@ -676,23 +741,6 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-body);
 }
-.ai-loading .dots {
-  display: inline-flex;
-  gap: 4px;
-}
-.ai-loading .dots i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--warn);
-  animation: ai-blink 1.2s infinite ease-in-out;
-}
-.ai-loading .dots i:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.ai-loading .dots i:nth-child(3) {
-  animation-delay: 0.4s;
-}
 @keyframes ai-blink {
   0%,
   80%,
@@ -708,7 +756,7 @@ h3 {
   font-size: var(--fs-cap);
   padding: 3px 12px;
   border-radius: var(--radius-pill);
-  color: #fff;
+  color: var(--color-action-text);
 }
 .advice.buy {
   background: var(--up);
@@ -738,87 +786,12 @@ h3 {
   font-size: var(--fs-cap);
   color: var(--muted);
 }
-.ai-src-line {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.ai-reason {
-  margin: 0;
-  font-size: var(--fs-body);
-}
 
 /* ---- 决策卡（第一梯度） ---- */
 .plan {
   margin-top: var(--space-3);
   padding-top: var(--space-3);
   border-top: 1px dashed var(--border);
-}
-.plan-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: var(--space-2);
-}
-.plan-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--bg, transparent);
-}
-.plan-grid span {
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.plan-grid strong {
-  font-size: var(--fs-body);
-}
-.plan-why {
-  margin: var(--space-2) 0 0;
-  padding-left: 1.1em;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  display: grid;
-  gap: 2px;
-}
-.plan-note {
-  margin: var(--space-2) 0 0;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.plan-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin-top: var(--space-2);
-}
-.plan-accept,
-.plan-ignore,
-.tools-btn {
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-cap);
-  cursor: pointer;
-}
-.plan-accept {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
-}
-.plan-accept:disabled,
-.plan-ignore:disabled,
-.tools-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.plan-notice {
-  font-size: var(--fs-cap);
-  color: var(--muted);
 }
 
 /* ---- 叙事归因（第二梯度） ---- */
@@ -830,12 +803,6 @@ h3 {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.ai-narrative-tag {
-  display: inline-block;
-  margin-right: 6px;
-  color: var(--accent-text);
-  font-weight: 600;
 }
 
 /* ---- 多角色纪要（第二梯度） ---- */
@@ -856,36 +823,6 @@ h3 {
 .minutes span {
   color: var(--muted);
   line-height: 1.6;
-}
-.panel-final {
-  margin: var(--space-3) 0 0;
-  font-size: var(--fs-body);
-}
-.panel-note {
-  display: block;
-  margin-top: 4px;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-}
-.tools-box {
-  margin-top: var(--space-3);
-  padding-top: var(--space-2);
-  border-top: 1px dashed var(--border);
-}
-.tools-list {
-  margin: var(--space-2) 0 0;
-  padding-left: 1.1em;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  display: grid;
-  gap: 2px;
-}
-.tools-list code {
-  color: var(--accent-text);
-}
-.tools-args {
-  margin-left: 6px;
-  opacity: 0.85;
 }
 .disclaimer {
   margin: var(--space-2) 0 0;
@@ -914,14 +851,6 @@ h3 {
   color: var(--muted);
   font-size: var(--fs-cap);
   cursor: pointer;
-}
-.ai-refresh:hover:not(:disabled) {
-  color: var(--text);
-  border-color: var(--muted);
-}
-.ai-refresh:disabled {
-  cursor: default;
-  opacity: 0.7;
 }
 
 /* 交易列在长页面中保持可见 */
@@ -964,13 +893,13 @@ h3 {
 
 /* ══════════ 智能体结论卡（改版：结论优先，细节折叠） ══════════ */
 .ai-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-5);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 .ai-top {
   display: flex;
@@ -1100,13 +1029,13 @@ h3 {
   font-weight: 600;
 }
 .meta-strong.low {
-  color: #4cc38a;
+  color: var(--color-success-base);
 }
 .meta-strong.medium {
-  color: #e0b341;
+  color: var(--color-warning-base);
 }
 .meta-strong.high {
-  color: #e5534b;
+  color: var(--color-error-base);
 }
 .meta-sep {
   color: var(--border);
@@ -1161,26 +1090,6 @@ h3 {
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.chip {
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  font-size: var(--fs-cap);
-  background: var(--neutral-bg);
-  color: var(--muted);
-  white-space: nowrap;
-}
-.chip.risk.low {
-  color: var(--down);
-  background: var(--down-bg);
-}
-.chip.risk.medium {
-  color: var(--warn);
-  background: var(--warn-bg);
-}
-.chip.risk.high {
-  color: var(--up-text);
-  background: var(--up-bg);
 }
 .ai-facts {
   display: flex;
@@ -1370,6 +1279,85 @@ h3 {
     width: 100%;
     justify-content: flex-end;
     flex-wrap: wrap;
+  }
+}
+
+/* ===== 首屏骨架（不转圈，版式先占位） ===== */
+.detail-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.sk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.sk-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sk-title {
+  width: 180px;
+  height: 26px;
+}
+.sk-meta {
+  width: 220px;
+}
+.sk-rating {
+  width: 140px;
+}
+.sk-price {
+  width: 120px;
+  height: 34px;
+}
+.sk-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-6);
+}
+.sk-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.sk-panel-title {
+  width: 96px;
+  height: 18px;
+}
+.sk-chart {
+  width: 100%;
+  height: 240px;
+  border-radius: var(--radius-sm);
+}
+.sk-para {
+  width: 100%;
+  height: 14px;
+}
+.sk-para.short {
+  width: 62%;
+}
+.sk-btn {
+  width: 120px;
+  height: 40px;
+  margin-top: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+.slow-hint {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+@media (max-width: 960px) {
+  .sk-cols {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 </style>

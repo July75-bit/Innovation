@@ -1,6 +1,6 @@
 @import './tokens.css';
-@import './ui-kit.css';
-/* 液态玻璃材质层：只给导航/浮层用，内容层保持扁平（规范见文件头注释） */
+/* liquid-glass.css 仍全局：模态框/删除账号弹窗/图表 tooltip 这些业务浮层还在用 .glass。
+   （2026-11-21 已移除 /ui-kit 展示页与 ui-kit.css，业务页不再有组件库样式负担。） */
 @import './liquid-glass.css';
 
 /*
@@ -49,6 +49,10 @@
   --down-bg: var(--color-down-subtle);
   --warn: var(--color-halt);
   --warn-bg: var(--color-halt-subtle);
+  /* 停牌 / 今天开打 用的琥珀色（历史类名就叫 halt；之前缺这个别名，
+     var(--halt) 全部静默失效 → 今天状态点、停牌标签、市场停牌数字都掉回普通文字色） */
+  --halt: var(--color-halt);
+  --halt-bg: var(--color-halt-subtle);
   --danger: var(--color-error-strong);
   --neutral-bg: var(--color-neutral-bg);
 
@@ -146,4 +150,148 @@ th.num {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+/* ============================================================
+ * 页面切换与浮层动效（2026-11-18）
+ *   原则：短（≤240ms）、只动 opacity/transform、进出不重叠（out-in）；
+ *   尊重 prefers-reduced-motion：开启后全部退化为瞬时切换。
+ * ============================================================ */
+/* 路由切换：淡入 + 轻微上移，离开只是快速淡出，避免两页叠在一起 */
+.page-enter-active {
+  transition:
+    opacity 200ms ease,
+    transform 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+.page-leave-active {
+  transition: opacity 120ms ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to {
+  opacity: 0;
+}
+
+/* 抽屉遮罩 / 通用淡入淡出 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 200ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active,
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none !important;
+  }
+  .page-enter-from {
+    transform: none;
+  }
+}
+
+/* ============================================================
+ * 细节打磨（2026-11-18）
+ *   - 选中文字用品牌淡色，而不是系统默认蓝
+ *   - 滚动条细化，和纸感一致（Firefox 用 scrollbar-color，Chromium 用伪元素）
+ *   - 数字用等宽数字，表格里不会左右跳
+ * ============================================================ */
+::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-text);
+}
+
+html {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.num,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 列表骨架：加载时先占好版式，避免转圈后内容"跳"出来 */
+.sk-list {
+  display: flex;
+  flex-direction: column;
+}
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.sk {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--neutral-bg);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+.sk-name {
+  width: 120px;
+  height: 16px;
+}
+.sk-mid {
+  width: 180px;
+}
+.sk-num {
+  width: 88px;
+  margin-left: auto;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* 浏览器自动填充：深浅主题下保持输入框底色与文字色（Chrome 会强行刷浅黄） */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--color-surface-raised) inset;
+  transition: background-color 9999s ease-out 0s;
 }

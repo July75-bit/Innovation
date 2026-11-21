@@ -60,3 +60,7 @@ tmp/
 # ---------- 部署/密钥 ----------
 render-secrets.md
 *.pem
+
+# ---------- Slidev 构建产物（由 GitHub Actions 生成，不提交） ----------
+docs/slides/dist/
+docs/slides/playerstock_defense.pdf

@@ -62,5 +62,5 @@
 
 ## 7. TODO
 
-- [ ] 第 4 天用真实测量数据替换"目标值"列旁边的空白，把实测值填进 `docs/acceptance/test_report.md`
-- [ ] 第 5 天线上环境复测 NFR-P-01/02/03 和 NFR-R-03
+- [x] 第 4 天用真实测量数据替换"目标值"列旁边的空白，把实测值填进 `docs/acceptance/test_report.md`（P-01~P-03 已回填；P-04/05 两项浏览器指标列为已知限制）
+- [x] 第 5 天线上环境复测 NFR-P-01/02/03 和 NFR-R-03（`load_test_report.md` 线上压测；R-03 由 TC-404 重部署复验）

@@ -39,7 +39,7 @@ function pick(key: string): void {
 
 <template>
   <nav
-    class="ui-tabbar glass glass--panel glass--scrim glass--interactive"
+    class="ui-tabbar"
     :class="{ 'is-preview': preview }"
     :aria-label="ariaLabel"
   >
@@ -72,8 +72,15 @@ function pick(key: string): void {
   gap: 2px;
   width: min(520px, calc(100% - 24px));
   padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
 }
 .ui-tab {
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease;
   flex: 1;
   min-width: 0;
   min-height: 44px;
@@ -102,9 +109,9 @@ function pick(key: string): void {
   outline-offset: 2px;
 }
 .ui-tab.is-active {
-  /* P1：与侧栏统一——淡主色底 pill + 主色文字，不再用顶部竖条 */
-  color: var(--color-selection-text);
-  background: var(--color-selection-bg);
+  /* 纸感：与侧栏一致，深色文字 + 极淡中性底 */
+  color: var(--color-text);
+  background: var(--neutral-bg);
   font-weight: var(--font-weight-semibold);
 }
 .ui-tab__icon svg {

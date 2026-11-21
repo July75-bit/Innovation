@@ -10,7 +10,7 @@
  * 2. 三条要点仍然正常渲染（清洗不能把内容洗没）。
  */
 
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import MarketView from '../MarketView.vue'
 
@@ -56,6 +56,10 @@ const h = vi.hoisted(() => ({
 
 vi.mock('../../api', () => ({ api: h.api }))
 
+beforeEach(() => {
+  sessionStorage.removeItem('playerstock.market.v1')
+})
+
 describe('市场页 · 今日简报', () => {
   it('摘要里的 JSON 被清洗成人话，界面上不出现花括号与字段名', async () => {
     const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
@@ -63,7 +67,7 @@ describe('市场页 · 今日简报', () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
     await flushPromises()
 
-    const summary = wrapper.find('.brief-summary')
+    const summary = wrapper.find('.lede')
     expect(summary.exists()).toBe(true)
     const text = summary.text()
 
@@ -73,13 +77,54 @@ describe('市场页 · 今日简报', () => {
     expect(text).toContain('sh1ro 现价 136.43')
   })
 
+  it('整句被模型套上引号时，界面上不显示引号', async () => {
+    const original = h.brief.summary
+    h.brief.summary = '\u201csh1ro 涨 13.96%，报 136.43\u201d'
+    const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+
+    const text = wrapper.find('.lede').text()
+    expect(text).toBe('sh1ro 涨 13.96%，报 136.43')
+    expect(text).not.toContain('\u201c')
+    expect(text).not.toContain('\u201d')
+    h.brief.summary = original
+  })
+
+  it('结构化 items 走「重点数字条」：大号数字 + 涨跌颜色，无长句', async () => {
+    const original = h.brief.items
+    h.brief.items = [
+      { title: '最该看', detail: 'sh1ro +13.96% · 136.43', player_id: 7, kind: 'up', name: 'sh1ro', value: '+13.96%', sub: '136.43', tone: 'up' },
+      { title: '低价区', detail: 'bLitz 48.48 · 评分 64', player_id: 16, kind: 'low', name: 'bLitz', value: '48.48', sub: '评分 64', tone: 'neutral' },
+      { title: '停牌', detail: '4 人 · ropz、jL', player_id: null, kind: 'halt', name: null, value: '4', sub: '人停牌', tone: 'halt' },
+    ] as unknown as typeof h.brief.items
+    const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    await flushPromises()
+
+    expect(wrapper.find('.hl-row').exists()).toBe(true)
+    expect(wrapper.find('.lede').exists()).toBe(false)
+    expect(wrapper.findAll('.hl')).toHaveLength(3)
+    expect(wrapper.get('.hl-value.tone-up').text()).toBe('+13.96%')
+    expect(wrapper.get('.hl-value.tone-halt').text()).toBe('4')
+    h.brief.items = original
+  })
+
   it('三条要点照常显示（清洗不影响内容）', async () => {
     const wrapper = mount(MarketView, { global: { stubs: { RouterLink: true } } })
     await flushPromises()
     await new Promise((resolve) => setTimeout(resolve, 0))
     await flushPromises()
 
-    const items = wrapper.findAll('.brief-items li')
+    // 纸感重构：三条要点默认收起，点「展开要点」后才出现
+    expect(wrapper.find('.lede-items').exists()).toBe(false)
+    const toggle = wrapper.findAll('button').find((b) => b.text().includes('展开要点'))
+    expect(toggle).toBeTruthy()
+    await toggle!.trigger('click')
+
+    const items = wrapper.findAll('.lede-items li')
     expect(items).toHaveLength(3)
     expect(items[0]!.text()).toContain('今日最该看一眼')
     expect(items[1]!.text()).toContain('低价区标的')

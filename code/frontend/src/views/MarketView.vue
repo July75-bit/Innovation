@@ -17,32 +17,66 @@
  * 界面设计层：搜索 / 排序 / 状态筛选让"找到目标选手"这一步最短；
  * 状态层：空 / 骨架加载 / 成功 / 出错四态齐备，加载不再整页闪白。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { api } from '../api'
 import { ApiError } from '../api/client'
 import type { PlayerSummary } from '../api/types'
-import { money, pct, trendClass } from '../utils/format'
+import { money, pct, trendClass, clockTime } from '../utils/format'
 import { TRADING } from '../core/schedule'
 import { checkBackendHealth } from '../composables/useBackendHealth'
 import EmptyState from '../components/EmptyState.vue'
 import ErrorState from '../components/ErrorState.vue'
-import StatusBadge from '../components/StatusBadge.vue'
-import { matchLabel, roundMatch } from '../core/schedule'
+import { roundMatch, teamNames } from '../core/schedule'
+import TeamLogo from '../components/TeamLogo.vue'
 import { currentRound, haltReason, withRoundStatus } from '../core/tradingStatus'
+import { MARKET_DEFAULTS, readMarketState, saveMarketState } from '../composables/useMarketState'
+import { useSlowHint } from '../composables/useSlowHint'
 
 const players = ref<PlayerSummary[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
+/** 加载超过 4 秒就解释一下「可能在唤醒服务」 */
+const slowLoading = useSlowHint(loading)
 /** 系统状态可见：告诉用户"这批行情是什么时候拉的" */
 const updatedAt = ref('')
 
 /* ---- 今日智能体简报（第 8 轮：让智能体出现在首屏，而不是只藏在详情页） ---- */
-type BriefItem = { title: string; detail: string; player_id?: number | null }
+type BriefTone = 'up' | 'down' | 'neutral' | 'halt'
+type BriefItem = {
+  title: string
+  detail: string
+  player_id?: number | null
+  /** 结构化字段（新后端）：kind 决定图标，value 用大号数字展示 */
+  kind?: 'up' | 'low' | 'halt'
+  name?: string | null
+  value?: string
+  sub?: string
+  tone?: BriefTone
+}
 /**
  * 简报总述清洗（防守）：
  * 模型偶尔返回 JSON（`{"action":"HOLD","reason":"..."}`），后端旧版本会原样透传，
  * 前端必须再兜一层——界面上只允许出现一句话，不允许出现花括号/字段名/代码块。
  */
+const WRAP_QUOTES: Record<string, string> = {
+  '"': '"',
+  "'": "'",
+  '“': '”',
+  '‘': '’',
+  '「': '」',
+  '『': '』',
+}
+
+/** 去掉模型给整句套的外层引号（最多 3 层），并合并多余空白 */
+function tidySentence(text: string): string {
+  let t = text.trim()
+  for (let i = 0; i < 3; i += 1) {
+    if (t.length >= 2 && WRAP_QUOTES[t[0]!] === t[t.length - 1]) t = t.slice(1, -1).trim()
+    else break
+  }
+  return t.replace(/\s+/g, ' ').trim()
+}
+
 function cleanSummary(raw: string | null | undefined): string {
   let text = (raw ?? '').trim()
   if (!text) return ''
@@ -50,16 +84,20 @@ function cleanSummary(raw: string | null | undefined): string {
   if (text.startsWith('{')) {
     const match = text.match(/"(?:reason|summary|text)"\s*:\s*"([^"]*)/)
     const picked = match?.[1]
-    if (picked) return picked.trim()
-    return text
-      .replace(/[{}"]/g, '')
-      .replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, '')
-      .trim()
+    if (picked) return tidySentence(picked)
+    return tidySentence(
+      text
+        .replace(/[{}"]/g, '')
+        .replace(/\b(action|risk_level|reason|summary|text)\s*[:：]\s*/g, ''),
+    )
   }
-  return text
+  return tidySentence(text)
 }
 
 const brief = ref<{ summary: string; items: BriefItem[]; source: string } | null>(null)
+/** 简报默认只显示一句话；要看三条要点再展开 */
+const restored = readMarketState()
+const briefOpen = ref(restored.briefOpen)
 
 async function loadBrief() {
   try {
@@ -72,9 +110,20 @@ async function loadBrief() {
 }
 
 /* ---- 筛选 / 排序（纯前端展示逻辑，不改后端数据） ---- */
-const keyword = ref('')
-const statusFilter = ref<'all' | 'trading' | 'halted'>('all')
-const sortBy = ref<'default' | 'price' | 'change' | 'rating'>('default')
+const keyword = ref(restored.keyword)
+const statusFilter = ref(restored.status)
+/** 默认「涨幅从高到低」：打开先看今天谁在动，而不是按 id 顺序 */
+const sortBy = ref(restored.sort)
+
+// 任何筛选变化都记下来：从选手详情返回、刷新页面都还在
+watch([keyword, statusFilter, sortBy, briefOpen], () => {
+  saveMarketState({
+    keyword: keyword.value,
+    status: statusFilter.value,
+    sort: sortBy.value,
+    briefOpen: briefOpen.value,
+  })
+})
 
 /**
  * 市场页显示的是"现在能不能买"：后端 status 只有初始/手动值，
@@ -95,7 +144,42 @@ const listed = computed(() =>
 const haltedCount = computed(() => listed.value.filter((p) => p.status !== TRADING).length)
 /** 今天是不是比赛日：不是就没有“本轮停牌”，横幅换成“休赛日”而不是硬指一场比赛 */
 const liveMatch = computed(() => (round === null ? null : roundMatch(round)))
-const matchText = computed(() => (liveMatch.value ? matchLabel(liveMatch.value) : ''))
+
+/** 本轮对阵的两支队伍（队标 + 队名）：用 team_id → 名字，避免从 "A vs B" 反解 */
+const teamNameMap = teamNames()
+const matchSides = computed(() => {
+  const m = liveMatch.value
+  if (!m) return null
+  const a = Number(m.team_a)
+  const b = Number(m.team_b)
+  return {
+    a: { id: a, name: teamNameMap.get(a) ?? String(m.team_a) },
+    b: { id: b, name: teamNameMap.get(b) ?? String(m.team_b) },
+  }
+})
+
+/** 简报来源做成图标 + tooltip，屏幕上不再占一行字 */
+const sourceLabel = computed(() =>
+  brief.value?.source === 'llm' ? 'AI 生成简报' : '简化模式（未连接模型）',
+)
+
+/** 结构化重点条：三条 items 都带 kind/value 才用新样式，否则回退到旧句子（兼容旧后端/测试 mock） */
+const highlights = computed<BriefItem[] | null>(() => {
+  const items = brief.value?.items
+  if (!items?.length) return null
+  if (!items.every((item) => item.kind && item.value !== undefined)) return null
+  return items
+})
+
+/** AI 原话（只在展开时以灰色小字出现） */
+const aiLine = computed(() => cleanSummary(brief.value?.summary))
+
+/** 停牌名单：detail 形如「4 人 · ropz、jL、broky、w0nderful」 */
+const haltNames = computed(() => {
+  const halt = highlights.value?.find((item) => item.kind === 'halt')
+  const parts = (halt?.detail ?? '').split('·')
+  return parts.length > 1 ? parts.slice(1).join('·').trim() : ''
+})
 
 const filtered = computed(() => {
   const kw = keyword.value.trim().toLowerCase()
@@ -124,14 +208,71 @@ const filtered = computed(() => {
   }
 })
 
-async function load() {
+/**
+ * 详情页预取：鼠标悬停/键盘聚焦/手指按下时就开始下载详情页代码 + 拉这份选手数据。
+ * 等真正点进去时 分包已经下载完、数据已经进缓存 → 首屏几乎即时。
+ */
+let detailChunkLoaded = false
+const prefetchedPlayers = new Set<number>()
+
+function warmDetailRoute(): void {
+  if (detailChunkLoaded) return
+  detailChunkLoaded = true
+  void import('../views/PlayerDetailView.vue')
+}
+
+/** 行情类数据（后端百毫秒级）：悬停即取 */
+function prefetchCore(playerId: number): void {
+  warmDetailRoute()
+  if (prefetchedPlayers.has(playerId) || prefetchedPlayers.size >= 20) return
+  prefetchedPlayers.add(playerId)
+  // 预取失败静默忽略：用户点击时会走正常加载/报错路径
+  void Promise.allSettled([
+    api.getPlayer(playerId),
+    api.getPriceHistory(playerId),
+    api.getPositions(),
+  ])
+}
+
+/**
+ * AI 分析要 2–3 秒（LLM）：只在指针停留 >= 250ms 时预取，避免扫过卡片就烧一次调用；
+ * 手指按下（pointerdown）视为确定意图，立即预取。
+ */
+let aiPrefetchTimer: ReturnType<typeof setTimeout> | null = null
+const aiPrefetched = new Set<number>()
+
+function prefetchAnalysis(playerId: number): void {
+  if (aiPrefetched.has(playerId)) return
+  aiPrefetched.add(playerId)
+  void api.getAnalysis(playerId).catch(() => {
+    aiPrefetched.delete(playerId) // 失败的话下次还能再试
+  })
+}
+function cancelAiPrefetch(): void {
+  if (aiPrefetchTimer !== null) {
+    clearTimeout(aiPrefetchTimer)
+    aiPrefetchTimer = null
+  }
+}
+function scheduleAiPrefetch(playerId: number): void {
+  cancelAiPrefetch()
+  aiPrefetchTimer = setTimeout(() => prefetchAnalysis(playerId), 250)
+}
+function prefetchOnPointerDown(playerId: number): void {
+  prefetchCore(playerId)
+  prefetchAnalysis(playerId)
+}
+onBeforeUnmount(cancelAiPrefetch)
+
+async function load(fresh = false) {
+  if (fresh) api.invalidate?.() // 用户点"刷新"：不能吃缓存，要拿最新行情
   loading.value = true
   error.value = null
   checkBackendHealth()
   void loadBrief() // 简报与行情并发，互不阻塞
   try {
     players.value = await api.listPlayers()
-    updatedAt.value = new Date().toLocaleTimeString()
+    updatedAt.value = clockTime()
   } catch (err) {
     error.value = err instanceof ApiError ? err.message : '加载选手列表失败'
   } finally {
@@ -142,168 +283,306 @@ async function load() {
 function resetFilters() {
   keyword.value = ''
   statusFilter.value = 'all'
-  sortBy.value = 'default'
+  sortBy.value = MARKET_DEFAULTS.sort
 }
 
-onMounted(load)
+onMounted(async () => {
+  await load()
+  // 回来时把滚动位置还原（等卡片渲染完一帧再滚，否则高度不够滚不到）
+  const target = restored.scrollY
+  if (target > 0) {
+    requestAnimationFrame(() => window.scrollTo({ top: target, behavior: 'instant' }))
+  }
+})
+
+onBeforeUnmount(() => {
+  saveMarketState({ scrollY: window.scrollY })
+})
 </script>
 
 <template>
-  <div>
-    <div class="page-head">
+  <article class="market">
+    <header class="masthead">
       <div>
-        <h2>选手市场</h2>
-        <p class="updated" v-if="updatedAt && !loading && !error">更新于 {{ updatedAt }}</p>
+        <h1>市场</h1>
+        <p v-if="updatedAt && !loading && !error" class="mast-meta">
+          16 名选手 · 更新于 {{ updatedAt }}
+        </p>
       </div>
-      <button class="refresh" :disabled="loading" @click="load">
-        <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span> 刷新
+      <button type="button" class="quiet-btn" :disabled="loading" @click="load(true)">
+        <span :class="['ico-refresh', { spinning: loading }]" aria-hidden="true">⟳</span>
+        {{ loading ? '刷新中' : '刷新' }}
       </button>
-    </div>
+    </header>
 
-    <!-- 今日智能体简报：一进首页先给一句人话结论，再列三条要点 -->
-    <section v-if="brief" class="brief" aria-label="今日简报">
-      <div class="brief-head">
-        <h2 class="brief-title">今日简报</h2>
-        <span class="brief-meta">{{ brief.source === 'llm' ? 'AI 生成' : '简化模式' }}</span>
+    <!-- 今日简报：一句话说结论，要点收起来 -->
+    <section v-if="brief" class="lede-block" aria-label="今日简报">
+      <!-- 重点数字条：图标 + 名字 + 大号数字（涨红跌绿）+ 小字补充；桌面不换行 -->
+      <div v-if="highlights" class="hl-row">
+        <span
+          v-for="item in highlights"
+          :key="item.kind"
+          :class="['hl', `hl--${item.kind}`]"
+          :title="item.detail"
+        >
+          <span class="hl-ico" aria-hidden="true">
+            <svg v-if="item.kind === 'up'" viewBox="0 0 16 16">
+              <path d="M3 11.2 7 7.2l3 2 3-5" />
+            </svg>
+            <svg v-else-if="item.kind === 'low'" viewBox="0 0 16 16">
+              <path d="M8 3v8M5 8l3 3 3-3" />
+            </svg>
+            <svg v-else viewBox="0 0 16 16">
+              <circle cx="8" cy="8" r="5.6" />
+              <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+            </svg>
+          </span>
+          <span v-if="item.name" class="hl-name">{{ item.name }}</span>
+          <span :class="['hl-value', `tone-${item.tone ?? 'neutral'}`]">{{ item.value }}</span>
+          <span class="hl-sub">{{ item.sub }}</span>
+        </span>
+
+        <span class="hl-actions">
+          <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
+            </svg>
+          </span>
+          <button
+            v-if="brief.items.length"
+            type="button"
+            class="icon-btn"
+            :class="{ 'is-open': briefOpen }"
+            :aria-expanded="briefOpen"
+            @click="briefOpen = !briefOpen"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
+            <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
+          </button>
+        </span>
       </div>
-      <p class="brief-summary">{{ cleanSummary(brief.summary) }}</p>
-      <ul class="brief-items">
-        <li v-for="(item, i) in brief.items" :key="i">
-          <span class="brief-k">{{ item.title }}</span>
-          <span class="brief-v">{{ item.detail }}</span>
-        </li>
-      </ul>
+
+      <!-- 旧后端/测试 mock 的回退样式：一句话 + 展开按钮 -->
+      <template v-else>
+        <p class="lede">{{ aiLine }}</p>
+        <div class="lede-actions">
+          <span class="src-ico" role="img" :aria-label="sourceLabel" :title="sourceLabel">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 2.2 9.3 6 13 7.2 9.3 8.4 8 12.2 6.7 8.4 3 7.2 6.7 6Z" />
+            </svg>
+          </span>
+          <button
+            v-if="brief.items.length"
+            type="button"
+            class="icon-btn"
+            :class="{ 'is-open': briefOpen }"
+            :aria-expanded="briefOpen"
+            @click="briefOpen = !briefOpen"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6.2 8 10.2l4-4" /></svg>
+            <span class="sr-only">{{ briefOpen ? '收起要点' : '展开要点' }}</span>
+          </button>
+        </div>
+      </template>
+
+      <!-- 展开：AI 原话（小字）+ 停牌名单 -->
+      <div v-if="briefOpen" class="brief-more">
+        <template v-if="highlights">
+          <p class="brief-quote">{{ aiLine }}</p>
+          <p v-if="haltNames" class="halt-line">停牌：{{ haltNames }}</p>
+        </template>
+        <ul v-else class="lede-items">
+          <li v-for="(item, i) in brief.items" :key="i">
+            <span class="item-ico" aria-hidden="true">
+              <svg v-if="i === 0" viewBox="0 0 16 16"><path d="M3 11.2 7 7.2l3 2 3-5" /></svg>
+              <svg v-else-if="i === 1" viewBox="0 0 16 16"><path d="M8 3v8M5 8l3 3 3-3" /></svg>
+              <svg v-else viewBox="0 0 16 16">
+                <circle cx="8" cy="8" r="5.6" />
+                <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+              </svg>
+            </span>
+            <span class="k">{{ item.title }}</span>
+            <span class="v">{{ item.detail }}</span>
+          </li>
+        </ul>
+      </div>
     </section>
 
-    <!-- 本轮停牌提示：让玩家一眼知道“这几个人现在买不了”，并能直接去看赛程 -->
-    <p class="round-note num">
-      <template v-if="liveMatch">
-        <span class="rn-tag">第 {{ round }} 轮</span>
-        <strong>{{ matchText }}</strong> 比赛中，<b class="halt">{{ haltedCount }}</b> 人暂停交易
+    <div class="round-line match-line">
+      <template v-if="liveMatch && matchSides">
+        <span class="round-chip num">第 {{ round }} 轮</span>
+        <span class="match">
+          <span class="side">
+            <TeamLogo :team="matchSides.a.id" :name="matchSides.a.name" size="xs" />
+            <span class="team-name">{{ matchSides.a.name }}</span>
+          </span>
+          <span class="vs" aria-hidden="true">vs</span>
+          <span class="side side-b">
+            <span class="team-name">{{ matchSides.b.name }}</span>
+            <TeamLogo :team="matchSides.b.id" :name="matchSides.b.name" size="xs" />
+          </span>
+        </span>
+        <span
+          class="halt-ico num"
+          :title="`比赛中，${haltedCount} 人暂停交易`"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 16 16">
+            <circle cx="8" cy="8" r="5.6" />
+            <path d="M6.6 6.1v3.8M9.4 6.1v3.8" />
+          </svg>
+          {{ haltedCount }} 人
+        </span>
+        <span class="sr-only">比赛中，{{ haltedCount }} 人暂停交易</span>
       </template>
-      <template v-else> <span class="rn-tag">休赛日</span>今天没有比赛，全部选手照常交易 </template>
-      <RouterLink class="rn-link" to="/schedule">看赛程 →</RouterLink>
-    </p>
+      <template v-else>
+        <span class="round-chip">休赛日</span>
+        <span class="rest">全部选手照常交易</span>
+      </template>
+      <RouterLink class="icon-btn rn-link" to="/schedule" aria-label="查看赛程" title="查看赛程">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M3 4.5h10v9H3zM3 7h10M5.5 2.8V5M10.5 2.8V5" />
+        </svg>
+        <span class="sr-only">看赛程</span>
+      </RouterLink>
+    </div>
 
-    <!-- 工具条：搜索 + 筛选 + 排序（任务流最短化） -->
-    <div class="toolbar">
+    <div class="controls">
       <input
         v-model="keyword"
         class="search"
         type="search"
-        placeholder="搜索选手 / 战队…"
+        placeholder="搜索选手 / 战队"
         aria-label="搜索选手或战队"
       />
-      <div class="segment" role="group" aria-label="按交易状态筛选">
+      <div class="filters" role="group" aria-label="按交易状态筛选">
         <button
           v-for="opt in [
             { v: 'all', t: '全部' },
             { v: 'trading', t: '交易中' },
-            { v: 'halted', t: '暂停' },
+            { v: 'halted', t: '停牌' },
           ]"
           :key="opt.v"
           type="button"
-          :class="['seg-btn', { active: statusFilter === opt.v }]"
+          :class="['filter', { active: statusFilter === opt.v }]"
           @click="statusFilter = opt.v as typeof statusFilter"
         >
           {{ opt.t }}
         </button>
       </div>
       <label class="sort">
-        <span>排序</span>
         <select v-model="sortBy" aria-label="排序方式">
-          <option value="default">默认</option>
-          <option value="price">价格高→低</option>
-          <option value="change">涨幅高→低</option>
-          <option value="rating">评分高→低</option>
+          <option value="change">涨幅从高到低</option>
+          <option value="default">列表顺序</option>
+          <option value="price">价格从高到低</option>
+          <option value="rating">评分从高到低</option>
         </select>
       </label>
     </div>
 
-    <!-- 加载态：骨架卡片，保持布局不跳动 -->
     <ul v-if="loading" class="grid" aria-busy="true" aria-label="加载选手列表">
-      <li v-for="i in 8" :key="i" class="card skeleton">
-        <span class="sk sk-name"></span><span class="sk sk-meta"></span
-        ><span class="sk sk-price"></span>
+      <li v-for="i in 6" :key="i" class="p-card skeleton">
+        <span class="sk sk-name"></span>
+        <span class="sk sk-meta"></span>
+        <span class="sk sk-price"></span>
       </li>
     </ul>
+    <p v-if="loading && slowLoading" class="slow-hint">
+      服务可能在唤醒中（免费实例休眠后首次访问约 30 秒），数据到了会自动显示…
+    </p>
     <ErrorState v-else-if="error" :message="error" @retry="load" />
     <EmptyState v-else-if="players.length === 0">市场暂无选手</EmptyState>
     <EmptyState v-else-if="filtered.length === 0">
       没有符合条件的选手。
-      <button type="button" class="link-btn" @click="resetFilters">清除筛选</button>
+      <button type="button" class="quiet-link" @click="resetFilters">清除筛选</button>
     </EmptyState>
 
     <ul v-else class="grid">
       <li
         v-for="p in filtered"
         :key="p.player_id"
-        :class="['card', { suspended: p.status !== TRADING }]"
+        :class="['p-card', { suspended: p.status !== TRADING }]"
         :title="p.halt_note ?? undefined"
       >
-        <RouterLink :to="`/players/${p.player_id}`" class="card-link">
-          <div class="top">
-            <span class="name">{{ p.display_name || p.name }}</span>
-            <StatusBadge :status="p.status" />
+        <RouterLink
+          :to="`/players/${p.player_id}`"
+          class="p-link"
+          @mouseenter="prefetchCore(p.player_id); scheduleAiPrefetch(p.player_id)"
+          @mouseleave="cancelAiPrefetch"
+          @focus="prefetchCore(p.player_id); scheduleAiPrefetch(p.player_id)"
+          @blur="cancelAiPrefetch"
+          @pointerdown="prefetchOnPointerDown(p.player_id)"
+        >
+          <div class="p-top">
+            <span class="p-name">{{ p.display_name || p.name }}</span>
+            <span :class="['p-status', p.status === TRADING ? 'on' : 'off']">
+              <i aria-hidden="true"></i>{{ p.status === TRADING ? '交易中' : '停牌' }}
+            </span>
           </div>
-          <div class="meta">
-            <span>{{ p.team ?? '—' }}</span>
-            <span class="role">{{ p.role ?? '—' }}</span>
-          </div>
-          <div class="price-row num">
-            <span class="price">{{ money(p.current_price) }}</span>
-            <span :class="['change', trendClass(p.change_pct)]">{{ pct(p.change_pct) }}</span>
-          </div>
-          <div class="rating-row">
-            <span class="rating-label">模拟表现分</span>
-            <span class="rating">{{ p.rating }}</span>
-          </div>
+          <p class="p-meta">
+            {{ p.team ?? '—' }}<template v-if="p.role"> · {{ p.role }}</template>
+          </p>
+          <p class="p-price">
+            <span class="num">{{ money(p.current_price) }}</span>
+            <span :class="['p-chg', trendClass(p.change_pct)]">{{ pct(p.change_pct) }}</span>
+          </p>
         </RouterLink>
       </li>
     </ul>
-  </div>
+  </article>
 </template>
 
 <style scoped>
-.page-head {
+/* 市场页（纸感）：一屏 3 列 × 2 行 = 6 张卡；区块之间用留白分开，不用分割线堆叠 */
+.market {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+}
+
+/* ===== 页头 ===== */
+.masthead {
+  display: flex;
   align-items: flex-start;
-  gap: var(--space-3);
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
-.page-head h2 {
+.masthead h1 {
   margin: 0;
-  font-size: var(--fs-h2);
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
-.updated {
-  margin: 4px 0 0;
+.mast-meta {
+  margin: var(--space-2) 0 0;
   font-size: var(--fs-cap);
-  color: var(--muted);
+  color: var(--faint);
 }
-.refresh {
+.quiet-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: var(--space-2) var(--space-4);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-body);
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--fs-aux);
   cursor: pointer;
 }
-.refresh:hover {
-  border-color: var(--accent-text);
-  color: var(--accent-text);
+.quiet-btn:hover {
+  color: var(--text);
 }
-.refresh:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.quiet-btn:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }
 .ico-refresh {
   display: inline-block;
+  font-size: 15px;
+  line-height: 1;
 }
-.ico-refresh.spinning {
+.spinning {
   animation: spin 0.9s linear infinite;
 }
 @keyframes spin {
@@ -311,304 +590,588 @@ onMounted(load)
     transform: rotate(360deg);
   }
 }
-
-/* ---- 今日智能体简报 ---- */
-.brief {
-  margin-top: var(--space-5);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: var(--radius-md);
-  background: var(--surface);
+@media (prefers-reduced-motion: reduce) {
+  .spinning {
+    animation: none;
+  }
 }
-.brief-head {
+
+/* ===== 一句话简报 ===== */
+.lede-block {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+.lede {
+  margin: 0;
+  max-width: 56em;
+  font-size: var(--fs-body);
+  line-height: var(--line-height-body);
+  color: var(--text);
+  text-wrap: pretty;
+}
+.lede-block {
+  margin-bottom: var(--space-5);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+/* 重点数字条：一行放下，靠字号/颜色分层，不写句子 */
+.hl-row {
   display: flex;
   align-items: baseline;
-  gap: var(--space-3);
-  margin-bottom: var(--space-2);
+  gap: var(--space-6);
+  flex-wrap: nowrap;
 }
-.brief-title {
-  margin: 0;
-  font-size: var(--fs-h3);
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.hl {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
 }
-.brief-meta {
+.hl-ico {
+  display: inline-flex;
+  align-self: center;
+  color: var(--faint);
+}
+.hl-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hl-name {
   font-size: var(--fs-cap);
   color: var(--muted);
 }
-.brief-summary {
-  margin: 0 0 var(--space-4);
-  font-size: 17px;
-  line-height: 1.75;
+.hl-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.hl--low .hl-value,
+.hl--halt .hl-value {
+  font-size: 20px;
+}
+.hl-value.tone-up {
+  color: var(--up-text);
+}
+.hl-value.tone-down {
+  color: var(--down);
+}
+.hl-value.tone-neutral {
   color: var(--text);
-  max-width: 62ch;
 }
-.brief-items {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-3);
+.hl-value.tone-halt {
+  color: var(--halt);
 }
-.brief-items li {
+.hl-sub {
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+.hl-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--faint);
+}
+.brief-more {
+  margin-top: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: var(--space-3);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  gap: 6px;
 }
-.brief-k {
+.brief-quote {
+  margin: 0;
+  max-width: 68em;
   font-size: var(--fs-cap);
+  line-height: 1.7;
   color: var(--muted);
+  text-wrap: pretty;
 }
-.brief-v {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.55;
+.halt-line {
+  margin: 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+}
+@media (max-width: 900px) {
+  .hl-row {
+    flex-wrap: wrap;
+    gap: var(--space-4);
+  }
+  .hl-actions {
+    margin-left: 0;
+  }
 }
 
-/* ---- 工具条 ---- */
-.round-note {
-  margin: var(--space-3) 0 calc(var(--space-2) * -1);
+.lede-actions {
+  margin-top: var(--space-3);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
+  color: var(--faint);
+}
+
+/* 图标按钮：默认低调，hover/展开时提一点；44px 点击区 */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--faint);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--text);
+  background: var(--neutral-bg);
+}
+.icon-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+.icon-btn.is-open svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .icon-btn svg {
+    transition: none;
+  }
+}
+.src-ico {
+  display: inline-flex;
+  align-items: center;
+  color: var(--faint);
+}
+.src-ico svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 屏幕阅读器专用文字（图标按钮/图标数字的可读替代） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.lede-items {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--fs-cap);
+}
+.lede-items li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  line-height: 1.6;
+}
+.lede-items .item-ico {
+  flex: none;
+  width: 14px;
+  align-self: center;
+  color: var(--faint);
+}
+.lede-items .item-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lede-items .k {
+  flex: none;
+  min-width: 4.2em;
+  color: var(--faint);
+}
+.lede-items .v {
+  color: var(--text);
+}
+@media (max-width: 600px) {
+  .lede-items li {
+    flex-wrap: wrap;
+  }
+  .lede-items .k {
+    min-width: 0;
+  }
+}
+
+/* ===== 轮次提示 ===== */
+/* 比赛行：轮次 + 队标对阵 + 停牌人数 + 赛程图标，基本不用句子 */
+.match-line {
+  display: flex;
+  align-items: center;
   flex-wrap: wrap;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-6);
   font-size: var(--fs-aux);
   color: var(--muted);
 }
-.round-note strong {
-  color: var(--text);
-}
-.round-note .halt {
-  color: var(--warn);
-}
-.rn-tag {
-  padding: 1px 9px;
-  border-radius: var(--radius-pill);
-  background: var(--neutral-bg);
+.round-chip {
+  color: var(--faint);
   font-size: var(--fs-cap);
+  white-space: nowrap;
 }
-.rn-link {
-  margin-left: auto;
-  color: var(--accent-text);
-  text-decoration: none;
-  font-size: var(--fs-aux);
-}
-.rn-link:hover {
-  text-decoration: underline;
-}
-.toolbar {
-  display: flex;
+.match {
+  display: inline-flex;
   align-items: center;
   gap: var(--space-3);
-  flex-wrap: wrap;
-  margin-top: var(--space-4);
+}
+.match .side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.match .side-b {
+  flex-direction: row;
+}
+.team-name {
+  color: var(--text);
+  font-size: var(--fs-cap);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.match .vs {
+  color: var(--faint);
+  font-size: var(--fs-cap);
+}
+.halt-ico {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--halt);
+  font-variant-numeric: tabular-nums;
+}
+.halt-ico svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+.rest {
+  color: var(--faint);
+}
+.match-line .rn-link {
+  margin-left: 0;
+}
+
+/* ===== 搜索 / 筛选 / 排序 ===== */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
 }
 .search {
-  flex: 1;
-  min-width: 180px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
+  width: 240px;
+  padding: var(--space-2) 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: none;
   color: var(--text);
+  font: inherit;
   font-size: var(--fs-body);
 }
 .search::placeholder {
-  color: var(--muted);
+  color: var(--faint);
 }
-.segment {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  background: var(--surface);
+.search:focus {
+  outline: none;
+  border-bottom-color: var(--color-border-strong);
 }
-.seg-btn {
-  padding: var(--space-2) var(--space-3);
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--fs-aux);
-  cursor: pointer;
-}
-.seg-btn.active {
-  background: var(--color-selection-bg);
-  color: var(--color-selection-text);
-  font-weight: 700;
-}
-.sort {
-  display: inline-flex;
+.filters {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
-.sort select {
-  padding: var(--space-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font-size: var(--fs-aux);
-}
-
-/* ---- 卡片网格 ---- */
-.grid {
-  list-style: none;
-  padding: 0;
-  margin: var(--space-4) 0 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-4);
 }
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  transition: border-color 0.15s ease;
-}
-.card:hover {
-  /* P1：内容卡片不位移、不加阴影，只提亮边框（参考站的做法） */
-  border-color: var(--border-strong);
-}
-.card.suspended {
-  opacity: 0.65;
-}
-.card-link {
-  display: block;
-  padding: var(--space-5); /* P1：卡片留白 16→24 */
-  text-decoration: none;
-  color: inherit;
-}
-.top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-}
-.name {
-  font-size: var(--fs-h3);
-  font-weight: 700;
-}
-.meta {
-  display: flex;
-  gap: var(--space-2);
-  color: var(--muted);
-  font-size: var(--fs-aux);
-  margin-top: 2px;
-}
-.role {
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--neutral-bg);
-}
-.price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-top: var(--space-3);
-}
-.price {
-  font-size: 22px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.change {
-  font-size: var(--fs-body);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.change.up {
-  color: var(--up-text);
-}
-.change.down {
-  color: var(--down);
-}
-.change.flat {
-  color: var(--muted);
-}
-.rating-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: var(--space-2);
-  font-size: var(--fs-aux);
-  color: var(--muted);
-}
-.rating {
-  font-weight: 700;
-  color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--accent-text);
-  font-size: inherit;
-  cursor: pointer;
+.filter {
   padding: 0;
-  text-decoration: underline;
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font: inherit;
+  font-size: var(--fs-aux);
+  cursor: pointer;
 }
-
-/* ---- 骨架屏 ---- */
-.card.skeleton {
-  padding: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+.filter:hover {
+  color: var(--text);
+}
+.filter.active {
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--color-text);
+}
+.sort {
+  position: relative;
+  margin-left: auto;
+}
+.sort select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  font: inherit;
+  font-size: var(--fs-aux);
+  padding: 4px 18px 4px 0;
+  cursor: pointer;
+  color-scheme: inherit;
+}
+.sort select:hover {
+  color: var(--text);
+}
+/* 自己画箭头：原生箭头在不同系统/主题下样式不可控 */
+.sort::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  color: var(--faint);
+  transform: translateY(-70%) rotate(45deg);
   pointer-events: none;
 }
+.sort:hover::after {
+  color: var(--text);
+}
+.sort select option {
+  background: var(--color-surface);
+  color: var(--text);
+}
+
+/* ===== 选手卡：一屏 6 张，留白优先 ===== */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+.p-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--motion-fast) var(--motion-ease);
+}
+.p-card:hover {
+  border-color: var(--color-border-strong);
+}
+.p-link {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  color: inherit;
+  text-decoration: none;
+}
+.p-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.p-name {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+.p-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-cap);
+  color: var(--faint);
+  white-space: nowrap;
+}
+.p-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.p-status.on {
+  color: var(--down);
+}
+.p-status.off {
+  color: var(--halt);
+}
+.p-meta {
+  margin: 0;
+  font-size: var(--fs-aux);
+  color: var(--muted);
+  line-height: 1.4;
+}
+.p-price {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+.p-price .num {
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.p-chg {
+  font-size: var(--fs-aux);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.p-chg.up {
+  color: var(--up-text);
+}
+.p-chg.down {
+  color: var(--down);
+}
+.p-chg.flat {
+  color: var(--muted);
+}
+
+/* 骨架 */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
 .sk {
-  border-radius: 6px;
+  display: block;
+  border-radius: 4px;
   background: var(--neutral-bg);
   animation: sk-pulse 1.2s ease-in-out infinite;
 }
 .sk-name {
-  height: 20px;
-  width: 60%;
+  width: 46%;
+  height: 18px;
 }
 .sk-meta {
+  width: 64%;
   height: 12px;
-  width: 40%;
 }
 .sk-price {
-  height: 26px;
-  width: 75%;
+  width: 38%;
+  height: 24px;
 }
 @keyframes sk-pulse {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.4;
   }
   50% {
-    opacity: 0.8;
+    opacity: 0.85;
   }
 }
 
-/* ===== 窄屏：工具条纵向堆叠，搜索占整行 ===== */
+/* ===== 窄屏：2 列 → 1 列 ===== */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 720px) {
-  .toolbar {
-    gap: var(--space-2);
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .masthead {
+    margin-bottom: var(--space-5);
+  }
+  .controls {
+    flex-wrap: wrap;
+    gap: var(--space-4);
   }
   .search {
-    flex-basis: 100%;
+    width: 100%;
+  }
+  .sort {
+    margin-left: 0;
+  }
+  .p-price .num {
+    font-size: 24px;
   }
 }
 
-/* 窄屏：简报两列改窄，详情允许折行 */
-@media (max-width: 720px) {
-  .brief-items {
-    grid-template-columns: 1fr;
+/* 卡片入场：列表出现时轻轻上浮，20ms 阶梯；筛选/返回时重建也会重新播放，但幅度很小 */
+@media (prefers-reduced-motion: no-preference) {
+  .p-card {
+    animation: card-in 300ms cubic-bezier(0.2, 0, 0.2, 1) both;
   }
-  .brief-summary {
-    font-size: var(--fs-body);
+  .p-card:nth-child(2) {
+    animation-delay: 20ms;
   }
+  .p-card:nth-child(3) {
+    animation-delay: 40ms;
+  }
+  .p-card:nth-child(4) {
+    animation-delay: 60ms;
+  }
+  .p-card:nth-child(5) {
+    animation-delay: 80ms;
+  }
+  .p-card:nth-child(6) {
+    animation-delay: 100ms;
+  }
+  .p-card:nth-child(n + 7) {
+    animation-delay: 120ms;
+  }
+  @keyframes card-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+.slow-hint {
+  margin: var(--space-4) 0 0;
+  font-size: var(--fs-cap);
+  color: var(--faint);
 }
 </style>

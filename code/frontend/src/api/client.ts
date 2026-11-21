@@ -39,6 +39,10 @@ export class ApiError extends Error {
   }
 }
 
+/** GET 自动重试：Render 冷启动可能返回 502/503，重试一次往往就活了；POST 永不重试（会变成第二笔交易） */
+const RETRYABLE_STATUS = new Set([502, 503, 504])
+const RETRY_DELAY_MS = 800
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!API_BASE_URL) {
     throw new ApiError(
@@ -48,22 +52,36 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     )
   }
 
+  // 仅带 body 的请求（POST 交易）才声明 Content-Type：
+  // GET 不带该头 = CORS 简单请求，不触发 OPTIONS 预检，缩小跨域故障面（day5 线上走查 P2 改进）。
+  const headers: Record<string, string> = {
+    ...(init?.headers as Record<string, string> | undefined),
+  }
+  if (init?.body != null) headers['Content-Type'] = 'application/json'
+  // 私人账号（第 7 轮）：本地有令牌就带上，后端据此把余额/持仓/流水落到该账号上。
+  // 没令牌时**不加这个头**——后端把"没带 Authorization"识别为公共演示账户，
+  // 这正是"未登录访客"与"令牌失效"的分界（后者后端回 401，useAuth 会清会话）。
+  const token = getToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const isGet = init?.method === undefined || init.method.toUpperCase() === 'GET'
+  const attempt = (): Promise<Response> =>
+    fetch(`${API_BASE_URL}${path}`, { ...init, headers }).catch(() => {
+      throw new ApiError('无法连接后端服务，请确认后端已启动后重试', 'NETWORK_ERROR', 0)
+    })
+
   let response: Response
   try {
-    // 仅带 body 的请求（POST 交易）才声明 Content-Type：
-    // GET 不带该头 = CORS 简单请求，不触发 OPTIONS 预检，缩小跨域故障面（day5 线上走查 P2 改进）。
-    const headers: Record<string, string> = {
-      ...(init?.headers as Record<string, string> | undefined),
-    }
-    if (init?.body != null) headers['Content-Type'] = 'application/json'
-    // 私人账号（第 7 轮）：本地有令牌就带上，后端据此把余额/持仓/流水落到该账号上。
-    // 没令牌时**不加这个头**——后端把"没带 Authorization"识别为公共演示账户，
-    // 这正是"未登录访客"与"令牌失效"的分界（后者后端回 401，useAuth 会清会话）。
-    const token = getToken()
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    response = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
-  } catch {
-    throw new ApiError('无法连接后端服务，请确认后端已启动后重试', 'NETWORK_ERROR', 0)
+    response = await attempt()
+  } catch (err) {
+    if (!isGet) throw err
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+    response = await attempt()
+  }
+  // 冷启动常见的 502/503 也重试一次（只 GET；交易类绝不重放）
+  if (isGet && RETRYABLE_STATUS.has(response.status)) {
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS))
+    response = await attempt()
   }
 
   let data: unknown = null

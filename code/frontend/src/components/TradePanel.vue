@@ -255,20 +255,15 @@ async function submit(side: 'BUY' | 'SELL') {
       </div>
     </div>
 
-    <p class="estimate num">
-      约需 <strong>{{ money(estimated) }}</strong> 币
-      <span class="hint">（以成交价实时计算）</span>
-    </p>
-
-    <p v-if="held != null" class="held-hint">当前持仓：{{ held }} 股 / 上限 50 股</p>
-
-    <!-- 把「最大 / 清仓」的算法结果直接写出来：窄屏没有鼠标悬停，也得看得懂这两颗键怎么算的 -->
-    <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">
-      {{ maxNote }}
-    </p>
-    <p :class="['sell-hint', { blocked: sellAllBlockReason !== null }]" role="status">
-      {{ sellAllNote }}
-    </p>
+    <div class="trade-meta num">
+      <p class="estimate">
+        约需 <strong>{{ money(estimated) }}</strong> 币
+      </p>
+      <p :class="['max-hint', { blocked: maxBlockReason !== null }]" role="status">{{ maxNote }}</p>
+      <p :class="['sell-hint', { blocked: sellAllBlockReason !== null }]" role="status">
+        {{ sellAllNote }}
+      </p>
+    </div>
 
     <!-- 拦截态：暂停交易时明确说明原因，而不是只禁用按钮 -->
     <p v-if="suspended" class="suspended-hint" role="status">
@@ -289,15 +284,12 @@ async function submit(side: 'BUY' | 'SELL') {
         {{ suspended ? '暂停交易中' : submitting ? '提交中…' : '卖出' }}
       </button>
     </div>
-    <p v-if="!suspended" class="kbd-hint">提示：在数量框按 <kbd>Enter</kbd> 直接买入</p>
 
     <!-- 结果反馈：成功/失败都即时可见（aria-live 供读屏播报） -->
     <div v-if="feedback" :class="['feedback', feedback.kind]" role="status" aria-live="polite">
       <span class="fb-ico" aria-hidden="true">{{ feedback.kind === 'success' ? '✓' : '✕' }}</span>
       {{ feedback.text }}
     </div>
-
-    <p class="virtual-note">信用点交易，不涉及真实资金；成交结果以后端账户数据为准。</p>
   </section>
 </template>
 
@@ -375,6 +367,14 @@ input[aria-invalid='true'] {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.trade-meta {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
 .estimate {
   margin: 0;
   font-size: var(--fs-aux);
@@ -387,11 +387,6 @@ input[aria-invalid='true'] {
 .hint {
   font-size: var(--fs-cap);
 }
-.held-hint {
-  font-size: var(--fs-aux);
-  margin: 0;
-  color: var(--muted);
-}
 /* 「最大 / 清仓」都是两字中文，比数字档宽一点，避免窄屏挤成换行 */
 .chip-max,
 .chip-sell {
@@ -399,6 +394,10 @@ input[aria-invalid='true'] {
 }
 .max-hint,
 .sell-hint {
+  margin: 0;
+  font-size: var(--fs-cap);
+  line-height: 1.5;
+  color: var(--muted);
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);
@@ -444,7 +443,7 @@ button.sell {
   font-size: var(--fs-body);
   font-weight: 700;
   cursor: pointer;
-  color: #fff;
+  color: var(--color-action-text);
 }
 button.buy:disabled,
 button.sell:disabled {
@@ -476,13 +475,6 @@ button.sell:disabled {
   background: var(--up-bg);
   color: var(--up-text);
 }
-.virtual-note {
-  margin: 0;
-  font-size: var(--fs-cap);
-  color: var(--muted);
-  border-top: 1px dashed var(--border);
-  padding-top: var(--space-2);
-}
 
 /* ===== 窄屏：买卖按钮改为整行，避免误触与换行错位 ===== */
 @media (max-width: 720px) {
@@ -506,13 +498,5 @@ button.sell:disabled {
   margin: 0;
   font-size: var(--fs-cap);
   color: var(--muted);
-}
-.kbd-hint kbd {
-  padding: 1px 5px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface-2);
-  font-family: inherit;
-  font-size: var(--fs-cap);
 }
 </style>

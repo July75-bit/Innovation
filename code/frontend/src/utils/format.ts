@@ -14,9 +14,16 @@
  * 这里只做展示格式化，不做任何四舍五入以外的数值计算。
  */
 
-/** 金额展示：保持两位小数，如 4748 -> "4748.00" */
+/**
+ * 金额展示：两位小数 + 千分位，如 4748 -> "4,748.00"。
+ * 行情/持仓里数字一多就差一位，千分位比裸数字更像正经行情软件。
+ */
+const MONEY_FORMAT = new Intl.NumberFormat('zh-CN', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
 export function money(value: number): string {
-  return value.toFixed(2)
+  return MONEY_FORMAT.format(value)
 }
 
 /** 涨跌幅展示：后端已算好 change_pct / profit_pct，这里只加正负号与 % */
@@ -32,12 +39,34 @@ export function trendClass(value: number): 'up' | 'down' | 'flat' {
   return 'flat'
 }
 
-/** ISO 8601 UTC 时间转本地可读格式（浏览器直接解析契约里的 ...Z 字符串） */
+/**
+ * ISO 8601 UTC 时间转本地可读格式：`2026-11-18 19:32:42`。
+ * 手写而不用 Intl：`zh-CN` 会给成 `2026/11/18`，斜杠在数据表里偏"网页默认"，
+ * 短横线更像行情/交易系统的时间戳。
+ */
 export function dateTime(iso: string): string {
-  return new Date(iso).toLocaleString()
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
 }
 
-/** 价格历史点的短时间（时:分） */
+/** 价格历史点的短时间（时:分，24 小时制） */
+const SHORT_TIME_FORMAT = new Intl.DateTimeFormat('zh-CN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
 export function shortTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString()
+  return SHORT_TIME_FORMAT.format(new Date(iso))
+}
+
+/** 页面上的"更新于 hh:mm:ss"：固定 24 小时制，避免不同浏览器出现 AM/PM */
+const CLOCK_FORMAT = new Intl.DateTimeFormat('zh-CN', {
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hour12: false,
+})
+export function clockTime(date: Date = new Date()): string {
+  return CLOCK_FORMAT.format(date)
 }

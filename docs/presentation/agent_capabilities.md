@@ -21,7 +21,7 @@
 
 | 设计 | 证据 |
 | --- | --- |
-| 智能体没有交易权限 | 8 个接口全部只读业务表；下单仍走 `/api/trades/buy|sell` |
+| 智能体没有交易权限 | 8 个接口全部只读业务表；下单仍走 `/api/trades/buy\|sell` |
 | 唯一写入是审计表 | `agent_traces` / `decision_logs` / `price_narratives`，都不影响余额/持仓/流水 |
 | 采纳也不等于下单 | `POST /api/agent/decisions` 只写一行记录，前端仍要用户点"买入" |
 | 模型不可用一律 200 | 8 个接口都有 `rule_fallback` 路径（有测试守住） |
