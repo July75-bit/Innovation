@@ -39,7 +39,7 @@
 | --- | --- | --- | --- |
 | **3.1 用户体验设计考虑的因素** | `prototype_review.md` §1.5（2026-11-07 补） | 9 类因素 × 取舍 × 落点 | ✅ |
 | **账号体系（第 7 轮新增）** | `api_contract.md` §3 #13–17、§4.11–4.15；`user_manual.md` §2.5；`compliance.md` §4.3 | 注册/登录/me/退出/删号 5 个接口；PBKDF2-HMAC-SHA256 加盐 10 万次、令牌 30 天可撤销；`test_api_auth.py` + `test_auth_multiuser.py` | ✅ |
-| **性能 / 容量（NFR-04/05）** | cceptance/load_test_report.md、	ests/perf/load_test.py | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 |
+| **性能 / 容量（NFR-04/05）** | `acceptance/load_test_report.md`、`tests/perf/load_test.py` | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 | ✅ |
 | **3.2 语言/IDE/框架 + 版本号，写在 README** | `README.md` 技术栈表、`architecture.md` §4 | Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6 | ✅ |
 | **3.3 仓库链接 + 每人提交次数截图** | `evidence/20~22`、`pulse-committers.csv` | pulse 截图 + 准数统计（49/41/28/21）+ 口径说明 | ✅ |
 | **3.4 生命周期问题汇总表** | `acceptance/lifecycle_issues.md` | 16 条 × 四列（类别/问题/原因/解决），每条带用例 | ✅ |
@@ -85,7 +85,7 @@
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
-| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project（**2026-11-14 无痕窗口实测已 Public**，证据 evidence/38-projects-public-incognito.png） + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅ 匿名可见，无需登录 | |
+| 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project（**2026-11-14 无痕窗口实测已 Public**，证据 evidence/38-projects-public-incognito.png） + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅ 匿名可见，无需登录 |
 
 ## 四、明确不做 / 已知限制（诚实清单）
 

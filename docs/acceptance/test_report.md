@@ -318,7 +318,7 @@ SAME balance=True total=True qty=True trades=True points=True
 ### 8.3 线上只读压测（2026-11-14，D）
 
 > 目的：回答能同时跑多少用户。方法、原始数据与完整分析见 [load_test_report.md](load_test_report.md)，
-> 脚本 	ests/perf/load_test.py（只读、带熔断，可复跑）。
+> 脚本 `tests/perf/load_test.py`（只读、带熔断，可复跑）。
 
 | 指标 | 实测 | 说明 |
 | --- | --- | --- |

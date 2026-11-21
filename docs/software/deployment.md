@@ -165,7 +165,7 @@ Render Cron（playerstock-agent-patrol，*/10 0-15 * * *）
 
 | Job | 关键命令 | 失败含义 |
 | --- | --- | --- |
-| 仓库卫生（冲突标记） | `git grep -n -E "^(<<<<<<< |>>>>>>> )"` | 解冲突时把标记提交了（历史事故 ×2） |
+| 仓库卫生（冲突标记） | `git grep -n -E "^(<<<<<<< \|>>>>>>> )"` | 解冲突时把标记提交了（历史事故 ×2） |
 | 后端测试（pytest） | `ruff check --select E4,E7,E9,F,C901 …` → `python -m pytest` | 圈复杂度/未用导入/单测失败；**ruff 在 pytest 之前** |
 | 前端检查 | `npm run lint` → `npm run test:unit -- --run` → `npm run build` | eslint/vitest/vue-tsc 失败 |
 | 交付物完整性 | 文档、证据、`defense.pdf` 存在且非空 | 误删交付物 |
@@ -666,8 +666,7 @@ cd code/frontend && npm run lint && npm run test:unit -- --run && npm run build
 | 2026-10-24 | 第 3 天部署预检（不部署） | 复核 rootDir/startCommand、CORS、SQLite 误用告警；代码侧就绪 |
 | 2026-10-25 | 首次手动部署（未用 Blueprint） | 建 Postgres + Web Service + Static Site；回填 CORS；线上买卖闭环通过 |
 | 2026-11-07 | LLM 从 OpenCode Zen 切到 DeepSeek 官方 API | Zen 免费档 429 限流；改 `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`；`source=llm` 中位 ~2.4s |
-| 2026-11-14 | 发现「数据总丢」根因 | 免费实例临时文件系统；改 Postgres；
-  顺带修 `postgres://` 归一化与 `psycopg2` 驱动坑 |
+| 2026-11-14 | 发现「数据总丢」根因 | 免费实例临时文件系统；改 Postgres；顺带修 `postgres://` 归一化与 `psycopg2` 驱动坑 |
 | 2026-11-14 | 线上 CORS 整站失败 | `CORS_ORIGINS` 未填/带尾斜杠；代码统一 rstrip(`/`) 并实测修复 |
 | 2026-11-19 | 免费实例冷启动严重（首请求 33.6s） | 加保温 cron（每 10 分钟，白天）、前端慢加载提示 + GET 重试 |
 | 2026-11-21 | CI 后端 14 秒红 | 实际是 ruff `C901` 圈复杂度（pytest 被跳过）；拆函数修复，CI 恢复 4/4 |

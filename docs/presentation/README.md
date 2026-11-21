@@ -90,17 +90,6 @@ npm ci → Playwright Chromium → slidev build → slidev export → 上传 art
 | 数据被清空 | 现场重新 seed（固定数据 10 秒重建） |
 | 时间不够 | 砍掉持仓页和彩蛋，保交易闭环 + AI |
 
-## 文件清单（旧版说明，已被顶部表格替代）
-
-```
-docs/presentation/
-├── README.md              # 本文件
-├── slides.md              # Slidev 源文件（15 页，已产出）
-├── demo-script.md         # 2 分钟演示脚本（已产出）
-├── qa.md                  # 20 问问答（已产出）
-└── defense.pdf            # 导出 PDF（待导出）
-```
-
 ## TODO
 
 - [x] D 出 Slidev 源稿（docs/slides/slides.md）/ demo-script.md / qa.md 初稿
