@@ -16,7 +16,7 @@
 | 覆盖率 | **98%**（1823 语句 / 45 未覆盖，要求 ≥60%；2026-11-07 19:30 本机实测，auth/重启后 D 复核） |
 | 线上 | 前端 `playerstock-frontend-mdlk.onrender.com`（bundle `index-W-YIPE7C.js`，含 A 的组件化）；后端 `/api/health` 200；**Postgres**（`/api/debug/db` 方言 postgresql、`是否 SQLite: false`）。**2026-11-07 晚重灌后：16 选手 / 8 队 / 每人 11 价格点 / 5 表 / 0 流水（干净演示态），m0NESY 已在 Falcons** |
 | 答辩材料 | `slides.md` **15 页** · `defense.pdf` **16 页**（含 01B/01C/01D，2026-11-07 重导）· `demo-script.md` 2:00 逐秒 + §0.1 值守流程 · `qa.md` **25 问**（原 20 + B 补 5） |
-| 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验） |
+| 检查单 | `deployment.md` **37/37 全勾**（含 7.2 的重新部署复验）——当时口径，现为 **93 项**（见顶部注） |
 | **AI 线上** | ✅ **真模型**：`source=llm`，中位 **2461ms**（1.8–3.9s）；DeepSeek 官方 API（Zen 免费档 429 后切换，`6aad25c`） |
 | **唯一硬缺口** | **彩排 0 次**（B-5 的"现场追问"也挂在彩排上） |
 
@@ -155,7 +155,7 @@ python -m pytest tests/unit/test_trades_concurrency.py -v
 | 3 | 幻灯片四件套齐：`slides.md` / `defense.pdf` / `demo-script.md` / `qa.md`（问答 ≥23 问） | 文件齐、PDF 与 md 同版 | D |
 | 4 | 演示 2:00 内完成，含错误分支 | 彩排记录 | A |
 | 5 | 线上 `/api/health` 200、16 选手、余额 5000.00 | 截图 | B |
-| 6 | `deployment.md` §5 检查单 **37/37** | 全勾 | B |
+| 6 | `deployment.md` §5 检查单 **37/37**（当时；现 93 项） | 全勾 | B |
 | 7 | `test_report.md` 结论 =「可交付」；320 passed | 文档 + push 后最新 run | D |
 | 8 | 彩排记录写进 `docs/presentation/README.md` | 两次记录 | D |
 | 9 | `daily_summary.md` 第 6 天段 | 有实质内容 | D |
