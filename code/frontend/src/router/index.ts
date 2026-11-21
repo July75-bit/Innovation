@@ -87,13 +87,6 @@ const router = createRouter({
       component: () => import('../views/ScheduleView.vue'),
       meta: { title: '赛程与停牌' },
     },
-    // UI 组件库预览（设计系统验收用；不在主导航里，地址直达）
-    {
-      path: '/ui-kit',
-      name: 'ui-kit',
-      component: () => import('../views/UiKitView.vue'),
-      meta: { public: true, title: 'UI 组件库' },
-    },
     // 兜底：拼错/过期的路径给一个明确的 404 页（带"回到市场"），
     // 而不是悄悄重定向到首页——用户以为自己看的是原地址，其实内容被换掉了。
     {

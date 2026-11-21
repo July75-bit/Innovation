@@ -12,7 +12,7 @@
  *   玻璃上的文字必须坐在 --glass-scrim（或 --glass-bg-strong）这层可读性底上。
  *
  * 开关：
- *   <html class="no-backdrop-filter">  → 强制走不透明回退（/ui-kit「模拟降级」按钮）
+ *   <html class="no-backdrop-filter">  → 强制走不透明回退（手动给 <html> 加 class；历史 /ui-kit 按钮已移除）
  *   <html data-theme="light">          → 浅色模式（令牌自动切换，本文件无需改动）
  * ============================================================ */
 
@@ -127,7 +127,7 @@
  * 降级
  *   1) 浏览器不支持 backdrop-filter → 不透明实色底（保留描边/圆角/内高光）
  *   2) prefers-reduced-transparency: reduce → 同上，并关掉半透明高光
- *   3) html.no-backdrop-filter → 手动开关（/ui-kit 验收演示用）
+ *   3) html.no-backdrop-filter → 手动开关（历史 /ui-kit 验收演示用；该页已移除）
  * ============================================================ */
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))

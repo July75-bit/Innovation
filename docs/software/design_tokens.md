@@ -6,7 +6,7 @@
 > - CSS（变量定义）：[`code/frontend/src/assets/tokens.css`](../../code/frontend/src/assets/tokens.css)
 > - JSON（含用途与对比度标注）：[`code/frontend/src/assets/design-tokens.json`](../../code/frontend/src/assets/design-tokens.json)
 > - 玻璃材质实现与降级：[`liquid-glass.css`](../../code/frontend/src/assets/liquid-glass.css) + 规范 [liquid_glass_design.md](liquid_glass_design.md)
-> - 组件实现（Vue 9 组件 + 状态矩阵）：[ui_components.md](ui_components.md)；兼容层：[`main.css`](../../code/frontend/src/assets/main.css)
+> - 组件实现：业务组件见 `code/frontend/src/components/ui/`（`UiBottomTab` / `UiModal`）；兼容层：[`main.css`](../../code/frontend/src/assets/main.css)
 > **分层原则**：内容层（正文/表格/表单/长文）= 扁平实色 + 1px 边框；材质层（导航壳/浮层）= 液态玻璃，同屏面积 ≤30%。
 > **对比度口径**：WCAG 2.1；深色相对表面 `#181b22`、浅色相对表面 `#ffffff`；AA 正文 ≥4.5:1、大号文字 ≥3:1。
 
@@ -122,7 +122,7 @@
 
 ### 1.8 主题切换（浅色 ↔ 深色）
 
-- 入口：侧栏底部「浅色/深色」按钮、移动端顶栏图标按钮（`App.vue`）；`/ui-kit` 也有同款按钮。
+- 入口：个人页 `/me` →「偏好与关于」的三档分段控件（自动 / 浅色 / 深色）。
 - 实现：`src/composables/useTheme.ts` 写 `<html data-theme="light|dark">` 并持久化到
   `localStorage['playerstock.theme.v1']`；`index.html` 用**同一 key** 的内联脚本在 CSS 之前定主题（防闪）。
 - 优先级：**已保存选择 > 系统 `prefers-color-scheme` > 深色**。
@@ -351,7 +351,7 @@
   .glass--interactive::after { display: none; }
 }
 
-/* ③ 手动降级开关（/ui-kit「模拟降级」按钮 / 现场演示用） */
+/* ③ 手动降级开关（历史演示用；/ui-kit 展示页已移除） */
 html.no-backdrop-filter .glass {
   background-color: var(--glass-solid) !important;
   -webkit-backdrop-filter: none !important;
@@ -375,7 +375,6 @@ html.no-backdrop-filter .glass {
 
 ```css
 @import './tokens.css';
-@import './ui-kit.css';
 
 :root {
   --bg: var(--color-canvas);
@@ -391,7 +390,7 @@ html.no-backdrop-filter .glass {
 ```
 
 新组件直接用 `ui-btn` / `ui-input` / `ui-card` / `ui-table` / `ui-nav` / `ui-badge`
-（见 `ui-kit.css`），不要再写一套颜色/圆角/字号。
+（见 `tokens.css` / `liquid-glass.css`），不要再写一套颜色/圆角/字号。
 
 ---
 
@@ -414,7 +413,7 @@ html.no-backdrop-filter .glass {
 | 玻璃上文字 AA | ✅ 6 处直接坐在玻璃上的文字实测最低 **8.55:1**；坐在实色卡片/头像上的文字按实色对算 |
 | CSS + JSON 双版本 | ✅ 83 个令牌同源同值，`design-tokens.spec.ts` 12 条断言守护（含 9/5/3 阶、玻璃、降级、半径、正文） |
 | 令牌用途 + 对比度标注 | ✅ CSS 注释 + JSON 每个令牌带 `purpose` / `contrast` / `requirement` |
-| 组件规则（按钮/输入/卡片/表格/导航） | ✅ §4 + `ui-kit.css` |
+| 业务组件（底部 Tab / 模态框） | ✅ `components/ui/` |
 | AA 合规 | ✅ 正文 14.33:1（深）/16.88:1（浅）；按钮白字 5.02–6.72；品牌红文字统一走 `--accent-text`/`--up-text`（深 `#ef7377` / 浅 `#c23539`） |
 | 双模式全量回归 | ✅ 7 路由 × 深/浅 × 桌面/移动 = **24 组合，自动审计违规 0**；证据 69–78 |
 | P1 审美对齐（参考 KPL 小助手） | ✅ 表格行高 44→59 / 表头 49、卡片留白 16→24、选中态淡底 pill、H1 28→24 / H2 22→20、浅色边框与辅助灰更柔和；双模式审计仍 **违规 0**（证据 85–90） |
@@ -422,9 +421,9 @@ html.no-backdrop-filter .glass {
 
 **已知限制（如实记录）**
 
-1. 业务页**默认深色**；浅色模式已完整定义令牌并通过 `/ui-kit` 与市场页实拍验证，但**全站逐页浅色回归尚未做**（个别页面可能有硬编码色残留）。
+1. 业务页**默认深色**；浅色模式已完整定义令牌并通过市场页、详情页、个人页实拍验证，但**全站逐页浅色回归尚未做**（个别页面可能有硬编码色残留）。
 2. 玻璃"液态流动感"只做 hover 轻微斜向高光，没有跟随鼠标的折射/位移（性能与规范双重限制）。
-3. 配额统计口径：只算"真实生效的 backdrop-filter 元素"；被遮罩压暗的背景玻璃不计（`/ui-kit` 材质展厅例外，页面已标注）。
+3. 配额统计口径：只算"真实生效的 backdrop-filter 元素"；被遮罩压暗的背景玻璃不计（纸感模式下玻璃已统一为实色）。
 
 ## 9. 纸感 v3 覆盖（2026-11-18）
 

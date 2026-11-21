@@ -1,7 +1,6 @@
 @import './tokens.css';
-/* ui-kit.css 是 UI 组件库（UiButton/UiCard/UiTable/UiNav/UiTag…）的样式，
-   只有 /ui-kit 演示路由用得到 → 改由 UiKitView.vue 按路由引入，不再让所有页面白付这 278 行。
-   liquid-glass.css 仍全局：模态框/删除账号弹窗/图表 tooltip 这些业务浮层还在用 .glass。 */
+/* liquid-glass.css 仍全局：模态框/删除账号弹窗/图表 tooltip 这些业务浮层还在用 .glass。
+   （2026-11-21 已移除 /ui-kit 展示页与 ui-kit.css，业务页不再有组件库样式负担。） */
 @import './liquid-glass.css';
 
 /*

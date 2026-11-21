@@ -39,9 +39,7 @@ const market = files['views/MarketView.vue'] ?? ''
 const ALLOW = new Set([
   'assets/tokens.css',
   'assets/liquid-glass.css',
-  'assets/ui-kit.css',
   'components/TeamLogo.vue',
-  'views/UiKitView.vue',
 ])
 
 const COLOR_LITERAL =

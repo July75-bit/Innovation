@@ -5,7 +5,7 @@
 > **实施提交**：`code/frontend/src/assets/main.css`（令牌）+ `App.vue` / `MarketView.vue` /
 > `PlayerDetailView.vue` / `AuthView.vue` / `TradePanel.vue` / `PriceChart.vue` / `StatusBadge.vue`
 > **证据**：`evidence/46~50-ui-v2-*.png`
-> **令牌明细（CSS + JSON 双版本、含对比度标注）**：见 [`design_tokens.md`](design_tokens.md)；代码在 `src/assets/{tokens.css,design-tokens.json,ui-kit.css}`。
+> **令牌明细（CSS + JSON 双版本、含对比度标注）**：见 [`design_tokens.md`](design_tokens.md)；代码在 `src/assets/{tokens.css,design-tokens.json}`。
 
 ---
 
@@ -166,7 +166,7 @@ AI 卡结构 = 结论行（建议 + 一句理由 + 风险/把握）→ 关键数
 参考对象：KPL 小助手（kplll.online）—— 浅色数据台，白卡 + 1px #f0f0f0 + 圆角 8 + 零阴影，
 靠留白（卡片 24、表格行 71）与灰度分层（#333/#666/#999）建立秩序，全站只有蓝/绿两个强调色。
 
-**我们借了什么**（P1，见 `ui_components.md §7.7`）：更大的表格行高与卡片留白、淡主色底 pill 选中态、
+**我们借了什么**（P1）：更大的表格行高与卡片留白、淡主色底 pill 选中态、
 标题降噪、更轻的浅色边框、内容卡不再位移/加阴影、可点文字统一文字档主色。
 **我们没借什么**：10–12px 小字与 #999 浅灰（不达 AA）、蓝色主色（品牌红已定）。
 （当时"全站去玻璃"被视为冲突；2026-11-18 用户明确要"克制感"，已改为纸感、去掉玻璃。）
@@ -374,9 +374,9 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
 
 ### 11.14 样式分包与仓库卫生（2026-11-19）
 
-- **`ui-kit.css` 改为按路由加载**：`.ui-*` 组件库样式只服务 `/ui-kit`（消费它的是 `UiButton/UiCard/UiTable/UiNav/UiTag/UiInput`，
-  这些组件也只在该页出现）。从 `main.css` 移除，改由 `UiKitView.vue` import：
-  构建后业务页只加载 `index-*.css`（43.16KB），`/ui-kit` 额外加载 `UiKitView-*.css`（17.5KB）。
+- **2026-11-21 移除 `/ui-kit` 展示页**：同时删除 10 个只在展示页使用的 Ui* 组件、
+  `ui-kit.css` 与 18 条组件测试；业务页只加载 `index-*.css`，仓库少约 2,200 行。
+  仅保留业务真正在用的 `UiBottomTab` / `UiModal`，以及设计令牌（`tokens.css` / `design-tokens.json`）。
 - `liquid-glass.css` **仍全局**：模态框、删除账号弹窗、图表 tooltip 还在用 `.glass` 系列，不能拆。
 - **CI 仓库卫生 job**（最前置，几秒内失败）：`git grep -n -E "^(<<<<<<< |>>>>>>> )"`，
   防"冲突标记进仓库"（历史两次事故：eslint 报 diff marker → Render 构建失败 → 白屏）。
