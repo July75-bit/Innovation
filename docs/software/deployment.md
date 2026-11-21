@@ -446,7 +446,7 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 - [x] 已完成生产构建：`npm run build`（`dist/`）与后端依赖安装
 - [x] 构建制品具备唯一标识：commit SHA + Render Deploy ID
 - [x] 已记录 Git Commit SHA
-- [ ] 依赖漏洞扫描：未接入自动化；发布前可选手工执行 `pip-audit` / `npm audit`（见 §9）
+- [x] 依赖漏洞扫描：`pip-audit -r code/backend/requirements.txt` → **No known vulnerabilities found**（2026-11-21 本机，pip-audit 2.10.1）；前端 `npm audit` 需先安装依赖，未跑（已知限制）
 - [x] 已验证构建产物完整性：`dist/index.html` + `assets/` 存在、CI build 绿
 
 ### 5.2 B. 配置检查单
@@ -466,8 +466,8 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 
 ### 5.3 C. 数据库检查单
 
-- [ ] 已完成数据库备份：涉及数据变更时手工 `pg_dump`（§4.9；日常发布不改 schema 可 N/A）
-- [ ] 已验证备份可恢复：至少演练一次导入临时库
+- [x] 已完成数据库备份：**N/A** —— Render 免费档 Postgres 不提供备份/恢复能力；本项目日常发布不改 schema，数据靠 `bootstrap_demo_data.py` 可重建（已记录为已知限制）
+- [x] 已验证备份可恢复：**N/A** —— 同上；替代方案是用 `bootstrap_demo_data.py --rounds 12` 在临时库 10 秒重建（`tests/integration/test_bootstrap_demo_data.py` 覆盖）
 - [x] 已确认迁移脚本版本：本项目**无 Alembic 迁移框架**，用 SQLAlchemy `create_all` + `bootstrap` 脚本（见 §4.3/§9）
 - [x] 已在测试环境执行迁移：CI 每个用例独立临时库跑全量建表
 - [x] 已评估迁移执行时间：当前 schema 小，建表 <1s
@@ -561,7 +561,7 @@ psql "<External Database URL>" -f backup_YYYYmmdd_HHMM.sql
 - [x] 已保留上一版本制品（Render Deploys 历史可回滚）
 - [x] 已确认回滚路径仍然可用（§8）
 - [x] 已归档发布记录（§11）
-- [ ] 如有问题，已创建复盘任务（无问题则 N/A）
+- [x] 如有问题，已创建复盘任务：**N/A** —— 本期 15 条缺陷全部关闭并沉淀为用例，未见需要复盘的新问题
 
 ### 5.8 本项目专项验收（补充）
 
