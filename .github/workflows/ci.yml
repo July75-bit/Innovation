@@ -14,11 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ---------------- 仓库卫生：未解决的合并冲突标记 ----------------
+  # ---------------- 仓库健康：未解决的合并冲突标记 ----------------
   # 历史事故（2 次）：手工解冲突后 git add -A，把 <<<<<<< 一起提交 → eslint 报 diff marker、
   # Render 前端构建失败、页面白屏。检查只读、几秒钟，放在最前面先失败。
   hygiene:
-    name: 仓库卫生 (冲突标记)
+    name: 仓库健康 (冲突标记)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -125,8 +125,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # 仓库卫生：这些文件绝不该进版本库（.gitignore 已有规则，这里是兜底告警）
-      - name: 仓库卫生（误提交拦截）
+      # 仓库健康：这些文件绝不该进版本库（.gitignore 已有规则，这里是兜底告警）
+      - name: 仓库健康（误提交拦截）
         run: |
           bad=$(git ls-files | grep -E '(^|/)(node_modules|\.venv)/|\.db$|\.db-wal$|\.db-shm$|/\.env$' || true)
           if [ -n "$bad" ]; then
@@ -134,7 +134,7 @@ jobs:
             echo "$bad"
             exit 1
           fi
-          echo "仓库卫生检查通过。"
+          echo "仓库健康检查通过。"
 
       - name: 检查 docs 必需文件是否存在（且非空）
         run: |

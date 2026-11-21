@@ -237,7 +237,7 @@ layout: default
       </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click><div class="accent small font-bold">协作</div><div class="small muted">Issues + Projects 管任务，14 条缺陷都有 Issue。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">CI 4 个 job</div><div class="small muted">卫生、后端、前端、交付物，每次 push 都跑。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">CI 4 个 job</div><div class="small muted">健康、后端、前端、交付物，每次 push 都跑。</div></div>
   </div>
 </div>
 
@@ -451,7 +451,7 @@ layout: default
   <div class="card" v-click><div class="metric">335</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，live 默认不跑</div></div>
   <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 23 个文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine</div></div>
-  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生、后端、前端、交付物</div></div>
+  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">健康、后端、前端、交付物</div></div>
 </div>
 
 <div class="grid2">

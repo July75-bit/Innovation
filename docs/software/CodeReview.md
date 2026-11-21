@@ -157,7 +157,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
 | vitest | 前端单测 | 3 个 spec（format / PriceChart / router） | 本地绿 |
-| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #95 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库卫生（误提交拦截）** |
+| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #95 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库健康（误提交拦截）** |
 | VS Code 扩展 | 编码即时反馈 | `.vscode/settings.json`（Pylance basic + Ruff 保存自动修） | 全员共用 |
 
 ---

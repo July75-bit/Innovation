@@ -21,7 +21,7 @@
 | 部署运维 | **Render 上服务直接起不来**（BUG-08，P0） | SQLAlchemy 2.1 起 `postgresql://` 默认 DBAPI 从 psycopg2 换成 psycopg 3，而项目只装了 `psycopg2-binary` | 连接串归一化时**显式钉死驱动** `postgresql+psycopg2://`（已带驱动的串不改写）；`test_config_db_url.py` 6 条，含真实 `create_engine()` 断言 |
 | 部署运维 | **线上 `/market` 刷新白屏**（BUG-11，P2） | 市场页路由是 `/`，`/market` 无匹配也无兜底；静态站 rewrite 仍返回 `index.html` → 没有 404、也没有页面 | 补 `/market → /` 重定向 + `/:pathMatch(.*)*` 兜底；新增 `router.spec.ts` 4 条；线上 bundle 已检索到修复标记 |
 | 部署运维 | **线上前端被跨域拦掉**（BUG-12，P0） | CORS 已改为按 `CORS_ORIGINS` 白名单，但 Render 上没填该变量 → 默认只放行 `localhost:5173` | 三处一起补：`render.yaml` 写死前端域名、误用本地默认值时退化 `*` 并 WARNING、尾斜杠归一化；`test_cors_config.py` 8 条；线上实测白名单生效 |
-| 仓库卫生 | WAL 临时文件被误提交（BUG-09，P2） | SQLite 开 WAL 后产生 `*.db-wal` / `*.db-shm`，`.gitignore` 未覆盖 | 补两条规则并用 `git check-ignore` 验证 |
+| 仓库健康 | WAL 临时文件被误提交（BUG-09，P2） | SQLite 开 WAL 后产生 `*.db-wal` / `*.db-shm`，`.gitignore` 未覆盖 | 补两条规则并用 `git check-ignore` 验证 |
 | 开发环境 | 全仓 pytest 在 agent 沙箱内全部 ERROR（`PermissionError [WinError 5]`） | pytest 以 0700 权限创建临时目录，被 workspace-write 沙箱拒绝；与代码无关 | 跑全仓测试时申请一次完全权限授权；重定向 TMP 无效（已实测） |
 | 开发环境 | 前端依赖装不上 | `registry.npmjs.org` 与国内镜像均连接重置，本机无 `node_modules` | 前端构建只认 CI（`npm ci` → lint → build）；本地只做静态核对，不声称"构建通过" |
 | 协作 | 两个会话同时写一个仓库，提交被 `git add -A` 扫走、出现两次冲突 | 并行会话共用工作区，没有任何互斥 | 动 git 前先查 `git status` 与 `MERGE_HEAD`；改完文件重读确认未被覆盖；`docs/mgmt/day5.md` 与 `PlayerDetailView.vue` 的冲突按两边内容合并而非二选一 |
