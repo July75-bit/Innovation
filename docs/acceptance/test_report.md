@@ -12,13 +12,14 @@
 | 测试日期 | 2026-10-24（第 3 天末 + 第 4 天） |
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
-| 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
+| 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；**2026-11-21 复测**为 DSH 运行时 Python 3.12.14；CI：GitHub Actions ubuntu-latest（Python 3.12） |
 | 自动化用例总数 | **330**（单元 276 / 集成 21 / 评测 33） |
-| 通过 / 失败 / 跳过 | **276 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 通过 / 失败 / 跳过 | **330 / 0 / 0**（单元 276 + 集成 21 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
+| 最新 CI run | **#205**（2026-11-21 15:04 CST，commit `7d8a7e4`）：仓库卫生 6s / 后端测试（pytest）32s / 前端检查（eslint + vitest + build）1m5s，**3 个 job 全部 completed successfully** |
 
-> 复跑说明（2026-10-25，B 核对）：总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 330 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
@@ -35,7 +36,7 @@
 ```text
 $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编码问题已修）
 330 passed, 1 warning in 55.83s
-# CI（ubuntu-latest）的条数以 GitHub Actions 最新 run 为准；本行只声明本机实测值
+# CI（ubuntu-latest）最新 run #205（2026-11-21，commit 7d8a7e4）3 job 全绿；条数以本机实测为准
 ```
 
 > 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **330**（单元 276 / 集成 21 / 评测 33；
@@ -89,7 +90,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
-> CI 前端 job 的三步是 `npm ci` → `npm run lint` → `npm run build`。
+> CI 前端 job 实际是 `eslint + vitest + build`（run #205 的 job 名可直接看到）；下面三步是本地等价复跑。
 > 2026-10-24 在 `code/frontend` 本地复跑（Node v24.20.0 / npm 11.19.0）：
 
 | 步骤 | 命令 | 结果 |
@@ -97,7 +98,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 | 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `npx vitest run`（CI 未纳入，顺带补跑，**仅 `format.spec.ts` 抽样**） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
+| 单元测试 | `npx vitest run`（**CI 已纳入**；本行仅为 `format.spec.ts` 抽样补跑） | ✅ 4 passed（`src/utils/__tests__/format.spec.ts`） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
