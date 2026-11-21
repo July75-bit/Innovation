@@ -70,8 +70,16 @@
 | `online/persistence-redeploy.md` | 逐项对账记录 + 复跑命令 | `scripts/persistence_check.py --diff` 退出码 0；含"余额变了为何不等于丢数据"的算术闭合 |
 
 > 复现方式见 `code/frontend/README.md`（启动步骤）与 `docs/software/database_design.md` §4.1（价格点配方）。
-  > **现状（2026-11-14 重灌后）**：16 名选手 / 8 队；每人 11 价格点（ropz 10，种子仅 1 条）/ 余额 5000.00 / 持仓 0 / 流水 0；暂停交易改为**队伍级派生**——每轮 2 队（4 人）停牌，第 12 轮为 Vitality vs Spirit。
-  > **待补三张整队停牌证据**（A/B 截）：① 市场页第 12 轮 Vitality/Spirit 四人置灰；② 任一停牌选手详情页「比赛中，暂停交易」；③ 同轮可交易选手（如 huNter-）可买作对照。
+  > **现状（2026-11-21 实测）**：16 名选手 / 8 队；每人 11 价格点（ropz 10，种子仅 1 条）/ 余额 5000.00 / 持仓 0 / 流水 0；暂停交易按赛程**队伍级派生**——当前第 21 轮 **Vitality vs FaZe Clan** → **4 人停牌**（ZywOo / flameZ / ropz / broky）。
+  > 三张整队停牌证据已补（2026-11-21，无头浏览器 + 游客态实拍，1440×900）：
+
+| 文件 | 内容 | 关键断言 |
+| --- | --- | --- |
+| `online/team-suspended-market.png` | 市场页 | 顶部横幅「第 21 轮 · Vitality vs FaZe Clan · 4 人停牌」；卡片状态出现「停牌」徽章；筛选含「停牌」 |
+| `online/team-suspended-detail.png` | 停牌选手详情（ZywOo） | 徽章「暂停交易」+「Vitality vs FaZe Clan 比赛中，暂停交易」；买卖按钮置灰为「暂停交易中」 |
+| `online/team-suspended-contrast.png` | 同轮可交易选手（sh1ro） | 徽章「交易中」、交易面板可用 → 证明停牌按**队伍**而不是全局 |
+
+> 说明：第 12 轮（Vitality vs Spirit）的停牌证据以接口为准（`pricing_model.md` §12.3：recalc 返回 `applied=0` + 暂停原因）；页面显示的是**当天**映射到的轮次（2026-11-21 → 第 21 轮），二者口径一致、只是轮次不同。
 > 上面 `online-*` 截图是重置前后的历史留档，数字以本行为准。
 
 ## 汇报证据（3.6 / 3.7 / 3.3）
