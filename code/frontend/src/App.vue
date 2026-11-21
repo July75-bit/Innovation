@@ -28,6 +28,7 @@ import { refreshAccount } from './composables/useAccount'
 import UiBottomTab from './components/ui/UiBottomTab.vue'
 import type { UiTabItem } from './components/ui/UiBottomTab.vue'
 import { useAuth } from './composables/useAuth'
+import { useTheme } from './composables/useTheme'
 
 /** 移动端底部 Tab：主导航的等价入口（玻璃材质层，≤960px 显示） */
 const TAB_ROUTES: Record<string, string> = {
@@ -72,6 +73,13 @@ watch(
 
 /** 登录 / 注册页用独立全屏布局，外壳（侧栏 + 顶栏 + 氛围背景）在这页不渲染 */
 const isAuthPage = computed(() => route.name === 'auth')
+
+/** 深浅色快捷开关：外壳里一键切换（/me 仍保留「自动/浅色/深色」三档偏好） */
+const { theme, setTheme } = useTheme()
+const themeSwitchLabel = computed(() => (theme.value === 'light' ? '深色' : '浅色'))
+function toggleTheme(): void {
+  setTheme(theme.value === 'light' ? 'dark' : 'light')
+}
 
 /** 移动端顶栏头像：入口指向个人页（侧栏里也有「我的」） */
 const displayName = computed(() => currentUser.value?.nickname ?? '访客')
@@ -145,6 +153,24 @@ onMounted(() => {
           </RouterLink>
         </nav>
 
+        <!-- 深浅色快捷切换：常驻侧栏底部，不用再进「我的」 -->
+        <button
+          type="button"
+          class="sidebar-theme"
+          :aria-label="`切换到${themeSwitchLabel}主题`"
+          :title="`切换到${themeSwitchLabel}主题`"
+          @click="toggleTheme"
+        >
+          <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+          </svg>
+          <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+            <circle cx="8" cy="8" r="3" />
+            <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+          </svg>
+          <span>{{ themeSwitchLabel }}</span>
+        </button>
+
       </aside>
 
       <!-- ===== 顶栏（移动端：品牌 + 个人头像；底部 Tab 负责导航） ===== -->
@@ -154,6 +180,21 @@ onMounted(() => {
         </RouterLink>
 
         <div class="topbar__right">
+          <button
+            type="button"
+            class="topbar-theme only-mobile"
+            :aria-label="`切换到${themeSwitchLabel}主题`"
+            :title="`切换到${themeSwitchLabel}主题`"
+            @click="toggleTheme"
+          >
+            <svg v-if="theme === 'light'" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M9.5 2.5a5.5 5.5 0 1 0 4 9.2 6 6 0 0 1-4-9.2Z" />
+            </svg>
+            <svg v-else viewBox="0 0 16 16" aria-hidden="true">
+              <circle cx="8" cy="8" r="3" />
+              <path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" />
+            </svg>
+          </button>
           <RouterLink
             to="/me"
             class="topbar-profile only-mobile"
@@ -335,6 +376,51 @@ onMounted(() => {
 }
 
 /* 主题切换：普通控件（内容层），44px 点击区，图标 + 文字双通道 */
+.sidebar-theme {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 8px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-aux);
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar-theme:hover {
+  color: var(--text);
+}
+.sidebar-theme svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.topbar-theme {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--neutral-bg);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.topbar-theme:hover {
+  color: var(--text);
+  border-color: var(--color-border-strong);
+}
+.topbar-theme svg {
+  width: 16px;
+  height: 16px;
+}
+
 .topbar-profile {
   width: 32px;
   height: 32px;

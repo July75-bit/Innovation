@@ -42,4 +42,16 @@ describe('App 外壳', () => {
     expect(wrapper.find('.content').exists()).toBe(true)
     wrapper.unmount()
   })
+
+  it('外壳常驻深浅色快捷开关（侧栏底部 + 手机顶栏）', async () => {
+    const wrapper = mount(App, {
+      global: { plugins: [router], stubs: { RouterView: true } },
+    })
+    expect(wrapper.find('.sidebar-theme').exists()).toBe(true)
+    expect(wrapper.find('.topbar-theme').exists()).toBe(true)
+    const before = document.documentElement.dataset.theme
+    await wrapper.find('.sidebar-theme').trigger('click')
+    expect(document.documentElement.dataset.theme).not.toBe(before)
+    wrapper.unmount()
+  })
 })

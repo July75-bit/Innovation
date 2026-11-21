@@ -198,6 +198,8 @@
 | `140-profile-structure-dark.png` | **资产结构（深色）** | 深色下两段颜色与图例可辨；占比来自当前账户余额与持仓市值 |
 | `141-ui-kit-glass-after-cleanup.png` | （历史，/ui-kit 已移除）**玻璃变体清理**（2026-11-21） | `/ui-kit` 玻璃展厅移除「导航壳」示例；`.glass--nav/--sheet/--scrim` 三个未使用变体删除，配额说明按纸感模式更新 |
 | `142-mobile-nav-light.png` | **手机端导航简化**（2026-11-21） | 顶栏只有品牌 + 个人头像（进「我的」）；无「菜单」按钮/抽屉；底部导航 4 项（市场/赛程/持仓/流水） |
+| `143-theme-toggle-desktop.png` | **深浅色快捷开关（桌面）**（2026-11-21） | 侧栏底部常驻「深色/浅色」按钮（太阳/月亮图标 + 文案），不必进「我的」即可切换 |
+| `144-theme-toggle-mobile.png` | **深浅色快捷开关（手机）** | 顶栏头像左侧新增圆形主题图标，点一下切深浅色；底部仍 4 Tab、无菜单 |
 | `36-kanban-board.png` | Kanban 看板 Backlog 视图 | 五列 Ready 1 / In progress 1 / In review 1 / **Done 15**（day1~day3 检查类 Issue 均已归档），协作痕迹可视 |
 | `pulse-committers.csv` | GitHub Pulse → Top committers 原始导出（2026-11-07） | wlkaqw 49 / July75-bit 41 / fusde0 28 / weedflame 21 = **139**；比 22 号截图时多 1 条（weedflame 20→21），统计窗口滚动，正常 |
 
