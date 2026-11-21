@@ -20,9 +20,13 @@
 > 课程允许直接用 Slidev 写幻灯片、用 Mermaid 画图；本稿架构图与 ER 图都是 Mermaid 代码块，改数据直接改 markdown。
 > 旧的 defense.pdf / defense.html 是上一版 HTML 流程产物，不作为本次答辩主材料。
 
-## GitHub Actions 自动构建（推荐）
+## GitHub Actions 自动构建 + 在线发布（推荐）
 
-推送 [docs/slides](../slides/) 的改动会自动触发 [.github/workflows/slides.yml](../../.github/workflows/slides.yml)：
+推送 [docs/slides](../slides/) 的改动会自动触发 [.github/workflows/slides.yml](../../.github/workflows/slides.yml)，
+构建后发布到 GitHub Pages：**幻灯片在线看 <https://july75-bit.github.io/Innovation/>**，
+**PDF 直接查看/下载 <https://july75-bit.github.io/Innovation/playerstock_defense.pdf>**。
+
+流水线：
 npm ci → Playwright Chromium → slidev build → slidev export → 上传 artifact **playerstock-defense-slides**（保留 30 天）。
 
 **下载**：GitHub 仓库 → Actions → 左侧「答辩幻灯片 (Slidev)」→ 最近一次绿色 run → 底部 Artifacts → 下载后解压，得到 17 页 PDF 与可离线放映的静态站。

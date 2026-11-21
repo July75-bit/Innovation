@@ -181,7 +181,8 @@ jobs:
             docs/acceptance/evidence/README.md \
             docs/acceptance/evidence/online/backend-debug-db.md \
             docs/presentation/README.md \
-            docs/presentation/slides.md \
+            docs/slides/slides.md \
+            docs/slides/style.css \
             docs/presentation/demo-script.md \
             docs/presentation/qa.md \
             docs/presentation/defense.pdf \
