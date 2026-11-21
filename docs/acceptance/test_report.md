@@ -13,7 +13,7 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **320**（单元 266 / 集成 21 / 评测 33） |
+| 自动化用例总数 | **330**（单元 276 / 集成 21 / 评测 33） |
 | 通过 / 失败 / 跳过 | **276 / 0 / 0**（CI ubuntu-latest 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
@@ -34,12 +34,12 @@
 
 ```text
 $ python -m pytest -q          # CI ubuntu-latest
-320 passed
+330 passed
 $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
-320 passed, 1 warning in 16.70s
+330 passed, 1 warning in 55.83s
 ```
 
-> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **320**（单元 266 / 集成 21 / 评测 33；
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **330**（单元 276 / 集成 21 / 评测 33；
 > 含 auth 22+7、重灌端点 4、余额重建 2 等；`--collect-only` 分目录复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -79,14 +79,14 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
-| **全部（app + core_engine）** | 1823 | 45 | **98%** |
+| **全部（app + core_engine）** | 1956 | 45 | **98%** |
 | 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
 | 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
 | 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
 | 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
 | 模型 + 响应 schema | 238 | 0 | 100% |
 
-> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（2026-11-07 复测：1823 语句 / 45 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（2026-11-21 复测：1956 语句 / 45 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -192,7 +192,7 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 | ID | 用例 | 结果 | 证据 |
 | --- | --- | --- | --- |
 | TC-401 | 线上健康检查 | ✅ | `GET /api/health` → 200 `{"status":"ok","service":"playerstock-backend"}`；`/docs` 200 |
-| TC-402 | CORS 正常 | ✅ | **白名单已生效**：`Origin: https://playerstock-frontend-mdlk.onrender.com` → 响应回显该域名；陌生来源无 `access-control-allow-origin`（不再是 `*`）。前端能取到 8 名选手与价格（A 的线上截图）。详见 `evidence/online/backend-debug-db.md` §2 |
+| TC-402 | CORS 正常 | ✅ | **白名单已生效**：`Origin: https://playerstock-frontend-mdlk.onrender.com` → 响应回显该域名；陌生来源无 `access-control-allow-origin`（不再是 `*`）。前端能取到选手列表与价格（A 的线上截图；当时 8 名，现 16 名）。详见 `evidence/online/backend-debug-db.md` §2 |
 | TC-403 | 线上交易闭环 | ✅ | **2026-10-25 线上实测**：`GET /api/account` 5000.00 → 买 #1 × 2 @ **108.75**（= 当时最新价）→ 4782.50 → 卖 1 → 4891.25 → 并发两个「卖 1」→ **[200, 400]** 只入账一次 → 5000.00；持仓归零、流水 3 条（#1 BUY ×2 / #2 SELL ×1 / #3 SELL ×1）。同轮把 6 类错误分支全打了一遍（余额不足 / 超上限 / 非法数量 ×3 / 选手不存在 / 暂停交易 / 持仓不足），错误码与契约 §5 完全一致。执行命令：`python scripts/smoke_test_api.py --base https://playerstock-backend-mdlk.onrender.com` |
 | TC-404 | 重启后数据持久 | ✅ | **2026-10-25 重新部署后实测**（Manual Deploy 后端 + 前端，现网已对齐 `develop`）：部署前后逐项一致 —— 余额 5000.00、总资产 5000.00、持仓 0 条、流水 **3 条**（#1 BUY ×2 @108.75→4782.50 / #2 SELL ×1→4891.25 / #3 SELL ×1→5000.00）、`/api/players/1/prices` 仍 **11 点**且末点 108.75。→ **Postgres 生效，不是临时 SQLite**（免费实例若用 SQLite，重新部署后这些行会全部消失） |
 | TC-405 | 子路由刷新 | ✅ | **两侧都成立**：① 服务端 `GET /players/1` → 200、`GET /` → 200（`render.yaml` SPA rewrite）；② `/market` 的 bug 已修并**上线生效**——原问题：市场页路由是 `/`，`/market` 无匹配且无兜底，按 F5 只剩页头（BUG-11）；修复后 `/market → /` 重定向 + `/:pathMatch(.*)*` 兜底，**线上 bundle 里已检索到 `/market`、`pathMatch`、`redirect` 三个标记**（`assets/index-DQQqv-MS.js`），即已部署代码含此修复。A 的浏览器证据显示详情页/折线图 11 点/最近变动原因均正常。复跑命令见 `evidence/online/backend-debug-db.md` §3 |
@@ -201,6 +201,9 @@ $ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
 > 线上证据（B 上传，D 已归档）：
 > [account 5000](evidence/online/online-account-5000.png)、[prices 11 点](evidence/online/online-prices-11points.png)、[positions 空](evidence/online/online-positions-empty.png)；
 > `online-trades-before-tc403.png` 是 TC-403 之前的**历史状态**（流水为空），不作为验收证据——现网 `GET /api/trades` 实测为 3 条（见 TC-404）。
+>
+> **时点说明（2026-11-21 补注）**：以下是 2026-10-24 的线上核对快照（8 人 / 9 轮时期）；
+> 当前线上为 **16 人 / 12 轮 / 175 条**，最新实测见 `pricing_model.md` §12.3。
 >
 > 线上数据核对（B，`GET /api/players/1/prices`）：**11 个点**、`ts` 升序、
 > 末点 `108.75` = `current_price`、`reason` 为「本轮得分 xx，S=±x.xx」；
@@ -369,7 +372,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 **320** 条，CI 与本机全绿；浏览器证据见 §2.5）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**320** 条自动化（单元 266 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-07）+ 核心逻辑覆盖率 **98%**（1823 语句 / 45 未覆盖的 19:30 口径；末轮新增 `account/rebuild` 与 reseed 改造后待 D 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**330** 条自动化（单元 276 / 集成 21 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` 检查单 **37/37** 全勾；汇报材料 `defense.pdf` **16 页**（含 01B/01C/01D 三页，2026-11-07 重导）。
@@ -382,6 +385,6 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
 - [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 320 passed / 0 skipped；BUG-10 已修）
+- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 330 passed / 0 skipped；BUG-10 已修）
 - [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
 - [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）
