@@ -1,6 +1,6 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（新增 **`playerstock_defense.pptx` 16 页 / PDF**，按课程 wiki「项目汇报内容」1.1–3.7 检查点重做；旧 `slides.md` + `defense.pdf` 16 页保留）；待**全员彩排**
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（新增 **`playerstock_defense.html` 16 页 HTML 答辩稿**，按课程 wiki「项目汇报内容」1.1–3.7 检查点重做；← → 翻页 / N 讲稿 / F 全屏 / Ctrl+P 打印；旧 `slides.md` + `defense.pdf` 16 页保留）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
 
 ## 文件清单（已产出）
@@ -14,11 +14,9 @@
 | [`demo-script.md`](demo-script.md) | 2 分钟现场演示脚本（逐秒操作 + 话术 + 失败预案） | D / A 执行 | ✅ |
 | [`qa.md`](qa.md) | 5 分钟问答（20 问，七类，含"救命句式"） | D 汇总 / 全员认领 | ✅ |
 | [`pricing_slides.pptx`](pricing_slides.pptx) | 定价模块 **3 页素材**（公式推导 / 参数理由 / 100 seed 稳定性与下行风险），每页含口播备注，可直接拷进主稿；文字数据与 `docs/algorithm/pricing_model.md` §2/§3/§7/§8 一致 | C | ✅ |
-| [`playerstock_defense.pptx`](playerstock_defense.pptx) | **新答辩 PPT（16:9，16 页，按课程 wiki 汇报内容 1.1–3.7 重做）**：使命口号策略 / 产品定义与用户故事 / 设计原则 / UX / 技术选型 / 仓库协作 / 生命周期问题 / 架构 / 定价与 AI / 数据库 / 接口 / 质量 / 代码统计 / 用户测试 / 演示与 QA；每页含 8 分钟口播备注 | D | ✅ |
-| [`playerstock_defense.pdf`](playerstock_defense.pdf) | 上面 PPT 的 PDF 投屏版（16 页，16:9） | D | ✅ |
-| [`playerstock_defense_notes.md`](playerstock_defense_notes.md) | 逐页讲稿（由 PPT 备注导出，含每页时间提示） | D | ✅ |
-| [`build_defense_deck.py`](build_defense_deck.py) | 重新生成 `playerstock_defense.pptx` 的脚本（python-pptx，离线） | D | ✅ |
-| [`assets/`](assets/) | 新 PPT 用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
+| [`playerstock_defense.html`](playerstock_defense.html) | **新答辩 HTML（单文件、离线、16 页，16:9）**：按课程 wiki 汇报内容 1.1–3.7 重做，覆盖使命口号策略 / 产品定义与用户故事 / 设计原则 / UX / 技术选型 / 仓库协作 / 生命周期问题 / 架构 / 定价与 AI / 数据库 / 接口 / 质量 / 代码统计 / 用户测试 / 演示与 QA；← → 翻页、N 讲稿、F 全屏、Ctrl+P 打印 | D | ✅ |
+| [`build_defense_html.py`](build_defense_html.py) | 重新生成 `playerstock_defense.html` 的脚本（内嵌截图，离线） | D | ✅ |
+| [`assets/`](assets/) | 新答辩 HTML 用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
 
 **重新生成 PDF**（改了 `slides.md` 之后）：
 
