@@ -2,7 +2,7 @@
 
 > **用途**：彩排当天照着走，不用再翻其他文档。**打印这一份就够**。
 > **对应课件**：SWIEP.pdf p.268–270 —— **幻灯片 8 分钟 40% + 作品演示 2 分钟 40% + 问答 5 分钟 20%**。
-> **当前材料**：`slides.md` 15 页 · `defense.pdf` 16 页 · `demo-script.md` 2:00 逐秒 · `qa.md` 25 问 · `qa_drill.md` 15 问追问链。
+> **当前材料**：Slidev 源稿 docs/slides/slides.md 17 页 · GitHub Actions 产物 17 页 PDF · demo-script.md 2:00 逐秒 · qa.md 25 问 · qa_drill.md 15 问追问链。
 > **线上状态**：`source=llm`（真模型，中位 2.5s）；余额需**上手前重置**（见 T−30）。
 
 ---
@@ -71,7 +71,7 @@
 | 1 | 把上表"实际"列填完，算出总时长与偏差 | D |
 | 2 | 超时段落**删句不删页**（页号一变，所有引用全废） | 对应讲者 |
 | 3 | 数字与代码核对：320 条 / 97% / 15 条缺陷 / 8 个路由 / Vue 3.5.42·TS 6.0·Vite 8.2.2·FastAPI 0.161.1·SQLAlchemy 2.1.6 | B + D |
-| 4 | 改完**重新导出** `defense.pdf`（`python docs/presentation/build_deck.py` + Edge 打印） | D |
+| 4 | 改完 push，等 GitHub Actions「答辩幻灯片 (Slidev)」重新构建并下载新 PDF | D |
 | 5 | 问题记进 `docs/presentation/README.md`（彩排记录，含两次计时） | D |
 
 ---
@@ -103,7 +103,7 @@
 
 - [ ] 两次彩排都有完整计时，合计 ≤ 15:00（允许 +30s）
 - [ ] 彩排记录写进 `docs/presentation/README.md`（时间 + 问题 + 改了什么）
-- [ ] `slides.md` 与 `defense.pdf` 是同一版（今天改过就重导）
+- [ ] docs/slides/slides.md 与 Actions artifact 的 PDF 是同一版（改过就重跑 Actions）
 - [ ] `qa.md` 补到 ≥ 28 问（B-5 追问后追加）
 - [ ] 演示数据在**最后一次彩排后**再重置一次（否则彩排会把余额用掉）
 - [ ] `day6.md` 的 A-5/A-7/B-5/C-3/D-5~D-8 状态回填为 ✅

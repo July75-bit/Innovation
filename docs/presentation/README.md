@@ -1,46 +1,32 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（`slides.md` 已按课程 wiki「项目汇报内容」1.1–3.7 检查点重写为 **17 页 Slidev 源稿**，含 Mermaid 架构/ER 图与逐页讲稿；`defense.pdf` / `defense.html` 为旧版，导出命令见下）；待**全员彩排**
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（Slidev 答辩稿已迁到 [docs/slides](../slides/)，17 页、Mermaid 架构/ER 图、逐页讲稿，GitHub Actions 自动构建 PDF；本目录保留演示脚本/问答/彩排手册与旧版 PDF）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
 
 ## 文件清单（已产出）
 
 | 文件 | 内容 | 负责人 | 状态 |
 | --- | --- | --- | --- |
-| [`slides.md`](slides.md) | **17 页 Slidev 答辩源稿**（按课程 wiki 1.1–3.7 重写；含 Mermaid 架构/ER 图、逐页讲稿、8 分钟时间轴；`npx @slidev/cli slides.md` 启动） | D 主笔 | ✅ |
+| [`../slides/`](../slides/) | **Slidev 答辩稿（17 页源稿 slides.md + style.css + assets + package.json）**；GitHub Actions 自动构建 PDF/静态站 | D | ✅ |
 | [`defense.pdf`](defense.pdf) | 旧版 PDF（16 页，上一版 HTML 流程产物；新版请用 Slidev 导出） | D | 历史 |
 | [`defense.html`](defense.html) | 旧版 HTML 源文件（历史；本次答辩主材料为 Slidev） | D | 历史 |
 | [`build_deck.py`](build_deck.py) | 旧版 `defense.html` 的生成脚本（历史） | D | 历史 |
 | [`demo-script.md`](demo-script.md) | 2 分钟现场演示脚本（逐秒操作 + 话术 + 失败预案） | D / A 执行 | ✅ |
 | [`qa.md`](qa.md) | 5 分钟问答（20 问，七类，含"救命句式"） | D 汇总 / 全员认领 | ✅ |
 | [`pricing_slides.pptx`](pricing_slides.pptx) | 定价模块 **3 页素材**（公式推导 / 参数理由 / 100 seed 稳定性与下行风险），每页含口播备注，可直接拷进主稿；文字数据与 `docs/algorithm/pricing_model.md` §2/§3/§7/§8 一致 | C | ✅ |
-| [`assets/`](assets/) | Slidev 源稿引用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
-| [`package.json`](package.json) / `package-lock.json` | Slidev/Playwright 依赖与构建脚本（给 GitHub Actions 用） | D | ✅ |
 
-**用 Slidev 放映 / 导出**（Slidev 官方推荐；需要 Node.js 20+）：
-
-```powershell
-cd docs/presentation
-npx @slidev/cli slides.md                 # 本地放映（浏览器打开）
-npx @slidev/cli export slides.md          # 导出 PDF（默认 slides-export.pdf）
-```
+**放映 / 导出**：Slidev 源稿与构建说明见 [../slides/README.md](../slides/README.md)；本机放映需要 Node.js 22.22+，或直接用 GitHub Actions 的 artifact。
 
 > 课程允许直接用 Slidev 写幻灯片、用 Mermaid 画图；本稿架构图与 ER 图都是 Mermaid 代码块，改数据直接改 markdown。
-> 旧的 `defense.pdf` / `defense.html` 是上一版 HTML 流程产物，不作为本次答辩主材料。
+> 旧的 defense.pdf / defense.html 是上一版 HTML 流程产物，不作为本次答辩主材料。
 
 ## GitHub Actions 自动构建（推荐）
 
-不需要本机装 Node/Slidev：推送 `docs/presentation/` 的改动会自动触发 [`.github/workflows/slides.yml`](../../.github/workflows/slides.yml)：
+推送 [docs/slides](../slides/) 的改动会自动触发 [.github/workflows/slides.yml](../../.github/workflows/slides.yml)：
+npm ci → Playwright Chromium → slidev build → slidev export → 上传 artifact **playerstock-defense-slides**（保留 30 天）。
 
-1. 安装依赖（`npm ci`，含 Playwright Chromium）
-2. `slidev build` 生成静态站 `dist/`
-3. `slidev export` 生成 `playerstock_defense.pdf`
-4. 上传 artifact **`playerstock-defense-slides`**（保留 30 天）
-
-**下载方式**：GitHub 仓库 → **Actions** 标签 → 左侧 **答辩幻灯片 (Slidev)** → 最近一次绿色 run → 页面底部 **Artifacts** → 下载 `playerstock-defense-slides`，解压得到 PDF 和静态站。
-也可以在 Actions 页面点 **Run workflow** 手动触发。
-
-> 如果只改答辩稿内容，改 `slides.md` 后 push 即可；CI 会重新构建并给出可下载 PDF。
+**下载**：GitHub 仓库 → Actions → 左侧「答辩幻灯片 (Slidev)」→ 最近一次绿色 run → 底部 Artifacts → 下载后解压，得到 17 页 PDF 与可离线放映的静态站。
+也可在 Actions 页面点 **Run workflow** 手动触发。
 
 ## 工具建议（课程推荐）
 
@@ -60,9 +46,7 @@ npx @slidev/cli export slides.md          # 导出 PDF（默认 slides-export.pd
 | 14–15 | 代码统计、用户测试与容量 | 35s |
 | 16–17 | 演示衔接 + Q&A 提示 | 10s |
 
-合计约 7′30″，留 30 秒缓冲；2 分钟演示与 5 分钟问答单独计时。
-| 演示 | 2min | 现场操作完整交易闭环 + AI 分析 | A |
-| 分工与反思 | 30s | 四人贡献、踩过的坑、如果重做会怎么改 | 全员 |
+合计约 7′30″，留 30 秒缓冲；2 分钟演示与 5 分钟问答单独计时（演示脚本见 demo-script.md，分工反思走 Q&A）。
 
 ## 必答的 8 个内容点（对应课程 22 条指标）
 
@@ -119,8 +103,8 @@ docs/presentation/
 
 ## TODO
 
-- [x] D 出 `slides.md` / `demo-script.md` / `qa.md` 初稿
-- [x] D 导出 `defense.pdf`（16 页，与 `slides.md` 内容一致）
+- [x] D 出 Slidev 源稿（docs/slides/slides.md）/ demo-script.md / qa.md 初稿
+- [x] Slidev 稿经 GitHub Actions 导出 17 页 PDF（旧 defense.pdf 仅历史）
 - [x] B 补第 04/05 页的后端细节（架构版本号、并发时序）
 - [x] C 补第 06/07 页的定价与回测数字（中位数 −7.40% / 均值 −6.46%、α=0.15·0.08·0.05 对比、3σ 满格说明；数据源 `pricing_model.md` §7.2；另有 3 页素材 `pricing_slides.pptx`）
 - [ ] C 把第 06 页的**案例 reason 换成线上实际口径**（`（本轮得分 76.6，S=-1.00）`），并改用页面可复现的第 9 轮那一对（ZywOo 81.3 → −13.88%、flameZ 79.9 → +15.00%）
