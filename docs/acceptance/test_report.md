@@ -109,26 +109,6 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 证据：<https://github.com/July75-bit/Innovation/actions/runs/42326740664>
 > 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
 
-### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
-
-> 采集方式：真实后端（uvicorn :8000，seed + 8 轮模拟价格）+ 真实浏览器截图（1280×900 全页）；
-> 目录：`docs/acceptance/evidence/`（README 有逐张关键断言）。
-
-| 证据 | 对应验收 |
-| --- | --- |
-| [01-market.png](evidence/01-market.png) | T3-04 行情页：8 名选手、涨跌色、模拟数据标注、连接成功徽标 |
-| [02-detail-chart-ai.png](evidence/02-detail-chart-ai.png) | **T4-01** 折线图（10 点）+ **T4-02** 最近变动 reason + **T4-04** AI 建议卡（6 字段） |
-| [03-buy2-success.png](evidence/03-buy2-success.png) | T3-04 买入 2 股成功（余额 5000→4747.46） |
-| [04-positions.png](evidence/04-positions.png) | T3-04 持仓页（数量/均价/现价/市值/盈亏） |
-| [05-sell1-success.png](evidence/05-sell1-success.png) | T3-04 卖出 1 股成功（余额→4873.73） |
-| [06-trades.png](evidence/06-trades.png) | T3-04 交易流水（倒序 + 每笔字段） |
-| [07-err-insufficient-balance.png](evidence/07-err-insufficient-balance.png) … [11-suspended.png](evidence/11-suspended.png) | T3-03 五条错误分支（中文 message 原样展示） |
-| [12-state-loading.png](evidence/12-state-loading.png) / [13-state-empty.png](evidence/13-state-empty.png) / [14-state-offline-error.png](evidence/14-state-offline-error.png) | **T4-05** 加载中 / 空数据 / 失败三态（断网真实停后端触发） |
-| [15-t4-02-point-reason.png](evidence/15-t4-02-point-reason.png) | **T4-02** 每点 reason：悬停 tooltip + 价格变动明细列表（10 点逐点展示时间/价格/reason） |
-| [16-tc307-refresh-persist.png](evidence/16-tc307-refresh-persist.png) | **TC-307** 深链 `/players/1` F5 刷新后数据仍由后端重建 |
-
-> 结论：**M3（浏览器交易闭环）与 M4（图表+原因+AI 卡）均已有可复核证据**；剩余未验项只在线上部署（第 5 天）。
-
 ## 3. 交易规则边界测试结果（P0 必过）
 
 | ID | 用例 | 结果 | 实际现象 / 截图 |
@@ -227,20 +207,6 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 > 余额 5000.00 → 4149.20 与之**算术闭合** → 数据没丢，且部署后仍可写。
 > 详见 `evidence/online/persistence-redeploy.md`。
 
-## 7. 本地持久化验证（T3-05，2026-10-24）
-
-> 目的：验证「重启后端后数据仍在」，而不是只写进内存/临时库。做法：真实 `uvicorn` 进程 + 独立 SQLite 文件（`DATABASE_URL` 指向工作区临时库），**杀掉进程再起一个新进程**，对比重启前后的余额/持仓/流水/价格历史。
-
-**执行命令（可复现）**
-
-```powershell
-$env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
-python scripts/seed_db.py                  # 建表 + 16 名选手（8 队×2 人）+ demo 账户
-cd code/backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
-```
-
-```powershell
 # 进程 A：健康检查 → 买入 2 股（价 126.00）→ 记录四个读接口
 Invoke-RestMethod http://127.0.0.1:8010/api/health
 Invoke-RestMethod -Method Post http://127.0.0.1:8010/api/trades/buy `
@@ -380,11 +346,3 @@ SAME balance=True total=True qty=True trades=True points=True
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。
 - 已知限制如实列在 §10（并发压测未做、LLM 版 AI 未压测）；**外部交叉测试双向完成**——2026-11-14 我方测 Tome 组 33 题（9/17/6/1，`cross_test.md` §3）；同日宇宙无敌暴龙战士测我方 33 题（28 通过 / 4 部分 / 0 不通过 / 1 未覆盖，对方注明「未重新测试」，按材料评审引用，§4）。
 - 签字：A____ B____ C____ **D 王泽棠（2026-11-07，自动化 + 代码质量 + 线上验收）**
-
-## 12. 附件
-
-- [x] 线上地址与截图：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；证据 `docs/acceptance/evidence/online/`
-- [x] 浏览器验收证据：`docs/acceptance/evidence/`（16 张 + README）
-- [x] pytest 输出文本 → 见 §2.1 / §2.2（本机 335 passed / 0 skipped；BUG-10 已修）
-- [x] 数据持久化验证（T3-05）→ 见 §7（重启前后四项一致，含复现命令）
-- [x] 部署持久化验证截图（线上）→ TC-404（重新部署前后 3 条流水/11 个价格点一致）
