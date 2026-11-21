@@ -1,0 +1,82 @@
+{
+  "base_url": "https://playerstock-backend-mdlk.onrender.com",
+  "ran_at": "2026-11-14T11:10:15",
+  "duration_s": 10.0,
+  "levels": [
+    {
+      "concurrency": 1,
+      "requests": 24,
+      "ok": 24,
+      "rps": 2.27,
+      "error_rate": 0.0,
+      "p50_ms": 410.9,
+      "p95_ms": 598.4,
+      "p99_ms": 626.7,
+      "max_ms": 626.7,
+      "statuses": {
+        "200": 24
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 5,
+      "requests": 116,
+      "ok": 116,
+      "rps": 11.38,
+      "error_rate": 0.0,
+      "p50_ms": 386.9,
+      "p95_ms": 1019.9,
+      "p99_ms": 1129.9,
+      "max_ms": 1334.4,
+      "statuses": {
+        "200": 116
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 10,
+      "requests": 222,
+      "ok": 222,
+      "rps": 21.36,
+      "error_rate": 0.0,
+      "p50_ms": 396.5,
+      "p95_ms": 989.8,
+      "p99_ms": 1124.4,
+      "max_ms": 1306.8,
+      "statuses": {
+        "200": 222
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 20,
+      "requests": 297,
+      "ok": 297,
+      "rps": 27.84,
+      "error_rate": 0.0,
+      "p50_ms": 501.6,
+      "p95_ms": 1844.0,
+      "p99_ms": 2132.0,
+      "max_ms": 2348.6,
+      "statuses": {
+        "200": 297
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 40,
+      "requests": 421,
+      "ok": 421,
+      "rps": 39.41,
+      "error_rate": 0.0,
+      "p50_ms": 892.3,
+      "p95_ms": 2032.4,
+      "p99_ms": 2348.3,
+      "max_ms": 2481.6,
+      "statuses": {
+        "200": 421
+      },
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+/**
+ * 白话导读：单元测试——验证 src/utils/format.ts 那几个格式化函数没写坏。
+ * describe = 一组用例的名字，it = 一条具体断言，expect(实际).toBe(期望)。
+ * 跑：npm run test:unit。这类文件不会被打包进线上页面，只在开发时执行。
+ */
+
+import { describe, expect, it } from 'vitest'
+import { dateTime, money, pct, trendClass } from '../format'
+
+describe('展示层格式化', () => {
+  it('money 两位小数 + 千分位（4,748.00 比裸数字更像行情软件）', () => {
+    expect(money(4748)).toBe('4,748.00')
+    expect(money(126.5)).toBe('126.50')
+    expect(money(126.12)).toBe('126.12')
+    expect(money(1234567.8)).toBe('1,234,567.80')
+  })
+
+  it('pct 正数带 + 号，负数保留 - 号', () => {
+    expect(pct(5)).toBe('+5.00%')
+    expect(pct(-3.25)).toBe('-3.25%')
+    expect(pct(0)).toBe('0.00%')
+  })
+
+  it('trendClass 按正负返回涨跌样式', () => {
+    expect(trendClass(1.2)).toBe('up')
+    expect(trendClass(-0.5)).toBe('down')
+    expect(trendClass(0)).toBe('flat')
+  })
+
+  it('dateTime 能解析契约中的 ISO 8601 UTC 字符串', () => {
+    const out = dateTime('2026-01-01T10:05:00Z')
+    expect(out.length).toBeGreaterThan(0)
+    expect(new Date('2026-01-01T10:05:00Z').getTime()).toBe(Date.parse('2026-01-01T10:05:00Z'))
+  })
+})

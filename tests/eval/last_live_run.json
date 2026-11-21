@@ -1,0 +1,294 @@
+{
+  "base_url": "https://playerstock-backend-mdlk.onrender.com",
+  "ran_at": "2026-11-14T10:11:37",
+  "results": [
+    {
+      "id": "E01",
+      "kind": "player",
+      "player_id": 1,
+      "status": 200,
+      "body": {
+        "player_id": 1,
+        "action": "HOLD",
+        "reason": "当前价格108.75，较前一日126.27单日下跌13.88%，原因是本轮表现下滑（得分81.3，S=-0.92）；但表现评分仍有88，且买入均价108.75与现价持平，暂不宜追跌或割肉，宜观察下一轮表现能否修复。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 3091.2
+    },
+    {
+      "id": "E02",
+      "kind": "player",
+      "player_id": 2,
+      "status": 200,
+      "body": {
+        "player_id": 2,
+        "action": "HOLD",
+        "reason": "当前价格131.45，已从11月15日的145.8回落9.84%至买入均价131.45，处于盈亏平衡点；表现评分90仍偏高，但最近一轮82.7分（S=-0.66）显示状态下滑，方向不明，暂持有观望。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1677.2
+    },
+    {
+      "id": "E03",
+      "kind": "player",
+      "player_id": 3,
+      "status": 200,
+      "body": {
+        "player_id": 3,
+        "action": "BUY",
+        "reason": "当前价 85.08 已从 11-14 低点 77.95 反弹，本轮上涨 8.27%，近期价格变化原因显示本轮得分 90.2（S=+0.55）、表现评分 86，属于实质性提升；但价格仍低于 11-10 的 94.0，且单日涨幅偏大，追高存在回",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 4752.3
+    },
+    {
+      "id": "E04",
+      "kind": "player",
+      "player_id": 4,
+      "status": 200,
+      "body": {
+        "player_id": 4,
+        "action": "HOLD",
+        "reason": "当前价格58.11，较11月9日的76.23累计下跌约24%，近期涨跌幅-4.38%仍处于下行趋势；但表现评分80并不差，且本轮S=-0.29只是小幅低于均值，跌势更多来自前期连续回调而非基本面恶化，在无持仓情况下宜观望，等待价格企稳信号。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2005.0
+    },
+    {
+      "id": "E05",
+      "kind": "player",
+      "player_id": 5,
+      "status": 200,
+      "body": {
+        "player_id": 5,
+        "action": "BUY",
+        "reason": "当前价格127.04，近5个交易日从98.57累计上涨约28.9%，最新单日涨幅5.07%，表现评分78且近期多轮得分在82-86区间，上涨由连续正S值驱动，动能较强。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2036.5
+    },
+    {
+      "id": "E06",
+      "kind": "player",
+      "player_id": 6,
+      "status": 200,
+      "body": {
+        "player_id": 6,
+        "action": "HOLD",
+        "reason": "当前价格105.27已从11月14日高点111.44回落，连续两日下跌（-1.43%），但仍远高于11月9日的91.25，累计涨幅明显；评分74处于中性水平，且本轮S=-0.10、表现接近均值，缺乏明确方向信号，建议观望等待企稳。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1801.2
+    },
+    {
+      "id": "E07",
+      "kind": "suspended",
+      "player_id": 7,
+      "status": 200,
+      "body": {
+        "player_id": 7,
+        "action": "HOLD",
+        "reason": "当前价格为136.5，较130.0上涨5.0%，表现评分85；但该涨幅来自行情初始化的种子数据，没有对应的比赛，缺乏真实的成交量和赛程数据支撑，因此不宜追高。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1949.6
+    },
+    {
+      "id": "E08",
+      "kind": "player",
+      "player_id": 8,
+      "status": 200,
+      "body": {
+        "player_id": 8,
+        "action": "BUY",
+        "reason": "当前价格74.45，近5个交易日从54.88连续反弹至74.45，累计涨幅15.0%，且本轮得分79.9（S=+1.00）显示表现显著提升，推动价格强势上行。近期涨势由连续的正向评分支撑，动量为正，但已处于短期高位。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2026.2
+    },
+    {
+      "id": "E09",
+      "kind": "player",
+      "player_id": 9,
+      "status": 200,
+      "body": {
+        "player_id": 9,
+        "action": "HOLD",
+        "reason": "当前价格104.26仅较前一日反弹0.69%，但已从126.98高点回落约17.9%，近期连续下跌后仍处弱势，且表现评分79并不突出，暂不宜追买或割肉。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 3393.1
+    },
+    {
+      "id": "E10",
+      "kind": "player",
+      "player_id": 10,
+      "status": 200,
+      "body": {
+        "player_id": 10,
+        "action": "HOLD",
+        "reason": "价格已从11月10日的82.52连续回落至69.09，近一日再跌3.64%，本轮下跌由表现下滑（得分65.5，S=-0.24）驱动，下行趋势尚未止稳；虽然表现评分72不算差，但短期没有企稳信号，无持仓者宜先观望，等待价格止跌后再介入。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2750.4
+    },
+    {
+      "id": "E11",
+      "kind": "player",
+      "player_id": 11,
+      "status": 200,
+      "body": {
+        "player_id": 11,
+        "action": "BUY",
+        "reason": "当前价格92.04，近期涨跌幅+6.97%，价格从11月9日的69.56连续上涨至92.04，8个交易日累计涨幅约32%；本场表现提升（78.8，S=+0.47）为近期最强，且当前无持仓，可考虑建仓。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1665.1
+    },
+    {
+      "id": "E12",
+      "kind": "player",
+      "player_id": 12,
+      "status": 200,
+      "body": {
+        "player_id": 12,
+        "action": "BUY",
+        "reason": "当前价 62.63，近期从 54.65 低点连续 5 日回升，最新单日涨 6.21% 且本轮得分 67.7（S=+0.41）显示表现提升，动量转强。但价格仍低于 11-09 的 75.41，追高需控制仓位。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1749.5
+    },
+    {
+      "id": "E13",
+      "kind": "player",
+      "player_id": 13,
+      "status": 200,
+      "body": {
+        "player_id": 13,
+        "action": "HOLD",
+        "reason": "当前价格110.11，近期涨跌幅仅-0.06%，已连续两日横盘在110附近；此前从96.24低点反弹至110.18，涨幅明显，短期追高性价比低，且表现评分82对应本轮得分84.6、S=-0.00，缺乏新催化。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1777.5
+    },
+    {
+      "id": "E14",
+      "kind": "player",
+      "player_id": 14,
+      "status": 200,
+      "body": {
+        "player_id": 14,
+        "action": "HOLD",
+        "reason": "当前价格74.58，较11月11日高点97.41累计回落约23.4%，且近5个交易日连续下跌（97.41→92.02→78.22→76.63→75.44→74.58），今日跌幅-1.14%虽已收窄，但表现评分仅69且S值为-0.08至-1.",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 1442.4
+    },
+    {
+      "id": "E15",
+      "kind": "player",
+      "player_id": 15,
+      "status": 200,
+      "body": {
+        "player_id": 15,
+        "action": "HOLD",
+        "reason": "当前价格 90.47，近期涨幅 7.65%，但此前从 94.71 一路跌至 73.08，随后连续两日反弹至 84.04 和 90.47，波动剧烈；表现评分 77 仅属中等，追高风险较大，建议无持仓者观望等待回踩确认。",
+        "risk_level": "HIGH",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2395.0
+    },
+    {
+      "id": "E16",
+      "kind": "player",
+      "player_id": 16,
+      "status": 200,
+      "body": {
+        "player_id": 16,
+        "action": "BUY",
+        "reason": "当前价格47.0，较前一日44.91上涨4.65%，已从11月11日的37.08低点反弹约26.7%，且近期连续多次因本场表现提升（得分68.6/72.1/70.7）而上涨，动能向上。表现评分64处于中上水平，无持仓可小仓位试探。",
+        "risk_level": "MEDIUM",
+        "source": "llm",
+        "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
+      },
+      "elapsed_ms": 2247.1
+    },
+    {
+      "id": "E17",
+      "kind": "edge_missing",
+      "player_id": 999,
+      "status": 404,
+      "body": {
+        "success": false,
+        "message": "选手不存在",
+        "code": "PLAYER_NOT_FOUND"
+      },
+      "elapsed_ms": 807.8
+    },
+    {
+      "id": "E18",
+      "kind": "edge_illegal",
+      "player_id": 0,
+      "status": 404,
+      "body": {
+        "success": false,
+        "message": "选手不存在",
+        "code": "PLAYER_NOT_FOUND"
+      },
+      "elapsed_ms": 733.2
+    },
+    {
+      "id": "E19",
+      "kind": "edge_negative",
+      "player_id": -1,
+      "status": 404,
+      "body": {
+        "success": false,
+        "message": "选手不存在",
+        "code": "PLAYER_NOT_FOUND"
+      },
+      "elapsed_ms": 433.3
+    },
+    {
+      "id": "E20",
+      "kind": "edge_huge",
+      "player_id": 100000,
+      "status": 404,
+      "body": {
+        "success": false,
+        "message": "选手不存在",
+        "code": "PLAYER_NOT_FOUND"
+      },
+      "elapsed_ms": 305.6
+    }
+  ]
+}

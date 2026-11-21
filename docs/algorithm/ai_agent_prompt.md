@@ -42,13 +42,14 @@
 
 ## 3. 输出 JSON 契约（固定，不可随意改）
 
+> 契约示例即**当前实现**：固定 6 字段，`suggested_price_band` 本期不输出（见本节末说明）。
+
 ```json
 {
   "player_id": 1,
   "action": "BUY",
   "reason": "近 3 场表现评分由 74 升至 82，价格上涨 3.5% 但低于表现提升幅度",
   "risk_level": "MEDIUM",
-  "suggested_price_band": { "low": 100.0, "high": 108.0 },
   "source": "llm",
   "disclaimer": "仅为分析建议，不构成投资建议；AI 不会自动交易"
 }
@@ -56,10 +57,11 @@
 
 | 字段 | 类型 | 约束 |
 | --- | --- | --- |
+| `player_id` | int | 与请求路径一致 |
 | `action` | enum | 只能是 `BUY` / `SELL` / `HOLD`，大写 |
-| `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 120 字 |
+| `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 200 字（超长在句末标点处截断并补 `…`） |
 | `risk_level` | enum | `LOW` / `MEDIUM` / `HIGH` |
-| `suggested_price_band` | object | `low` ≤ `high`，可缺省 |
+| `suggested_price_band` | object | **本期不输出**（契约 §4.10 中保留为可缺省字段），`low` ≤ `high`；前端按缺省容错 |
 | `source` | enum | `llm` / `rule_fallback` |
 | `disclaimer` | string | 固定文案，前端必显示 |
 
@@ -92,7 +94,9 @@
 | 上下文组装 | `code/backend/ai/context.py`（`build_player_context`：查库失败自动回落 seed 数据） |
 | 调用与校验 | `code/backend/ai/llm_agent.py`（`analyze` / `_parse_and_validate`，支持注入 chat client，超时取 `settings.llm_timeout_seconds`） |
 | 规则兜底 | `code/backend/ai/fallback.py` |
-| 单测 | `tests/unit/test_llm_agent.py`（13 条）+ `tests/unit/test_ai_fallback.py`（6 条） |
+| 接口接线 | `code/backend/app/api/ai.py`（`GET /api/analysis/{player_id}`，第 3 天 D 接线；入参校验 404 / AI 故障一律 200 + 规则版） |
+| 单测 | `tests/unit/test_llm_agent.py`（13 条）+ `tests/unit/test_ai_fallback.py`（6 条）+ `tests/unit/test_api_ai.py`（7 条） |
+| 集成测试 | `tests/integration/test_e2e_flow.py`（2 条：全链路交易闭环 + AI 结构/降级/只读） |
 | 命令行验收 | `cd code/backend` → `python -m ai.llm_agent 1 --demo {llm,dirty,no-key}`；上下文 `python -m ai.context 1` |
 
 ## 5. 失败处理链路（与 B 一起实现）
@@ -126,7 +130,7 @@ flowchart TD
 
 ## 6. 成本与限流（加分项）
 
-- 单次分析 token 上限：______
+- 单次分析 token 上限：**输入约 600–900 tokens（上下文 JSON）、输出约 120–200 tokens**；实测一次分析 `source=llm` 中位 **2461ms**，未触发 20s 超时（`test_report.md` §8.3）
 - 是否缓存：同一选手 5 分钟内复用上次结果（建议做，演示时省钱且更快）
 - 失败重试：最多 1 次，超时即兜底
 
@@ -136,8 +140,20 @@ flowchart TD
 - 模型不可用时怎么办？→ 现场拔掉密钥演示一次降级（效果很好）
 - 为什么 action 要用枚举？→ 前端渲染和测试都需要稳定契约
 
+## 7.5 参考的开源模型与文献（汇报 3.5.3 要求）
+
+| 来源 | 用途 | 链接 |
+| --- | --- | --- |
+| DeepSeek 官方 API 文档（OpenAI 兼容） | 线上真模型的接入方式与参数 | <https://api-docs.deepseek.com/> |
+| OpenAI Chat Completions 规范 | 请求/响应结构基准（只依赖 `choices[0].message.content`） | <https://platform.openai.com/docs/api-reference/chat> |
+| Python `urllib.request` 标准库文档 | 不引第三方 HTTP 库的取舍（零依赖、易审计） | <https://docs.python.org/3/library/urllib.request.html> |
+| 本仓 `qa.md` Q9–Q11 | 「模型只给建议、不执行」的取舍与降级话术 | `docs/presentation/qa.md` |
+
+> 本项目**没有训练或微调任何模型**，只调用推理接口，因此不列算法论文，只列接口规范与工程参考；
+> 定价的可解释公式来源见 `pricing_model.md` §1（z-score / 3σ 标准化的通用统计做法）。
+
 ## 8. TODO
 
-- [ ] D 第 2 天：填第 4 节迭代记录（至少 2 版）
-- [ ] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码
-- [ ] D 第 6 天：把最差一次模型输出做成答辩"翻车→兜底"演示素材
+- [x] D 第 2 天：填第 4 节迭代记录（至少 2 版）——§4 已有 v1（小写/夹带解释）与 v2（大写 + 校验回退）
+- [x] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码 → 404 `PLAYER_NOT_FOUND` / 200（含 AI 降级）/ 500 仅非 AI 故障；已写入契约 §4.10 并落到 `app/api/ai.py`（2026-10-23）
+- [x] D 第 6 天：把最差一次模型输出做成答辩"翻车→兜底"演示素材——现场用 `python -m ai.llm_agent 1 --demo dirty` 复现（无需额外静态素材）

@@ -1,25 +1,47 @@
-# PlayerStock —— 数据驱动的虚拟选手股交易与智能体市场模拟系统
+﻿# PlayerStock —— 数据驱动的虚拟选手股交易与智能体市场模拟系统
+
+[![CI](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/July75-bit/Innovation/actions/workflows/ci.yml)
+[![后端](https://img.shields.io/badge/pytest-320%20passed-brightgreen)](docs/acceptance/test_report.md)
+[![覆盖率](https://img.shields.io/badge/coverage-98%25-brightgreen)](docs/acceptance/test_report.md)
+[![许可](https://img.shields.io/badge/license-see%20LICENSE-blue)](LICENSE)
 
 > 软件创新工程实践（软件新技术创新实践）课程作品 · 4 人团队 · 6 天冲刺
 > 仓库名建议：`playerstock`（本地目录名可为 `innovation`，两者不必一致）
 
+> **界面主题**：支持**浅色 / 深色**双模式（侧栏或移动端顶栏切换，选择记在浏览器本地；默认深色）。
+> 设计令牌与玻璃材质规范见 [`docs/software/design_tokens.md`](docs/software/design_tokens.md)。
+
 ## ⚠️ 合规声明
 
-本项目全程使用**虚拟币**，**不可充值、不可提现、不可兑换**任何实物或货币。选手姓名、战队与位置取自公开可查的 CS2 职业选手信息，但**价格与综合表现评分均为本项目自行设定的模拟数据**，不代表 HLTV 或任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部**均无关联**，属非官方课程作品，不展示任何官方图片或 Logo。项目仅用于课程学习与演示，不构成任何投资建议或金融产品。
+本项目全程使用**信用点**，**不可充值、不可提现、不可兑换**任何实物或货币。选手姓名、战队与位置取自公开可查的 CS2 职业选手信息，但**价格与综合表现评分均为本项目自行设定的模拟数据**，不代表 HLTV 或任何官方统计。本项目与 Valve、HLTV、相关选手及俱乐部**均无关联**，属非官方课程作品，不展示任何官方图片或 Logo。项目仅用于课程学习与演示，不构成任何投资建议或金融产品。
 
 ## 一句话介绍
 
-用户用 **5000 初始虚拟币**买卖虚拟选手股，股价随模拟比赛表现与市场供需动态变化；系统同时提供 AI 的 BUY / SELL / HOLD 建议（**仅建议，不自动执行交易**）。
+用户用 **5000 初始信用点**买卖虚拟选手股，股价随模拟比赛表现与市场供需动态变化；系统同时提供 AI 的 BUY / SELL / HOLD 建议（**仅建议，不自动执行交易**）。
 
 ## 技术栈
 
-| 层 | 选型 | 负责人 |
-| --- | --- | --- |
-| 前端 | Vue 3 + TypeScript + Vite | A |
-| 后端 | FastAPI + SQLAlchemy + SQLite | B |
-| 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | C |
-| 智能体 | Python + LLM API（可降级为规则版） | D |
-| 部署 | Render（前端 Static Site / 后端 Web Service） | D |
+> 汇报要求 3.2：编程语言、IDE、平台、框架**要写明版本号并写在 README**。后端版本取自 `code/backend/requirements.lock.txt`（封闭锁定），前端取自 `code/frontend/package.json`。
+
+| 条目名称 | 条目内容 | 版本号 | 备注 |
+| --- | --- | --- | --- |
+| 程序设计语言 | Python | 3.13.5（本机与锁文件基线；Render 运行时 3.12.6） | B / C / D |
+| 程序设计语言 | TypeScript | 6.0 | A |
+| IDE | VS Code | — | 推荐扩展见 `.vscode/extensions.json`（Python、Pylance、Ruff、Prettier、Vue Volar、ESLint） |
+| Web 后端框架 | FastAPI | 0.161.1 | 自动生成 Swagger，兼做联调文档（B） |
+| ASGI 服务器 | Uvicorn | 0.54.0 | — |
+| 数据校验 | Pydantic / pydantic-settings | 2.14.1 | 配置与请求体校验 |
+| ORM | SQLAlchemy | 2.1.6 | 本地与 CI 用 SQLite，线上用 Render Postgres（B） |
+| 数据库驱动 | psycopg2-binary | 见 `requirements.lock.txt` | 连接串显式钉死 `postgresql+psycopg2`（BUG-08） |
+| Web 前端框架 | Vue | 3.5.42 | 组合式 API（A） |
+| 前端构建 | Vite | 8.2.2 | — |
+| 前端路由 | vue-router | 5.3.1 | 含 `/auth` 登录注册页与守卫、`/market` 重定向与兜底路由（BUG-11） |
+| 测试框架 | pytest / httpx / Vitest | 9.1.1 / 0.28.1 / 4.1.11 | 后端 320 条、前端 108 条 |
+| 代码质量 | ruff / ESLint / oxlint / Pylint / complexipy | 0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0 | 配置与结果见 `docs/software/CodeReview.md` |
+| 定价引擎 | Python 纯函数 + 模拟赛数据发生器 | 同 Python 运行时 | 无第三方依赖（C） |
+| 智能体 | Python + LLM API（可降级为规则版） | 标准库 urllib，超时 20s | 无密钥/超时/脏输出一律回落 `rule_fallback`（D） |
+| 持续集成 | GitHub Actions | — | 3 个 job：后端测试、前端检查、交付物完整性 |
+| 部署平台 | Render | — | 前端 Static Site / 后端 Web Service / 免费 Postgres（D） |
 
 ## 目录结构
 
@@ -62,6 +84,29 @@
 - Python **3.12 / 3.13**
 - Node.js **LTS**（建议 20+）
 - Git
+
+### 0.1 编辑器与代码质量（VS Code，建议全员照做）
+
+仓库里已带团队共享配置，**打开项目后照下面四步做一次**即可（不必改全局设置）：
+
+1. 装推荐扩展：VS Code 会弹「是否安装推荐扩展」→ 允许；或手动装 **Python / Pylance / Ruff**（前端再加 **Prettier / Vue - Official / ESLint**）。
+2. 选对解释器：点右下角 Python 版本 → 选**项目环境**（conda `playerstock`，或下面「启动后端」里建的 `.venv`），别停在 base。停 base 时 Pylance 会误报「无法解析导入 sqlalchemy」——那是环境不对不是代码问题（`ai/context.py` 的 `sqlalchemy` 是刻意的延迟导入，无依赖机器也能 import 本模块）。
+3. 本地 linter：Ruff 扩展自带 ruff 0.17.4，装完扩展即生效。但**扩展只检查你在编辑器里打开过的文件**——没打开过的文件、以及队友合进来的代码不会报警（第 7 轮的 F401 就是这么漏过去、CI 连红三次的）。终端里的全量检查才是准的，把 ruff 装进项目环境：`pip install -r code/backend/requirements-dev.txt`（版本与 CI 钉死一致）。
+4. 生效：`.vscode/settings.json` 已配置「保存时自动格式化 + 自动修可修的问题」，规则来自 `pyproject.toml` 的 `[tool.ruff.lint]`，与 CI 同口径。
+
+常用操作：`Ctrl+Shift+M` 看问题面板、光标处 `Ctrl+.` 触发 Quick Fix。
+
+**提交前自查**（与 CI 后端 job 逐条同口径，全绿再 push，别把红留给 Actions）：
+
+```powershell
+python -m pytest                                              # ① 后端用例
+ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine   # ② 业务代码
+ruff check --select E4,E7,E9,F,C901 tests                     # ③ 测试代码
+ruff check --select E4,E7,E9,F scripts                        # ④ CLI 入口
+cd code/frontend; npm run lint; npm run test:unit -- --run   # ⑤ 前端（--run 否则进 watch 模式）
+```
+
+写了超过 100 行、或改了交易/定价/AI 契约/表结构的改动，提交前按 [`docs/mgmt/code_review_template.md`](docs/mgmt/code_review_template.md) 找一位队友交叉评审。
 
 ### 1. 启动后端
 
@@ -115,9 +160,21 @@ python scripts/simulate_match.py # 生成一轮模拟比赛并触发价格更新
 
 ```powershell
 # 在仓库根目录（pyproject.toml 已配置 pythonpath = ["code/backend", "code/core_engine", "code"]）
+
+# ① 先确保用的是「项目环境」，不是 conda base：
+#    conda activate playerstock        # 或 cd code/backend; .\.venv\Scripts\Activate.ps1
+#    窗口提示里若还是 (base)，python 里没有 pytest，会报 No module named pytest
+
+# ② 装依赖（装进当前激活的环境）
 pip install -r code/backend/requirements.txt
+
+# ③ 跑
 python -m pytest
+python -m pytest -q -p no:warnings                                  # 屏蔽过时告警，答辩演示更干净
+python -m pytest --cov=app --cov=core_engine --cov-report=term      # 覆盖率（98%，需 pytest-cov）
 ```
+
+> 不想切环境也可以直接用绝对路径，最稳：`& "D:\miniconda\envs\playerstock\python.exe" -m pytest`
 
 ## 四人分工
 
@@ -132,16 +189,16 @@ python -m pytest
 
 ### 联系方式
 
-> 群聊 / 电话由各人补填真值（不把私人联系方式写进公开仓库）；以下为协作入口与写权限边界，对应 `project_management_plan.md` §8.1。
+> 沟通入口统一为**课程项目群（微信群）+ GitHub Issues**；不把私人联系方式写进公开仓库；以下为协作入口与写权限边界，对应 `project_management_plan.md` §8.1。
 
 | 成员 | 负责目录 | 沟通入口 | 升级路径 |
 | --- | --- | --- | --- |
-| A | `code/frontend/` | 小组群（待填） | 前端阻塞影响验收时直接找 D 升级 |
-| B | `code/backend/app/{api,models,schemas,core}`、`requirements.txt` | 小组群（待填） | 接口字段有异议 → 契约评审，2 小时内定 |
-| C | `code/core_engine/`、`data/seed_players.json` | 小组群（待填） | 价格口径与 B 冲突时以 `api_contract.md` 为准 |
-| D | `code/backend/ai/`、`docs/`、`.github/`、`render.yaml` | 小组群（待填） | 协调人，负责汇总进度与风险升级 |
+| A | `code/frontend/` | 课程项目群 + GitHub Issues | 前端阻塞影响验收时直接找 D 升级 |
+| B | `code/backend/app/{api,models,schemas,core}`、`requirements.txt` | 课程项目群 + GitHub Issues | 接口字段有异议 → 契约评审，2 小时内定 |
+| C | `code/core_engine/`、`data/seed_players.json` | 课程项目群 + GitHub Issues | 价格口径与 B 冲突时以 `api_contract.md` 为准 |
+| D | `code/backend/ai/`、`docs/`、`.github/`、`render.yaml` | 课程项目群 + GitHub Issues | 协调人，负责汇总进度与风险升级 |
 
-> GitHub 协作账号（取自 `git log` 提交记录）：`July75-bit`（仓库所有者）、`wlkaqw`、`weedflame`、`Hu De Hao`；与 A/B/C/D 的对应关系请各人补填。
+> GitHub 协作账号（取自 `git log` 提交记录）：`July75-bit`（仓库所有者）、`wlkaqw`、`weedflame`（A）、`Hu De Hao`（B）、`fusde0`（C）。
 
 ## 接口一览
 
@@ -152,6 +209,10 @@ python -m pytest
 | 健康检查 | `GET /api/health` | 全员 |
 | 查询市场选手 | `GET /api/players` | A + B |
 | 查询单个选手 | `GET /api/players/{id}` | A + B |
+| 注册私人账号 | `POST /api/auth/register` | A + B |
+| 登录（签发令牌） | `POST /api/auth/login` | A + B |
+| 当前身份 | `GET /api/auth/me` | A + B |
+| 退出 / 删除账号 | `POST /api/auth/logout` · `DELETE /api/auth/account` | A + B |
 | 查询账户 | `GET /api/account` | A + B |
 | 买入 | `POST /api/trades/buy` | A + B |
 | 卖出 | `POST /api/trades/sell` | A + B |
@@ -174,7 +235,7 @@ python -m pytest
 
 ## 交易规则（稳定层）
 
-- 新用户注册赠送 **5000 虚拟币**，每日签到补给固定额度
+- 新用户注册赠送 **5000 信用点**，每日签到补给固定额度
 - 单选手持仓上限 **50 股**
 - 比赛进行期间对应选手**暂停交易**，结算后恢复
 - 数量必须为正整数；余额充足才能买入；持仓足够才能卖出
@@ -184,13 +245,17 @@ python -m pytest
 
 | 目录 | 内容 | 负责人 |
 | --- | --- | --- |
-| [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图 | D 牵头 |
+| [`docs/requirements/`](docs/requirements/) | 问题定义、功能/非功能需求、用户故事、机制设计、线框图、**原型设计评审（三层模型 + 可用性清单）**（[`prototype_review.md`](docs/requirements/prototype_review.md)） | D 牵头 |
 | [`docs/algorithm/`](docs/algorithm/) | 定价模型、AI 提示词设计、智能体回测报告 | C + D |
-| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明 | B + D |
-| [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS | D |
-| [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明 | D |
-| [`docs/presentation/`](docs/presentation/) | 答辩幻灯片 | 全员 |
+| [`docs/software/`](docs/software/) | 系统架构、接口契约、数据库设计、部署说明、交互原型（[`prototype/index.html`](docs/software/prototype/index.html)）、**代码评审与质量工具使用**（[`CodeReview.md`](docs/software/CodeReview.md)）、**代码质量报告**（[`code_quality.md`](docs/software/code_quality.md)）、**代码评审记录**（[`code_review.md`](docs/software/code_review.md)）、**UI 设计规范 v2**（[`ui_design_system.md`](docs/software/ui_design_system.md)）、**设计系统 Token**（[`design_tokens.md`](docs/software/design_tokens.md)） | B + D |
+| [`docs/mgmt/`](docs/mgmt/) | 沟通计划、风险计划、里程碑与 WBS、每日任务清单（含第 6 天 [`day6.md`](docs/mgmt/day6.md)）、**代码评审模板**（[`code_review_template.md`](docs/mgmt/code_review_template.md)、**14 条缺陷 Issue 准备稿**（[`bug-issues.md`](docs/mgmt/bug-issues.md)） ，**课程要求 → 落点对照表** [`requirements-map.md`](docs/mgmt/requirements-map.md) | D |
+| [`docs/acceptance/`](docs/acceptance/) | 测试计划、测试报告、用户手册、合规声明、代码质量报告、**生命周期问题汇总**（[`lifecycle_issues.md`](docs/acceptance/lifecycle_issues.md)，汇报 3.4）、**智能体测试分层自查**（[`agent_test_layers.md`](docs/acceptance/agent_test_layers.md)）、**L4 评测报告**（[`agent_eval_report.md`](docs/acceptance/agent_eval_report.md)）、**L5 红队报告**（[`agent_redteam.md`](docs/acceptance/agent_redteam.md)）、验收证据 [`evidence/`](docs/acceptance/evidence/README.md) | D |
+| [`docs/reviews/`](docs/reviews/) | **代码评审记录**（按 `docs/mgmt/code_review_template.md` 产出，一次改动一份） | D + 全员 |
+| [`docs/slides/`](docs/slides/) | **答辩幻灯片（Slidev）**：17 页源稿 [`slides.md`](docs/slides/slides.md)、样式与截图；GitHub Actions 自动构建 PDF/静态站；在线看 https://july75-bit.github.io/Innovation/，PDF 见 https://july75-bit.github.io/Innovation/playerstock_defense.pdf | D |
+| [`docs/presentation/`](docs/presentation/) | 演示脚本 / 问答 / 彩排手册 / 证据材料（旧版 PDF 与 HTML 为历史） | 全员 |
 | [`docs/retrospection/`](docs/retrospection/) | 每日站会记录与复盘 | 全员 |
+
+> 额外参考：[`docs/software/agent_workflow_design.md`](docs/software/agent_workflow_design.md)（AI Agent 工作流模式选型与完善路线，非课程交付物，供答辩加分参考；由 A 于第 4 天提交，待团队评审）。
 
 ## 部署（Render）
 

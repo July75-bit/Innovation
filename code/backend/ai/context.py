@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -26,16 +27,27 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[3]
 SEED_FILE = ROOT / "data" / "seed_players.json"
 
+logger = logging.getLogger(__name__)
+
 # 演示用假持仓：只给 1 号选手，方便规则版/LLM 版都能给出"有持仓"的建议
 DEMO_POSITIONS: dict[int, dict[str, float]] = {
     1: {"quantity": 10, "avg_cost": 120.0},
 }
 DEMO_POSITION_DEFAULT = {"quantity": 0.0, "avg_cost": 0.0}
 
+# 只把最近这么多个价格点喂给模型：线上单名选手已有 78 条历史，
+# 全量塞进 prompt 既浪费 token，也让 `recent_*` 名不副实。
+HISTORY_LIMIT = 10
+
 
 # ---------------------------------------------------------------- 工具函数
 
-def _pct(prev_price: float, current_price: float) -> float:
+def pct_change(prev_price: float, current_price: float) -> float:
+    """涨跌幅（%，未四舍五入）。
+
+    context 的两条路径与接口层的「最小上下文」共用这一份实现，避免 `_pct` 重复；
+    调用方按需自行 `round(..., 2)`。
+    """
     if not prev_price:
         return 0.0
     return (current_price - prev_price) / prev_price * 100.0
@@ -50,6 +62,11 @@ def _fmt_ts(value: Any) -> str:
     return str(value)
 
 
+def _as_rating(value: Any) -> int:
+    """评分缺失才兜底 50；`0` 是合法评分，不能被 `or` 吞掉。"""
+    return 50 if value is None else int(value)
+
+
 # ---------------------------------------------------------------- mock 路径
 
 def load_seed_players() -> list[dict[str, Any]]:
@@ -58,10 +75,11 @@ def load_seed_players() -> list[dict[str, Any]]:
 
 
 def _seed_player(player_id: int) -> dict[str, Any]:
-    for player in load_seed_players():
+    players = load_seed_players()
+    for player in players:
         if player.get("player_id") == player_id:
             return player
-    raise LookupError(f"选手 {player_id} 不存在（seed 数据共 {len(load_seed_players())} 名）")
+    raise LookupError(f"选手 {player_id} 不存在（seed 数据共 {len(players)} 名）")
 
 
 def mock_context(player_id: int) -> dict[str, Any]:
@@ -80,8 +98,8 @@ def mock_context(player_id: int) -> dict[str, Any]:
         "team": player.get("team", ""),
         "role": player.get("role", ""),
         "current_price": current,
-        "change_pct": round(_pct(prev, current), 2),
-        "rating": player.get("rating", 50),
+        "change_pct": round(pct_change(prev, current), 2),
+        "rating": _as_rating(player.get("rating")),
         "recent_prices": [
             {"ts": "初始价格", "price": initial},
             {"ts": "上一价格", "price": prev},
@@ -102,12 +120,18 @@ WHERE player_id = :player_id
 """
 
 _SQL_HISTORY = """
-SELECT price, reason, ts
-FROM price_history
-WHERE player_id = :player_id
+SELECT price, reason, ts FROM (
+    SELECT price, reason, ts
+    FROM price_history
+    WHERE player_id = :player_id
+    ORDER BY ts DESC
+    LIMIT :limit
+)
 ORDER BY ts
 """
 
+# 说明：positions 表有 `user_id`，但本项目是**单一共享演示账户**（`users.nickname='demo'`，
+# 见 `app/api/deps.py`），故这里只按 player_id 取。将来接多用户时必须同时按 user_id 过滤。
 _SQL_POSITION = """
 SELECT quantity, avg_cost
 FROM positions
@@ -115,19 +139,20 @@ WHERE player_id = :player_id
 """
 
 
-def db_context(player_id: int) -> dict[str, Any]:
-    """按 database_design.md 的表结构只读取数；任何一步失败都抛异常交给上层回落。"""
+def _read_context(db: Any, player_id: int) -> dict[str, Any]:
+    """在给定会话上执行 3 条只读 SELECT 并组装上下文（不 commit、不写库）。"""
     from sqlalchemy import text  # 延迟导入：本地无依赖时也能 import 本模块
 
-    from app.core.database import SessionLocal
+    player = db.execute(text(_SQL_PLAYER), {"player_id": player_id}).mappings().first()
+    if player is None:
+        raise LookupError(f"数据库里没有选手 {player_id}")
 
-    with SessionLocal() as db:
-        player = db.execute(text(_SQL_PLAYER), {"player_id": player_id}).mappings().first()
-        if player is None:
-            raise LookupError(f"数据库里没有选手 {player_id}")
-
-        history = db.execute(text(_SQL_HISTORY), {"player_id": player_id}).mappings().all()
-        position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
+    history = (
+        db.execute(text(_SQL_HISTORY), {"player_id": player_id, "limit": HISTORY_LIMIT})
+        .mappings()
+        .all()
+    )
+    position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
 
     recent_prices = [
         {"ts": _fmt_ts(row["ts"]), "price": float(row["price"])} for row in history
@@ -147,8 +172,10 @@ def db_context(player_id: int) -> dict[str, Any]:
         "team": player.get("team") or "",
         "role": player.get("role") or "",
         "current_price": float(player["current_price"]),
-        "change_pct": round(_pct(float(player["prev_price"]), float(player["current_price"])), 2),
-        "rating": player.get("rating") or 50,
+        "change_pct": round(
+            pct_change(float(player["prev_price"]), float(player["current_price"])), 2
+        ),
+        "rating": _as_rating(player.get("rating")),
         "recent_prices": recent_prices,
         "recent_reasons": reasons[-5:],
         "position": {
@@ -158,14 +185,43 @@ def db_context(player_id: int) -> dict[str, Any]:
     }
 
 
+def db_context(player_id: int, *, db: Any = None) -> dict[str, Any]:
+    """按 database_design.md 的表结构只读取数；任何一步失败都抛异常交给上层回落。
+
+    Args:
+        player_id: 选手 ID。
+        db: 可选的 SQLAlchemy 会话。接口层把 FastAPI 依赖注入的**同一个只读会话**传进来，
+            这样测试里 `get_db` 的依赖覆盖也生效（不会另开一个连到开发库的会话）。
+            默认（None）自己开一个会话，供命令行/独立调用使用。
+    """
+    if db is not None:
+        return _read_context(db, player_id)
+
+    from app.core.database import SessionLocal
+
+    with SessionLocal() as own_session:
+        return _read_context(own_session, player_id)
+
+
 # ---------------------------------------------------------------- 对外入口
 
-def build_player_context(player_id: int, *, prefer_db: bool = True) -> dict[str, Any]:
-    """组装上下文：优先真实数据库，失败自动回落 mock（并把回落原因带出来便于排查）。"""
+def build_player_context(
+    player_id: int, *, prefer_db: bool = True, db: Any = None
+) -> dict[str, Any]:
+    """组装上下文：优先真实数据库，失败自动回落 mock（并把回落原因带出来便于排查）。
+
+    `db` 传入接口层的只读会话时，真实路径就在该会话上跑；其余行为不变。
+    """
     if prefer_db:
         try:
-            return db_context(player_id)
-        except Exception as exc:  # B 未实现 / 表未建 / 驱动缺失 都走这里
+            return db_context(player_id, db=db)
+        except Exception as exc:  # noqa: BLE001 —— 兜底链路：查库失败必须回落 mock，不能把 AI 故障升级成 5xx
+            logger.warning(
+                "AI 上下文查库失败，回落 seed 数据：player_id=%s %s: %s",
+                player_id,
+                type(exc).__name__,
+                exc,
+            )
             context = mock_context(player_id)
             context["context_fallback_reason"] = f"{type(exc).__name__}: {exc}"
             return context

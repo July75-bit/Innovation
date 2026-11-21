@@ -1,4 +1,4 @@
-# 测试计划
+﻿# 测试计划
 
 > **负责人**：D ｜ **截止**：第 4 天定稿，第 5–6 天执行 ｜ **状态**：✅ 已填写（用例已列，第 4–6 天执行打勾）
 > **对应课程指标**：#9 测试计划与报告、#10 单元/集成/系统测试；交付物清单第 4 项
@@ -30,67 +30,127 @@
 | Python | 3.12/3.13 | 3.12.6 |
 | Node | LTS | 20 |
 | 数据库 | SQLite 本地文件 | SQLite + 持久盘 / PostgreSQL |
-| 数据 | `data/seed_players.json`（8 名选手） | 同 |
+| 数据 | `data/seed_players.json`（16 名选手 / 8 队，2026-11-07 起） | 同 |
 | LLM | 可无密钥（走兜底） | 同 |
 
 ## 4. 测试用例清单
 
 > `TC-xxx` 编号与 `docs/requirements/functional_spec.md` 的 FR 编号对应。
 
+### 4.0 标准七列用例（课件 p.197 模板，可直接对照评分表）
+
+> 课件给的模板是七列：**用例编号 / 用例名称 / 前置条件 / 测试步骤 / 输入数据 / 预期结果 / 优先级**。
+> 下面 12 条按原样格式写，覆盖**等价类 + 边界值 + 场景法**三类设计方法；每条的自动化实现在 `tests/` 里，
+> 更细的技术性清单见 §4.1–§4.6（同一批用例的另一种呈现）。
+
+| 用例编号 | 用例名称 | 前置条件 | 测试步骤 | 输入数据 | 预期结果 | 优先级 | 实际结果（执行方式） |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **TC-001** | 正常买入（等价类·有效） | demo 账户余额 5000，ZywOo 现价 108.75，状态交易中 | 1. 打开 `/players/1` 2. 数量填 2 3. 点买入 | quantity=2 | 200；余额扣 2×成交价；持仓 +2；流水 +1（BUY） | 高 | ✅ 通过 · `test_trades_rule.py::test_buy_normal` + e2e 买入链路 |
+| **TC-002** | 买入数量下边界（边界值） | 同上 | 同上，数量填 **1** | quantity=1 | 200；余额减少 1 股金额；持仓 +1 | 高 | ✅ 通过 · `test_buy_invalid_quantity` 的边界分支 |
+| **TC-003** | 买入数量上边界（边界值） | 同上，当前持仓 0 | 同上，数量填 **50** | quantity=50 | 200；持仓达上限 50 | 高 | ✅ 通过 · 上限 50 由 `test_buy_normal` 的边界断言覆盖 |
+| **TC-004** | 超过持仓上限（边界值 +1） | 同上 | 同上，数量填 **51** | quantity=51 | 400 `POSITION_LIMIT_EXCEEDED`，余额与持仓不变 | 高 | ✅ 通过 · `test_position_limit_exceeded`（400） |
+| **TC-005** | 数量为 0（无效等价类） | 同上 | 同上，数量填 0 | quantity=0 | 422 `VALIDATION_ERROR`（quantity 必须 ≥1） | 高 | ✅ 通过 · `test_buy_invalid_quantity[0]`（422） |
+| **TC-006** | 数量非整数（无效等价类） | 同上 | 同上，直接输字母 | quantity="abc" | 前端拦下不发请求；绕过前端则 422 | 中 | ✅ 通过 · 前端 TradePanel 本地校验 + 后端 422 双保险 |
+| **TC-007** | 余额不足（等价类·无效） | 余额 50，选手价 108.75 | 数量填 1 买入 | quantity=1 | 400 `INSUFFICIENT_BALANCE`，提示"最多可买 0 股"；余额/持仓/流水不变 | 高 | ✅ 通过 · `test_buy_insufficient_balance`（400 + 文案） |
+| **TC-008** | 暂停交易选手（判定表） | sh1ro 状态 suspended | 打开 `/players/7`，观察买卖按钮 | — | 按钮置灰并说明原因；直接调接口 → 400 `PLAYER_TRADING_SUSPENDED` | 高 | ✅ 通过 · `test_suspended_player_rejected` + 前端置灰证据 |
+| **TC-009** | 卖出全部持仓（边界值·清仓） | 已持 ZywOo 2 股 | 数量填 2 卖出 | quantity=2 | 200；持仓行被删除（非置 0）；余额增加；流水 +1（SELL） | 高 | ✅ 通过 · `test_sell_normal`（卖光后持仓行删除） |
+| **TC-010** | 卖出超过持仓（无效等价类） | 已持 2 股 | 数量填 3 卖出 | quantity=3 | 400 `INSUFFICIENT_POSITION`，提示"还能卖 2 股" | 高 | ✅ 通过 · `test_sell_insufficient_position`（400） |
+| **TC-011** | 选手不存在（等价类·无效） | 无 | 直接访问 `/api/analysis/999`、`/api/players/999` | player_id=999 | 404 `PLAYER_NOT_FOUND`，中文 message | 中 | ✅ 通过 · `test_analysis_unknown_player_returns_404`（404） |
+| **TC-012** | **完整交易链路（场景法·E2E）** | 干净账户 5000、16 名选手 | 1. 看行情 2. 进详情看折线+AI 3. 买 2 股 4. 看持仓 5. 卖 1 股 6. 看流水 | 买 2、卖 1 | 每步金额自洽：5000 → 买入后 → 卖出后；流水倒序且每笔带交易后余额；AI 调用前后账户分文不动 | 高 | ✅ 通过 · `test_e2e_flow.py::test_full_trade_flow` + 浏览器 16 张证据 |
+
+**方法覆盖说明（评委可能追问）**：
+
+| 设计方法 | 落在哪几条 | 说明 |
+| --- | --- | --- |
+| 等价类划分 | TC-001（有效）、TC-005/006/007/010/011（无效） | 每个等价类取代表值，不对每一条数据穷举 |
+| 边界值分析 | TC-002（下界 1）、TC-003（上界 50）、TC-004（上界+1）、TC-009（持仓清空边界） | 边界及其两侧都测——80% 的缺陷在边界 |
+| 判定表 | TC-008（状态 × 操作） | 选手状态与买卖动作的合法组合 |
+| 场景法 | TC-012 | 一条主业务流程走完整，断金额自洽 |
+| 因果图（课件 p.184 简述） | — | **本产品不适用**：输入条件相互影响很少（数量、余额、持仓、选手状态基本独立），判定表 + 边界值已覆盖全部组合 |
+
 ### 4.1 交易规则（最高优先级）
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 关联风险 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- |
-| TC-001 | 正常买入 | 余额 5000，价 126.00，买 2 | 余额 4748.00，持仓 +2，流水 +1 | FR-M1-03 | — | ⬜ |
-| TC-002 | 余额不足买入 | 余额 50，价 126.00，买 1 | 400 `INSUFFICIENT_BALANCE`，三者不变 | FR-M1-03 | R06 | ⬜ |
-| TC-003 | 数量为 0 | quantity=0 | 422 | FR-M1-03 | — | ⬜ |
-| TC-004 | 数量为负 | quantity=-1 | 422 | FR-M1-03 | — | ⬜ |
-| TC-005 | 数量为小数 | quantity=1.5 | 422 | FR-M1-03 | — | ⬜ |
-| TC-006 | 选手不存在 | player_id=999 | 404 `PLAYER_NOT_FOUND` | FR-M1-03 | — | ⬜ |
-| TC-007 | 超过持仓上限 | 已持 50，再买 1 | 400 `POSITION_LIMIT_EXCEEDED` | FR-M1-03 | — | ⬜ |
-| TC-008 | 正常卖出 | 持 3，卖 1 | 余额 +，持仓 2，流水 +1 | FR-M1-04 | — | ⬜ |
-| TC-009 | 持仓不足卖出 | 持 0，卖 1 | 400 `INSUFFICIENT_POSITION`，不产生负持仓 | FR-M1-04 | R06 | ⬜ |
-| TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ⬜ |
-| TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ⬜ |
-| TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ⬜ |
+| TC-001 | 正常买入 | 余额 5000，价 126.00，买 2 | 余额 4748.00，持仓 +2，流水 +1 | FR-M1-03 | — | ✅ `test_trades_rule.py::test_buy_normal` + e2e 买入链路 |
+| TC-002 | 余额不足买入 | 余额 50，价 126.00，买 1 | 400 `INSUFFICIENT_BALANCE`，三者不变 | FR-M1-03 | R06 | ✅ `test_buy_insufficient_balance` |
+| TC-003 | 数量为 0 | quantity=0 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[0]` |
+| TC-004 | 数量为负 | quantity=-1 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[-1]` |
+| TC-005 | 数量为小数 | quantity=1.5 | 422 | FR-M1-03 | — | ✅ `test_buy_invalid_quantity[1.5]` |
+| TC-006 | 选手不存在 | player_id=999 | 404 `PLAYER_NOT_FOUND` | FR-M1-03 | — | ✅ `test_buy_invalid_player` + e2e 404 断言 |
+| TC-007 | 超过持仓上限 | 已持 50，再买 1 | 400 `POSITION_LIMIT_EXCEEDED` | FR-M1-03 | — | ✅ `test_buy_exceeds_position_limit` |
+| TC-008 | 正常卖出 | 持 3，卖 1 | 余额 +，持仓 2，流水 +1 | FR-M1-04 | — | ✅ `test_sell_normal` + e2e 卖出链路 |
+| TC-009 | 持仓不足卖出 | 持 0，卖 1 | 400 `INSUFFICIENT_POSITION`，不产生负持仓 | FR-M1-04 | R06 | ✅ `test_sell_more_than_held` |
+| TC-010 | 暂停交易 | status=suspended 时买卖 | 400 `PLAYER_TRADING_SUSPENDED` | FR-M1-03/04 | — | ✅ `test_buy_suspended_player` |
+| TC-011 | 价格变动后成交 | 更新价格后立即买入 | 按**最新价**成交 | FR-M1-03 | — | ✅ `test_trade_uses_latest_price` |
+| TC-012 | 事务回滚 | 制造写入失败（如非法 player 外键） | 余额/持仓/流水都未变 | FR-M1-03 | R06 | ✅ `test_transaction_rollback_on_failure` |
+| TC-120 | 核心异常矩阵（T4-06） | 卖出暂停/未知选手、买入缺字段、未知价格历史、卖超持仓 | 400/404/422，账户不变 | FR-M1-03/04 | R06 | ✅ `test_core_exceptions.py` 7 条（第 4 天新增） |
+| TC-121 | 核心逻辑覆盖率（课程 p.177） | `coverage run --source=app,core_engine` | ≥60% | NFR-可维护性 | — | ✅ **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测；第 4 天时为 839/79 → 91%） |
+
+> **执行记录（2026-10-24 第 4 天末，D 核对）**：A 的浏览器证据（14 张）、C 的 recalc 5 条用例、B 的部署预检/一键灌数 8 条用例合入后全仓 → **120 passed / 0 skipped**（CI ubuntu：单元 107 + 集成 21；本机 Windows 因 BUG-03 为 118 passed + 1 failed + 1 error，见 `test_report.md` §9）；覆盖率 **91%**，课程 p.177 ≥60% 检查点达标。
+
+> **执行记录（2026-10-24 第 3 天，D）**：全仓 `python -m pytest` → **65 passed / 5 skipped**（`test_trades_rule.py` 14 项、`test_api_trades.py` 6 项、`test_trades_concurrency.py` 3 项、`test_e2e_flow.py` 2 项）；TC-001~012 全部有自动化覆盖。
+> 显式 skip 只剩定价 5 条（TC-101~107，等 C 的 PR）。测试总数 70（65+5），逐文件明细见 `test_report.md` §2。
 
 ### 4.2 定价引擎
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ⬜ |
-| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ⬜ |
-| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ⬜ |
-| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ⬜ |
-| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ⬜ |
-| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | ⬜ |
-| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ⬜ |
+| TC-101 | 表现上升价格上涨 | P=100, S=+0.5, α=0.2 | 110.00 | FR-M2-03 | ✅ `test_pricing.py::test_price_rises_when_score_positive` |
+| TC-102 | 表现下降价格下跌 | P=100, S=-0.5, α=0.2 | 90.00 | FR-M2-03 | ✅ `test_price_falls_when_score_negative` |
+| TC-103 | 无信号价格不变 | S=0, D=0 | 100.00 | FR-M2-03 | ✅ `test_zero_demand_signal_keeps_price_when_score_zero` |
+| TC-104 | 触及价格下限 | P=2, S=-1, α=5 | ≥ floor，且不为负 | FR-M2-03 | ✅ `test_price_never_below_floor` + `test_floor_applies_after_clamp` |
+| TC-105 | 非法入参 | P=0 | `ValueError` | FR-M2-03 | ✅ `test_invalid_current_price_raises` |
+| TC-106 | 模拟可复现 | 同 seed 跑两次 | 结果完全一致 | FR-M2-01 | ✅ 2026-10-24（C 补 `tests/unit/test_simulator.py` 3 条：同 seed 序列逐条相等 / 单场稳定 / 换 seed 不同，防"假复现"） |
+| TC-107 | 历史升序 | 多次更新后查询 | ts 严格升序 | FR-M2-04 | ✅ e2e 价格历史升序断言 + `test_price_update.py::test_apply_updates_writes_price_and_history` |
+| TC-108 | 表现信号 3σ 归一化 | z=1.5，`Z_FULL_SCALE`=3.0 / 1.0 | 3.0 时 S=0.5；1.0 时 clamp 为 1.0；z=0 → 0 | FR-M2-02 | ✅ 2026-10-24（C 补：`test_standardize_score_three_sigma_scale` 断言 1σ→0.333/2σ→0.667/3σ→1.0/>3σ 饱和；`test_z_full_scale_one_matches_literal_mapping` 验证开关） |
+| TC-109 | 单次变动对称 clamp ±20% | 原始涨幅 > 20% | 涨跌都封顶 ±20%，`reason` 注明已按上限执行 | FR-M2-03 | ✅ `test_step_is_capped_symmetrically` |
+| TC-110 | 价格历史 reason 可追溯（方案 A） | C 的 `simulate_match.py --json` 导出 → B 的 `update_prices.py --from-json` 落库 | `/api/players/{id}/prices` 每条模拟调价 reason 同时含 `S=` 与本轮模拟得分；换会话/读库后仍可读（进程级重启由 T3-05 覆盖），价格升序 | FR-M2-04 / FR-M2-05 | ✅ 2026-10-24（`tests/integration/test_price_reason_traceability.py` 4 条：from-json / 进程内引擎 / 落库+API / 200 字截断） |
+| TC-122 | 赛后重算接口 `POST /api/prices/recalc` | 重复 round 幂等去重、暂停选手跳过、未知选手 404、非法参数 422 | 接口返回 applied/skipped 明细，重复调用不重复落库 | FR-M2-04 | ✅ 2026-10-24（C：`test_prices_recalc.py` 5 条集成用例） |
+
+> **决策（2026-10-24）**：不新增 `score` 列或 `matches` 表（选项 B），改为把 `S(t)` 与本轮得分写进 `reason`（选项 A）。
+> 理由：不改表/契约，详情页、AI 上下文、答辩讲解都能直接用到；精确复现靠 `simulate_match.py` 固定 seed + reason 里的得分对齐。
+> 当前实现（已切换完成）：**C 直接拼好**——`update_price(..., score=...)` 生成
+> `…（本轮得分 76.6，S=-1.00）`；B 的 `update_prices.with_score_in_reason` 以"得分"为幂等标记，
+> 命中即透传、只在吃到早期不带得分的导出明细时才补一次，并负责 200 字截断。
+> 见 `database_design.md` §3.2「分工结论」。
+
+> **执行记录（2026-10-24 11:00，D）**：A 前端初版、C 定价实现、B 价格落库脚本合入后，全仓 `python -m pytest` → **79 passed / 0 skipped**；
+> 定价 8 条（`test_pricing.py`）+ 价格落库 6 条（`test_price_update.py`）全部转绿；TC-106/108 两条数值断言待 C 补（后续均已补齐：TC-108 见 `dfe9f26`，TC-106 见 `506b564`）。
+>
+> **执行记录（2026-10-24 11:00 后，D 复核）**：C 补 3σ 断言（`dfe9f26`）后再跑 → **81 passed / 0 skipped**（`test_pricing.py` 8→10 条）；TC-108 转 ✅，仅剩 TC-106 同 seed 可复现断言待补（已于 `506b564` 补齐，见下方 15:00 记录）。
+>
+> **执行记录（2026-10-24 11:45，D）**：B 的 `--from-json` + reason 拼接（`adcc848`/`24496ee`）合入，加 D 的 TC-110 4 条后全仓 → **92 passed / 0 skipped**（另含 B 的 `test_update_prices_script.py` 7 条）。
+>
+> **执行记录（2026-10-24 15:00，D）**：C 补同 seed 断言（`506b564`）+ B 的 `update_prices` 脚本测试补到 9 条后，全仓 → **97 passed / 0 skipped**（单元 91 + 集成 6）；TC-106 转 ✅，TC-101~110 全部有自动化断言。
 
 ### 4.3 AI 智能体
 
 | ID | 用例 | 输入 | 期望 | 对应 FR | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| TC-201 | 正常分析 | 有效选手 | 200，action ∈ {BUY,SELL,HOLD} | FR-M3-01 | 🟡 单元层已过（假 client） |
-| TC-202 | 无密钥降级 | 清空密钥 | 200，`source=rule_fallback` | FR-M3-03 | ✅ 2026-10-23 |
-| TC-203 | 模型返回非 JSON | mock 脏输出 | 不 500，返回兜底 | FR-M3-02 | ✅ 2026-10-23 |
-| TC-204 | 模型超时 | mock 延迟 > 20s | 按时返回兜底 | FR-M3-04 | 🟡 逻辑层已过（client 抛超时） |
-| TC-205 | AI 不改数据 | 调分析接口前后对比 | 余额/持仓完全不变 | FR-M3-01 | 🟡 单测已断言输出不含余额字段 |
-| TC-206 | 密钥不外泄 | 抓包/看前端产物 | 响应与 bundle 中无密钥 | FR-M3-01 | 🟡 待部署后检查 |
+| TC-201 | 正常分析 | 有效选手 | 200，action ∈ {BUY,SELL,HOLD} | FR-M3-01 | ✅ 2026-10-23（接口层：假 client 合法输出 → `source=llm`） |
+| TC-202 | 无密钥降级 | 清空密钥 | 200，`source=rule_fallback` | FR-M3-03 | ✅ 2026-10-23（单元层 + 接口层） |
+| TC-203 | 模型返回非 JSON | mock 脏输出 | 不 500，返回兜底 | FR-M3-02 | ✅ 2026-10-23（单元层 + 接口层） |
+| TC-204 | 模型超时 | mock 延迟 > 20s | 按时返回兜底 | FR-M3-04 | 🟡 逻辑/接口层已过（注入超时 client → 200 兜底）；真实 20s 延迟未压测 |
+| TC-205 | AI 不改数据 | 调分析接口前后对比 | 余额/持仓完全不变 | FR-M3-01 | ✅ 2026-10-23（接口层：`/api/account` + `/api/positions` 前后完全一致） |
+| TC-206 | 密钥不外泄 | 抓包/看前端产物 | 响应与 bundle 中无密钥 | FR-M3-01 | 🟡 接口层已过（响应不含密钥）；前端 bundle 与线上待查 |
 
 > **执行记录（2026-10-23，D）**：`tests/unit/test_llm_agent.py` 13 条 + `tests/unit/test_ai_fallback.py` 6 条，用注入假 client 在无密钥环境跑通。
-> TC-201/204 的**真实模型路径**、TC-205/206 的**接口/部署层**验证要等 B 的 `/api/analysis` 路由接入（第 3 天）与线上部署（第 5 天）。
+> **第 3 天接口层补测（2026-10-23，D）**：`GET /api/analysis/{player_id}` 已接入，`tests/unit/test_api_ai.py` 7 条 + `tests/integration/test_e2e_flow.py` 2 条，
+> 覆盖 TC-201/202/203/205/206 与全链路联调；AI 故障（超时 / 脏输出）均由假 client 注入验证为 200 + 兜底，不碰真实网络。
+> 真实模型路径（有密钥）与 TC-206 的前端产物/线上抓包仍留待部署后（第 5 天）验证。
 
 ### 4.4 前端与体验
 
 | ID | 用例 | 期望 | 状态 |
 | --- | --- | --- | --- |
-| TC-301 | 行情列表渲染 | 8 行，价格 2 位小数，涨跌带色 | ⬜ |
-| TC-302 | 买卖后自动刷新 | 余额/持仓/流水同步更新，不用手动刷新 | ⬜ |
-| TC-303 | 错误提示 | 后端 message 中文直出 | ⬜ |
-| TC-304 | 加载中/无数据/失败三态 | 三种状态都有 UI | ⬜ |
-| TC-305 | 折线图 | ≥10 个点，时间升序 | ⬜ |
-| TC-306 | AI 建议卡 | action 徽标 + 理由 + 风险等级 + 免责声明 | ⬜ |
-| TC-307 | 刷新页面数据仍在 | F5 后数据不变 | ⬜ |
+| TC-301 | 行情列表渲染 | 8 行，价格 2 位小数，涨跌带色 | ✅ 2026-10-24（`evidence/01-market.png`） |
+| TC-302 | 买卖后自动刷新 | 余额/持仓/流水同步更新，不用手动刷新 | ✅ 2026-10-24（`evidence/03/04/05/06`） |
+| TC-303 | 错误提示 | 后端 message 中文直出 | ✅ 2026-10-24（`evidence/07~11` 五条分支） |
+| TC-304 | 加载中/无数据/失败三态 | 三种状态都有 UI | ✅ 2026-10-24（`evidence/12/13/14`） |
+| TC-305 | 折线图 | ≥10 个点，时间升序 | ✅ 2026-10-24（`evidence/02-detail-chart-ai.png`） |
+| TC-306 | AI 建议卡 | action 徽标 + 理由 + 风险等级 + 免责声明 | ✅ 2026-10-24（`evidence/02-detail-chart-ai.png`） |
+| TC-307 | 刷新页面数据仍在 | F5 后数据不变 | ✅ 后端持久化已验（`test_report.md` §7）；浏览器深链 F5 已验（`evidence/16-tc307-refresh-persist.png`，2026-10-24 A 收口） |
 
 ### 4.5 部署与系统
 
@@ -100,14 +160,38 @@
 | TC-402 | 线上 CORS 正常 | 前端无跨域报错 | ⬜ |
 | TC-403 | 线上交易闭环 | 买卖成功入库 | ⬜ |
 | TC-404 | 重启后数据持久 | 重新部署后数据仍在 | ⬜ |
-| TC-405 | 前端子路由刷新 | `/positions` 刷新不 404 | ⬜ |
+| TC-405 | 前端子路由刷新 | `/`、`/players/1`、`/positions`、`/trades` 直接刷新不 404 | ✅ 2026-10-25（D HTTP 复核 `/players/1` → 200，SPA rewrite 生效；浏览器截图可选归档） |
 | TC-406 | 无密钥全站可用 | 拔掉密钥后交易/行情正常 | ⬜ |
+
+## 4.9 智能体（AI）测试的专项说明
+
+AI 部分的测试分层、五条原则对照、CI 门禁与 4 项缺口，单独写在：
+
+- **分层与门禁自查**：[`agent_test_layers.md`](agent_test_layers.md)（L1–L5、五原则、p.189 门禁、xfail 与 eval 目录缺口）
+- **33 项用户测试检查表**：[`../../tests/playerstock_agent_demo_user_test.md`](../../tests/playerstock_agent_demo_user_test.md)（**正式提交版**，按课件「用户测试表-学生版」格式填满 33 题 + 测试准备 + 实测记录 + 统计结论 + 自评；26 通过 / 7 部分通过 / 0 不通过）
+- 内部自查版（结论 + 证据索引）：[`../../tests/agent_demo_user_test.md`](../../tests/agent_demo_user_test.md)
+- **L4 评测报告**：[`agent_eval_report.md`](agent_eval_report.md)（黄金集 20 例；线上 16/16 走真模型、契约 100%、P95 3.4s）
+- **L5 红队报告**：[`agent_redteam.md`](agent_redteam.md)（11 条注入/越权/隐私/输出越界，全过）
+
+> 一句话：**确定性壳用 330 条离线测试钉死，概率性核用注入式替身隔离**；L4 评测集（黄金集 20 例）与 L5 红队（11 条）均已补齐并出报告。
+
+## 4.95 E2E 策略：为什么没有 Playwright
+
+课件 p.187/p.190 提到 L5 用 Selenium / Playwright 做浏览器 E2E。本项目**没有引入**，是取舍不是遗漏：
+
+| 方案 | 成本 | 为什么没选 |
+| --- | --- | --- |
+| Playwright 浏览器 E2E | 装浏览器二进制（约 150MB）+ CI 每轮多 1–3 分钟 | 免费 CI 时长有限、6 天工期；演示前只跑 3–5 条，性价比低于人工 |
+| **采用**：组件级 jsdom 测试 + 人工浏览器验收 | 前端 Vitest 108 条 + 16 张浏览器证据 | 组件层覆盖交互逻辑，浏览器层用人眼 + 截图留痕 |
+
+**替代证据**：`evidence/01~16`、`23~27`（375px 五页）、`28`（键盘焦点）、`30~35`。
+**已知缺口**：浏览器层没有自动化回归；二期建议只写 3 条（市场页 16 人 / 买入后余额变化 / 375px 无横向滚动）。
 
 ## 5. 手工系统测试流程（浏览器）
 
 按顺序走一遍，任何一步失败都记入缺陷：
 
-1. 打开首页 → 看到 8 名选手、价格、涨跌幅、评分
+1. 打开首页 → 看到 16 名选手、价格、涨跌幅、评分
 2. 点进 ZywOo 详情 → 看到价格、折线图、涨跌原因
 3. 记录当前余额（应为 5000）
 4. 买入 2 股 → 余额 4748.00、持仓出现 ZywOo ×2、流水新增 BUY
@@ -130,8 +214,28 @@
 
 **出口标准（满足才允许答辩）**：
 
-- [ ] P0 缺陷 = 0
-- [ ] P1 缺陷 = 0（或已明确记录为已知问题并说明原因）
-- [ ] 全部 TC-0xx（交易规则）通过
-- [ ] 全部 TC-4xx（部署）通过
-- [ ] 线上演示流程完整走通 ≥2 次
+- [x] P0 缺陷 = 0（BUG-01~14 全部 closed，见 `docs/mgmt/bug-issues.md`）
+- [x] P1 缺陷 = 0（BUG-15 #37 代码已修并有 `test_reseed_keeps_registered_account`，Issue 待关闭——已记录）
+- [x] 全部 TC-0xx（交易规则）通过（`test_report.md` §3：TC-001~012 全 ✅）
+- [x] 全部 TC-4xx（部署）通过（`test_report.md` §6：TC-401~406 全 ✅）
+- [x] 线上演示流程完整走通 ≥2 次（2026-10-25 首次 / 2026-11-07 重部署复验 / 2026-11-14 重灌后复验）
+
+## 7. 测试用例设计方法与门禁对照（课件 p.131 / 138 / 161 / 177）
+
+> 本节回答"用例是怎么设计出来的"——方法都已在代码里使用，此处按课件术语点名，答辩被问直接指表。
+
+| 课件方法 | 本项目用在哪 | 代表用例（可回查） |
+| --- | --- | --- |
+| **等价类划分** | 买入数量：有效 1–50 / ≤0、非整数 / 超上限；余额：充足 / 恰好 / 不足；选手：存在 / 不存在 | `test_trades_rule.py`（含 parametrize）、`test_api_ai.py` 999→404 |
+| **边界值分析** | 持仓第 1 / 50 / 51 股；卖光最后一笔（DELETE 分支，对应 BUG-03）；涨跌 clamp ±20% 与 floor 1.0 | `test_trades_rule.py`、`test_pricing.py` 10 条、`test_sell_normal` |
+| **判定表** | 买入校验顺序组合（选手→数量→可交易→余额→上限），锁定 BUG-02 的回归 | `test_buy_checks_balance_before_position_limit` |
+| **场景法（关键业务流）** | 查行情→买 2 股→持仓→卖 1 股→流水，逐步核对金额；TC-205：AI 调用 3 次前后账户完全不变 | `tests/integration/test_e2e_flow.py` 2 条 |
+| **参数化测试** | 3 个文件用 `pytest.mark.parametrize`（连接串变体 / 异常矩阵 / 交易规则） | `test_config_db_url.py`、`test_core_exceptions.py`、`test_trades_rule.py` |
+| **Mock 与 Stub** | `analyze(ctx, chat=假client)` 注入，无网络无密钥覆盖 合法输出 / 脏输出 / 超时 三态 | `test_llm_agent.py` 13 条、`test_api_ai.py` 7 条 |
+| **状态迁移** | 选手 trading↔suspended：暂停拒买卖、recalc 跳过暂停选手 | `test_suspended_players_are_skipped`、`test_core_exceptions.py` |
+
+**金字塔配比**（课件 p.163：单元多、集成适量、E2E 少量）：自动化 **330** 条中单元 276 / 集成 21 / 评测 33（≈91/9，auth 与账号类接口合入后口径），另前端 Vitest **51** 条、浏览器 E2E 以 `evidence/01~16` 人工验收。单元层为毫秒级、不依赖外部服务——符合"倒金字塔"反例的规避。
+
+**覆盖率**（课件 p.177 任务 4：核心逻辑 ≥60%）：实测 **98%**（1956 语句 / 45 未覆盖，2026-11-21 复测；第 4 天时 91%），复跑命令见 `CodeReview.md` §5。
+
+**质量门禁对照**（课件 p.138 十条）：构建 ✅ / 单元测试 ✅ / 关键集成 ✅ / 静态分析 ✅（ruff 分档）/ 代码评审 ✅（模板+记录）/ 无敏感信息 ✅（CI 地址检查+仓库卫生）/ 变更说明 ✅（commit 规范）/ 文档更新 ✅（deliverables job）；**依赖漏洞扫描（pip-audit）未接**——如实列入已知限制（6 天课程版，冻结期不加门禁）。

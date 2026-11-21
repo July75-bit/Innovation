@@ -1,0 +1,34 @@
+{
+  "_comment": "L4 评测黄金集：20 例（16 名真实选手 + 4 个边界场景）。字段说明见同目录 README.md。",
+  "version": 1,
+  "cases": [
+    { "id": "E01", "kind": "player", "player_id": 1,  "label": "ZywOo（AWPer，上涨后回落）" },
+    { "id": "E02", "kind": "player", "player_id": 2,  "label": "donk（Rifler，强势）" },
+    { "id": "E03", "kind": "player", "player_id": 3,  "label": "m0NESY（AWPer，转会）" },
+    { "id": "E04", "kind": "player", "player_id": 4,  "label": "NiKo（Rifler）" },
+    { "id": "E05", "kind": "player", "player_id": 5,  "label": "ropz（Lurker，横盘）" },
+    { "id": "E06", "kind": "player", "player_id": 6,  "label": "jL（Rifler）" },
+    { "id": "E07", "kind": "suspended", "player_id": 7, "label": "sh1ro（suspended：比赛暂停交易）" },
+    { "id": "E08", "kind": "player", "player_id": 8,  "label": "flameZ（Rifler）" },
+    { "id": "E09", "kind": "player", "player_id": 9,  "label": "broky（AWPer）" },
+    { "id": "E10", "kind": "player", "player_id": 10, "label": "w0nderful（AWPer）" },
+    { "id": "E11", "kind": "player", "player_id": 11, "label": "huNter-（Rifler）" },
+    { "id": "E12", "kind": "player", "player_id": 12, "label": "Snax（IGL）" },
+    { "id": "E13", "kind": "player", "player_id": 13, "label": "device（AWPer）" },
+    { "id": "E14", "kind": "player", "player_id": 14, "label": "stavn（Rifler）" },
+    { "id": "E15", "kind": "player", "player_id": 15, "label": "910（Rifler）" },
+    { "id": "E16", "kind": "player", "player_id": 16, "label": "bLitz（IGL）" },
+    { "id": "E17", "kind": "edge_missing", "player_id": 999, "label": "不存在的选手 → 期望 404，不进模型" },
+    { "id": "E18", "kind": "edge_illegal", "player_id": 0, "label": "非法 player_id=0 → 期望 422/404，不进模型" },
+    { "id": "E19", "kind": "edge_negative", "player_id": -1, "label": "负数 player_id → 期望 422/404，不进模型" },
+    { "id": "E20", "kind": "edge_huge", "player_id": 100000, "label": "越界大数 → 期望 404，不进模型" }
+  ],
+  "thresholds": {
+    "contract_pass_rate": 1.0,
+    "reason_with_number_rate": 0.8,
+    "risk_in_enum_rate": 1.0,
+    "no_forbidden_word_rate": 1.0,
+    "p95_latency_ms": 10000
+  },
+  "forbidden_words": ["保证上涨", "稳赚", "必涨", "翻倍", "包赚", "下注", "赔率"]
+}

@@ -1,0 +1,496 @@
+﻿"""生成答辩幻灯片 HTML（离线，无 Slidev 依赖），供 Edge headless 打印为 PDF。
+
+用法（在仓库任意位置执行都可以，路径按脚本自身位置推断）：
+    python docs/presentation/build_deck.py
+    msedge --headless=new --print-to-pdf=docs/presentation/defense.pdf <html 的 file:// URL>
+
+> 2026-11-07 修：原来把 ROOT 写死成 `D:\\projects\\innovation\\Innovation`（D 本机的目录结构），
+> 换台机器/换个 clone 路径就 `FileNotFoundError`。现在按 `__file__` 反推仓库根，谁都能跑。
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+# <repo>/docs/presentation/build_deck.py → parents[2] = <repo>
+ROOT = Path(__file__).resolve().parents[2]
+OUT = ROOT / "docs" / "presentation" / "defense.html"
+EVID = ROOT / "docs" / "acceptance" / "evidence"
+
+ARCH_SVG = """
+<svg viewBox="0 0 980 300" class="arch">
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto">
+      <path d="M0,0 L10,4 L0,8 z" fill="#9a9da6"/>
+    </marker>
+  </defs>
+  <g font-family="Segoe UI, PingFang SC, Microsoft YaHei" font-size="15" fill="#ececef">
+    <rect x="20" y="30" width="210" height="70" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="125" y="60" text-anchor="middle">Vue 3 + TS + Vite</text>
+    <text x="125" y="82" text-anchor="middle" fill="#9a9da6" font-size="13">4 视图 · 5 组件</text>
+
+    <rect x="290" y="30" width="200" height="70" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="390" y="60" text-anchor="middle">FastAPI</text>
+    <text x="390" y="82" text-anchor="middle" fill="#9a9da6" font-size="13">8 个路由模块</text>
+
+    <rect x="540" y="20" width="190" height="90" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="635" y="48" text-anchor="middle">app/core</text>
+    <text x="635" y="70" text-anchor="middle" fill="#9a9da6" font-size="13">交易事务</text>
+    <text x="635" y="90" text-anchor="middle" fill="#9a9da6" font-size="13">价格落库 · 规则</text>
+
+    <rect x="540" y="140" width="190" height="80" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="635" y="170" text-anchor="middle">ai/</text>
+    <text x="635" y="192" text-anchor="middle" fill="#9a9da6" font-size="13">上下文 + LLM + 兜底</text>
+
+    <rect x="790" y="20" width="170" height="90" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="875" y="48" text-anchor="middle">core_engine</text>
+    <text x="875" y="70" text-anchor="middle" fill="#9a9da6" font-size="13">模拟比赛 · 3σ</text>
+    <text x="875" y="90" text-anchor="middle" fill="#9a9da6" font-size="13">定价（纯计算）</text>
+
+    <rect x="790" y="140" width="170" height="80" rx="8" fill="#16181c" stroke="#2a2d33"/>
+    <text x="875" y="170" text-anchor="middle">SQLite / Postgres</text>
+    <text x="875" y="192" text-anchor="middle" fill="#9a9da6" font-size="13">一套模型双环境</text>
+
+    <rect x="290" y="150" width="200" height="70" rx="8" fill="#16181c" stroke="#e5484d" stroke-dasharray="5 4"/>
+    <text x="390" y="180" text-anchor="middle" fill="#e5484d">rule_fallback</text>
+    <text x="390" y="202" text-anchor="middle" fill="#9a9da6" font-size="13">6 字段不变</text>
+
+    <path d="M232 65 L288 65" stroke="#9a9da6" stroke-width="1.6" marker-end="url(#a)"/>
+    <text x="260" y="52" text-anchor="middle" fill="#9a9da6" font-size="12">/api/*</text>
+    <path d="M492 55 L536 55" stroke="#9a9da6" stroke-width="1.6" marker-end="url(#a)"/>
+    <path d="M492 90 L520 90 L520 170 L536 170" stroke="#9a9da6" stroke-width="1.6" fill="none" marker-end="url(#a)"/>
+    <path d="M732 50 L786 50" stroke="#9a9da6" stroke-width="1.6" marker-end="url(#a)"/>
+    <path d="M732 175 L786 175" stroke="#9a9da6" stroke-width="1.6" marker-end="url(#a)"/>
+    <path d="M390 100 L390 146" stroke="#e5484d" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a)"/>
+    <text x="405" y="128" fill="#e5484d" font-size="12">失败降级</text>
+  </g>
+</svg>
+"""
+
+
+def img(name: str) -> str:
+    p = EVID / name
+    return f'<img class="shot" src="{p.as_uri()}" alt="{name}"/>'
+
+
+SLIDES: list[str] = [
+    f"""
+    <section class="slide cover">
+      <h1>PlayerStock</h1>
+      <p class="sub">虚拟选手股交易模拟</p>
+      <p class="tag">CS2 选手 · 模拟行情 · 规则化定价 · 只给建议不自动交易的 AI</p>
+      <p class="meta">课程作品答辩 ｜ A 倪颢容 · B 胡德昊 · C 刘宏 · D 王泽棠</p>
+      <p class="note">全程信用点 · 不可充值 / 提现 / 兑换 · 不构成投资建议</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01 我们解决的问题</h2>
+      <div class="two">
+        <div>
+          <h3>用户痛点</h3>
+          <ul>
+            <li>想"体验交易"，但真实市场门槛高、风险真实</li>
+            <li>赛事数据分散，<b>涨跌没有解释</b>，只能看热闹</li>
+            <li>现有模拟盘标的是公司财报，<b>不是自己关心的选手</b></li>
+          </ul>
+        </div>
+        <div>
+          <h3>目标用户</h3>
+          <ul>
+            <li>CS2 观众 / 校园赛参与者</li>
+            <li>想验证"我对选手状态的判断准不准"</li>
+          </ul>
+          <h3>我们给的答案</h3>
+          <ul>
+            <li>16 名真实 CS2 选手、8 支战队各 2 人（身份公开，<b>价格与评分为模拟数据</b>）</li>
+            <li>每一分钱变化都能回答"<b>为什么</b>"</li>
+          </ul>
+        </div>
+      </div>
+      <p class="foot">需求：problem_definition.md（5W1H）· user_stories.md（7 条 INVEST）</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01B 使命 · 口号 · 为什么是我们</h2>
+      <div class="two">
+        <div>
+          <h3>使命</h3>
+          <div class="quote">让每一位电竞观众，都能把自己的判断，变成一条<b>看得懂、可验证、零风险</b>的价格曲线。</div>
+          <h3>口号</h3>
+          <p style="font-size:26px;color:#fff;margin:8px 0 4px"><b>看懂比赛，从持有起。</b></p>
+          <p class="small">不含"赚 / 赢 / 翻倍"，与博彩切割；8 个字、动词开头、可传播。</p>
+        </div>
+        <div>
+          <h3>目标用户（三类）</h3>
+          <ul class="tight-list">
+            <li>CS2 电竞爱好者：有判断、没地方验证</li>
+            <li>虚拟交易体验用户：想体验交易，不想担真钱风险</li>
+            <li>计算机 / 数据分析学习者：要一个能跑通的工程范本</li>
+          </ul>
+          <p class="small"><b>明确不做</b>：想靠它赚钱的人 / 未成年人 / 真钱竞猜用户</p>
+          <h3>如何获得用户</h3>
+          <ul class="tight-list">
+            <li>赛事节点：Major/IEM 开赛前 3 天预告、赛后 10 分钟涨跌日报</li>
+            <li>内容与社群：B 站 / 贴吧 / 校园电竞社群；答辩现场即首批种子</li>
+            <li>产品自带传播：持仓卡（标注虚拟）与 AI 复盘卡可分享</li>
+          </ul>
+        </div>
+      </div>
+      <p class="foot"><b>团队优势</b>：A 前端交互 / B 交易事务与部署 / C 定价与回测 / D AI·测试·质量·文档——四人覆盖一条完整链路，无职责重叠</p>
+      <table class="tight">
+        <tr><th>维度</th><th>赛事竞猜</th><th>电竞养成</th><th>模拟炒股</th><th>PlayerStock</th></tr>
+        <tr><td>标的</td><td>比赛结果</td><td>策划定数值</td><td>公司与财报</td><td><b>单个选手的身价</b></td></tr>
+        <tr><td>价格形成</td><td>盘口赔率</td><td>数值表</td><td>真实行情</td><td><b>表现驱动 · 连续 · 可回测</b></td></tr>
+        <tr><td>涨跌可解释</td><td>—</td><td>—</td><td>部分</td><td><b>每条都带 reason</b></td></tr>
+        <tr><td>资金风险</td><td>真钱</td><td>虚拟</td><td>虚拟</td><td><b>全程信用点，无出口</b></td></tr>
+      </table>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01C 产品定义：我们在做什么</h2>
+      <div class="quote">
+        对于 <b>关注 CS2 选手表现、又想体验数据分析与虚拟交易的观众</b>，<br/>
+        他们希望知道<b>选手表现如何变成价格</b>、并亲手验证自己的判断；<br/>
+        <b>PlayerStock</b> 是一个<b>以 CS2 职业选手为标的的虚拟股交易模拟平台</b>，<br/>
+        它能把<b>比赛表现转成可解释的价格变动</b>，提供行情、买卖、持仓、走势与 AI 建议；<br/>
+        不同于<b>只给结果的赛事资讯站</b>和<b>只交易金融标的的模拟盘</b>，
+        我们把"<b>选手表现 → 价格 → 你的判断</b>"这条因果链显式做出来。
+      </div>
+      <div class="two" style="margin-top:14px">
+        <div>
+          <h3>一条用户故事（业务语言）</h3>
+          <p>作为一个<b>关注 CS2 赛事的观众</b>，我想在看完一场比赛后<b>马上买入我认为被低估的选手</b>，以便于<b>验证我的判断是不是比解说更早</b>。</p>
+        </div>
+        <div>
+          <h3>形态与边界</h3>
+          <ul class="tight-list">
+            <li>形态：<b>Web 网页应用</b>（桌面优先，≤960px 响应式）</li>
+            <li>规模：16 名选手 / 5000 信用点 / 单选手上限 50 股</li>
+            <li>账号：<code>demo</code> 免登录；可注册私人账号（口令加盐散列、令牌可撤销）</li>
+            <li>边界：<b>不充值、不提现、不兑换、不给赔率、不自动交易</b></li>
+          </ul>
+        </div>
+      </div>
+      <p class="foot">不做清单来源：docs/requirements/problem_definition.md（第 3 天范围冻结）· 7 条用户故事均带 Given-When-Then</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>01D 产品设计原则：五条自我约束</h2>
+      <p class="small">不是抄教科书 —— <b>每条原则都能指到我们做过的一个真实决定</b>。</p>
+      <table class="tight">
+        <tr><th>原则</th><th>我们怎么用它</th><th>落点（可核查）</th></tr>
+        <tr><td><b>需求原则</b>：先解决真痛点，再加信息</td><td>只做"看得懂 + 能验证"，砍掉注册、充值、多用户、撮合盘口</td><td>problem_definition.md 的"不做什么"清单</td></tr>
+        <tr><td><b>收敛与优化</b>：让选择收敛，不发散</td><td>定价一条公式五个参数；AI 只输出六个字段，不给价格区间</td><td>pricing_model.md §2 · api_contract.md §4.10</td></tr>
+        <tr><td><b>继承与效益</b>：复用成熟方案</td><td>不写图表库（自绘 SVG）、不写 ORM、不写鉴权</td><td>architecture.md §4.1</td></tr>
+        <tr><td><b>定量与简化</b>：能度量才叫验收</td><td>320 条测试、98% 覆盖率、单次涨跌 ≤20%、P95 有时限</td><td>test_report.md · CodeReview.md §3</td></tr>
+        <tr><td><b>审核原则</b>：先机器、后人</td><td>CI 三 job 卡门禁；评审看设计不看格式</td><td>CodeReview.md §4 · docs/reviews/</td></tr>
+      </table>
+      <p class="foot">被问"真按原则做了吗"时：每行右侧都有落点，当场翻文档核对</p>
+    </section>
+    """,
+    f"""
+    <section class="slide">
+      <h2>02 产品长什么样</h2>
+      <div class="two wide-left">
+        <div>
+          <h3>四条路由 = 一条完整链路</h3>
+          <ul>
+            <li><code>/</code> 市场：16 名选手，现价 / 涨跌 / 模拟评分 / 状态</li>
+            <li><code>/players/:id</code> 详情：折线图 + 涨跌原因 + AI 建议 + 交易面板</li>
+            <li><code>/positions</code> 持仓：数量 / 均价 / 市值 / 浮盈</li>
+            <li><code>/trades</code> 流水：倒序、每笔带交易后余额</li>
+          </ul>
+          <p class="small">截图全部来自真实浏览器验收（1280×900），共 16 张。</p>
+        </div>
+        <div>{img("01-market.png")}</div>
+      </div>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>03 需求与取舍</h2>
+      <table>
+        <tr><th>做了</th><th>刻意不做（及原因）</th></tr>
+        <tr><td><b>账号体系</b>：演示账户免登录，可注册私人账号（PBKDF2 加盐 10 万次、令牌 30 天、可退出/删号）</td><td>第三方登录 / 找回密码 / 邮箱验证：与课程无关，本期不做</td></tr>
+        <tr><td>16 名选手，价格由比赛表现驱动</td><td>接真实赛事 API：可用性未知，模拟数据保证演示稳定</td></tr>
+        <tr><td>交易闭环：买入 / 卖出 / 持仓 / 流水</td><td>充值 / 提现 / 兑换：<b>合规红线</b>，一律不做</td></tr>
+        <tr><td>AI 只给建议，不自动交易</td><td>多用户 / 撮合盘口：6 天做不完，且不影响核心机制</td></tr>
+      </table>
+      <p class="foot">可测量指标：行情 P95 ≤300ms（实测 <b>24ms</b>）· 交易 P95 ≤500ms（实测 <b>36ms</b>）· AI 20s 必降级 · 覆盖率 ≥60%（实测 <b>98%</b>）</p>
+    </section>
+    """,
+    f"""
+    <section class="slide">
+      <h2>04 系统架构</h2>
+      {ARCH_SVG}
+      <div class="three">
+        <div><b>前端</b><br/>Vue 3 · TS · Vite</div>
+        <div><b>后端</b><br/>FastAPI · Pydantic v2</div>
+        <div><b>数据</b><br/>SQLAlchemy 2.x · SQLite / Postgres 18</div>
+      </div>
+      <p class="foot">三层边界：接口层只管路由与错误码；core 管事务；core_engine 纯计算不碰库；ai 只读、永不改余额。</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>05 交易正确性：不靠"先查后写"</h2>
+      <div class="two">
+        <div>
+          <h3>问题</h3>
+          <p>先 SELECT 判断余额、再 UPDATE 扣款 → 两条并发请求同时通过判断 → <b>超卖</b>。</p>
+          <h3>做法：判断写进 SQL</h3>
+          <pre><code>UPDATE users SET balance = balance - :amount
+ WHERE user_id = :uid AND balance >= :amount;
+-- rowcount = 0 → 400 INSUFFICIENT_BALANCE</code></pre>
+          <p class="small">加仓 <code>... AND quantity + :n &lt;= 50</code>；减仓 <code>... AND quantity &gt; :n</code>；清仓用 DELETE（写 0 违反 CHECK）。</p>
+        </div>
+        <div>
+          <h3>实测（BUG-01 修复前）</h3>
+          <div class="alert">
+            <p>两条连接各卖 2 股、实际只持 3 股：</p>
+            <p>卖出 <b>4 股</b>，余额 5000.00 → <b>5504.00</b>，还剩 1 股</p>
+            <p class="small">凭空多卖一股、多入账</p>
+          </div>
+          <h3>修复后</h3>
+          <p>并发两笔"卖 1" → <code>[200, 400]</code>，只入账一次；<code>test_trades_concurrency.py</code> 3 条守着。</p>
+          <p class="small">不用 <code>FOR UPDATE</code>：SQLite 会静默忽略，本地绿、线上未必。</p>
+        </div>
+      </div>
+    </section>
+    """,
+    f"""
+    <section class="slide">
+      <h2>06 定价：一条价格是怎么来的</h2>
+      <div class="two">
+        <div>
+          <pre><code>P(t+1) = max( floor , P(t) × (1 + α·S(t) + β·D(t)) )
+S(t)   = clamp( z(t) / 3 , -1 , +1 )
+z      = 本轮得分相对近 5 场均值的 z-score</code></pre>
+          <table class="tight">
+            <tr><th>参数</th><th>值</th><th>含义</th></tr>
+            <tr><td>α</td><td><b>0.15</b></td><td>满格 S=±1 → 单次 ±15%</td></tr>
+            <tr><td>β</td><td>0</td><td>需求项（本期不用）</td></tr>
+            <tr><td>floor</td><td>1.0</td><td>价格下限</td></tr>
+            <tr><td>clamp</td><td><b>±20%</b></td><td>单次涨跌对称上限</td></tr>
+            <tr><td>满格</td><td>3σ</td><td>1σ 记 1/3，避免二值跳动</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>真实一次调价（第 11 轮）</h3>
+          <p>ZywOo：得分 <b>78.1</b>，低于自己近 5 场均分 → S = <b>−0.68</b></p>
+          <p>99.17 × (1 + 0.15 × −0.68) ≈ <b>89.13</b>（−10.12%）；满格只有 ±15%，clamp 未触发</p>
+          <div class="quote">本场表现下滑（本轮得分 78.1，S=-0.68），价格下跌 10.12%</div>
+          <h3>同一轮对照（页面可点）</h3>
+          <p>sh1ro <b>93.9</b> 分 → S=<b>+0.93</b>，119.72 → <b>136.43（+13.96%）</b>：<b>同轮一涨一跌</b></p>
+          <p class="small">价格比的是「各自和自己近 5 场比」；第 12 轮两队整队停牌，正好演示暂停交易。</p>
+        </div>
+      </div>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>07 定价的诚实部分：它会长期温和下行</h2>
+      <div class="two">
+        <div>
+          <h3>100 seed × 28 轮</h3>
+          <table class="tight">
+            <tr><th>指标</th><th>结果</th></tr>
+            <tr><td>区间收益（逐人）</td><td>中位数 <b>−5.71%</b>（每 seed 平均后 −3.86%）</td></tr>
+            <tr><td>方向一致率</td><td><b>99.99%</b>（涨跌接近 1:1，公式无偏）</td></tr>
+            <tr><td>单次最大变动</td><td>≤ <b>15.01%</b>，clamp 触发 0 次</td></tr>
+            <tr><td>≥4 人盈利的 seed</td><td><b>93%</b>（每 seed 盈利中位数 6 人）</td></tr>
+          </table>
+          <p><b>根因</b>：① 得分在 100 处截断，高分段右尾削平 → E[S] 略小于 0；② 乘性更新的波动拖累。</p>
+          <p class="small">不是 bug 是机制特性；α 调小可收敛（报告有 α=0.15/0.08/0.05 对比）。</p>
+        </div>
+        <div>
+          <h3>智能体回测（seed 42 / 28 轮）</h3>
+          <table class="tight">
+            <tr><th>策略</th><th>收益率</th><th>最大回撤</th></tr>
+            <tr><td>规则版 AI</td><td><b>+11.56%</b></td><td>8.12%</td></tr>
+            <tr><td>随机</td><td>+4.48%</td><td><b>5.91%</b></td></tr>
+            <tr><td>买入持有</td><td>+1.00%</td><td>6.97%</td></tr>
+          </table>
+          <p><b>结论只说一条</b>：3 个 seed 平均规则版收益最高（+2.34%），但回撤也最大（11.05%）——多数 seed 收益更好，但优势不稳定。</p>
+          <p class="small">LLM 版回测待有密钥后补跑（已在报告如实标注）。</p>
+        </div>
+      </div>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>08 AI 智能体：只给建议，永不改余额</h2>
+      <div class="two">
+        <div>
+          <h3>固定 6 字段契约</h3>
+          <pre><code>{
+  "player_id": 1,
+  "action": "HOLD",
+  "reason": "近 5 个价格点累计变动 +25.5%…",
+  "risk_level": "LOW",
+  "source": "rule_fallback",
+  "disclaimer": "仅为分析建议，不构成投资建议…"
+}</code></pre>
+        </div>
+        <div>
+          <h3>降级是设计的一部分</h3>
+          <p>无密钥 / 超时（20s）/ 非 JSON / 枚举非法 → <b>一律 HTTP 200 + rule_fallback</b>，绝不 4xx/5xx 阻塞交易。</p>
+          <h3>四层测试守住它</h3>
+          <ul class="tight-list">
+            <li><code>test_llm_agent.py</code> 13 条：注入假 client，不碰网络</li>
+            <li><code>test_ai_fallback.py</code> 6 条：阈值规则</li>
+            <li><code>test_api_ai.py</code> 7 条：契约 / 只读 / 降级</li>
+            <li>e2e：调用前后余额与持仓<b>完全不变</b></li>
+          </ul>
+          <p class="small">规则版与 LLM 同源可解释：LLM 是增量，不是命门。</p>
+        </div>
+      </div>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>09 工程实践与线上验证</h2>
+      <div class="three">
+        <div>
+          <h3>测试</h3>
+          <ul>
+            <li><b>231</b> 条用例（单元 266 / 集成 21 / 评测 33），CI + 本机全绿</li>
+            <li>核心逻辑覆盖率 <b>98%</b>（1823 语句 / 45 未覆盖，要求 ≥60%）</li>
+            <li>已修 <b>15</b> 条真实缺陷（含 3 个 P0）</li>
+          </ul>
+        </div>
+        <div>
+          <h3>质量与 CI</h3>
+          <ul>
+            <li>ruff 分档门槛（业务/测试 · 脚本 · 复杂度）</li>
+            <li>15 条缺陷全部带可复跑用例</li>
+            <li>前端 lint + build + 真机 16 张验收图</li>
+          </ul>
+        </div>
+        <div>
+          <h3>线上</h3>
+          <ul>
+            <li>前端 / 后端 / Postgres 三服务（Render）</li>
+            <li><b>TC-401~406 全部通过</b></li>
+            <li>重新部署后流水仍 3 条、价格点仍 11 个 → <b>Postgres 真的生效</b></li>
+          </ul>
+        </div>
+      </div>
+      <p class="foot">线上：playerstock-frontend-mdlk.onrender.com ／ playerstock-backend-mdlk.onrender.com</p>
+    </section>
+    """,
+    """
+    <section class="slide">
+      <h2>10 分工、复盘与下一步</h2>
+      <div class="two">
+        <div>
+          <h3>四人分工（按写权限边界）</h3>
+          <table class="tight">
+            <tr><th>人</th><th>负责</th></tr>
+            <tr><td>A 倪颢容</td><td>前端 4 视图 + 组件 + 真机验收</td></tr>
+            <tr><td>B 胡德昊</td><td>后端接口 / 交易事务 / 落库 / 部署</td></tr>
+            <tr><td>C 刘宏</td><td>模拟器 + 定价引擎 + 回测</td></tr>
+            <tr><td>D 王泽棠</td><td>AI / 测试 / 代码质量 / CI / 文档</td></tr>
+          </table>
+        </div>
+        <div>
+          <h3>踩过的坑（真话）</h3>
+          <ul class="tight-list">
+            <li>并发超卖：先查后写 → 条件更新</li>
+            <li>SQLAlchemy 2.1 默认 psycopg3，线上起不来 → 显式 +psycopg2</li>
+            <li>reason"得分"被拼两遍 → 幂等标记</li>
+            <li>外部交叉测试<b>没约到组</b>，如实标延期</li>
+          </ul>
+          <h3>如果重做</h3>
+          <p class="small">先定契约再写代码；把定价下行风险在文档前移；外部测试排在第 2 天。</p>
+        </div>
+      </div>
+    </section>
+    """,
+    """
+    <section class="slide center">
+      <h2>演示环节（2 分钟）</h2>
+      <p class="big">查行情 → 看走势与原因 → 买入 → 持仓 → 卖出 → 流水</p>
+      <p class="foot">现场操作；失败即切录屏，不解释超过 3 秒</p>
+    </section>
+    """,
+    """
+    <section class="slide center">
+      <h2>谢谢 · 欢迎提问</h2>
+      <p class="sub">PlayerStock · 虚拟选手股交易模拟</p>
+      <p class="note">本项目为课程作品：全程信用点，不可充值 / 提现 / 兑换；选手信息与价格评分为模拟数据，与 Valve、HLTV 及相关俱乐部无关联，不构成投资建议。</p>
+    </section>
+    """,
+]
+
+CSS = """
+@page { size: 1280px 720px; margin: 0; }
+* { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin: 0; background: #0b0c0e; color: #ececef;
+  font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif; }
+.slide { width: 1280px; height: 720px; padding: 44px 64px 66px; position: relative;
+  display: flex; flex-direction: column; justify-content: center;
+  page-break-after: always; break-after: page; overflow: hidden; background: #0b0c0e; }
+.slide:last-child { page-break-after: auto; }
+h1 { font-size: 62px; margin: 0 0 6px; letter-spacing: 1px; }
+h2 { font-size: 33px; margin: 0 0 20px; color: #fff; border-left: 5px solid #e5484d; padding-left: 14px; }
+h3 { font-size: 19px; margin: 12px 0 8px; color: #e8a33d; }
+p, li { font-size: 17px; line-height: 1.6; }
+ul { margin: 6px 0; padding-left: 22px; }
+li { margin-bottom: 6px; }
+code { font-family: Consolas, monospace; font-size: 15px; background: #1b1e23;
+  padding: 1px 5px; border-radius: 4px; color: #ffd7a8; }
+pre { background: #14171b; border: 1px solid #2a2d33; border-radius: 8px;
+  padding: 14px 16px; overflow: hidden; margin: 8px 0 10px; }
+pre code { background: none; padding: 0; color: #d8f3dc; font-size: 14.5px; line-height: 1.55; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0 10px; }
+th, td { border: 1px solid #2a2d33; padding: 8px 12px; font-size: 15.5px; text-align: left; vertical-align: top; }
+th { background: #191c21; color: #fff; font-weight: 600; }
+table.tight th, table.tight td { padding: 5px 10px; font-size: 14.5px; }
+.two { display: flex; gap: 40px; }
+.two > div { flex: 1; min-width: 0; }
+.two.wide-left > div:first-child { flex: 1.15; }
+.three { display: flex; gap: 26px; margin-top: 12px; }
+.three > div { flex: 1; background: #14171b; border: 1px solid #2a2d33; border-radius: 8px; padding: 12px 16px; }
+.three h3 { margin-top: 0; }
+.tight-list li { margin-bottom: 4px; font-size: 16px; }
+.cover { align-items: center; text-align: center; }
+.cover h1 { font-size: 84px; }
+.sub { font-size: 30px; color: #e5484d; margin: 4px 0 18px; }
+.tag { font-size: 19px; color: #c9ccd4; margin: 0 0 38px; }
+.meta { font-size: 16px; color: #9a9da6; }
+.note { font-size: 14px; color: #7d818a; margin-top: 24px; max-width: 900px; }
+.center { align-items: center; text-align: center; }
+.big { font-size: 27px; color: #e5484d; }
+.foot { position: absolute; bottom: 24px; left: 64px; right: 64px; font-size: 14px; color: #8c9099;
+  border-top: 1px solid #23262b; padding-top: 10px; }
+.small { font-size: 14.5px; color: #a9adb6; }
+.shot { width: 100%; border-radius: 8px; border: 1px solid #2a2d33; }
+.quote { background: #1a1d22; border-left: 4px solid #e8a33d; padding: 10px 14px;
+  border-radius: 4px; font-size: 16px; color: #ffd7a8; margin: 8px 0; }
+.alert { background: #2a1416; border: 1px solid #e5484d; border-radius: 8px; padding: 12px 16px; margin: 8px 0; }
+.alert p { margin: 4px 0; }
+.arch { width: 100%; height: auto; margin: 4px 0; }
+"""
+
+
+def main() -> int:
+    html = (
+        "<!doctype html><html lang='zh-CN'><head><meta charset='utf-8'>"
+        "<title>PlayerStock 答辩</title><style>"
+        + CSS
+        + "</style></head><body>"
+        + "".join(SLIDES)
+        + "</body></html>"
+    )
+    OUT.write_text(html, encoding="utf-8")
+    print(f"wrote {OUT} ({len(html)} bytes, {len(SLIDES)} slides)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

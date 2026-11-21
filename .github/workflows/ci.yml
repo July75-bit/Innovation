@@ -14,6 +14,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ---------------- 仓库卫生：未解决的合并冲突标记 ----------------
+  # 历史事故（2 次）：手工解冲突后 git add -A，把 <<<<<<< 一起提交 → eslint 报 diff marker、
+  # Render 前端构建失败、页面白屏。检查只读、几秒钟，放在最前面先失败。
+  hygiene:
+    name: 仓库卫生 (冲突标记)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 检查未解决的合并冲突标记
+        run: |
+          if git grep -n -E "^(<<<<<<< |>>>>>>> )" -- . ; then
+            echo "::error::仓库里存在未解决的合并冲突标记（<<<<<<< / >>>>>>>），请先解冲突再提交"
+            exit 1
+          fi
+          echo "仓库无冲突标记。"
+
   # ---------------- 后端：pytest ----------------
   backend:
     name: 后端测试 (pytest)
@@ -27,15 +43,39 @@ jobs:
           cache-dependency-path: code/backend/requirements.txt
       - name: 安装依赖
         run: pip install -r code/backend/requirements.txt
+      # 顺序刻意是「先 ruff 再 pytest」：F401/F841 这类 lint 问题十几秒就能判，
+      # 排在 200 多条用例后面等于让人白等两分钟才知道红（第 7 轮踩过）。
+      # 第 3 天代码质量检查点：静态分析门槛
+      # 规则：业务代码/测试卡「真实缺陷 + 圈复杂度(10)」；scripts/ 是 CLI 入口（argparse 装配分支多），
+      #      只卡真实缺陷，圈复杂度阈值放宽到 12（当前 scripts/simulate_match.py::main = 11）。
+      - name: 代码质量检查 (ruff)
+        run: |
+          # 版本钉在 requirements-dev.txt（与本地 / VS Code Ruff 扩展同口径），
+          # 免掉「CI 装的是最新版、本地跑的是旧版」这种规则集漂移
+          pip install -r code/backend/requirements-dev.txt
+          ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine
+          ruff check --select E4,E7,E9,F,C901 tests
+          ruff check --select E4,E7,E9,F scripts
+          ruff check --select C901 --config "lint.mccabe.max-complexity = 12" scripts
       - name: 运行 pytest
         run: python -m pytest
 
-  # ---------------- 前端：eslint + build ----------------
+  # ---------------- 前端：eslint + vitest + build ----------------
   frontend:
-    name: 前端检查 (eslint + build)
+    name: 前端检查 (eslint + vitest + build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # 翻车点 #5（docs/mgmt/milestones.md）：前端代码不允许写死本地地址
+      - name: 检查前端无写死的本地地址
+        run: |
+          if [ -d code/frontend/src ]; then
+            if grep -rnE "127\.0\.0\.1|localhost:8000" code/frontend/src code/frontend/env.d.ts; then
+              echo "::error::前端代码出现写死的本地地址，请改用 VITE_API_BASE_URL 环境变量"
+              exit 1
+            fi
+            echo "前端代码无写死的本地地址。"
+          fi
       # ⚠️ 不能把 hashFiles() 写在 job 级 if 里：job 级 if 在 checkout 之前求值，
       #    工作区还是空的，hashFiles 永远返回空字符串，导致该 job 永远被跳过。
       #    所以先 checkout，再用 step output 判断。
@@ -52,7 +92,10 @@ jobs:
         if: steps.detect.outputs.ready == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          # node 版本必须与 code/frontend/package.json 的 engines 对齐：jsdom@30 要求
+          # ^22.22.2 || ^24.15.0 || >=26。第 7 轮踩过——Node 20 下 eslint 和 build 都过，
+          # 只有「单元测试 (vitest)」红，因为 jsdom 环境根本起不来。
+          node-version: "24"
           cache: npm
           cache-dependency-path: code/frontend/package-lock.json
       # 注意：npm ci 需要提交 package-lock.json（vue 脚手架会生成，别加进 .gitignore）
@@ -64,6 +107,13 @@ jobs:
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
         run: npm run lint
+      # 51 条 Vitest 用例（注册 / 登录 / 删号弹窗 / 路由守卫）此前只在本地跑过，CI 完全没覆盖，
+      # 前端只剩 eslint 和 build 两道防线——鉴权这种带状态机的改动尤其需要它。
+      # 必须带 --run：package.json 里 test:unit = "vitest"，不加就进 watch 模式把 job 挂死。
+      - name: 单元测试 (vitest)
+        if: steps.detect.outputs.ready == 'true'
+        working-directory: code/frontend
+        run: npm run test:unit -- --run
       - name: 构建
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
@@ -75,19 +125,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 检查 docs 必需文件是否存在
+      # 仓库卫生：这些文件绝不该进版本库（.gitignore 已有规则，这里是兜底告警）
+      - name: 仓库卫生（误提交拦截）
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)(node_modules|\.venv)/|\.db$|\.db-wal$|\.db-shm$|/\.env$' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::以下文件不该进版本库（见 .gitignore）："
+            echo "$bad"
+            exit 1
+          fi
+          echo "仓库卫生检查通过。"
+
+      - name: 检查 docs 必需文件是否存在（且非空）
         run: |
           missing=0
+          total=0
           for f in \
             README.md \
             .gitignore \
             LICENSE \
+            render.yaml \
             data/seed_players.json \
             docs/requirements/problem_definition.md \
             docs/requirements/functional_spec.md \
             docs/requirements/nonfunctional_spec.md \
             docs/requirements/user_stories.md \
             docs/requirements/mechanism_design.md \
+            docs/requirements/prototype_review.md \
+            docs/requirements/wireframes/README.md \
             docs/algorithm/pricing_model.md \
             docs/algorithm/ai_agent_prompt.md \
             docs/algorithm/backtest_report.md \
@@ -95,17 +160,38 @@ jobs:
             docs/software/api_contract.md \
             docs/software/database_design.md \
             docs/software/deployment.md \
+            docs/software/frontend_setup.md \
+            docs/software/agent_workflow_design.md \
+            docs/software/CodeReview.md \
+            docs/software/prototype/index.html \
             docs/mgmt/communication_plan.md \
             docs/mgmt/risk_plan.md \
             docs/mgmt/milestones.md \
+            docs/mgmt/code_review_template.md \
+            docs/mgmt/day6.md \
             docs/acceptance/test_plan.md \
             docs/acceptance/test_report.md \
+            docs/acceptance/code_quality_report.md \
+            docs/acceptance/lifecycle_issues.md \
+            docs/acceptance/defect_stories.md \
+            docs/acceptance/cross_test.md \
+            docs/acceptance/backend_joint_debug.md \
             docs/acceptance/user_manual.md \
             docs/acceptance/compliance.md \
+            docs/acceptance/evidence/README.md \
+            docs/acceptance/evidence/online/backend-debug-db.md \
+            docs/presentation/README.md \
+            docs/slides/slides.md \
+            docs/slides/style.css \
+            docs/presentation/demo-script.md \
+            docs/presentation/qa.md \
+            docs/presentation/defense.pdf \
             docs/retrospection/daily_summary.md
           do
-            if [ ! -f "$f" ]; then
-              echo "::error file=$f::缺少课程要求的交付物"
+            total=$((total + 1))
+            # -s = 存在且非空：空文件在答辩时同样是"没做"
+            if [ ! -s "$f" ]; then
+              echo "::error file=$f::缺少或为空的课程交付物"
               missing=1
             fi
           done
@@ -113,4 +199,19 @@ jobs:
             echo "交付物不完整，请补齐后再合并。"
             exit 1
           fi
-          echo "交付物完整性检查通过。"
+          echo "交付物完整性检查通过（$total 项）。"
+
+      # 验收证据是答辩的硬证据：被误删/漏提交时，靠这一关发现
+      - name: 检查验收证据与答辩材料
+        run: |
+          n=$(find docs/acceptance/evidence -name '*.png' | wc -l)
+          echo "evidence 目录下 png 数量：$n"
+          if [ "$n" -lt 20 ]; then
+            echo "::error::验收证据少于 20 张（当前 $n），疑似误删或漏提交"
+            exit 1
+          fi
+          if [ ! -s docs/presentation/defense.pdf ]; then
+            echo "::error::docs/presentation/defense.pdf 缺失或为空"
+            exit 1
+          fi
+          echo "证据与答辩材料检查通过。"

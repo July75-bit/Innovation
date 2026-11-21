@@ -1,0 +1,52 @@
+{
+  "base_url": "https://playerstock-backend-mdlk.onrender.com",
+  "ran_at": "2026-11-14T11:11:19",
+  "duration_s": 10.0,
+  "levels": [
+    {
+      "concurrency": 40,
+      "requests": 423,
+      "ok": 423,
+      "rps": 37.51,
+      "error_rate": 0.0,
+      "p50_ms": 904.5,
+      "p95_ms": 1852.5,
+      "p99_ms": 2322.7,
+      "max_ms": 2595.4,
+      "statuses": {
+        "200": 423
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 60,
+      "requests": 389,
+      "ok": 389,
+      "rps": 34.96,
+      "error_rate": 0.0,
+      "p50_ms": 1410.0,
+      "p95_ms": 2889.5,
+      "p99_ms": 3825.5,
+      "max_ms": 3869.2,
+      "statuses": {
+        "200": 389
+      },
+      "errors": []
+    },
+    {
+      "concurrency": 80,
+      "requests": 439,
+      "ok": 439,
+      "rps": 38.27,
+      "error_rate": 0.0,
+      "p50_ms": 1806.3,
+      "p95_ms": 3439.8,
+      "p99_ms": 4144.3,
+      "max_ms": 4651.9,
+      "statuses": {
+        "200": 439
+      },
+      "errors": []
+    }
+  ]
+}

@@ -1,0 +1,208 @@
+/* ============================================================
+ * PlayerStock · 液态玻璃材质层（Liquid Glass Material Layer）
+ * ============================================================
+ * 令牌在 tokens.css（--glass-*，深色默认 + [data-theme='light'] 浅色）；
+ * 本文件只负责"怎么用"和"怎么降级"。
+ *
+ * 分层铁律（改样式前先读）：
+ *   内容层（正文 / 表格 / 表单 / 长文 / 数据区）= 扁平：实色表面 + 1px 边框，绝不用玻璃。
+ *   材质层（顶部导航 / 侧栏壳 / 底部工具条 / 模态框 / Popover / 图表 tooltip）= 玻璃。
+ *   玻璃配额：同屏可见玻璃面积 ≤ 30%（模态打开时被遮罩压暗的背景玻璃不计）。
+ *   不允许两层玻璃直接叠加；玻璃内再放卡片/输入框一律实色（即"玻璃 + 实色"两层，允许）。
+ *   玻璃上的文字必须坐在 --glass-scrim（或 --glass-bg-strong）这层可读性底上。
+ *
+ * 开关：
+ *   <html class="no-backdrop-filter">  → 强制走不透明回退（手动给 <html> 加 class；历史 /ui-kit 按钮已移除）
+ *   <html data-theme="light">          → 浅色模式（令牌自动切换，本文件无需改动）
+ * ============================================================ */
+
+/* 兼容别名：旧文档/旧类名里出现过的 tint 名字，统一指向 tokens.css 的玻璃令牌 */
+:root {
+  --glass-tint-nav: var(--glass-bg);
+  --glass-tint-panel: var(--glass-bg-strong);
+  --glass-tint-control: var(--glass-bg);
+  --glass-border-strong: rgba(255, 255, 255, 0.26);
+  --glass-hover-glow: rgba(255, 255, 255, 0.08);
+  --glass-radius-control: var(--radius-material-sm);
+  --glass-radius-panel: var(--radius-material-lg);
+  --glass-radius-sheet: var(--radius-material-xl);
+}
+
+/* 窄屏：降低模糊半径省 GPU（仍是规格下限 18px） */
+@media (max-width: 600px) {
+  :root {
+    --glass-blur: 18px;
+  }
+}
+
+/* ============================================================
+ * 玻璃基类
+ *   背景色 = 半透明底 + 模糊在它下面发生；inset 高光只有 1px，属于材质边界。
+ * ============================================================ */
+.glass {
+  background-color: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  /* 顶部 1px 内高光 + 左右 1px 边缘光：液态材质的"边缘"感，全部 1px 以内 */
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 1px 0 0 var(--glass-edge),
+    inset -1px 0 0 var(--glass-edge);
+}
+
+/* 浮层/弹窗：可读性底更实 + 圆角 20 + 极轻投影表达悬浮 */
+.glass--panel {
+  background-color: var(--glass-bg-strong);
+  border-radius: var(--glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 1px 0 0 var(--glass-edge),
+    inset -1px 0 0 var(--glass-edge),
+    var(--glass-shadow);
+}
+
+/* 小浮层（下拉/tooltip）：比面板更浅，透出更多背景；文字仍坐在可读性底上 */
+.glass--popover {
+  background-color: var(--glass-bg-popover);
+  border-radius: var(--glass-radius);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    inset 1px 0 0 var(--glass-edge),
+    inset -1px 0 0 var(--glass-edge),
+    var(--glass-shadow);
+}
+
+/* 底部工具条/悬浮控件：圆角 12 */
+.glass--control {
+  border-radius: var(--radius-material-sm);
+  background-color: var(--glass-bg);
+}
+
+/* ---------- 动态高光：只在有鼠标 + 允许动效时轻微出现 ---------- */
+.glass--interactive {
+  position: relative;
+  isolation: isolate;
+}
+.glass--interactive::before {
+  /* hover 时整块轻微提亮（不改变 backdrop-filter，也不制造渐变装饰） */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: var(--glass-hover-tint);
+  transition: opacity var(--motion-base) var(--motion-ease);
+}
+.glass--interactive::after {
+  /* 指针跟随的柔和高光：位置由 --glow-x / --glow-y 驱动（useGlassGlow 在桌面端写入） */
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    240px circle at var(--glow-x, 28%) var(--glow-y, 0%),
+    var(--glass-hover-glow),
+    transparent 70%
+  );
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    background 160ms ease-out;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .glass--interactive:hover::before,
+  .glass--interactive:focus-visible::before,
+  .glass--interactive:hover::after,
+  .glass--interactive:focus-visible::after {
+    opacity: 1;
+  }
+}
+
+/* ============================================================
+ * 降级
+ *   1) 浏览器不支持 backdrop-filter → 不透明实色底（保留描边/圆角/内高光）
+ *   2) prefers-reduced-transparency: reduce → 同上，并关掉半透明高光
+ *   3) html.no-backdrop-filter → 手动开关（历史 /ui-kit 验收演示用；该页已移除）
+ * ============================================================ */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .glass {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass--interactive::before,
+  .glass--interactive::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background-color: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* 减少透明时也不要有半透明高光（它同样是"透明材质"的一部分） */
+  .glass--interactive::before,
+  .glass--interactive::after {
+    display: none;
+  }
+}
+
+html.no-backdrop-filter .glass {
+  background-color: var(--glass-solid) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.no-backdrop-filter .glass--interactive::before,
+html.no-backdrop-filter .glass--interactive::after {
+  display: none !important;
+}
+
+/* ============================================================
+ * 纸感模式（2026-11-18 重构试点）
+ *   方向：去掉模糊、内高光、边缘光、悬停提亮与投影，玻璃壳统一成
+ *   "实色表面 + 1px 细边 + 圆角 8"。类名保留，方便以后回滚。
+ * ============================================================ */
+:root {
+  --glass-bg: var(--color-surface);
+  --glass-bg-strong: var(--color-surface);
+  --glass-bg-popover: var(--color-surface);
+  --glass-border: var(--color-border);
+  --glass-blur: 0px;
+  --glass-saturate: 100%;
+  --glass-radius: var(--radius-md);
+  --glass-scrim: var(--color-surface);
+  --glass-shadow: none;
+  --glass-highlight: transparent;
+  --glass-edge: transparent;
+  --glass-hover-tint: transparent;
+  --glass-hover-glow: transparent;
+}
+.glass,
+.glass--control,
+.glass--panel,
+.glass--popover {
+  background-color: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border: 1px solid var(--color-border);
+  box-shadow: none;
+}
+.glass--panel,
+.glass--popover {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+}
+.glass--interactive::before,
+.glass--interactive::after {
+  content: none;
+  display: none;
+}

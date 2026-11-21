@@ -2,23 +2,256 @@
 
 负责人：B
 
-待实现：
-- GET /api/account   当前用户虚拟币余额与总资产
+GET /api/account —— 当前用户信用点余额与总资产：
+- balance：可用信用点；
+- initial_balance：初始 5000，用于算总收益率；
+- position_value：持仓按当前价合计的市值；
+- total_asset：balance + position_value。
 
-参考响应：
-    {
-      "user_id": 1,
-      "balance": 5000,
-      "initial_balance": 5000,
-      "total_asset": 5000,
-      "position_value": 0
-    }
-
-规则来源：新用户初始 5000 虚拟币（settings.initial_balance），每日签到补给为加分项。
+POST /api/account/rebuild —— **余额重建**（用户自助）：把自己这个账户恢复成"刚注册"的样子
+（余额回到 5000、清空自己的持仓与流水）。账号本身、口令、其它账号一律不动。
+为什么需要：重置市场行情（`POST /api/debug/reseed`）现在**不会**动任何注册账号
+（余额/持仓/流水跟着账号走），所以"我想重新开始"必须由用户自己按一下。
 """
 
-from fastapi import APIRouter
+from __future__ import annotations
+
+from bisect import bisect_right
+from datetime import datetime, timezone
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_current_user
+from app.core.database import get_db
+from app.core.errors import ApiError
+from app.models import Player, Position, PriceHistory, Trade, User
+from app.schemas.account import (
+    AccountHistoryResponse,
+    AccountRebuildResponse,
+    AccountResponse,
+    AccountStats,
+    AssetPoint,
+)
 
 router = APIRouter(prefix="/account", tags=["account"])
 
-# TODO(B)：实现 GET /api/account
+CENT = Decimal("0.01")
+
+
+@router.get("", response_model=AccountResponse, summary="账户余额与总资产")
+def get_account(
+    db: Session = Depends(get_db), user: User = Depends(get_current_user)
+) -> AccountResponse:
+    rows = db.execute(
+        select(Position.quantity, Player.current_price).join(
+            Player, Position.player_id == Player.player_id
+        ).where(Position.user_id == user.user_id, Position.quantity > 0)
+    ).all()
+
+    position_value = sum(
+        (Decimal(price) * int(quantity) for quantity, price in rows), Decimal("0")
+    ).quantize(CENT)
+
+    balance = Decimal(user.balance).quantize(CENT)
+    return AccountResponse(
+        user_id=user.user_id,
+        balance=float(balance),
+        initial_balance=float(Decimal(user.initial_balance).quantize(CENT)),
+        position_value=float(position_value),
+        total_asset=float((balance + position_value).quantize(CENT)),
+    )
+
+
+def _epoch(dt: datetime) -> float:
+    """把可能被 SQLite 读成 naive 的时间统一成 UTC 时间戳。"""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.timestamp()
+
+
+def _group_price_rows(price_rows):
+    """按选手聚合历史价格，并收集所有价格时间点。"""
+    series: dict[int, list[tuple[float, float]]] = {}
+    price_epochs: set[float] = set()
+    for player_id, ts, price in price_rows:
+        epoch = _epoch(ts)
+        series.setdefault(int(player_id), []).append((epoch, float(price)))
+        price_epochs.add(epoch)
+    for rows in series.values():
+        rows.sort(key=lambda item: item[0])
+    return series, price_epochs
+
+
+def _price_lookup(series, current_prices):
+    """返回 price_at(player_id, epoch)：该选手在 epoch 时刻最近一次已知价格。"""
+    epoch_cache: dict[int, list[float]] = {}
+
+    def price_at(player_id: int, epoch: float) -> float:
+        rows = series.get(player_id)
+        if not rows:
+            return current_prices.get(player_id, 0.0)
+        epochs = epoch_cache.setdefault(player_id, [row[0] for row in rows])
+        index = max(bisect_right(epochs, epoch) - 1, 0)
+        return rows[index][1]
+
+    return price_at
+
+
+def _cash_and_holdings(epoch: float, initial: Decimal, trade_epochs):
+    """重放到 epoch 时刻：可用现金 + 各选手持仓数量。"""
+    cash = float(initial)
+    holdings: dict[int, int] = {}
+    for trade_epoch, trade in trade_epochs:
+        if trade_epoch > epoch:
+            break
+        quantity = int(trade.quantity)
+        player_id = int(trade.player_id)
+        if trade.side == "BUY":
+            cash -= float(trade.amount)
+            holdings[player_id] = holdings.get(player_id, 0) + quantity
+        else:
+            cash += float(trade.amount)
+            holdings[player_id] = holdings.get(player_id, 0) - quantity
+    return cash, holdings
+
+
+def _timeline(price_epochs, trade_epochs, cutoff: float, now: float) -> list[float]:
+    """曲线取点：历史价格时间点 ∪ 交易时间点 ∪ 现在（只保留回看窗口内）。"""
+    return sorted(
+        {epoch for epoch in price_epochs if epoch >= cutoff}
+        | {epoch for epoch, _ in trade_epochs if epoch >= cutoff}
+        | {now}
+    )
+
+
+def _build_points(timeline, initial, trade_epochs, price_at, account) -> list[AssetPoint]:
+    points: list[AssetPoint] = []
+    last_epoch = timeline[-1]
+    for epoch in timeline:
+        cash, holdings = _cash_and_holdings(epoch, initial, trade_epochs)
+        if abs(epoch - last_epoch) < 1e-6:
+            # 最后一点直接用当前账户值，和 GET /api/account 完全对齐
+            cash = account.balance
+            position_value = account.position_value
+        else:
+            position_value = sum(
+                max(quantity, 0) * price_at(player_id, epoch)
+                for player_id, quantity in holdings.items()
+            )
+        points.append(
+            AssetPoint(
+                ts=datetime.fromtimestamp(epoch, tz=timezone.utc),
+                cash=round(cash, 2),
+                position_value=round(position_value, 2),
+                total_asset=round(cash + position_value, 2),
+            )
+        )
+    return points
+
+
+def _trade_stats(db: Session, user: User, trades, account, initial: Decimal) -> AccountStats:
+    buys = [trade for trade in trades if trade.side == "BUY"]
+    sells = [trade for trade in trades if trade.side == "SELL"]
+    position_rows = db.execute(
+        select(Position.quantity, Player.current_price)
+        .join(Player, Position.player_id == Player.player_id)
+        .where(Position.user_id == user.user_id, Position.quantity > 0)
+    ).all()
+    return AccountStats(
+        trades=len(trades),
+        buys=len(buys),
+        sells=len(sells),
+        buy_amount=round(sum(float(trade.amount) for trade in buys), 2),
+        sell_amount=round(sum(float(trade.amount) for trade in sells), 2),
+        positions=len(position_rows),
+        position_value=account.position_value,
+        profit=round(account.total_asset - float(initial), 2),
+    )
+
+
+@router.get("/history", response_model=AccountHistoryResponse, summary="资产曲线与统计")
+def get_account_history(
+    days: int = Query(default=30, ge=1, le=365, description="回看多少天"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AccountHistoryResponse:
+    """个人页用：按时间重建「现金 + 持仓市值」曲线，并汇总交易统计。
+
+    - 数据只来自**本账户**的流水 + 全市场历史价格（价格是公共数据）；
+    - 曲线点 = 历史价格时间点 ∪ 交易时间点 ∪ 现在；没有交易时是一条 5000 的水平线；
+    - 最后一个点用当前余额/当前持仓对齐 `GET /api/account`，保证两处数字一致。
+    """
+    initial = Decimal(str(user.initial_balance)).quantize(CENT)
+    now = datetime.now(timezone.utc)
+    cutoff = now.timestamp() - days * 86400
+
+    trades = list(
+        db.scalars(
+            select(Trade).where(Trade.user_id == user.user_id).order_by(Trade.created_at)
+        ).all()
+    )
+    trade_epochs = [(_epoch(trade.created_at), trade) for trade in trades]
+
+    # 每个选手的 (时间戳, 价格) 序列，供任意时刻取"最近一次已知价格"
+    price_rows = db.execute(
+        select(PriceHistory.player_id, PriceHistory.ts, PriceHistory.price).order_by(
+            PriceHistory.ts
+        )
+    ).all()
+    series, price_epochs = _group_price_rows(price_rows)
+    current_prices = {
+        int(player_id): float(price)
+        for player_id, price in db.execute(select(Player.player_id, Player.current_price)).all()
+    }
+    price_at = _price_lookup(series, current_prices)
+    timeline = _timeline(price_epochs, trade_epochs, cutoff, now.timestamp())
+    account = get_account(db=db, user=user)
+
+    return AccountHistoryResponse(
+        initial_balance=float(initial),
+        points=_build_points(timeline, initial, trade_epochs, price_at, account),
+        stats=_trade_stats(db, user, trades, account, initial),
+    )
+
+
+@router.post(
+    "/rebuild",
+    response_model=AccountRebuildResponse,
+    summary="重建余额（把自己这个账户恢复成刚注册的样子）",
+)
+def rebuild_account(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    confirm: bool = Query(default=False, description="必须显式传 confirm=true，防误触"),
+) -> AccountRebuildResponse:
+    """**只作用于当前登录的账户**：余额 → `initial_balance`，清空自己的持仓与流水。
+
+    - 公共演示账户（无令牌时的 demo）也允许重建——它就是给大家试用的；
+    - 幂等：重复调用结果一致（第二次清掉 0 条）；
+    - 不影响其它账号、不影响行情与选手数据。
+    """
+    if not confirm:
+        raise ApiError("请显式确认（confirm=true）后再重建余额", status_code=400, code="CONFIRM_REQUIRED")
+
+    cleared_positions = int(
+        db.execute(delete(Position).where(Position.user_id == user.user_id)).rowcount or 0
+    )
+    cleared_trades = int(
+        db.execute(delete(Trade).where(Trade.user_id == user.user_id)).rowcount or 0
+    )
+
+    initial = Decimal(str(user.initial_balance)).quantize(CENT)
+    user.balance = initial
+    db.commit()
+    db.refresh(user)
+
+    return AccountRebuildResponse(
+        user_id=user.user_id,
+        balance=float(Decimal(user.balance).quantize(CENT)),
+        cleared_positions=cleared_positions,
+        cleared_trades=cleared_trades,
+        note="余额已恢复为初始值；本账户的持仓与流水已清空（其它账号与行情不受影响）",
+    )

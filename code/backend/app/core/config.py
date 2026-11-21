@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     database_url: str = "sqlite:///./playerstock.db"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # 只读运维自检接口 `GET /api/debug/db`（见 app/api/debug.py）。
+    # 默认开着是为了上线验收能直接截图；功能验收完成后设 DEBUG_ENDPOINTS=0 关掉。
+    debug_endpoints: bool = True
+    # 运维重灌接口 `POST /api/debug/reseed` 的口令（见 app/api/debug.py）。
+    # 它会**清空并重建**演示数据（16 名选手 + demo 账户），所以必须带 token 防误触；
+    # 默认值仅用于课程演示，上线正式环境请设 RESEED_TOKEN 环境变量覆盖。
+    reseed_token: str = "playerstock-demo-reseed-2026"
+    # 智能体审计：是否把每次智能体调用写进 agent_traces（写失败也不影响响应）。
+    # 关掉后 /api/agent/traces 仍可用，只是没有新记录。
+    agent_traces_enabled: bool = True
 
     # ---------- 交易规则（B） ----------
     initial_balance: int = 5000
@@ -51,13 +61,36 @@ class Settings(BaseSettings):
     @field_validator("database_url")
     @classmethod
     def _normalize_database_url(cls, v: str) -> str:
-        """Render 给的连接串可能以 postgres:// 开头，SQLAlchemy 2.x 只认 postgresql://。
+        """把 Render 给的连接串归一化成 SQLAlchemy 认得的写法。
 
-        不转换的话，线上启动会直接抛
-        `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`。
+        两个坑都要在这里处理：
+
+        1. Render 的地址可能以 `postgres://` 开头，SQLAlchemy 只认 `postgresql://`，
+           不转换会抛 `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:postgres`；
+        2. **SQLAlchemy 2.1 起，`postgresql://` 默认解析到 psycopg 3（包名 psycopg）**，
+           而本项目依赖的是 `psycopg2-binary`。不显式写驱动时，线上启动会直接
+           `ModuleNotFoundError: No module named 'psycopg'`（第 4 天部署预检实测）。
+           所以这里统一补成 `postgresql+psycopg2://`，与 requirements.txt 对齐，
+           也避免 SQLAlchemy 版本变化再次改变默认驱动。
         """
         if v.startswith("postgres://"):
-            return "postgresql://" + v[len("postgres://") :]
+            v = "postgresql://" + v[len("postgres://") :]
+
+        # 只补齐"没写驱动"的裸 postgresql://；显式写了 +psycopg / +asyncpg 的保持原样
+        bare = "postgresql://"
+        if v.startswith(bare):
+            return "postgresql+psycopg2://" + v[len(bare) :]
+
+        # SQLite 相对路径统一相对 code/backend 解析：否则"在仓库根目录 seed、
+        # 在 code/backend 启动服务"会各自生成一个 playerstock.db，看起来像数据丢了。
+        prefix = "sqlite:///"
+        if v.startswith(prefix):
+            raw = v[len(prefix) :]
+            if raw and raw != ":memory:" and not raw.startswith("file:"):
+                path = Path(raw)
+                if not path.is_absolute():
+                    backend_dir = Path(__file__).resolve().parents[2]  # code/backend
+                    return prefix + (backend_dir / path).resolve().as_posix()
         return v
 
     @property
@@ -67,7 +100,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        """`CORS_ORIGINS` 解析成列表。
+
+        统一去掉首尾空白与**结尾斜杠**：浏览器发的 `Origin` 永远不带尾部 `/`，
+        而人在控制台里手填时常写成 `https://xxx.onrender.com/`，Starlette 是精确字符串
+        比较，差一个斜杠就整站跨域失败（第 5 天线上就踩过一次类似的坑，这里先堵上）。
+        """
+        return [o.strip().rstrip("/") for o in self.cors_origins.split(",") if o.strip()]
 
     @property
     def llm_enabled(self) -> bool:

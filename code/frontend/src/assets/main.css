@@ -1,0 +1,297 @@
+@import './tokens.css';
+/* liquid-glass.css 仍全局：模态框/删除账号弹窗/图表 tooltip 这些业务浮层还在用 .glass。
+   （2026-11-21 已移除 /ui-kit 展示页与 ui-kit.css，业务页不再有组件库样式负担。） */
+@import './liquid-glass.css';
+
+/*
+   白话导读：全站唯一的"全局样式"文件，由 src/main.ts 引入。
+   :root 里那一大堆 --xxx 是 CSS 自定义属性（变量）：颜色、字号、间距、圆角在这里定义一次，
+   各组件只写 var(--up) 这样的引用，想换主题色改这里就全站生效。
+   小提醒：涨=红、跌=绿 是按国内证券行情习惯，与欧美"绿涨红跌"相反。
+ */
+
+
+/* ============================================================
+ * 全局设计令牌（视觉设计层：色彩 / 字体 / 间距圆角统一变量）
+ * 三层模型落地：
+ *   1) 色彩体系 = 主色（CS2 红）+ 语义色（涨/跌/警示/中性）
+ *   2) 字体层级 = 标题 / 正文 / 辅助 三档
+ *   3) 间距与圆角 = 统一 design token，组件不再写死数值
+ * ============================================================ */
+/* ============================================================
+ * 设计令牌 v2（扁平化 / 产品化）
+ *   1) 色彩 = 中性色阶 + 1 主色（品牌红）+ 语义色（成功/警告/危险）
+ *   2) 字体 = 3 级标题 + 正文 16px + 辅助 14/13px
+ *   3) 间距 = 8pt 体系；圆角 = 4/6/8；不使用重阴影与渐变
+ * ============================================================ */
+/* 兼容层：组件仍用旧的变量名，值统一指向 tokens.css（无需逐个改组件） */
+:root {
+  /* 表面与文字 */
+  --bg: var(--color-canvas);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-surface-raised);
+  --surface-3: var(--color-surface-3); /* 导航选中/第三层（明暗两套值都在 tokens.css） */
+  --text: var(--color-text);
+  --muted: var(--color-text-muted);
+  --faint: var(--color-text-faint);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+
+  /* 主色与语义 */
+  --accent: var(--color-primary-500);
+  --accent-text: var(--color-primary-300); /* 文字/图标档：对表面对比 ≥5:1 */
+  --accent-hover: var(--color-action-hover);
+  --accent-weak: var(--color-up-subtle);
+  --up: var(--color-up);
+  --up-text: var(--color-up-text);
+  --up-bg: var(--color-up-subtle);
+  --down: var(--color-down);
+  --down-bg: var(--color-down-subtle);
+  --warn: var(--color-halt);
+  --warn-bg: var(--color-halt-subtle);
+  /* 停牌 / 今天开打 用的琥珀色（历史类名就叫 halt；之前缺这个别名，
+     var(--halt) 全部静默失效 → 今天状态点、停牌标签、市场停牌数字都掉回普通文字色） */
+  --halt: var(--color-halt);
+  --halt-bg: var(--color-halt-subtle);
+  --danger: var(--color-error-strong);
+  --neutral-bg: var(--color-neutral-bg);
+
+  /* 阴影：扁平化——一律无阴影，弹层用极轻投影 */
+  --shadow-1: var(--shadow-none);
+  --shadow-2: var(--shadow-overlay);
+
+  /* 间距 / 圆角 / 字体 / 图标（沿用 tokens） */
+  --radius-pill: var(--radius-sm);
+
+  --fs-h1: var(--font-size-h1);
+  --fs-h2: var(--font-size-h2);
+  --fs-h3: var(--font-size-h3);
+  --fs-body: var(--font-size-body);
+  --fs-aux: var(--font-size-aux);
+  --fs-cap: var(--font-size-cap);
+  --lh: var(--line-height-body);
+  --lh-tight: var(--line-height-tight);
+
+  --icon-sm: var(--icon-size-sm);
+  --icon-md: var(--icon-size-md);
+  --icon-lg: var(--icon-size-lg);
+
+  font-family: var(--font-sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: var(--fs-body);
+  line-height: var(--lh);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: var(--lh-tight);
+  letter-spacing: 0.01em;
+}
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: 700;
+}
+h2 {
+  font-size: var(--fs-h2);
+  font-weight: 700;
+}
+h3 {
+  font-size: var(--fs-h3);
+  font-weight: 600;
+}
+
+/* 数字统一等宽，价格/涨跌幅对齐不跳动（金融界面的可读性细节） */
+.num,
+td.num,
+th.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 无障碍：键盘操作时显示 2px 主色焦点环（形状跟随元素自身圆角，不再覆写 border-radius——
+   覆写会把玻璃浮层的 20px 圆角打成 6px，2026-11-14 实测踩过） */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 尊重"减少动效"偏好：关闭过渡与动画（队友无障碍补充） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* ============================================================
+ * 页面切换与浮层动效（2026-11-18）
+ *   原则：短（≤240ms）、只动 opacity/transform、进出不重叠（out-in）；
+ *   尊重 prefers-reduced-motion：开启后全部退化为瞬时切换。
+ * ============================================================ */
+/* 路由切换：淡入 + 轻微上移，离开只是快速淡出，避免两页叠在一起 */
+.page-enter-active {
+  transition:
+    opacity 200ms ease,
+    transform 240ms cubic-bezier(0.2, 0, 0.2, 1);
+}
+.page-leave-active {
+  transition: opacity 120ms ease;
+}
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.page-leave-to {
+  opacity: 0;
+}
+
+/* 抽屉遮罩 / 通用淡入淡出 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 200ms ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter-active,
+  .page-leave-active,
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: none !important;
+  }
+  .page-enter-from {
+    transform: none;
+  }
+}
+
+/* ============================================================
+ * 细节打磨（2026-11-18）
+ *   - 选中文字用品牌淡色，而不是系统默认蓝
+ *   - 滚动条细化，和纸感一致（Firefox 用 scrollbar-color，Chromium 用伪元素）
+ *   - 数字用等宽数字，表格里不会左右跳
+ * ============================================================ */
+::selection {
+  background: var(--color-selection-bg);
+  color: var(--color-text);
+}
+
+html {
+  scrollbar-color: var(--color-border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-faint);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.num,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 列表骨架：加载时先占好版式，避免转圈后内容"跳"出来 */
+.sk-list {
+  display: flex;
+  flex-direction: column;
+}
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.sk {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--neutral-bg);
+  animation: skeleton-pulse 1.2s ease-in-out infinite;
+}
+.sk-name {
+  width: 120px;
+  height: 16px;
+}
+.sk-mid {
+  width: 180px;
+}
+.sk-num {
+  width: 88px;
+  margin-left: auto;
+}
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* 浏览器自动填充：深浅主题下保持输入框底色与文字色（Chrome 会强行刷浅黄） */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+  box-shadow: 0 0 0 1000px var(--color-surface-raised) inset;
+  transition: background-color 9999s ease-out 0s;
+}

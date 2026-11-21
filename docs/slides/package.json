@@ -1,0 +1,15 @@
+{
+  "name": "playerstock-defense-slides",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "slidev slides.md",
+    "build": "slidev build slides.md --out dist",
+    "export": "slidev export slides.md --output playerstock_defense.pdf"
+  },
+  "devDependencies": {
+    "@slidev/cli": "53.1.0",
+    "@slidev/theme-default": "0.25.0",
+    "playwright-chromium": "1.65.1"
+  }
+}

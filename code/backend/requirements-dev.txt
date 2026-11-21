@@ -1,0 +1,6 @@
+# 后端「开发 / 质量」依赖——只给本地和 CI 用，不进运行时镜像（Render 只装 requirements.txt）。
+# 版本必须与 .github/workflows/ci.yml、VS Code Ruff 扩展同一口径：
+# 第 7 轮就因为「本地没装 ruff、只有编辑器在检」红过三次 CI（F401 / F841）。
+# 用法：pip install -r code/backend/requirements-dev.txt
+
+ruff==0.17.4

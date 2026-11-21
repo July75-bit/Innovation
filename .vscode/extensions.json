@@ -1,0 +1,11 @@
+{
+  // 团队推荐扩展：打开仓库时 VS Code 会提示安装
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "charliermarsh.ruff",
+    "esbenp.prettier-vscode",
+    "Vue.volar",
+    "dbaeumer.vscode-eslint"
+  ]
+}

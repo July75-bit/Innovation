@@ -9,6 +9,10 @@ venv/
 !.env.example
 *.egg-info/
 .pytest_cache/
+# pytest 的临时目录已由 tests/conftest.py 钉进仓库内的 .pytest-tmp/run（原因见该文件的 pytest_configure）
+.pytest-tmp/
+# 兜底：从别的 rootdir 直接跑 pytest 时，仍可能在仓库根目录甩出 pytest-of-<user>/（第 5 天误生成过一次）
+pytest-of-*/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -17,10 +21,15 @@ htmlcov/
 # ---------- SQLite ----------
 *.db
 *.db-journal
+# SQLite 开 WAL 后还会生成这两个边车文件，跑一次后端就会冒出来，别提交
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 # 但保留演示种子数据（JSON 不是数据库文件）
 !data/seed_players.json
+# C 的定价脚本导出的价格更新明细（生成物，每次跑 simulate_match.py 重出，不提交）
+data/price_updates.json
 
 # ---------- Node / Vue ----------
 node_modules/
@@ -33,7 +42,10 @@ pnpm-debug.log*
 yarn-error.log
 
 # ---------- Editor / OS ----------
-.vscode/
+# 编辑器目录：只放行“团队共享”的两个配置文件，其余（工作区缓存等）继续忽略
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db
@@ -48,3 +60,7 @@ tmp/
 # ---------- 部署/密钥 ----------
 render-secrets.md
 *.pem
+
+# ---------- Slidev 构建产物（由 GitHub Actions 生成，不提交） ----------
+docs/slides/dist/
+docs/slides/playerstock_defense.pdf

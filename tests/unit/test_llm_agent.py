@@ -14,9 +14,17 @@ import json
 from types import SimpleNamespace
 
 import pytest
-
 from ai.fallback import rule_based_advice
-from ai.llm_agent import OUTPUT_KEYS, LLMOutputError, _parse_and_validate, analyze
+from ai.llm_agent import (
+    DEFAULT_BASE_URL,
+    LLMOutputError,
+    OUTPUT_KEYS,
+    _api_key,
+    _base_url,
+    _model,
+    _parse_and_validate,
+    analyze,
+)
 
 EXPECTED_KEYS = set(OUTPUT_KEYS)
 
@@ -170,14 +178,37 @@ def test_output_never_contains_band_or_balance_fields():
     assert set(result) == EXPECTED_KEYS
 
 
-# ---------- 8. 理由长度约束 ----------
+# ---------- 8. 理由长度约束（2026-11-14 由 120 放宽到 200，且改为智能截断）----------
 
-def test_reason_is_truncated_to_120_chars():
-    long_reason = "价格" * 100
+def test_reason_is_truncated_to_limit_with_ellipsis():
+    """超长理由不能裸切（旧实现切出"短期动量明显偏"这种残句），要补省略号且不超限。"""
+    long_reason = "价格" * 200
     raw = json.dumps({"action": "HOLD", "reason": long_reason, "risk_level": "LOW"}, ensure_ascii=False)
     result = analyze(_ctx(), chat=lambda prompt: raw, settings=_settings())
 
-    assert len(result["reason"]) <= 120
+    from ai.llm_agent import MAX_REASON_LEN
+
+    assert len(result["reason"]) <= MAX_REASON_LEN
+    assert result["reason"].endswith("…"), "截断后必须带省略号，让人知道不是文案坏了"
+
+
+def test_reason_cut_at_sentence_end_when_possible():
+    """能在句末标点处断开时，优先断在标点后（不把句子切一半）。"""
+    from ai.llm_agent import MAX_REASON_LEN, _truncate_reason
+
+    sentence = "价格由 89.13 跌至 85.00，跌幅 4.6%。"
+    text = sentence * 20  # 远超上限
+    out = _truncate_reason(text)
+
+    assert len(out) <= MAX_REASON_LEN
+    assert out.endswith("…")
+    assert out[:-1].endswith("。"), f"应在句号后断开，实际尾部：{out[-12:]!r}"
+
+
+def test_short_reason_is_untouched():
+    from ai.llm_agent import _truncate_reason
+
+    assert _truncate_reason("近 3 个价格点上涨 5%，表现分 88。") == "近 3 个价格点上涨 5%，表现分 88。"
 
 
 # ---------- 9. 兜底本身也合法（回归保护）----------
@@ -188,3 +219,40 @@ def test_fallback_output_is_renderable():
     assert advice["risk_level"] in {"LOW", "MEDIUM", "HIGH"}
     assert advice["source"] == "rule_fallback"
     assert advice["disclaimer"]
+
+
+# ---------- 10. 端点 URL 归一化（LLM_BASE_URL 两种写法都吃）----------
+
+def test_base_url_defaults_to_openai_endpoint(monkeypatch):
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    assert _base_url() == DEFAULT_BASE_URL
+
+
+def test_base_url_appends_chat_completions_when_only_base_given(monkeypatch):
+    """只填 base（最常见、也最符合变量名的写法）要自动补全，否则线上 404 回落成规则版。"""
+    monkeypatch.setenv("LLM_BASE_URL", "https://opencode.ai/inference/openai/v1")
+    assert _base_url() == "https://opencode.ai/inference/openai/v1/chat/completions"
+
+
+def test_base_url_keeps_full_endpoint_untouched(monkeypatch):
+    full = "https://opencode.ai/inference/openai/v1/chat/completions"
+    monkeypatch.setenv("LLM_BASE_URL", full)
+    assert _base_url() == full
+
+
+def test_base_url_strips_trailing_slash_and_spaces(monkeypatch):
+    monkeypatch.setenv("LLM_BASE_URL", "  https://api.openai.com/v1/  ")
+    assert _base_url() == "https://api.openai.com/v1/chat/completions"
+
+
+def test_base_url_strips_pasted_quotes(monkeypatch):
+    """Windows `set LLM_BASE_URL="https://…"` 会把引号并进值里 → 旧实现 unknown url type。"""
+    monkeypatch.setenv("LLM_BASE_URL", '"https://opencode.ai/inference/openai/v1"')
+    assert _base_url() == "https://opencode.ai/inference/openai/v1/chat/completions"
+
+
+def test_api_key_and_model_strip_pasted_quotes(monkeypatch):
+    monkeypatch.setenv("LLM_API_KEY", '"oc_sk_demo"')
+    monkeypatch.setenv("LLM_MODEL", "'deepseek-v4.1-flash-free'")
+    assert _api_key(None) == "oc_sk_demo"
+    assert _model(None) == "deepseek-v4.1-flash-free"
