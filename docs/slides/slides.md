@@ -279,6 +279,41 @@ layout: default
 layout: default
 ---
 
+<div class="kicker">03 产品实现 · 缺陷跟踪</div>
+
+# 14 条缺陷都建了 Issue，全部关闭
+
+<div class="body">
+
+<div class="small muted font-bold" v-click>GitHub Issues #22–#35 ｜ P0 3 条 · P1 5 条 · P2 6 条 ｜ 状态全部 closed</div>
+
+<div class="grid3">
+  <div class="card" v-click>
+    <div class="accent small font-bold">P0 · 3 条</div>
+    <div class="small mt-2">#22 并发超卖、重复入账<br>#29 线上数据库驱动起不来<br>#33 CORS 未配，整站失败</div>
+  </div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">P1 · 5 条</div>
+    <div class="small mt-2">#23 买入校验顺序反了<br>#24 清仓触发约束报 500<br>#26 定价文案污染历史<br>#27 停牌选手仍被改价<br>#31 GBK 控制台测试报错</div>
+  </div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">P2 · 6 条</div>
+    <div class="small mt-2">#25 得分被拼两遍<br>#28 reason 超长写库失败<br>#30 WAL 文件误入仓库<br>#32 /market 刷新白屏<br>#34 测试日期炸弹<br>#35 脚本写死绝对路径</div>
+  </div>
+</div>
+
+<div class="sage small font-bold" v-click>每条都有根因说明、修复提交与回归测试；#36 / #37 是 BUG-15 的重复/确认记录。</div>
+
+</div>
+
+<!--
+【20 秒】缺陷没有停在口头：14 条都建了 Issue，按 P0/P1/P2 分级，现在全部关闭。每条 Issue 里都写了根因、修复提交和对应的回归测试，老师可以按编号查。
+-->
+
+---
+layout: default
+---
+
 <div class="kicker">03 产品实现 · 3.5 概要设计</div>
 
 # 系统架构与模块划分
