@@ -201,3 +201,32 @@ def test_narrative_cleaning_strips_model_json():
 
     plain = "价格由 120 跌到 89，属于明显回调。"
     assert _clean_model_text(plain) == plain
+
+
+# ---------------------------------------------------------------- 角色纪要的 JSON 清洗
+def test_panel_role_text_never_shows_raw_json():
+    """三个角色那栏不能出现 {"action": ...}（用户截图反馈）。
+
+    模型在角色提示下仍会沿用"只输出 JSON"的习惯，所以 `_clip()` 必须先清洗再限长。
+    """
+    from ai.panel import _clip
+
+    raw = '{"action":"HOLD","reason":"现价 136.43 与成本完全持平，建议观望。","risk_level":"HIGH"}'
+    cleaned = _clip(raw)
+    assert "{" not in cleaned and '"action"' not in cleaned
+    assert cleaned.startswith("现价 136.43")
+
+
+def test_hold_advice_still_has_stop_loss():
+    """HOLD/SELL 也要给参考止损（以前只有 BUY 给，界面永远是"—"）。"""
+    from ai.decision import build_plan
+
+    for action in ("HOLD", "SELL", "BUY"):
+        plan = build_plan(
+            {"action": action, "risk_level": "HIGH", "source": "llm"},
+            balance=5000.0,
+            current_price=136.43,
+            held_quantity=49,
+        )
+        assert plan["stop_loss_price"] is not None, action
+        assert plan["stop_loss_price"] < 136.43

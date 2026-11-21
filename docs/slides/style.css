@@ -180,3 +180,7 @@ ul.clean li { font-size:.9rem; margin:.25rem 0; }
 .slidev-layout th { padding:.44rem .6rem; }
 .slidev-layout td { padding:.34rem .6rem; }
 .body { gap:.8rem; }
+
+.small { font-size:.95rem; line-height:1.6; }
+.muted { color:#5c574d; }
+.sage.small { font-size:.95rem; }

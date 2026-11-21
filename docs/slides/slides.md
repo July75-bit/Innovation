@@ -43,7 +43,7 @@ fonts:
 </div>
 
 <!--
-【15 秒】各位老师好，我们是「有请下一组」，作品是 PlayerStock：用信用点交易 CS2 职业选手的虚拟股。一句话，把观众对选手的判断变成一条看得懂、能验证、不花真钱的价格曲线。接下来先讲产品和设计，再看两分钟演示，最后是证据链。
+【15 秒】老师们好，我们是「有请下一组」，作品叫 PlayerStock：用信用点交易 CS2 选手的虚拟股。说白了，就是把你对选手的判断，变成一条看得懂、能验证、不用真钱的价格曲线。先讲产品，再看两分钟演示，最后给证据。
 -->
 
 ---
@@ -59,8 +59,8 @@ layout: default
 <div class="grid2">
   <div class="card" v-click>
     <div class="accent font-bold text-sm">使命 Mission</div>
-    <div class="text-lg font-bold mt-2 leading-relaxed">让每个看比赛的人，都能把判断变成一条看得懂、能验证、不花钱的价格曲线。</div>
-    <div class="small muted mt-4">边界：纯信用点，不可充值 / 提现 / 兑换；不面向未成年人推广</div>
+    <div class="text-lg font-bold mt-2 leading-relaxed">让看比赛的人，把判断变成一条看得懂、能验证、不花钱的价格曲线。</div>
+    <div class="small muted mt-4">纯信用点，不可充值 / 提现 / 兑换</div>
     <div class="border-t border-#e3ded4 mt-3 pt-3">
       <div class="small font-bold">三条可验证原则</div>
       <ul class="clean">
@@ -77,12 +77,12 @@ layout: default
   </div>
 </div>
 
-<div class="small muted" v-click><b class="accent">差异化：</b>不比人多，比三件事——交易选手价值、涨跌能解释、不碰真钱。</div>
+<div class="small muted" v-click><b class="accent">跟别人比，</b>我们只比三件事：交易的是选手、涨跌能解释、不碰真钱。</div>
 
 </div>
 
 <!--
-【20 秒】先看使命和口号：看懂比赛，从持有起。目标用户是看 CS 比赛、对选手有判断、但不想用真钱的人。我们没有推广预算，靠赛事节点、内容化日报和校园社群慢慢做；团队四个人分工不重叠。跟竞品比，我们比的是标的、可解释、零真实资金，不是比人多。
+【20 秒】先说我们是干嘛的：看懂比赛，从持有起。用户是看 CS 比赛、对选手有感觉、但不想花真钱的人。我们没推广预算，靠赛事、日报和校园社群慢慢来。四个人分工不重叠。跟别人比，我们比的是选手本身、能解释、不碰真钱。
 -->
 
 ---
@@ -91,20 +91,20 @@ layout: default
 
 <div class="kicker">01 产品设计 · 1.2 产品定义 / 用户故事</div>
 
-# 一个纯虚拟、可解释的选手股市场
+# 一个虚拟的选手股市场
 
 <div class="body">
 
 <div class="dark-band text-base font-bold leading-relaxed" v-click>
-给看 CS 比赛的人一个纯信用点、能解释的选手股市场：选手表现变成可交易的价格，每条涨跌都有原因。不做竞猜，不碰真钱。
+给看比赛的人一个虚拟选手股市场：选手表现变成价格，每条涨跌都有原因。不做竞猜，不碰真钱。
 </div>
 
-<div class="sage small font-bold" v-click>解决的问题：判断无处验证 · 价格变化是黑箱 · 决策门槛高</div>
+<div class="sage small font-bold" v-click>解决三个问题：判断没处验证 · 涨跌看不懂 · 门槛高</div>
 
 <div class="grid3">
-  <div class="card" v-click><div class="accent small font-bold">交易新手</div><div class="font-bold text-sm mt-1">打开首页 60 秒内知道「现在该不该买」</div><div class="small muted mt-2">首页直接给结论，理由可展开</div></div>
-  <div class="card" v-click><div class="accent small font-bold">行情玩家</div><div class="font-bold text-sm mt-1">点开选手，看懂价格为什么涨 / 跌</div><div class="small muted mt-2">价格曲线 + 每条变动的原因</div></div>
-  <div class="card" v-click><div class="accent small font-bold">演示者 / 老师</div><div class="font-bold text-sm mt-1">断网、无 API Key 也能完成交易闭环</div><div class="small muted mt-2">AI 走规则兜底，接口仍 200</div></div>
+  <div class="card" v-click><div class="accent small font-bold">交易新手</div><div class="font-bold text-sm mt-1">打开首页 60 秒，知道该不该买</div></div>
+  <div class="card" v-click><div class="accent small font-bold">行情玩家</div><div class="font-bold text-sm mt-1">点开选手，看懂为什么涨、为什么跌</div></div>
+  <div class="card" v-click><div class="accent small font-bold">演示者 / 老师</div><div class="font-bold text-sm mt-1">断网、没有 API Key，也能完成交易</div></div>
 </div>
 
 <div class="flex gap-2 flex-wrap" v-click>
@@ -115,7 +115,7 @@ layout: default
 </div>
 
 <!--
-【35 秒】一句话定义：对想在观赛时参与判断的 CS 观众，PlayerStock 是一个纯信用点、可解释的选手股市场。它把选手表现变成可交易、可追溯的价格，每条涨跌都能拆出原因。三个用户故事对应新手、行情玩家、演示者，每个都有验收标准。规模是 16 名选手、8 支战队、每人 11 个价格点，5000 信用点开局，全部虚拟、不可兑换。
+【35 秒】一句话：给看比赛的人一个虚拟选手股市场，选手表现变成价格，每条涨跌都有原因。三个用户故事对应新手、行情玩家和演示者。规模是 16 名选手、8 支战队，每人 11 个价格点，5000 信用点开局，全是虚拟的。
 -->
 
 ---
@@ -124,23 +124,23 @@ layout: default
 
 <div class="kicker">02 产品设计应用的原则</div>
 
-# 五条原则，对应五个可被验证的取舍
+# 五个原则，五个取舍
 
 <div class="body">
 
 <div class="grid2">
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">需求原则</div><div class="font-bold">先回答「该不该买」</div><div class="small muted">首屏给结论（买/卖/观望 + 风险），证据按需展开。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">信息原则</div><div class="font-bold">一屏完成行情 → 建议 → 下单</div><div class="small muted">市场 3 列卡，详情左图右交易，不来回跳。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">简化原则</div><div class="font-bold">纸感、低密度、可读</div><div class="small muted">暖纸色、细边、正文 16px；一屏 6 张卡，去玻璃。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">系统原则</div><div class="font-bold">确定性骨架 + 智能体肌肉</div><div class="small muted">交易/定价由确定性代码完成；LLM 只建议，挂了自动降级。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">需求原则</div><div class="font-bold">先回答该不该买</div><div class="small muted">首屏给结论，证据按需展开。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">信息原则</div><div class="font-bold">一屏完成行情 → 建议 → 下单</div><div class="small muted">不来回跳。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">简化原则</div><div class="font-bold">纸感、低密度、可读</div><div class="small muted">一屏 6 张卡，去掉玻璃。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">系统原则</div><div class="font-bold">交易写死，AI 只建议</div><div class="small muted">AI 挂了，交易照常。</div></div></div></div>
 </div>
 
-<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">审核 / 合规原则</div><div class="font-bold">零真实资金 + 只读 AI</div><div class="small muted">0 充值/提现/兑换；AI 不下单，每次调用留审计。</div></div></div></div>
+<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">合规原则</div><div class="font-bold">零真实资金，AI 只能看不能动</div><div class="small muted">0 充值 / 提现 / 兑换；每次调用留审计。</div></div></div></div>
 
 </div>
 
 <!--
-【35 秒】这一页不讲条文，讲五个取舍：先给结论、一屏完成、纸感低密度、确定性骨架让 LLM 挂了也能交易、合规零真实资金。每个原则后面都跟了落地方式。
+【35 秒】这一页不讲条文，讲五个取舍：先给结论、一屏做完、纸感低密度、交易写死让 AI 挂了也能用、合规零真钱。
 -->
 
 ---
@@ -149,7 +149,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.1 用户体验设计</div>
 
-# 界面：让数据和判断同时可读
+# 界面：看数据、做判断，一屏够用
 
 <div class="body">
 
@@ -160,9 +160,9 @@ layout: default
       <div class="small muted mt-2">市场页：一行简报 + 筛选 + 3 列选手卡</div>
     </div>
     <ul class="clean" v-click>
-      <li>首屏先给结论，不堆技术词</li>
+      <li>首屏先给结论</li>
       <li>一屏 6 张卡，3 列对齐</li>
-      <li>筛选/排序/搜索不跳页</li>
+      <li>筛选排序不跳页</li>
     </ul>
   </div>
   <div class="flex flex-col gap-2">
@@ -171,9 +171,9 @@ layout: default
       <div class="small muted mt-2">详情页：价格曲线 + AI 建议 + 交易同屏</div>
     </div>
     <ul class="clean" v-click>
-      <li>左侧看曲线与归因，右侧直接下单</li>
+      <li>左边看曲线，右边下单</li>
       <li>手机 4 个 Tab，顶栏头像入口</li>
-      <li>深浅色一键切换，骨架屏与慢加载提示</li>
+      <li>深浅色一键切</li>
     </ul>
   </div>
 </div>
@@ -181,7 +181,7 @@ layout: default
 </div>
 
 <!--
-【35 秒】界面就是这样：桌面市场一屏 6 张卡，简报先给结论；详情页左边价格历史，右边 AI 建议和交易；移动端底部 4 个导航加顶栏头像。左右两块都是先图后要点，节奏一致。
+【35 秒】界面就这样：桌面市场一屏 6 张卡，简报先给结论；详情页左边曲线，右边 AI 建议和下单；手机上 4 个 Tab。左右都是先看图、再看要点。
 -->
 
 ---
@@ -190,7 +190,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.2 技术选型</div>
 
-# 轻量、可复现、团队真正 Hold 得住
+# 轻量、能复现，我们 hold 得住
 
 <div class="body">
 
@@ -209,12 +209,10 @@ layout: default
 
 <div class="sage small font-bold" v-click>原则：不选简历上最响的，选 6 天能交付、能测试、能部署、能讲清楚的。</div>
 
-<div class="small muted" v-click>引用来源：Vue / FastAPI / SQLAlchemy / Vite 官方文档；DeepSeek 官方 API 文档；版本号见 README / requirements。</div>
-
 </div>
 
 <!--
-【30 秒】技术选型只有一个原则：轻量、可复现、团队真正 Hold 得住。前端 Vue 3 + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek 并保留规则兜底；部署交给 Render 和 GitHub Actions。
+【30 秒】选型就一个原则：轻、能复现、我们四个人 hold 得住。前端 Vue + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek，留规则兜底；部署交给 Render 和 GitHub Actions。
 -->
 
 ---
@@ -227,7 +225,7 @@ layout: default
 
 <div class="body">
 
-<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ 部署分支 develop ｜ 共 466 次提交（334 次非合并）</div>
+<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ develop ｜ 466 次提交（334 次非合并）</div>
 
 <div class="grid2">
   <div class="card" v-click>
@@ -238,20 +236,17 @@ layout: default
       <tr><td>B 胡德昊</td><td>114</td><td>C 刘宏</td><td>81</td></tr>
       </tbody>
     </table>
-    <div class="small muted mt-2">B 的两个本地 GitHub 身份已合并统计（July75-bit / Hu De Hao）。</div>
-  </div>
+      </div>
   <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">协作与项目管理</div><div class="small muted">Issues + Projects 管任务；14 条缺陷都建了 Issue；提交统一格式，互相审。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">CI 4 个 job（每次 push 自动跑）</div><div class="small muted">卫生 → 后端 ruff+pytest → 前端 eslint+vitest+build → 交付物检查</div></div>
+    <div class="card" v-click><div class="accent small font-bold">协作</div><div class="small muted">Issues + Projects 管任务，14 条缺陷都有 Issue。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">CI 4 个 job</div><div class="small muted">卫生、后端、前端、交付物，每次 push 都跑。</div></div>
   </div>
 </div>
-
-<div class="small muted" v-click>证据：Pulse 提交截图、Issue #22–#35、CI run 记录都在仓库/材料里。</div>
 
 </div>
 
 <!--
-【25 秒】仓库在 GitHub 的 July75-bit/Innovation，develop 是部署分支，一共 466 次提交、334 次非合并。四个人都有持续提交，B 的两个 GitHub 身份已经合并统计。协作靠 Issues 和 Projects，CI 4 个 job 每次 push 自动跑。
+【25 秒】仓库在 GitHub，develop 是部署分支，466 次提交、334 次非合并。四个人都在提交。协作靠 Issues 和 Projects，CI 4 个 job，每次 push 都跑。
 -->
 
 ---
@@ -260,7 +255,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.4 生命周期问题复盘</div>
 
-# 6 个真实问题：每个都有原因、修复和验证
+# 踩过的 6 个坑
 
 <div class="body">
 
@@ -282,7 +277,7 @@ layout: default
 </div>
 
 <!--
-【40 秒】挑了 6 个真实问题：数据全丢（SQLite 临时盘换成 Postgres）、psycopg 驱动、CORS、模型输出透传、CI 圈复杂度、冷启动。每个都说清原因和修复，修复后都有测试或线上验证。
+【40 秒】挑了 6 个真踩过的坑：数据全丢、psycopg 驱动、CORS、模型输出没洗、CI 圈复杂度、冷启动。每个都说清原因和怎么修的，修完都有测试或线上验证。
 -->
 
 ---
@@ -291,7 +286,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5 概要设计</div>
 
-# 系统架构：前后端分离 + 确定性交易内核
+# 系统架构：前后端分开，交易内核写死
 
 <div class="body">
 
@@ -315,15 +310,15 @@ flowchart LR
 </div>
 
 <div class="grid3">
-  <div class="card" v-click><div class="accent small font-bold">部署</div><div class="small muted">Render：Static + Web + Cron + Postgres；Blueprint 可复现</div></div>
-  <div class="card" v-click><div class="accent small font-bold">可观测性</div><div class="small muted">/api/logs · /api/debug/db · health 探针 · 简报新鲜度</div></div>
-  <div class="card" v-click><div class="accent small font-bold">关键取舍</div><div class="small muted">AI 是旁路：只读建议，不参与交易；交易/定价是确定性代码</div></div>
+  <div class="card" v-click><div class="accent small font-bold">部署</div><div class="small muted">Render 四件套，Blueprint 能复现</div></div>
+  <div class="card" v-click><div class="accent small font-bold">可观测性</div><div class="small muted">日志、健康检查、简报新鲜度</div></div>
+  <div class="card" v-click><div class="accent small font-bold">关键取舍</div><div class="small muted">AI 只读建议，交易和定价是写死的代码</div></div>
 </div>
 
 </div>
 
 <!--
-【35 秒】架构分四层：前端 SPA、FastAPI 路由、确定性业务内核（core_engine 加规则层）、数据库。AI 是旁路，只读建议，不参与交易。部署是 Render 四件套：静态站、Web Service、Cron、Postgres。
+【35 秒】架构就四层：前端、FastAPI 接口、写死的交易内核、数据库。AI 是旁路，只读建议，不掺和交易。部署是 Render 四件套。
 -->
 
 ---
@@ -332,7 +327,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 算法与 AI</div>
 
-# 价格可拆解，建议可回落
+# 价格说得清，AI 挂了也能用
 
 <div class="body">
 
@@ -353,12 +348,12 @@ layout: default
       <div class="flex gap-1 flex-wrap mt-2">
         <span class="pill">感知行情</span><span class="pill">分析师</span><span class="pill">风控</span><span class="pill">交易员</span><span class="pill">人点采纳</span><span class="pill">审计</span>
       </div>
-      <div class="small muted mt-2">DeepSeek API，20 秒超时；无 Key/超时/坏 JSON 都走规则兜底，接口仍 200。</div>
-      <div class="small mt-2">契约固定 6 字段；L4 评测：<b>16/16 走真模型、契约完整率 100%、P95 3.39s</b>（门禁 10s）。</div>
+      <div class="small muted mt-2">DeepSeek API，20 秒超时；没 Key、超时、坏 JSON 都走规则兜底，接口照样 200。</div>
+      <div class="small mt-2">固定 6 个字段；L4 评测 <b>16/16、P95 3.39s</b>。</div>
     </div>
     <div class="dark-band small" v-click>
-      <b>为什么不直接让模型定价？确定性优先，智能体做增强</b><br>
-      规则版稳定、零成本；LLM 版能说人话、多角色。模型失败自动回落，交易和行情不受影响。
+      <b>为什么不让模型定价？</b><br>
+      规则稳定、零成本；模型挂了自动回落，交易照常。
     </div>
   </div>
 </div>
@@ -366,7 +361,7 @@ layout: default
 </div>
 
 <!--
-【40 秒】定价用 z-score 加线性映射，单次涨跌不超过 20%，每条价格都带 reason，现场能拆。AI 是旁路：分析师到风控到交易员，人在环、留审计；DeepSeek 挂了走规则兜底，接口仍然 200。我们不给模型定价权。
+【40 秒】定价用 z-score 加线性映射，一次最多涨跌 20%，每条价格都带原因，现场能拆。AI 这边是分析师、风控、交易员，人在环、留审计；DeepSeek 挂了就走规则兜底。我们不给模型定价权。
 -->
 
 ---
@@ -375,7 +370,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.4 数据库设计</div>
 
-# 9 张表：交易可追溯，AI 可审计
+# 9 张表：交易有记录，AI 有审计
 
 <div class="body">
 
@@ -405,15 +400,15 @@ erDiagram
 
   </div>
   <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">交易一致性</div><div class="small muted">余额、持仓、流水同一事务写；14 条交易测试 + 并发测试。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">为什么不用缓存/队列？</div><div class="small muted">课程量级不需要；优先保证「数据可追溯 + 事务正确」。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">交易一致性</div><div class="small muted">余额、持仓、流水一起写；14 条交易测试。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">为什么不用缓存/队列？</div><div class="small muted">这门课的量级不用缓存，先保证数据对得上。</div></div>
   </div>
 </div>
 
 </div>
 
 <!--
-【25 秒】数据库 9 张表，分账号、市场、交易、智能体四组。两个关键设计：交易流水只追加，并记 balance_after；持仓唯一约束，余额、持仓、流水在同一事务里写。AI 的调用、采纳、归因都落审计表，业务表只读。
+【25 秒】数据库 9 张表，分账号、市场、交易、智能体。两个关键：流水只追加、记余额；余额、持仓、流水一个事务写完。AI 的调用、采纳、归因都落审计表，业务表只读。
 -->
 
 ---
@@ -422,7 +417,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.5 接口设计</div>
 
-# 23 个接口，统一契约与错误码
+# 23 个接口，格式统一
 
 <div class="body">
 
@@ -440,13 +435,13 @@ layout: default
 
 <div class="grid2">
   <div class="dark-band small" v-click><b>在线文档：</b>https://playerstock-backend-mdlk.onrender.com/api/docs<br>FastAPI 自动生成 OpenAPI / Swagger，可直接试调。</div>
-  <div class="card" v-click><div class="small muted">GET 失败自动重试 1 次；POST 不重试；统一错误码；敏感字段不返回。</div></div>
+  <div class="card" v-click><div class="small muted">GET 失败重试一次，POST 不重试；敏感字段不返回。</div></div>
 </div>
 
 </div>
 
 <!--
-【20 秒】接口一共 23 个，分行情、交易、身份、AI、运维五组。FastAPI 自动生成 Swagger，老师现场可以打开 /api/docs 试调。GET 可以安全重试一次，POST 绝不重试，避免重复下单。
+【20 秒】接口 23 个，分行情、交易、身份、AI、运维。FastAPI 自带 Swagger，老师现场可以打开 /api/docs 试。GET 可以重试，POST 不重试，避免重复下单。
 -->
 
 ---
@@ -455,25 +450,25 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.6 软件质量</div>
 
-# 质量：每次都跑，跑得出来才算数
+# 质量：每次提交都跑测试
 
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">333</div><div class="small font-bold">后端测试</div><div class="small muted">pytest（6 条 live 默认排除）</div></div>
+  <div class="card" v-click><div class="metric">333</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，live 默认不跑</div></div>
   <div class="card" v-click><div class="metric">182</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 22 个文件</div></div>
-  <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine，1956 语句 / 45 未覆盖</div></div>
-  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生 / 后端 / 前端 / 交付物</div></div>
+  <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine</div></div>
+  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生、后端、前端、交付物</div></div>
 </div>
 
 <div class="grid2">
   <div class="card" v-click><div class="accent small font-bold">质量控制与保证方法</div>
     <ul class="clean">
-      <li>日志：/api/logs 记录请求和错误</li>
+      <li>日志：/api/logs 记请求和错误</li>
       <li>异常：统一错误码，前端能提示</li>
       <li>契约：Pydantic 校验入参出参</li>
       <li>并发：事务 + 条件更新，有测试</li>
-      <li>降级：LLM/网络/冷启动都有兜底</li>
+      <li>降级：LLM、网络、冷启动都有兜底</li>
     </ul>
   </div>
   <div class="card" v-click><div class="accent small font-bold">质量工具</div>
@@ -492,7 +487,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】质量用数字说话：后端 333 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一异常、契约校验、事务并发和降级路径，工具链和 CI 同口径。
+【30 秒】质量拿数字说话：后端 333 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一错误码、契约校验和降级。
 -->
 
 ---
@@ -501,7 +496,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.7 代码统计</div>
 
-# 代码量不是目标，结构清楚才是
+# 3 万多行代码，重点在结构
 
 <div class="body">
 
@@ -519,8 +514,8 @@ layout: default
 </div>
 
 <div class="grid2">
-  <div class="card" v-click><div class="accent small font-bold">模块数</div><div class="small muted">前端 8 视图 / 9 组件；后端 11 路由 / 9 AI 模块 / 9 张表。</div></div>
-  <div class="dark-band small" v-click><b>AI 与团队编写的比例</b><br>没做逐行归因，不编百分比。AI 参与建议、测试和文档；核心逻辑人工写并互审，提交都有 CI 和评审。</div>
+  <div class="card" v-click><div class="accent small font-bold">模块数</div><div class="small muted">前端 8 视图 / 9 组件；后端 11 路由 / 9 AI 模块。</div></div>
+  <div class="dark-band small" v-click><b>AI 与团队编写的比例</b><br>没做逐行归因，不编百分比。AI 帮忙写测试和文档；核心逻辑人工写、互相审。</div>
 </div>
 
 <div class="sage small font-bold" v-click>可执行代码合计约 33,000 行；文档约 12,000 行（65 份 md）。</div>
@@ -528,7 +523,7 @@ layout: default
 </div>
 
 <!--
-【15 秒】可执行代码约 3.3 万行，文档约 1.2 万行。前端 8 个视图、9 个组件；后端 11 个路由模块、9 个 AI 模块。AI 参与建议、测试和文档，核心逻辑人工写并互审，所有提交都有 CI 和评审。
+【15 秒】代码大概 3.3 万行，文档 1.2 万行。前端 8 个视图 9 个组件，后端 11 个路由 9 个 AI 模块。AI 帮忙写测试和文档，核心逻辑人工写、互相审。
 -->
 
 ---
@@ -537,25 +532,25 @@ layout: default
 
 <div class="kicker">验收 · 测试与容量</div>
 
-# 用户测试 + 智能体评测 + 压测，三条证据链
+# 三类证据：用户测试、AI 评测、压测
 
 <div class="body">
 
 <div class="grid2">
-  <div class="card" v-click><div class="metric">33 项</div><div class="small font-bold">用户测试表</div><div class="sage small font-bold">32 通过 / 1 部分通过</div><div class="small muted">对话/状态/错误/边界逐项实测，截图留痕</div></div>
-  <div class="card" v-click><div class="metric">16/16</div><div class="small font-bold">AI 契约评测</div><div class="sage small font-bold">source=llm 100% · P95 3.39s</div><div class="small muted">6 字段完整率 100%，合规/可核性全过</div></div>
-  <div class="card" v-click><div class="metric">11/11</div><div class="small font-bold">红队用例</div><div class="sage small font-bold">提示注入 / 越权 / 伪造来源</div><div class="small muted">全部守住，审计日志可追</div></div>
-  <div class="card" v-click><div class="metric">38 req/s</div><div class="small font-bold">只读压测</div><div class="sage small font-bold">≈190 人同时在线 · 0 错误</div><div class="small muted">瓶颈是免费档 0.1 vCPU，不是代码</div></div>
+  <div class="card" v-click><div class="metric">33 项</div><div class="small font-bold">用户测试表</div><div class="sage small font-bold">32 通过 / 1 部分通过</div><div class="small muted">对话、状态、错误、边界都测了</div></div>
+  <div class="card" v-click><div class="metric">16/16</div><div class="small font-bold">AI 契约评测</div><div class="sage small font-bold">source=llm 100% · P95 3.39s</div><div class="small muted">6 个字段都全，合规也过</div></div>
+  <div class="card" v-click><div class="metric">11/11</div><div class="small font-bold">红队用例</div><div class="sage small font-bold">提示注入 / 越权 / 伪造来源</div><div class="small muted">全部守住，有审计日志</div></div>
+  <div class="card" v-click><div class="metric">38 req/s</div><div class="small font-bold">只读压测</div><div class="sage small font-bold">≈190 人同时在线 · 0 错误</div><div class="small muted">瓶颈是免费档，不是代码</div></div>
 </div>
 
-<div class="small muted" v-click>边界：交叉测试双向各 33 题、样本仍小；没有真实赛事数据，不吹预测准确率，也不承诺长期留存。</div>
+<div class="small muted" v-click>边界：交叉测试双向各 33 题，样本还小；没有真实赛事数据，不吹准确率。</div>
 
 <div class="card" v-click><div class="small">证据索引：docs/acceptance/evidence（147 张截图）· test_report.md · agent_eval_report.md · load_test_report.md</div></div>
 
 </div>
 
 <!--
-【20 秒】三条证据链：33 项用户测试（32 通过、1 部分通过）、AI 契约 16/16、红队 11/11；压测 38 req/s、190 并发、0 错误。说清边界：交叉测试双向各 33 题，我方测 Tome 9/17/6/1，他组测我方 28/4/0/1；没有真实赛事数据，所以不吹准确率。
+【20 秒】三类证据：33 项用户测试（32 过、1 部分过）、AI 契约 16/16、红队 11/11；压测 38 req/s、190 并发、0 错误。也说清楚：交叉测试样本还小，没有真实赛事数据，不吹准确率。
 -->
 
 ---
@@ -564,7 +559,7 @@ layout: default
 
 <div class="kicker">演示</div>
 
-# 2 分钟现场演示：一条完整的判断→交易→复盘
+# 现场演示：从判断到下单，2 分钟
 
 <div class="body">
 
@@ -577,12 +572,12 @@ layout: default
   <div class="card" v-click><div class="accent font-bold">06 结束</div><div class="small muted mt-1">回到市场，数据干净可重复</div></div>
 </div>
 
-<div class="small muted" v-click>演示期间不切窗口、不输入敏感信息；失败预案：刷新只读页 / 放录屏 / 用本机备份。</div>
+<div class="small muted" v-click>演示时不切窗口；卡了就刷新只读页或放录屏。</div>
 
 </div>
 
 <!--
-【5 秒】下面用 2 分钟演示一条完整链路：市场、详情、买入、复盘，再补一个停牌拦截和 AI 降级。演示期间不切窗口。
+【5 秒】下面用两分钟走一遍：市场、详情、买入、复盘，再补一个停牌拦截和 AI 降级。演示时不切窗口。
 -->
 
 ---
@@ -615,5 +610,5 @@ layout: default
 </div>
 
 <!--
-【结束】最后一页不列问题清单：这是给老师做结课审查的材料，不是答辩培训。谢谢老师，页面留三个入口：在线演示、仓库、完整材料 PDF，随时可以点开看。
+【结束】最后一页不列问题：这是给老师做结课审查的材料。谢谢老师，页面上留了在线演示、仓库和完整材料三个入口，随时能点开看。
 -->
