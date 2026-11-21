@@ -27,3 +27,115 @@ ul.clean { padding-left:1.1rem; } ul.clean li { margin:.18rem 0; font-size:.82re
 .slidev-layout table th:first-child, .slidev-layout table td:first-child { white-space: nowrap; }
 .pdf-link { display:inline-flex; align-items:center; gap:.35rem; padding:.35rem .75rem; border:1px solid #d9d3c7; border-radius:999px; color:#a62b2f !important; text-decoration:none !important; font-weight:600; background:#fcfbf8; }
 .pdf-link:hover { background:#f0ebe2; }
+/* ============================================================
+   动效层（2026-11-21）
+   - 入场：标题/要点/卡片/表格行/图片 依次淡入上浮
+   - 悬停：卡片轻抬、图片微放大、表格行高亮
+   - 翻页：沿用 Slidev 的 slide-left transition
+   - 打印/减少动效：全部复位，保证 PDF 导出不漏内容
+   ============================================================ */
+@keyframes deck-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes deck-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes deck-zoom {
+  from { opacity: 0; transform: scale(.982); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes deck-pop {
+  0%   { opacity: 0; transform: scale(.9); }
+  70%  { opacity: 1; transform: scale(1.04); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes deck-line {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 标题与 kicker */
+  .slidev-layout .kicker { animation: deck-rise .45s cubic-bezier(.22,1,.36,1) both; }
+  .slidev-layout .kicker::before { transform-origin: left; animation: deck-line .5s cubic-bezier(.22,1,.36,1) .05s both; }
+  .slidev-layout h1 { position: relative; animation: deck-rise .5s cubic-bezier(.22,1,.36,1) .04s both; }
+  .slidev-layout h1::after {
+    content: ""; display: block; width: 44px; height: 3px; margin-top: .38rem;
+    background: #a62b2f; border-radius: 2px; transform-origin: left;
+    animation: deck-line .55s cubic-bezier(.22,1,.36,1) .16s both;
+  }
+  .cover-title { animation: deck-rise .65s cubic-bezier(.22,1,.36,1) both; }
+  .slidev-layout .excerpt { animation: deck-rise .55s cubic-bezier(.22,1,.36,1) .1s both; }
+
+  /* 卡片 / 药丸 / 色块 / 公式 / 图片 */
+  .slidev-layout .card,
+  .slidev-layout .pill,
+  .slidev-layout .dark-band,
+  .slidev-layout .formula { animation: deck-rise .5s cubic-bezier(.22,1,.36,1) both; }
+  .slidev-layout .shot { animation: deck-zoom .65s cubic-bezier(.22,1,.36,1) .06s both; }
+  .slidev-layout .metric { animation: deck-pop .6s cubic-bezier(.22,1,.36,1) .14s both; }
+  .slidev-layout .mermaid,
+  .slidev-layout svg[id^="mermaid"] { animation: deck-fade .7s ease .1s both; }
+
+  /* 卡片依次入场（最多 8 个） */
+  .slidev-layout .card:nth-child(1) { animation-delay: .05s; }
+  .slidev-layout .card:nth-child(2) { animation-delay: .11s; }
+  .slidev-layout .card:nth-child(3) { animation-delay: .17s; }
+  .slidev-layout .card:nth-child(4) { animation-delay: .23s; }
+  .slidev-layout .card:nth-child(5) { animation-delay: .29s; }
+  .slidev-layout .card:nth-child(6) { animation-delay: .35s; }
+  .slidev-layout .card:nth-child(7) { animation-delay: .41s; }
+  .slidev-layout .card:nth-child(8) { animation-delay: .47s; }
+  .slidev-layout .pill:nth-child(1) { animation-delay: .08s; }
+  .slidev-layout .pill:nth-child(2) { animation-delay: .14s; }
+  .slidev-layout .pill:nth-child(3) { animation-delay: .20s; }
+  .slidev-layout .pill:nth-child(4) { animation-delay: .26s; }
+  .slidev-layout ul.clean li:nth-child(1) { animation-delay: .10s; }
+  .slidev-layout ul.clean li:nth-child(2) { animation-delay: .16s; }
+  .slidev-layout ul.clean li:nth-child(3) { animation-delay: .22s; }
+  .slidev-layout ul.clean li:nth-child(4) { animation-delay: .28s; }
+  .slidev-layout ul.clean li:nth-child(5) { animation-delay: .34s; }
+  .slidev-layout table tbody tr { animation: deck-fade .4s ease both; }
+  .slidev-layout table tbody tr:nth-child(1) { animation-delay: .06s; }
+  .slidev-layout table tbody tr:nth-child(2) { animation-delay: .10s; }
+  .slidev-layout table tbody tr:nth-child(3) { animation-delay: .14s; }
+  .slidev-layout table tbody tr:nth-child(4) { animation-delay: .18s; }
+  .slidev-layout table tbody tr:nth-child(5) { animation-delay: .22s; }
+  .slidev-layout table tbody tr:nth-child(6) { animation-delay: .26s; }
+  .slidev-layout table tbody tr:nth-child(7) { animation-delay: .30s; }
+  .slidev-layout table tbody tr:nth-child(8) { animation-delay: .34s; }
+}
+
+/* 悬停微交互（桌面端） */
+@media (hover: hover) {
+  .slidev-layout .card { transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  .slidev-layout .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,31,27,.07); border-color:#d8d1c4; }
+  .slidev-layout .pill { transition: transform .18s ease, background .18s ease; }
+  .slidev-layout .pill:hover { transform: translateY(-1px); background:#e6dfd1; }
+  .slidev-layout .shot { transition: transform .28s ease, box-shadow .28s ease; }
+  .slidev-layout .shot:hover { transform: scale(1.008); box-shadow: 0 12px 26px rgba(34,31,27,.12); }
+  .slidev-layout table tbody tr { transition: background .15s ease; }
+  .slidev-layout table tbody tr:hover { background:#f3efe6; }
+}
+
+/* 点击浮现（v-click）的过渡；给后续加交互留口子 */
+.slidev-vclick-target { transition: opacity .32s ease, transform .32s cubic-bezier(.22,1,.36,1); }
+.slidev-vclick-hidden { opacity: 0 !important; transform: translateY(10px); }
+
+/* 导出 PDF / 打印：动画全部复位，避免内容停在 opacity:0 */
+@media print, (prefers-reduced-motion: reduce) {
+  .slidev-layout *, .cover-title, .slidev-layout h1::after, .slidev-layout .kicker::before {
+    animation: none !important;
+    transition: none !important;
+  }
+  .slidev-layout .card, .slidev-layout .pill, .slidev-layout .shot,
+  .slidev-layout .dark-band, .slidev-layout .formula, .slidev-layout .metric,
+  .slidev-layout .mermaid, .slidev-layout svg[id^="mermaid"],
+  .slidev-layout table tbody tr, .slidev-layout ul.clean li,
+  .slidev-layout .excerpt, .cover-title {
+    opacity: 1 !important; transform: none !important;
+  }
+}
+
