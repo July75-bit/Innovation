@@ -106,6 +106,6 @@ src/
 ## 待办（对齐里程碑）
 
 - [x] 后端启动后联调：查行情 → 买入 → 看持仓 → 卖出（2026-10-24 实机两轮通过：5 条错误分支 + AI 卡 + 三态均验证）
-- [ ] 折线图悬停显示 `reason`（第 4 天，答辩归因用）
-- [ ] 每日签到补给入口（若后端第 4 天提供接口）
-- [ ] 注册 / 登录接后端（`POST /api/auth/register`、`/login`、`/logout`）：届时替换 `useAuth.ts`，并删掉本地摘要
+- [x] 折线图悬停显示 `reason`（第 4 天，答辩归因用）——已实现并有 `PriceChart.spec.ts` 用例
+- [x] 每日签到补给入口——**不做**：后端无签到接口，`user_stories.md` 已列为 Could/Won't
+- [x] 注册 / 登录接后端（`POST /api/auth/register`、`/login`、`/logout`）：已接真实接口（`api/index.ts` + `useAuth.ts`），线上可注册/登录/删号

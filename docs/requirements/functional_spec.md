@@ -213,6 +213,6 @@ classDiagram
 
 ## 6. TODO
 
-- [ ] B 补全 M1 的异常分支（余额不足/持仓不足/非法数量/无效选手/暂停交易）
+- [x] B 补全 M1 的异常分支（余额不足/持仓不足/非法数量/无效选手/暂停交易）——已实现并有 7 条异常矩阵（`tests/unit/test_core_exceptions.py`、`test_trades_rule.py`）
 - [x] C 补全 M2 的参数范围与 clamp 策略（见 M2 章节后的「参数范围与 clamp 策略」表 + 三层 clamp 顺序；与 `pricing_model.md` §2/§3 一致）
-- [ ] D 补全 M3 的降级链路时序
+- [x] D 补全 M3 的降级链路时序——超时/脏输出/无密钥三条路径均有用例（`tests/unit/test_api_ai.py`、`test_llm_agent.py`）

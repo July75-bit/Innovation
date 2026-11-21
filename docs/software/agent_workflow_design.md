@@ -50,7 +50,7 @@
 - [x] 失败降级策略（rule_fallback，永不阻塞交易）
 - [x] 统一输出格式（固定 6 字段 JSON）
 - [ ] 最大重试次数（P0：Critic 重试上限 1）
-- [ ] 工具调用审计日志（P0）
+- [x] 工具调用审计日志（P0）——`agent_traces` 表 + `app/api/agent.py` 每次调用写审计行，`GET /api/agent/traces` 可查
 - [ ] 幂等键（P0：缓存键）
 - [ ] 最大 token 消耗 / 单日预算（P1）
 - [ ] 可观测性面板指标（P2）

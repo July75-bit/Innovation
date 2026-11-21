@@ -123,7 +123,7 @@ sequenceDiagram
 | 响应式 | `@media (max-width: 960px / 720px)` + 导航抽屉 + 表格转卡片 | 375px 无横向滚动（证据 `evidence/23~27`、`35`） |
 | 可访问性 | 数据点 `tabindex` + `@focus` 出 tooltip、`:focus-visible` 描边、`prefers-reduced-motion` | 键盘可达（证据 `evidence/28`） |
 
-## 4. 技术选型与版本## 4. 技术选型与版本
+## 4. 技术选型与版本
 
 | 组件 | 选型 | 版本 | 选它的理由 | 备选 |
 | --- | --- | --- | --- | --- |
@@ -217,7 +217,7 @@ flowchart TB
 
 ## 8. TODO
 
-- [ ] B 第 1 天补全模块边界与数据表关系
-- [ ] D 第 5 天补全部署拓扑的真实域名
-- [ ] D 第 6 天把"见 requirements.lock.txt"替换成真实版本号
-- [ ] A 第 4 天按 `docs/software/prototype/` 实现 Vue 页面，并补 `docs/requirements/wireframes/` 截图
+- [x] B 第 1 天补全模块边界与数据表关系（§2 分层与模块职责表 + `database_design.md` §2/§3）
+- [x] D 第 5 天补全部署拓扑的真实域名（§6 + `deployment.md` §6 三服务地址）
+- [x] D 第 6 天把"见 requirements.lock.txt"替换成真实版本号（§4：Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6）
+- [x] A 第 4 天按 `docs/software/prototype/` 实现 Vue 页面，并补 `docs/requirements/wireframes/` 截图（4 张实机截图已放入该目录，原图在 `docs/acceptance/evidence/`）
