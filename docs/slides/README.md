@@ -7,6 +7,7 @@ PlayerStock 答辩用的 Slidev 项目：17 页 16:9 幻灯片，覆盖课程 wi
 > 本机不装 Node / Slidev / Playwright 也能拿到在线网页和 PDF。
 
 > **放映方式**：空格 / → 逐条展开（v-click 渐进披露），P 开演讲者模式；PDF 导出会一次性显示全部内容。
+> **讲稿在哪**：每页的 HTML 注释（按 P 在演讲者模式查看）；纯文本版在 [notes.md](notes.md)。
 
 ## 在线访问（push 后自动发布）
 
