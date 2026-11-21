@@ -101,12 +101,12 @@
 
 ## 五、彩排后：定稿清单（M6 关闭条件）
 
-- [ ] 两次彩排都有完整计时，合计 ≤ 15:00（允许 +30s）
-- [ ] 彩排记录写进 `docs/presentation/README.md`（时间 + 问题 + 改了什么）
-- [ ] docs/slides/slides.md 与 Actions artifact 的 PDF 是同一版（改过就重跑 Actions）
-- [ ] `qa.md` 补到 ≥ 28 问（B-5 追问后追加）
-- [ ] 演示数据在**最后一次彩排后**再重置一次（否则彩排会把余额用掉）
-- [ ] `day6.md` 的 A-5/A-7/B-5/C-3/D-5~D-8 状态回填为 ✅
+- [ ] 两次彩排都有完整计时，合计 ≤ 15:00（允许 +30s） —— 🟡 未执行（尚未彩排）
+- [ ] 彩排记录写进 `docs/presentation/README.md`（时间 + 问题 + 改了什么） —— 🟡 未执行
+- [ ] docs/slides/slides.md 与 Actions artifact 的 PDF 是同一版（改过就重跑 Actions） —— 🟡 待彩排前复核（`defense.pdf` 已是历史产物，主材料改为 Slidev）
+- [ ] `qa.md` 补到 ≥ 28 问（B-5 追问后追加） —— 🟡 当前 20 问，待补 8 问
+- [ ] 演示数据在**最后一次彩排后**再重置一次（否则彩排会把余额用掉） —— 🟡 待彩排后执行（`POST /api/debug/reseed?rounds=12&seed=42`）
+- [ ] `day6.md` 的 A-5/A-7/B-5/C-3/D-5~D-8 状态回填为 ✅ —— 🟡 历史计划文档，未回填（不影响交付）
 
 ---
 
