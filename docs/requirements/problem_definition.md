@@ -63,13 +63,13 @@ PlayerStock 是一个**纯信用点、不可兑换**的娱乐性"选手股"交�
 
 ## 6. 成功标准（可验收）
 
-- [ ] 浏览器打开线上地址，能完成"查看行情 → 买入 → 查看持仓 → 卖出"
-- [ ] 价格随模拟比赛变化，且每条变化都有可读的原因
-- [ ] 任选一个选手，能拆解"哪部分价格来自比赛表现"
-- [ ] AI 能对任一选手给出 BUY/SELL/HOLD + 理由 + 风险等级
-- [ ] 断开/无密钥时 AI 降级，交易与行情仍可用
+- [x] 浏览器打开线上地址，能完成"查看行情 → 买入 → 查看持仓 → 卖出"（TC-403/404 + `evidence/03/05`）
+- [x] 价格随模拟比赛变化，且每条变化都有可读的原因（`test_price_reason_traceability` + `pricing_model.md` §5）
+- [x] 任选一个选手，能拆解"哪部分价格来自比赛表现"（`pricing_model.md` §8 单点案例）
+- [x] AI 能对任一选手给出 BUY/SELL/HOLD + 理由 + 风险等级（`test_api_ai.py` 6 字段契约）
+- [x] 断开/无密钥时 AI 降级，交易与行情仍可用（`test_api_ai.py::test_analysis_contract_shape_and_rule_fallback` + TC-406）
 
 ## 7. TODO
 
-- [ ] D 第 1 天完成初稿并组织 15 分钟评审（A/B/C 各提 1 个反对意见）
-- [ ] 评审结论记录到 `docs/retrospection/daily_summary.md`
+- [x] D 第 1 天完成初稿并组织 15 分钟评审（A/B/C 各提 1 个反对意见）——评审记录见 `daily_summary.md` 第 1 天
+- [x] 评审结论记录到 `docs/retrospection/daily_summary.md`（第 1 天「契约评审」行）
