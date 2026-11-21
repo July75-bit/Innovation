@@ -219,11 +219,11 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.3 代码仓库与协作</div>
 
-# 466 次提交、4 位贡献者、4 道 CI 门禁
+# 502 次提交、4 位贡献者、4 道 CI 门禁
 
 <div class="body">
 
-<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ develop ｜ 466 次提交（334 次非合并）</div>
+<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ develop ｜ 502 次提交（363 次非合并）</div>
 
 <div class="grid2">
   <div class="card" v-click>
@@ -244,7 +244,7 @@ layout: default
 </div>
 
 <!--
-【25 秒】仓库在 GitHub，develop 是部署分支，466 次提交、334 次非合并。四个人都在提交。协作靠 Issues 和 Projects，CI 4 个 job，每次 push 都跑。
+【25 秒】仓库在 GitHub，develop 是部署分支，502 次提交、363 次非合并。四个人都在提交。协作靠 Issues 和 Projects，CI 4 个 job，每次 push 都跑。
 -->
 
 ---
@@ -325,33 +325,31 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 算法与 AI</div>
 
-# 价格说得清，AI 挂了也能用
+# 价格怎么算，AI 怎么建议
 
 <div class="body">
 
 <div class="grid2">
   <div class="card" v-click>
-    <div class="accent small font-bold">定价模型：每条涨跌都能拆成一句话</div>
+    <div class="accent small font-bold">价格怎么变</div>
     <div class="formula mt-3">P′ = max(1.0, P × (1 + 0.15 · S))</div>
-    <div class="small font-bold muted mt-2">S = clamp(z / 3.0, −1, 1)　｜　单次变动 |Δ| ≤ 20%</div>
+    <div class="small mt-2">新价 = 旧价 ×（1 + 0.15 × 表现分），最低 1.0</div>
     <ul class="clean mt-2">
-      <li>用 z-score 标准化，避免强队恒涨</li>
-      <li>0.15 权重 + 地板价 + ±20% 熔断</li>
-      <li>每条价格都带 reason，现场能拆</li>
+      <li>表现分看这轮比平时好多少，强队不会一直涨</li>
+      <li>一次最多涨跌 20%，不会一夜翻倍</li>
+      <li>每次变价都写一句原因，点开就能看</li>
     </ul>
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click>
-      <div class="accent small font-bold">AI 智能体：只给建议，永不改余额</div>
-      <div class="flex gap-1 flex-wrap mt-2">
-        <span class="pill">感知行情</span><span class="pill">分析师</span><span class="pill">风控</span><span class="pill">交易员</span><span class="pill">人点采纳</span><span class="pill">审计</span>
-      </div>
-      <div class="small muted mt-2">DeepSeek API，20 秒超时；没 Key、超时、坏 JSON 都走规则兜底，接口照样 200。</div>
-      <div class="small mt-2">固定 6 个字段；L4 评测 <b>16/16、P95 3.39s</b>。</div>
+      <div class="accent small font-bold">AI 只给建议，不动你的钱</div>
+      <div class="small mt-2">流程：看行情 → 分析师 → 风控 → 交易员 → 你来点采纳，全程留审计。</div>
+      <div class="small muted mt-2">接的是 DeepSeek，20 秒超时；没配 Key、超时或返回坏数据，就自动用规则版，页面照样能用。</div>
+      <div class="small mt-2">6 个固定字段；线上 16/16 通过，P95 3.39 秒。</div>
     </div>
     <div class="dark-band small" v-click>
-      <b>为什么不让模型定价？</b><br>
-      规则稳定、零成本；模型挂了自动回落，交易照常。
+      <b>为什么不让 AI 定价？</b><br>
+      规则稳定、不花钱；AI 挂了，交易也不受影响。
     </div>
   </div>
 </div>
@@ -359,7 +357,7 @@ layout: default
 </div>
 
 <!--
-【40 秒】定价用 z-score 加线性映射，一次最多涨跌 20%，每条价格都带原因，现场能拆。AI 这边是分析师、风控、交易员，人在环、留审计；DeepSeek 挂了就走规则兜底。我们不给模型定价权。
+【40 秒】价格怎么变：新价 = 旧价 ×（1 + 0.15 × 表现分），最低 1.0，一次最多涨跌 20%。每条价格都带原因，点开就能看。AI 这边走一遍分析师、风控、交易员，最后你点采纳，全程留审计；DeepSeek 挂了自动用规则版。我们不给 AI 定价权。
 -->
 
 ---
@@ -451,7 +449,7 @@ layout: default
 
 <div class="grid4">
   <div class="card" v-click><div class="metric">335</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，live 默认不跑</div></div>
-  <div class="card" v-click><div class="metric">182</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 22 个文件</div></div>
+  <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 23 个文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine</div></div>
   <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 门禁 job</div><div class="small muted">卫生、后端、前端、交付物</div></div>
 </div>
@@ -482,7 +480,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】质量拿数字说话：后端 335 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一错误码、契约校验和降级。
+【30 秒】质量拿数字说话：后端 335 条、前端 186 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一错误码、契约校验和降级。
 -->
 
 ---
@@ -500,16 +498,16 @@ layout: default
 | 语言           | 文件数 | 行数     |
 | ------------ | --- | ------ |
 | Python       | 111 | 16,790 |
-| Vue          | 20  | 8,848  |
-| TypeScript   | 47  | 6,348  |
-| CSS          | 4   | 968    |
+| Vue          | 21  | 8,992  |
+| TypeScript   | 49  | 6,410  |
+| CSS          | 4   | 969    |
 | HTML         | 3   | 1,082  |
-| Markdown（文档） | 70  | 8,275  |
+| Markdown（文档） | 70  | 8,270  |
 
 </div>
 
 <div class="grid2">
-  <div class="card" v-click><div class="accent small font-bold">模块数</div><div class="small muted">前端 8 视图 / 9 组件；后端 11 路由 / 9 AI 模块。</div></div>
+  <div class="card" v-click><div class="accent small font-bold">模块数</div><div class="small muted">前端 8 视图 / 12 组件；后端 11 路由 / 9 AI 模块。</div></div>
   <div class="dark-band small" v-click><b>AI 与团队编写的比例</b><br>没做逐行归因，不编百分比。AI 帮忙写测试和文档；核心逻辑人工写、互相审。</div>
 </div>
 
@@ -518,7 +516,7 @@ layout: default
 </div>
 
 <!--
-【15 秒】代码约 3.4 万行，文档约 8,300 行。前端 8 个视图 9 个组件，后端 11 个路由 9 个 AI 模块。AI 帮忙写测试和文档，核心逻辑人工写、互相审。
+【15 秒】代码约 3.4 万行，文档约 8,300 行。前端 8 个视图 12 个组件，后端 11 个路由 9 个 AI 模块。AI 帮忙写测试和文档，核心逻辑人工写、互相审。
 -->
 
 ---
