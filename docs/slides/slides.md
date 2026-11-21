@@ -40,9 +40,7 @@ fonts:
 </div>
 
 <!--
-【15 秒】各位老师好，我们是「有请下一组」，作品是 PlayerStock：用信用点交易 CS2 职业选手虚拟股，
-把观众对选手的判断变成一条可交易、可解释、没有真实资金风险的价格曲线。
-接下来 8 分钟讲产品与实现，2 分钟现场演示，5 分钟回答提问。
+【20 秒】各位老师好，我们是「有请下一组」，作品是 PlayerStock——用信用点交易 CS2 职业选手的虚拟股。一句话：把观众对选手的判断，变成一条看得懂、能验证、不花真钱的价格曲线。接下来 8 分钟讲产品，2 分钟演示，5 分钟问答。
 -->
 
 ---
@@ -78,13 +76,11 @@ layout: two-cols
 </div>
 
 <div class="mt-4 tiny muted">
-  <b>差异化：</b>不跟竞品比「人多」，比「可解释 + 零真实资金」——交易选手价值（vs 猜胜负）、机器人可解释（vs 黑箱）、零真实货币（vs 竞猜/预测市场）。
+  <b>差异化：</b>不比人多，比「可解释 + 零真实资金」——交易的是选手价值，不是猜胜负；每条涨跌能解释；不碰真钱。
 </div>
 
 <!--
-【40 秒】使命和口号：看懂比赛，从持有起。目标用户是看 CS 比赛、对选手有判断、但不想用真钱的人。
-没有推广预算，只靠赛事节点、内容化日报和校园社群。团队 4 人能力互补。
-与竞品比，差异是标的（选手价值）、可解释、零真实资金。
+【15 秒】先看使命和口号：看懂比赛，从持有起。目标用户是看 CS 比赛、对选手有判断、但不想用真钱的人。我们没有推广预算，靠赛事节点、内容化日报和校园社群慢慢做；团队四个人能力互补。跟竞品比，我们比的是标的、可解释、零真实资金，不是比人多。
 -->
 
 ---
@@ -96,9 +92,8 @@ layout: default
 # 一个纯虚拟、可解释的选手股市场
 
 <div class="dark-band text-base font-bold leading-relaxed" v-click>
-对于想在观赛时参与「判断」的 CS 观众，PlayerStock 是一个纯信用点、可解释的选手股交易市场；
-它把选手的赛场表现变成可交易、可追溯、可归因的价格曲线；不同于赛事竞猜和模拟炒股，
-我们不涉及任何真实资金，并且每条涨跌都能拆解原因。
+对于想在观赛时参与判断的 CS 观众，PlayerStock 是一个纯信用点、可解释的选手股市场。
+它把选手表现变成可交易、可追溯的价格；每条涨跌都能拆出原因。我们不做竞猜，也不碰真钱。
 </div>
 
 <div class="sage small font-bold mt-3" v-click>解决的问题：判断无处验证 · 价格变化是黑箱 · 决策门槛高</div>
@@ -115,8 +110,7 @@ layout: default
 </div>
 
 <!--
-【40 秒】一句话定义产品；三个用户故事对应新手、行情玩家、演示者，每个都带验收。
-规模是 16 名选手、8 支战队、每人 11 个价格点；5000 信用点开局，全部虚拟不可兑换。
+【40 秒】一句话定义：对想在观赛时参与判断的 CS 观众，PlayerStock 是一个纯信用点、可解释的选手股市场。它把选手表现变成可交易、可追溯的价格，每条涨跌都能拆出原因。三个用户故事对应新手、行情玩家、演示者，每个都有验收标准。规模是 16 名选手、8 支战队、每人 11 个价格点，5000 信用点开局，全部虚拟、不可兑换。
 -->
 
 ---
@@ -137,8 +131,7 @@ layout: default
 <div class="card mt-3" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">审核 / 合规原则</div><div class="font-bold">零真实资金 + 只读 AI</div><div class="small muted">0 充值 / 0 提现 / 0 兑换；AI 不下单、不改余额，每次调用留审计 trace。</div><div class="tiny faint mt-1">落地：README + 页面双处合规声明；AI 只读红线写进接口契约。</div></div></div></div>
 
 <!--
-【35 秒】设计原则不是背条文，而是每个原则对应一个取舍：先给结论、一屏完成、纸感低密度、
-确定性骨架让 LLM 挂了也能交易、合规零真实资金。
+【35 秒】这一页不讲条文，讲五个取舍：先给结论、一屏完成、纸感低密度、确定性骨架让 LLM 挂了也能交易、合规零真实资金。每个原则后面都跟了落地方式和验收。
 -->
 
 ---
@@ -168,8 +161,7 @@ layout: two-cols
 - 深浅色快捷切换、骨架屏、慢加载提示
 
 <!--
-【35 秒】桌面市场一屏 6 张卡，简报先给结论；详情页左边价格历史，右边 AI 建议和交易；
-移动端底部 4 个导航 + 顶栏头像，下滑隐藏顶栏，深浅色一键切换。全部按可读、低密度做减法。
+【35 秒】界面就是这样：桌面市场一屏 6 张卡，简报先给结论；详情页左边价格历史，右边 AI 建议和交易；移动端底部 4 个导航加顶栏头像，下滑隐藏顶栏，深浅色一键切换。整体按可读、低密度做减法。
 -->
 
 ---
@@ -193,13 +185,12 @@ layout: default
 
 </div>
 
-<div class="sage small font-bold mt-4" v-click>原则：不选「简历上最响」的框架，选团队 6 天内能交付、能测试、能部署、能讲清楚的技术。</div>
+<div class="sage small font-bold mt-4" v-click>原则：不选简历上最响的，选 6 天能交付、能测试、能部署、能讲清楚的。</div>
 
 <div class="tiny faint mt-2">引用来源：Vue / FastAPI / SQLAlchemy / Vite 官方仓库与文档；DeepSeek 官方 API 文档；版本号与链接见 README / requirements。</div>
 
 <!--
-【30 秒】技术选型一条原则：轻量、可复现、团队 Hold 得住。前端 Vue3+Vite，后端 FastAPI + SQLAlchemy，
-线上 Postgres，AI 用 DeepSeek 并保留规则兜底；部署交给 Render + GitHub Actions。
+【30 秒】技术选型只有一个原则：轻量、可复现、团队真正 Hold 得住。前端 Vue 3 + Vite，后端 FastAPI + SQLAlchemy，线上 Postgres；AI 用 DeepSeek 并保留规则兜底；部署交给 Render 和 GitHub Actions。
 -->
 
 ---
@@ -208,17 +199,17 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.3 代码仓库与协作</div>
 
-# 444 次提交、5 位贡献者、4 道 CI 门禁
+# 466 次提交、5 位贡献者、4 道 CI 门禁
 
-<div class="small muted font-bold">github.com/July75-bit/Innovation ｜ 部署分支 develop ｜ 共 444 次提交（315 次非合并）</div>
+<div class="small muted font-bold">github.com/July75-bit/Innovation ｜ 部署分支 develop ｜ 共 466 次提交（334 次非合并）</div>
 
 <div class="grid2 mt-4">
   <div v-click class="card">
     <div class="accent small font-bold">提交分布（GitHub Pulse / git shortlog，含合并提交）</div>
     <table class="mt-2">
       <tbody>
-      <tr><td>D 王泽棠</td><td>186</td><td>A 倪颢容</td><td>74</td></tr>
-      <tr><td>B 胡德昊</td><td>114</td><td>C 刘宏</td><td>70</td></tr>
+      <tr><td>D 王泽棠</td><td>197</td><td>A 倪颢容</td><td>74</td></tr>
+      <tr><td>B 胡德昊</td><td>114</td><td>C 刘宏</td><td>81</td></tr>
       </tbody>
     </table>
     <div class="tiny faint mt-2">B 的两个本地 GitHub 身份已合并统计（July75-bit / Hu De Hao）。</div>
@@ -232,8 +223,7 @@ layout: default
 <div class="mt-3 tiny muted">证据：Pulse 提交截图、Issue #22–#35、CI run 记录都在仓库/答辩材料里。</div>
 
 <!--
-【25 秒】仓库在 GitHub 的 July75-bit/Innovation，develop 是部署分支，共 444 次提交、315 次非合并。
-四个人都有持续提交；B 的两个本地 GitHub 身份已合并统计。协作靠 Issues/Projects，CI 4 个 job 每次 push 自动跑。
+【25 秒】仓库在 GitHub 的 July75-bit/Innovation，develop 是部署分支，一共 466 次提交、334 次非合并。四个人都有持续提交，B 的两个 GitHub 身份已经合并统计。协作靠 Issues 和 Projects，CI 4 个 job 每次 push 自动跑。
 -->
 
 ---
@@ -257,11 +247,10 @@ layout: default
 
 </div>
 
-<div class="sage small font-bold mt-4" v-click>复盘不是「踩坑列表」：每个问题都补了测试、监控或文档，避免同类问题再发生。</div>
+<div class="sage small font-bold mt-4" v-click>每个问题都补了测试、监控或文档，别再踩同一个坑。</div>
 
 <!--
-【40 秒】挑 6 个真实问题：数据全丢（SQLite 临时盘→Postgres）、psycopg 驱动、CORS、模型输出透传、
-CI 圈复杂度、冷启动。每个都说明原因和修复；修复后都有测试或线上验证。
+【40 秒】挑了 6 个真实问题：数据全丢（SQLite 临时盘换成 Postgres）、psycopg 驱动、CORS、模型输出透传、CI 圈复杂度、冷启动。每个都说清原因和修复，修复后都有测试或线上验证。
 -->
 
 ---
@@ -294,8 +283,7 @@ flowchart LR
 </div>
 
 <!--
-【35 秒】架构分四层：前端 SPA、FastAPI 路由、确定性业务内核（core_engine + 规则层）、数据库；
-AI 是旁路，只读建议不参与交易。部署是 Render 四件套：静态站、Web Service、Cron、Postgres。
+【35 秒】架构分四层：前端 SPA、FastAPI 路由、确定性业务内核（core_engine 加规则层）、数据库。AI 是旁路，只读建议，不参与交易。部署是 Render 四件套：静态站、Web Service、Cron、Postgres。
 -->
 
 ---
@@ -330,14 +318,13 @@ layout: two-cols
 </div>
 
 <div class="dark-band mt-3 small" v-click>
-<b>为什么不直接让模型定价？—— 确定性优先，智能体做增强</b><br>
-规则版：稳定、零成本、可复现；LLM 版：自然语言理由、多角色视角。两者混合：模型失败自动回落，交易与行情不受影响；
-评测只评「契约 / 可核性 / 合规 / 边界诚实」，不宣称预测准确率。
+<b>为什么不直接让模型定价？确定性优先，智能体做增强</b><br>
+规则版稳定、零成本；LLM 版能说人话、多角色。模型失败自动回落，交易和行情不受影响。
+我们只评契约、合规和边界，不吹准确率。
 </div>
 
 <!--
-【40 秒】定价用 z-score + 线性映射，单次涨跌不超过 20%，每条价格都有 reason，现场能拆。
-AI 是旁路：分析师→风控→交易员，人在环、留审计；DeepSeek 挂了走规则兜底，接口仍 200。我们不给模型定价权。
+【40 秒】定价用 z-score 加线性映射，单次涨跌不超过 20%，每条价格都带 reason，现场能拆。AI 是旁路：分析师到风控到交易员，人在环、留审计；DeepSeek 挂了走规则兜底，接口仍然 200。我们不给模型定价权。
 -->
 
 ---
@@ -382,8 +369,7 @@ erDiagram
 <div class="tiny faint">完整 E-R 图与字段见 database_design.md §1（Mermaid）。</div>
 
 <!--
-【25 秒】数据库 9 张表，分账号、市场、交易、智能体四组。两个关键设计：交易流水只追加并记录 balance_after；
-持仓唯一约束 + 同一事务写余额/持仓/流水。AI 的调用、采纳、归因都落审计表，业务表只读。
+【25 秒】数据库 9 张表，分账号、市场、交易、智能体四组。两个关键设计：交易流水只追加，并记 balance_after；持仓唯一约束，余额、持仓、流水在同一事务里写。AI 的调用、采纳、归因都落审计表，业务表只读。
 -->
 
 ---
@@ -412,8 +398,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】接口总共 23 个，分行情、交易、身份、AI、运维五组。FastAPI 自动生成 Swagger，老师现场可以打开 /api/docs 试调。
-GET 可以安全重试一次，POST 永不重试，避免重复下单。
+【20 秒】接口一共 23 个，分行情、交易、身份、AI、运维五组。FastAPI 自动生成 Swagger，老师现场可以打开 /api/docs 试调。GET 可以安全重试一次，POST 绝不重试，避免重复下单。
 -->
 
 ---
@@ -422,7 +407,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.6 软件质量</div>
 
-# 质量不是「跑通过」，是每次都跑、跑得出来
+# 质量：每次都跑，跑得出来才算数
 
 <div class="grid4 mt-4">
   <div v-click class="card"><div class="metric">330</div><div class="small font-bold">后端测试</div><div class="tiny faint">pytest（6 条 live 默认排除）</div></div>
@@ -455,8 +440,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】质量用数字说话：后端 330、前端 182，核心覆盖率 98%；CI 4 个 job 全绿才部署。
-除了测试，还有日志、统一异常、契约校验、事务并发和降级路径；工具链和 CI 同口径。
+【30 秒】质量用数字说话：后端 330 条、前端 182 条，核心覆盖率 98%；CI 4 个 job 全绿才部署。除了测试，还有日志、统一异常、契约校验、事务并发和降级路径，工具链和 CI 同口径。
 -->
 
 ---
@@ -490,11 +474,10 @@ layout: default
 </div>
 </div>
 
-<div class="sage small font-bold mt-3" v-click>可执行代码合计约 33,000 行；文档约 12,000 行（63 份 md）。</div>
+<div class="sage small font-bold mt-3" v-click>可执行代码合计约 33,000 行；文档约 12,000 行（65 份 md）。</div>
 
 <!--
-【15 秒】可执行代码约 3.3 万行，文档约 1.2 万行；前端 8 视图/9 组件，后端 11 路由模块/9 AI 模块。
-AI 参与建议、测试和文档，核心逻辑人工编写并互审，所有提交有 CI 和评审。
+【15 秒】可执行代码约 3.3 万行，文档约 1.2 万行。前端 8 个视图、9 个组件；后端 11 个路由模块、9 个 AI 模块。AI 参与建议、测试和文档，核心逻辑人工写并互审，所有提交都有 CI 和评审。
 -->
 
 ---
@@ -512,13 +495,12 @@ layout: default
   <div v-click class="card"><div class="metric">38 req/s</div><div class="small font-bold">只读压测</div><div class="sage small font-bold">≈190 人同时在线 · 0 错误</div><div class="tiny faint">瓶颈是免费档 0.1 vCPU，不是代码</div></div>
 </div>
 
-<div class="small muted mt-4">诚实说明：交叉用户测试样本较小；没有真实赛事数据与真实资金，因此不宣称预测准确率或长期留存。这些是课程作品的边界，不是隐藏项。</div>
+<div class="small muted mt-4">说清边界：交叉测试样本还小，也没有真实赛事数据，所以不吹预测准确率，也不承诺长期留存。</div>
 
-<div class="card mt-3" v-click><div class="tiny">证据索引：docs/acceptance/evidence（146 张截图）· test_report.md · agent_eval_report.md · load_test_report.md</div></div>
+<div class="card mt-3" v-click><div class="tiny">证据索引：docs/acceptance/evidence（147 张截图）· test_report.md · agent_eval_report.md · load_test_report.md</div></div>
 
 <!--
-【20 秒】三条证据链：33 项用户测试（32 通过/1 部分）、AI 契约 16/16、红队 11/11、压测 38 req/s、190 并发 0 错误。
-同时诚实说明边界：交叉测试只测了一个外部组（Tome，33 题）、无真实赛果、不做准确率承诺。
+【20 秒】三条证据链：33 项用户测试（32 通过、1 部分通过）、AI 契约 16/16、红队 11/11；压测 38 req/s、190 并发、0 错误。也说清边界：交叉测试样本还小，没有真实赛事数据，所以不吹准确率。
 -->
 
 ---
@@ -541,7 +523,7 @@ layout: default
 <div class="mt-6 small muted">演示期间不切窗口、不输入敏感信息；失败预案：刷新只读页 / 放录屏 / 用本机备份。</div>
 
 <!--
-【5 秒】下面用 2 分钟演示一条完整链路：市场→详情→买入→复盘，再补一个停牌拦截和 AI 降级；演示期间不切窗口。
+【5 秒】下面用 2 分钟演示一条完整链路：市场、详情、买入、复盘，再补一个停牌拦截和 AI 降级。演示期间不切窗口。
 -->
 
 ---
@@ -562,5 +544,5 @@ layout: default
 <div class="mt-8 text-2xl font-bold accent" v-click>谢谢，欢迎提问。</div>
 
 <!--
-【5 分钟】回答时先给结论、再给证据，最后承认边界：交叉测试只测了一个外部组（Tome，33 题）、无真实赛果、不做预测准确率承诺。
+【5 分钟】回答时先给结论，再给证据，最后承认边界：交叉测试样本小、没有真实赛果，不做准确率承诺。
 -->
