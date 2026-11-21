@@ -1,0 +1,70 @@
+name: 答辩幻灯片 (Slidev)
+
+# 用户要求「用 git actions 完成」：不依赖本机 Node/Slidev/Playwright，
+# 由 GitHub Actions 安装依赖、构建静态站、导出 PDF，并上传可下载的 artifact。
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "docs/presentation/**"
+      - ".github/workflows/slides.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "docs/presentation/**"
+      - ".github/workflows/slides.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: slides-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-slides:
+    name: 构建 Slidev 与 PDF
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs/presentation
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      # Slidev 53 的 engines 要求 Node >= 22.22.0
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: docs/presentation/package-lock.json
+
+      - name: 安装依赖（含 Playwright Chromium）
+        run: npm ci
+
+      - name: 安装 Chromium 系统依赖
+        run: npx playwright install --with-deps chromium
+
+      - name: 构建静态站
+        run: npm run build
+
+      - name: 导出 PDF（供投屏/提交）
+        run: npm run export
+
+      - name: 校验产物
+        run: |
+          test -s playerstock_defense.pdf
+          test -f dist/index.html
+          echo "PDF 大小：$(du -h playerstock_defense.pdf | cut -f1)"
+          echo "静态站文件数：$(find dist -type f | wc -l)"
+
+      - name: 上传 artifact（可下载）
+        uses: actions/upload-artifact@v4
+        with:
+          name: playerstock-defense-slides
+          path: |
+            docs/presentation/playerstock_defense.pdf
+            docs/presentation/dist/
+          retention-days: 30

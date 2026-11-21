@@ -208,8 +208,10 @@ layout: default
   <div class="card">
     <div class="accent small font-bold">提交分布（GitHub Pulse / git shortlog，含合并提交）</div>
     <table class="mt-2">
+      <tbody>
       <tr><td>D 王泽棠</td><td>186</td><td>A 倪颢容</td><td>74</td></tr>
       <tr><td>B 胡德昊</td><td>114</td><td>C 刘宏</td><td>70</td></tr>
+      </tbody>
     </table>
     <div class="tiny faint mt-2">B 的两个本地 GitHub 身份已合并统计（July75-bit / Hu De Hao）。</div>
   </div>
@@ -421,11 +423,13 @@ layout: default
   </div>
   <div class="card"><div class="accent small font-bold">质量工具（3.6.2）</div>
     <table>
+      <tbody>
       <tr><td>ruff（E/F/C901）</td><td>Python 规范 + 圈复杂度，CI 与本地同版本 0.17.4</td></tr>
       <tr><td>oxlint / eslint</td><td>前端规范；diff marker、硬编码色也有守卫</td></tr>
       <tr><td>vue-tsc</td><td>类型检查进 build，类型错误直接挂 CI</td></tr>
       <tr><td>Vitest / pytest</td><td>单元 + 集成 + 评测 + 并发；每次 push 跑</td></tr>
       <tr><td>GitHub Actions</td><td>4 个 job 全绿才部署；44 秒级反馈</td></tr>
+      </tbody>
     </table>
   </div>
 </div>

@@ -15,6 +15,7 @@
 | [`qa.md`](qa.md) | 5 分钟问答（20 问，七类，含"救命句式"） | D 汇总 / 全员认领 | ✅ |
 | [`pricing_slides.pptx`](pricing_slides.pptx) | 定价模块 **3 页素材**（公式推导 / 参数理由 / 100 seed 稳定性与下行风险），每页含口播备注，可直接拷进主稿；文字数据与 `docs/algorithm/pricing_model.md` §2/§3/§7/§8 一致 | C | ✅ |
 | [`assets/`](assets/) | Slidev 源稿引用的产品截图（市场浅/深、详情、移动端） | D | ✅ |
+| [`package.json`](package.json) / `package-lock.json` | Slidev/Playwright 依赖与构建脚本（给 GitHub Actions 用） | D | ✅ |
 
 **用 Slidev 放映 / 导出**（Slidev 官方推荐；需要 Node.js 20+）：
 
@@ -26,6 +27,20 @@ npx @slidev/cli export slides.md          # 导出 PDF（默认 slides-export.pd
 
 > 课程允许直接用 Slidev 写幻灯片、用 Mermaid 画图；本稿架构图与 ER 图都是 Mermaid 代码块，改数据直接改 markdown。
 > 旧的 `defense.pdf` / `defense.html` 是上一版 HTML 流程产物，不作为本次答辩主材料。
+
+## GitHub Actions 自动构建（推荐）
+
+不需要本机装 Node/Slidev：推送 `docs/presentation/` 的改动会自动触发 [`.github/workflows/slides.yml`](../../.github/workflows/slides.yml)：
+
+1. 安装依赖（`npm ci`，含 Playwright Chromium）
+2. `slidev build` 生成静态站 `dist/`
+3. `slidev export` 生成 `playerstock_defense.pdf`
+4. 上传 artifact **`playerstock-defense-slides`**（保留 30 天）
+
+**下载方式**：GitHub 仓库 → **Actions** 标签 → 左侧 **答辩幻灯片 (Slidev)** → 最近一次绿色 run → 页面底部 **Artifacts** → 下载 `playerstock-defense-slides`，解压得到 PDF 和静态站。
+也可以在 Actions 页面点 **Run workflow** 手动触发。
+
+> 如果只改答辩稿内容，改 `slides.md` 后 push 即可；CI 会重新构建并给出可下载 PDF。
 
 ## 工具建议（课程推荐）
 
