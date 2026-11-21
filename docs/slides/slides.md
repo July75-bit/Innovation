@@ -77,12 +77,11 @@ layout: default
   </div>
 </div>
 
-<div class="small muted" v-click><b class="accent">跟别人比，</b>我们只比三件事：交易的是选手、涨跌能解释、不碰真钱。</div>
 
 </div>
 
 <!--
-【20 秒】先说我们是干嘛的：看懂比赛，从持有起。用户是看 CS 比赛、对选手有感觉、但不想花真钱的人。我们没推广预算，靠赛事、日报和校园社群慢慢来。四个人分工不重叠。跟别人比，我们比的是选手本身、能解释、不碰真钱。
+【20 秒】先说我们是干嘛的：看懂比赛，从持有起。用户是看 CS 比赛、对选手有感觉、但不想花真钱的人。我们没推广预算，靠赛事、日报和校园社群慢慢来。四个人分工不重叠。
 -->
 
 ---
@@ -96,15 +95,15 @@ layout: default
 <div class="body">
 
 <div class="dark-band text-base font-bold leading-relaxed" v-click>
-给看比赛的人一个虚拟选手股市场：选手表现变成价格，每条涨跌都有原因。不做竞猜，不碰真钱。
+PlayerStock 就是一个用虚拟积分买卖电竞选手的市场：选手比赛打得好，价格就涨；打得差，价格就跌。
 </div>
 
-<div class="sage small font-bold" v-click>解决三个问题：判断没处验证 · 涨跌看不懂 · 门槛高</div>
+<div class="sage small font-bold" v-click>玩法就三步：看行情 → 买或卖 → 看持仓和流水。AI 在旁边给建议，但不替你下单。</div>
 
 <div class="grid3">
-  <div class="card" v-click><div class="accent small font-bold">交易新手</div><div class="font-bold text-sm mt-1">打开首页 60 秒，知道该不该买</div></div>
-  <div class="card" v-click><div class="accent small font-bold">行情玩家</div><div class="font-bold text-sm mt-1">点开选手，看懂为什么涨、为什么跌</div></div>
-  <div class="card" v-click><div class="accent small font-bold">演示者 / 老师</div><div class="font-bold text-sm mt-1">断网、没有 API Key，也能完成交易</div></div>
+  <div class="card" v-click><div class="accent small font-bold">看不懂行情的人</div><div class="font-bold text-sm mt-1">首页直接告诉你：现在该不该买</div></div>
+  <div class="card" v-click><div class="accent small font-bold">想验证判断的人</div><div class="font-bold text-sm mt-1">点开选手，看懂涨跌原因</div></div>
+  <div class="card" v-click><div class="accent small font-bold">上课演示的人</div><div class="font-bold text-sm mt-1">断网、没有 API Key，也能买卖</div></div>
 </div>
 
 <div class="flex gap-2 flex-wrap" v-click>
@@ -115,7 +114,7 @@ layout: default
 </div>
 
 <!--
-【35 秒】一句话：给看比赛的人一个虚拟选手股市场，选手表现变成价格，每条涨跌都有原因。三个用户故事对应新手、行情玩家和演示者。规模是 16 名选手、8 支战队，每人 11 个价格点，5000 信用点开局，全是虚拟的。
+【35 秒】一句话：用虚拟积分买卖电竞选手。选手打得好价格就涨，打得差就跌。玩法就三步：看行情、买卖、看持仓和流水。三类用户各取所需：新手看结论，玩家看原因，演示看断网也能用。规模是 16 名选手、8 支战队、每人 11 个价格点，5000 信用点开局。
 -->
 
 ---
@@ -124,23 +123,23 @@ layout: default
 
 <div class="kicker">02 产品设计应用的原则</div>
 
-# 五个原则，五个取舍
+# 五条原则，五条做法
 
 <div class="body">
 
 <div class="grid2">
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">需求原则</div><div class="font-bold">先回答该不该买</div><div class="small muted">首屏给结论，证据按需展开。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">信息原则</div><div class="font-bold">一屏完成行情 → 建议 → 下单</div><div class="small muted">不来回跳。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">简化原则</div><div class="font-bold">纸感、低密度、可读</div><div class="small muted">一屏 6 张卡，去掉玻璃。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">系统原则</div><div class="font-bold">交易写死，AI 只建议</div><div class="small muted">AI 挂了，交易照常。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">需求</div><div class="font-bold">先告诉用户该不该买</div><div class="small">首页直接给结论，想看理由再展开。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">信息</div><div class="font-bold">一屏做完：看行情、看建议、下单</div><div class="small">不用来回切页面。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">界面</div><div class="font-bold">干净、字够大、一眼能读懂</div><div class="small">一屏放 6 张选手卡，不堆小字。</div></div></div></div>
+  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">系统</div><div class="font-bold">交易和定价写死，AI 只给建议</div><div class="small">AI 挂了，买卖照常。</div></div></div></div>
 </div>
 
-<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">合规原则</div><div class="font-bold">零真实资金，AI 只能看不能动</div><div class="small muted">0 充值 / 提现 / 兑换；每次调用留审计。</div></div></div></div>
+<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">合规</div><div class="font-bold">不碰真钱，AI 只能看不能动</div><div class="small">0 充值 / 提现 / 兑换；AI 不下单、不改余额。</div></div></div></div>
 
 </div>
 
 <!--
-【35 秒】这一页不讲条文，讲五个取舍：先给结论、一屏做完、纸感低密度、交易写死让 AI 挂了也能用、合规零真钱。
+【35 秒】五条做法：先告诉用户该不该买；一屏做完看行情、建议、下单；界面干净字够大；交易和定价写死，AI 只建议；不碰真钱，AI 只能看。
 -->
 
 ---
@@ -149,7 +148,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.1 用户体验设计</div>
 
-# 界面：看数据、做判断，一屏够用
+# 界面：一屏看完，顺手就能下单
 
 <div class="body">
 
@@ -190,7 +189,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.2 技术选型</div>
 
-# 轻量、能复现，我们 hold 得住
+# 技术选型：够用、稳定、我们熟
 
 <div class="body">
 
@@ -207,7 +206,7 @@ layout: default
 
 </div>
 
-<div class="sage small font-bold" v-click>原则：不选简历上最响的，选 6 天能交付、能测试、能部署、能讲清楚的。</div>
+<div class="sage small font-bold" v-click>原则：不追新，选我们 6 天能做完、能测、能上线的。</div>
 
 </div>
 
@@ -417,31 +416,28 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.5 接口设计</div>
 
-# 23 个接口，格式统一
+# 前后端约定：23 个接口
 
 <div class="body">
 
 <div v-click>
 
-| 分组 | 接口示例 | 契约要点 |
+| 分组 | 能做什么 | 一个例子 |
 | --- | --- | --- |
-| 行情 | GET /api/players · /api/players/\{id\} · /api/players/\{id\}/prices | 列表 / 详情 / 价格历史（按 ts 升序） |
-| 交易 | GET /api/account · /api/account/history · POST /api/trades/buy \| sell | 余额/资产曲线；买卖返回余额与流水 |
-| 身份 | POST /api/auth/register \| login \| logout · GET /api/auth/me | PBKDF2 + 不透明令牌；30 天有效 |
-| AI | GET /api/analysis/\{id\} · /api/agent/decision \| brief \| panel \| tools | 6 字段契约；只读；失败 200 + rule_fallback |
-| 运维 | GET /api/health · /api/debug/db · /api/logs | 健康检查 / 只读自检 / 运行日志 |
+| 行情 | 看选手列表、选手详情、价格历史 | GET /api/players |
+| 交易 | 看账户、买入、卖出、持仓、流水 | POST /api/trades/buy |
+| 身份 | 注册、登录、退出、删号 | POST /api/auth/login |
+| AI | 看建议、简报、决策记录 | GET /api/analysis/\{id\} |
+| 运维 | 健康检查、数据库自检、日志 | GET /api/health |
 
 </div>
 
-<div class="grid2">
-  <div class="dark-band small" v-click><b>在线文档：</b>https://playerstock-backend-mdlk.onrender.com/api/docs<br>FastAPI 自动生成 OpenAPI / Swagger，可直接试调。</div>
-  <div class="card" v-click><div class="small muted">GET 失败重试一次，POST 不重试；敏感字段不返回。</div></div>
-</div>
+<div class="dark-band small" v-click>所有接口返回同一种格式，出错也给中文提示。在线文档可以直接试：playerstock-backend-mdlk.onrender.com/api/docs</div>
 
 </div>
 
 <!--
-【20 秒】接口 23 个，分行情、交易、身份、AI、运维。FastAPI 自带 Swagger，老师现场可以打开 /api/docs 试。GET 可以重试，POST 不重试，避免重复下单。
+【20 秒】前后端一共约定了 23 个接口，分五组：行情、交易、身份、AI、运维。所有接口返回同一种格式，出错也给中文提示。现场可以直接打开 /api/docs 试。
 -->
 
 ---
@@ -496,7 +492,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.7 代码统计</div>
 
-# 3 万多行代码，重点在结构
+# 3.4 万行代码，重点在结构
 
 <div class="body">
 
@@ -504,12 +500,12 @@ layout: default
 
 | 语言 | 文件数 | 行数 |
 | --- | --- | --- |
-| Python | 109 | 16,391 |
-| Vue | 20 | 8,835 |
-| TypeScript | 47 | 6,350 |
-| CSS | 3 | 782 |
-| HTML | 3 | 1,083 |
-| Markdown（文档） | 71 | 12,452 |
+| Python | 111 | 16,790 |
+| Vue | 20 | 8,848 |
+| TypeScript | 47 | 6,348 |
+| CSS | 4 | 968 |
+| HTML | 3 | 1,082 |
+| Markdown（文档） | 70 | 8,275 |
 
 </div>
 
@@ -518,12 +514,12 @@ layout: default
   <div class="dark-band small" v-click><b>AI 与团队编写的比例</b><br>没做逐行归因，不编百分比。AI 帮忙写测试和文档；核心逻辑人工写、互相审。</div>
 </div>
 
-<div class="sage small font-bold" v-click>可执行代码合计约 33,000 行；文档约 12,000 行（65 份 md）。</div>
+<div class="sage small font-bold" v-click>可执行代码约 34,000 行；文档约 8,300 行（70 份 md）。</div>
 
 </div>
 
 <!--
-【15 秒】代码大概 3.3 万行，文档 1.2 万行。前端 8 个视图 9 个组件，后端 11 个路由 9 个 AI 模块。AI 帮忙写测试和文档，核心逻辑人工写、互相审。
+【15 秒】代码约 3.4 万行，文档约 8,300 行。前端 8 个视图 9 个组件，后端 11 个路由 9 个 AI 模块。AI 帮忙写测试和文档，核心逻辑人工写、互相审。
 -->
 
 ---
