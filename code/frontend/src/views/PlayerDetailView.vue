@@ -298,6 +298,24 @@ function hasMoreReason(text: string): boolean {
   return clean.length > summaryReason(text).length
 }
 
+/**
+ * 底部两个数字的提示语要跟动作走（2026-11-21 用户反馈：HOLD 时也写"若采纳可买 0 股"很怪）。
+ *   BUY  → 若采纳可买 N 股
+ *   SELL → 若采纳可卖 N 股（= 当前持仓）
+ *   HOLD → 当前持仓 N 股（不暗示要买）
+ */
+const factsLabel = computed(() => {
+  const action = analysis.value?.action
+  if (action === 'BUY') return '若采纳可买'
+  if (action === 'SELL') return '若采纳可卖'
+  return '当前持仓'
+})
+
+const factsQuantity = computed(() => {
+  if (analysis.value?.action === 'HOLD') return snapshot.value?.held_quantity ?? 0
+  return plan.value?.suggested_quantity ?? 0
+})
+
 /** 防御：模型/缓存里万一把 JSON 漏到页面上，这里取其中的 reason/summary 展示 */
 function humanizeText(text: string | null | undefined): string {
   const raw = (text || '').trim()
@@ -421,10 +439,10 @@ watch(playerId, () => loadCore())
               </button>
             </div>
 
-            <!-- 第二层：只留两个下单真正用得上的数字 -->
+            <!-- 第二层：只留两个下单真正用得上的数字（提示语跟动作走，HOLD 时不说"可买"） -->
             <div v-if="analysis && plan" class="ai-facts">
               <span
-                ><em>若采纳可买</em><b>{{ plan.suggested_quantity }}</b> 股</span
+                ><em>{{ factsLabel }}</em><b>{{ factsQuantity }}</b> 股</span
               >
               <span
                 ><em>参考止损</em
@@ -464,9 +482,9 @@ watch(playerId, () => loadCore())
                   <template v-else-if="panel">
                     <ul class="role-list">
                       <template v-for="(m, i) in panel.minutes" :key="i">
-                        <li v-if="!isTechLeak(m.content)">
+                        <li v-if="!isTechLeak(humanizeText(m.content))">
                           <em>{{ ROLE_LABEL[m.role] ?? m.role }}</em>
-                          <span :title="m.content">{{ m.content }}</span>
+                          <span :title="humanizeText(m.content)">{{ humanizeText(m.content) }}</span>
                         </li>
                       </template>
                     </ul>
