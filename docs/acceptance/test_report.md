@@ -17,7 +17,7 @@
 | 通过 / 失败 / 跳过 | **335 / 0 / 0**（单元 281 + 集成 21 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
-| CI run（连续两次） | **#205**（commit `7d8a7e4`）与 **#206**（commit `daf928a`）：仓库卫生 / 后端测试（pytest）/ 前端检查（eslint + vitest + build）**3 个 job 全部 completed successfully**（2026-11-21） |
+| CI run（连续两次） | **#205**（commit `7d8a7e4`）与 **#206**（commit `daf928a`）：仓库健康 / 后端测试（pytest）/ 前端检查（eslint + vitest + build）**3 个 job 全部 completed successfully**（2026-11-21） |
 
 > 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 335 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
