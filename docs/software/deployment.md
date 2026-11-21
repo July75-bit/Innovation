@@ -1,6 +1,6 @@
 # 部署与发布文档（Deployment & Release）
 
-> **课程交付物**：《软件创新工程实践》第 5 天「部署发布作品」——部署和发布软件的方法及检查单
+> **课程交付物**：《软件新技术创新实践课程》第 5 天「部署发布作品」——部署和发布软件的方法及检查单
 > → `docs/software/deployment.md`（课程 PDF 第 5 天 211–217 页、271–278 页）
 > **负责人 / 发布负责人**：D ｜ **验证负责人**：D（交叉验证：B）
 > **部署源**：GitHub `July75-bit/Innovation` 的 `develop` 分支 ｜ **CI**：GitHub Actions（4 个 job）

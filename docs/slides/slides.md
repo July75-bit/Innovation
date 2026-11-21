@@ -3,7 +3,7 @@ theme: default
 colorSchema: light
 title: PlayerStock 结课审查
 info: |
-  软件创新工程实践 · 结课项目审查
+  软件新技术创新实践课程 · 结课项目审查
   产品介绍 + 关键设计 + 演示 + 证据链
 class: text-left
 highlighter: shiki
@@ -33,7 +33,7 @@ fonts:
 
 <div class="mt-10 small muted">
   有请下一组 ｜ 王泽棠（D）· 倪颢容（A）· 胡德昊（B）· 刘宏（C）<br>
-  软件创新工程实践 · 2026-11 · 结课项目审查
+  软件新技术创新实践课程 · 2026-11 · 结课项目审查
 </div>
 
 <div class="mt-4 small">

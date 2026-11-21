@@ -5,7 +5,7 @@
 [![覆盖率](https://img.shields.io/badge/coverage-98%25-brightgreen)](docs/acceptance/test_report.md)
 [![许可](https://img.shields.io/badge/license-see%20LICENSE-blue)](LICENSE)
 
-> 软件创新工程实践（软件新技术创新实践）课程作品 · 4 人团队 · 6 天冲刺
+> 软件新技术创新实践课程作品 · 4 人团队 · 6 天冲刺
 > 仓库名建议：`playerstock`（本地目录名可为 `innovation`，两者不必一致）
 
 > **界面主题**：支持**浅色 / 深色**双模式（侧栏或移动端顶栏切换，选择记在浏览器本地；默认深色）。
