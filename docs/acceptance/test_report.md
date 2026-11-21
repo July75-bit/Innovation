@@ -33,10 +33,9 @@
 ### 2.1 单元测试
 
 ```text
-$ python -m pytest -q          # CI ubuntu-latest
-330 passed
-$ python -m pytest -q          # 本机 Windows（BUG-03 编码问题已修）
+$ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编码问题已修）
 330 passed, 1 warning in 55.83s
+# CI（ubuntu-latest）的条数以 GitHub Actions 最新 run 为准；本行只声明本机实测值
 ```
 
 > 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **330**（单元 276 / 集成 21 / 评测 33；
