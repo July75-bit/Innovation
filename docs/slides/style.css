@@ -139,3 +139,13 @@ ul.clean { padding-left:1.1rem; } ul.clean li { margin:.18rem 0; font-size:.82re
   }
 }
 
+/* v-click 渐进披露：点击出现的内容不要自动播放 */
+.slidev-layout .slidev-vclick-target,
+.slidev-layout .slidev-vclick-target * { animation: none !important; }
+.slidev-layout .slidev-vclick-hidden { transform: translateY(10px); }
+
+/* PDF / 打印：把所有 v-click 内容一次性显示，避免导出缺内容 */
+@media print {
+  .slidev-vclick-hidden { opacity: 1 !important; transform: none !important; }
+}
+

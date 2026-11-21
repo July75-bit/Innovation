@@ -6,6 +6,8 @@ PlayerStock 答辩用的 Slidev 项目：17 页 16:9 幻灯片，覆盖课程 wi
 > 构建、导出与发布**全部交给 GitHub Actions**（见 [`.github/workflows/slides.yml`](../../.github/workflows/slides.yml)），
 > 本机不装 Node / Slidev / Playwright 也能拿到在线网页和 PDF。
 
+> **放映方式**：空格 / → 逐条展开（v-click 渐进披露），P 开演讲者模式；PDF 导出会一次性显示全部内容。
+
 ## 在线访问（push 后自动发布）
 
 | 内容 | 地址 |
