@@ -59,7 +59,7 @@ npm ci → Playwright Chromium → slidev build → slidev export → 上传 art
 - [x] 3. 架构图 + 技术栈**含版本号**（架构页：Vue 3.5.42 / TS 6.0 / FastAPI 0.161.1 / SQLAlchemy 2.1.6）
 - [x] 4. 定价算法：公式、参数含义、**一条价格变化的完整拆解**（定价页：第 11 轮 ZywOo/sh1ro 对照）
 - [x] 5. AI：Prompt 设计、JSON 契约、**不可用时的降级演示**（AI 页 + `ai_agent_prompt.md`）
-- [x] 6. 测试：用例数、通过率、边界测试证据（质量页：333 条 / 98%；`test_report.md`）
+- [x] 6. 测试：用例数、通过率、边界测试证据（质量页：335 条 / 98%；`test_report.md`）
 - [x] 7. 部署：线上地址、数据持久化验证（技术选型页含 Render 三服务；`deployment.md` §6 / TC-404）
 - [x] 8. 项目管理：WBS、风险应对、复盘（协作页 + 6 个真实问题页 + `docs/retrospection/daily_summary.md`）
 
