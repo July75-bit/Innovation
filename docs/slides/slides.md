@@ -398,32 +398,56 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
 
-# 智能体：会拉数据、会给建议、会留记录
+# 智能体技术设计：编排、工具、护栏
 
 <div class="body">
 
 <div class="dark-band text-base font-bold leading-relaxed" v-click>
-它不只会聊天：会拉行情、算风险、给动作，最后让人来拍板。
+一次建议 = 感知行情 → 规划步骤 → 调用工具 → 生成 6 字段 → 人点采纳 → 写审计。
 </div>
 
 <div class="grid3" v-click>
-  <div class="card"><div class="accent small font-bold">工具调用</div><div class="small mt-1">7 个 agent 接口，能读行情、持仓、赛程、价格，不用手工整理数据。</div></div>
-  <div class="card"><div class="accent small font-bold">多角色协作</div><div class="small mt-1">分析师给观点 → 风控压风险 → 交易员出动作，三个角色串成一条链。</div></div>
-  <div class="card"><div class="accent small font-bold">人在环</div><div class="small mt-1">采纳还是忽略由你点；AI 不自动下单，也不替你改余额。</div></div>
+  <div class="card"><div class="accent small font-bold">任务编排</div><div class="small mt-1">固定 agent loop：拉行情 / 持仓 / 赛程 → 分析师 → 风控 → 交易员 → 人工确认；20 秒超时。</div></div>
+  <div class="card"><div class="accent small font-bold">工具调用</div><div class="small mt-1">7 个 agent 接口：决策、简报、叙事、多角色纪要、工具清单、采纳记录、审计查询；全部只读。</div></div>
+  <div class="card"><div class="accent small font-bold">护栏</div><div class="small mt-1">只读红线（不改余额 / 不下单）+ 固定 6 字段 + 超时 / 坏 JSON 走规则版 + 人点采纳 + 全程审计。</div></div>
 </div>
 
-<div class="grid3" v-click>
-  <div class="card"><div class="accent small font-bold">可审计</div><div class="small mt-1">每次调用、采纳、归因都写进 3 张审计表，事后能回放。</div></div>
-  <div class="card"><div class="accent small font-bold">只读红线</div><div class="small mt-1">不碰交易事务、不改余额；交易和定价始终由确定性代码执行。</div></div>
-  <div class="card"><div class="accent small font-bold">失败可降级</div><div class="small mt-1">没 Key、超时或返回坏 JSON，自动用规则版，接口仍返回 200。</div></div>
-</div>
+<div class="card" v-click><div class="accent small font-bold">失败时怎么走</div><div class="small mt-1">DeepSeek 20 秒超时；没 Key、超时、返回格式不对 → 自动切规则模板，接口仍 200，前端无感。</div></div>
 
-<div class="sage small font-bold" v-click>一句话：建议是它出的，动作是人点的，记录是库里的。</div>
+<div class="sage small font-bold" v-click>一句话：模型负责建议，代码负责边界，人负责拍板。</div>
 
 </div>
 
 <!--
-【30 秒】这页专门讲智能体，因为它不是个聊天框：它会调用 7 个接口拉行情、持仓和赛程；内部按分析师、风控、交易员三个角色串起来；最后把采纳权交给人。每次调用和采纳都落审计表，AI 全程只读，不碰余额和下单；模型挂了就自动走规则版。
+【30 秒】这页讲智能体的技术设计。任务编排是一个固定的 agent loop：先拉行情、持仓、赛程，再按分析师、风控、交易员三个角色推理，最后交给人确认。工具调用走 7 个只读 agent 接口；护栏有四层：只读红线、固定 6 字段、超时或坏输出走规则版、人点采纳并写审计。模型只给建议，边界由代码守。
+-->
+
+---
+layout: default
+---
+
+<div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
+
+# 记忆、知识库与 RAG 的取舍
+
+<div class="body">
+
+<div class="grid2" v-click>
+  <div class="card"><div class="accent small font-bold">记忆</div><div class="small mt-1">短期：每次请求临时拼结构化上下文（11 个价格点、持仓、赛程、账户）；长期：3 张审计表 + 简报缓存。没有向量记忆。</div></div>
+  <div class="card"><div class="accent small font-bold">专业知识库</div><div class="small mt-1">9 张业务表 + 规则 / 文档（定价公式、接口契约、合规口径）；靠 SQL 和固定模板取数，不是文档向量检索。</div></div>
+</div>
+
+<div class="grid2" v-click>
+  <div class="card"><div class="accent small font-bold">为什么当前不引入 RAG / 知识图谱</div><div class="small mt-1">数据量小、字段结构化，SQL 足够；演示要求稳定可复现，向量库和 KG 的维护成本不划算。</div></div>
+  <div class="card"><div class="accent small font-bold">如果继续演进</div><div class="small mt-1">RAG 检索历史复盘 / 文档 → KG 校验选手-战队-比赛关系 → 记忆补用户偏好，最后拼成个性化上下文。</div></div>
+</div>
+
+<div class="dark-band small" v-click>当前取舍：先把结构化数据和审计做扎实；RAG / KG 作为下一阶段扩展，不硬凑。</div>
+
+</div>
+
+<!--
+【25 秒】记忆分两层：短期是每次请求临时拼的结构化上下文，长期是 3 张审计表和简报缓存，没有向量记忆。知识库目前是 9 张业务表加规则文档，用 SQL 和模板取数。为什么没上 RAG 和知识图谱：数据量小、结构清晰，SQL 够用，而且演示要稳定；如果以后扩展，会是 RAG 找依据、KG 校验关系、记忆补偏好，最后拼成上下文。
 -->
 
 ---
