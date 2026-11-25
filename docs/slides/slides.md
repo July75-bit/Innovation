@@ -42,7 +42,7 @@ fonts:
 </div>
 
 <!--
-【15 秒】老师们好，我们是有请下一组。这是 PlayerStock。我们用模拟比赛给 CS2 选手股定价，大家可以用信用点买卖，也可以看看智能体为什么给出某条建议。
+【15 秒】老师们好，我们是「有请下一组」。我们做的项目叫 PlayerStock。系统根据模拟比赛给 CS2 选手股定价，用户可以用信用点买卖。详情页也会展示智能体的建议和依据。
 -->
 
 ---
@@ -71,7 +71,7 @@ layout: default
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click><div class="accent small font-bold">目标用户</div><div class="small muted">关注 CS 比赛、对选手发挥有个人判断的普通观众。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">怎么让观众知道</div><div class="small muted">大赛期间分享涨跌复盘，先在校园电竞社群找人试用。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">试用与推广</div><div class="small muted">大赛期间分享涨跌复盘，先在校园电竞社群找人试用。</div></div>
     <div class="card" v-click><div class="accent small font-bold">团队分工</div><div class="small muted">4 人各自负责独立模块：前端交互 / 后端与交易 / 定价与数据 / AI、测试与部署。</div></div>
   </div>
 </div>
@@ -79,7 +79,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】我们想做的是一个看比赛时能顺手用的工具。你看好一位选手，可以用信用点试试，再从价格曲线和交易记录回头看判断。四位同学分别负责前端、后端交易、定价数据，以及智能体、测试和部署。
+【20 秒】这个项目面向平时看 CS 比赛的观众。比如你看好一位选手，可以用信用点试着买入，再结合价格曲线和自己的交易记录复盘。我们四个人分工完成了前端、后端交易、定价和数据，以及智能体、测试和部署。
 -->
 
 ---
@@ -88,7 +88,7 @@ layout: default
 
 <div class="kicker">01 产品设计 · 1.2 核心玩法</div>
 
-# 用信用点怎么买卖选手股
+# 选手股的模拟买卖
 
 <div class="body">
 
@@ -110,7 +110,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】进入市场先看简报，再点进一位选手看他的价格和涨跌原因。你可以决定买卖，也可以先观望。成交后，持仓和流水会更新。演示数据有 16 名选手、8 支战队，初始余额是 5000 信用点。
+【30 秒】进入市场后，可以先看简报，再点开感兴趣的选手。详情页有价格曲线和每次涨跌的原因。成交后，持仓和流水会随之更新。演示包含 16 名选手和 8 支战队，初始余额是 5000 信用点。
 -->
 
 ---
@@ -119,7 +119,7 @@ layout: default
 
 <div class="kicker">02 设计取舍</div>
 
-# 我们做了哪五个设计决定
+# 五项设计取舍
 
 <div class="body">
 
@@ -135,7 +135,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】首页先给简报，具体数据想看再展开。进到详情页，价格、建议和买卖放在一起。定价和交易都由代码按规则执行，模型出问题时，用户仍能买卖。
+【30 秒】首页把市场简报放在前面，详细信息可以按需展开。选手详情页把走势、建议和买卖放在一起。定价和交易都有明确的规则，模型服务暂时不可用时，买卖仍可继续。
 -->
 
 ---
@@ -176,7 +176,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】左边是市场页，能直接筛选、排序。右边是选手详情，价格曲线、智能体建议和买卖都在这里。手机端也可以用底部导航切换页面，并切换深浅色。
+【30 秒】左边是市场页，可以在这里筛选和排序。右边是选手详情，价格曲线、智能体建议和买卖按钮放在同一页。移动端用底部导航切换主页面。
 -->
 
 ---
@@ -185,13 +185,13 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.2 技术选型</div>
 
-# 我们用了哪些技术
+# 技术选型
 
 <div class="body">
 
 <div v-click>
 
-| 层    | 选型与版本（完整版本表见 README）                                         | 为什么选它               |
+| 层    | 选型与版本（完整版本表见 README）                                         | 选用理由               |
 | ---- | ------------------------------------------------------------ | ------------------ |
 | 前端   | Vue 3.5 · Vue Router 5.4 · Vite 8.3 · TS 6.0 · Vitest 4.1    | 轻量、构建快、类型检查完善      |
 | 后端   | Python 3.12 · FastAPI 0.161 · SQLAlchemy 2.1 · Pydantic 2.14 | 接口文档自动生成、路由组织清晰    |
@@ -207,7 +207,7 @@ layout: default
 </div>
 
 <!--
-【25 秒】我们只有六天，所以选了组里熟悉的技术。前端用 Vue 和 TypeScript，后端用 FastAPI。本地用 SQLite 调试，线上用 PostgreSQL 存数据。智能体接 DeepSeek，服务放在 Render。
+【25 秒】开发周期是六天，我们选了组里熟悉的技术。前端用 Vue 和 TypeScript，后端用 FastAPI。本地用 SQLite 调试，线上用 PostgreSQL 存数据。智能体接入 DeepSeek，项目部署在 Render。
 -->
 
 ---
@@ -216,7 +216,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.3 代码仓库与协作</div>
 
-# 四个人怎么一起开发
+# 团队分工与开发记录
 
 <div class="body">
 
@@ -241,7 +241,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】代码放在 GitHub，日常合到 develop。统计到这版前一条提交，四位成员一共 522 次提交，里面有 379 次非合并提交。任务和缺陷用 Issues 和 Projects 跟踪。
+【20 秒】代码放在 GitHub，日常开发合入 develop 分支。以页面标注的版本为准，四位成员共有 522 次提交，其中 379 次是非合并提交。我们用 Issues 和 Projects 跟进任务和缺陷。
 -->
 
 ---
@@ -272,7 +272,7 @@ layout: default
 </div>
 
 <!--
-【35 秒】上线时碰到了一个典型问题：Render 免费实例的磁盘是临时的，重启后 SQLite 数据就没了，因此迁到了 PostgreSQL。另一个问题是首页把模型返回的 JSON 直接显示出来，我们在后端清理文本，前端也加了处理。其他四个问题可以看这张表。
+【35 秒】上线时，我们发现 Render 免费实例使用临时磁盘，重启后 SQLite 数据会丢失，所以把线上数据迁到了 PostgreSQL。首页简报也曾显示模型返回的原始 JSON。我们在后端整理文本，并在前端增加了相应的处理。
 -->
 
 ---
@@ -281,7 +281,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 缺陷跟踪</div>
 
-# 14 条缺陷怎么跟踪
+# 14 条缺陷的跟踪记录
 
 <div class="body">
 
@@ -307,7 +307,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】这页列的是 GitHub 上编号 22 到 35 的 14 条缺陷，都已关闭。比如第 22 条是并发卖出会造成超卖和重复入账。按编号能看到问题和处理过程。
+【20 秒】这里列出 GitHub 上编号 22 到 35 的 14 条缺陷。这批记录都已关闭。第 22 条涉及两笔卖单同时处理时可能出现的超卖和重复入账，具体处理过程可以按编号查阅。
 -->
 
 ---
@@ -316,7 +316,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5 概要设计</div>
 
-# 系统各部分怎么连起来
+# 系统架构
 
 <div class="body">
 
@@ -341,14 +341,14 @@ flowchart LR
 
 <div class="grid3">
   <div class="card" v-click><div class="accent small font-bold">部署架构</div><div class="small muted">前端、后端和定时任务部署在 Render</div></div>
-  <div class="card" v-click><div class="accent small font-bold">怎么查运行状态</div><div class="small muted">查请求日志、健康接口和简报更新时间</div></div>
+  <div class="card" v-click><div class="accent small font-bold">运行状态</div><div class="small muted">查请求日志、健康接口和简报更新时间</div></div>
   <div class="card" v-click><div class="accent small font-bold">价格和建议分开</div><div class="small muted">程序算价格和处理交易，智能体给建议</div></div>
 </div>
 
 </div>
 
 <!--
-【30 秒】浏览器访问 Vue 页面，前端再通过 FastAPI 取数据或下单。规则层负责定价和交易，数据库保存结果。智能体读取所需数据，生成建议和分析记录。
+【30 秒】浏览器加载 Vue 页面，前端通过 FastAPI 查询行情或提交订单。定价和交易由后端按规则处理，结果保存在数据库。智能体也会读取相关数据，生成建议并留下分析记录。
 -->
 
 ---
@@ -357,7 +357,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 算法与 AI</div>
 
-# 选手股的价格怎么算
+# 选手股的定价规则
 
 <div class="body">
 
@@ -374,13 +374,13 @@ layout: default
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click>
-      <div class="accent small font-bold">智能体怎么看价格</div>
+      <div class="accent small font-bold">智能体的行情分析</div>
       <div class="small mt-2">看价格历史和涨跌原因，给出买入、卖出或观望的建议。</div>
       <div class="small muted mt-2">决策卡会结合账户余额和持仓，估算建议买卖数量。</div>
       <div class="small mt-2">用户可以采纳或忽略建议，下单时再单独确认。</div>
     </div>
     <div class="dark-band small" v-click>
-      <b>为什么不让智能体直接定价？</b><br>
+      <b>定价与建议各自独立</b><br>
       同样的输入算出同样的价格。模型服务出问题，定价和交易照常。
     </div>
   </div>
@@ -389,7 +389,7 @@ layout: default
 </div>
 
 <!--
-【40 秒】我们用选手这一轮的表现和他平时的表现对比，再按公式更新价格。最低是 1 个信用点，还有单次涨跌上限。每次变价都会附上原因，智能体可以用这些信息解释行情。
+【40 秒】系统先比较选手本轮与以往的表现，再按公式计算新价格。价格最低为 1 个信用点，单次涨跌也有限制。每次变价都附有原因，用户和智能体都可以查到。
 -->
 
 ---
@@ -398,7 +398,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
 
-# 智能体怎么查数据、给建议
+# 智能体的分析流程与护栏
 
 <div class="body">
 
@@ -419,7 +419,7 @@ layout: default
 </div>
 
 <!--
-【30 秒】决策卡先给方向，再用账户数据估算仓位。还有两个入口可以单独看：多角色分析按分析师、风控、交易员依次往下走，工具演示让模型自己选查什么，最多三轮。基础建议会检查字段，模型出问题时走规则版。点采纳只是记下选择。
+【30 秒】决策卡先给出建议方向，再根据余额和持仓估算数量。多角色分析依次经过分析师、风控和交易员。工具调用另有演示入口，模型可以在三个工具中选择，最多运行三轮。基础建议会校验字段，模型失败时用规则版。用户点采纳只会留下记录。
 -->
 
 ---
@@ -428,7 +428,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
 
-# 智能体从哪里取数，记住了什么
+# 智能体的数据来源与记忆
 
 <div class="body">
 
@@ -439,7 +439,7 @@ layout: default
 
 <div class="grid2" v-click>
   <div class="card"><div class="accent small font-bold">当前用 SQL 取数</div><div class="small mt-1">数据量小，所需字段明确。当前未接入 RAG、知识图谱或跨会话偏好记忆。</div></div>
-  <div class="card"><div class="accent small font-bold">以后怎么扩展</div><div class="small mt-1">RAG 找历次复盘，知识图谱核对选手和战队关系，偏好记忆补上用户关注点。</div></div>
+  <div class="card"><div class="accent small font-bold">可扩展的方向</div><div class="small mt-1">RAG 找历次复盘，知识图谱核对选手和战队关系，偏好记忆补上用户关注点。</div></div>
 </div>
 
 <div class="dark-band small" v-click>当前可以回查建议和采纳记录。用户历史选择暂未用于生成下一次建议。</div>
@@ -447,14 +447,14 @@ layout: default
 </div>
 
 <!--
-【25 秒】每次请求临时取当前需要的数据，业务规则在代码里。调用、采纳和价格归因会留下记录，简报会短时缓存。目前没有 RAG、知识图谱或跨会话偏好记忆。将来如果加，分别用来查复盘、核对关系和保留关注点。
+【25 秒】每次请求都会读取当时需要的行情和价格记录，定价、停牌等规则由代码处理。系统保留调用、采纳和价格归因记录，简报也会短时缓存。目前没有接入 RAG、知识图谱或跨会话偏好记忆。以后若扩展，可以分别用它们查阅复盘、核对关系和保留用户的关注点。
 -->
 
 ---
 
 <div class="kicker">03 产品实现 · 3.5.4 数据库设计</div>
 
-# 9 张表分别存什么
+# 数据库中的 9 张表
 
 <div class="body">
 
@@ -484,7 +484,7 @@ erDiagram
 
 </div>
   <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">一笔交易一起写</div><div class="small muted">余额、持仓和流水在同一个事务里更新。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">交易的事务处理</div><div class="small muted">余额、持仓和流水在同一个事务里更新。</div></div>
     <div class="card" v-click><div class="accent small font-bold">方便对账</div><div class="small muted">流水记下成交后的余额，可以逐笔核对。</div></div>
   </div>
 </div>
@@ -492,7 +492,7 @@ erDiagram
 </div>
 
 <!--
-【25 秒】九张表里，账号和市场数据各有自己的表。下单时，余额、持仓和流水在一次事务里更新，流水还会记下交易后的余额。智能体的分析和采纳另有记录。
+【25 秒】九张表分别保存账号、市场、交易和智能体记录。一笔交易会在同一个事务里更新余额、持仓和流水。流水还会记下成交后的余额，便于之后对账。
 -->
 
 ---
@@ -501,7 +501,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.5.5 接口设计</div>
 
-# 前后端用哪些接口
+# 前后端接口
 
 <div class="body">
 
@@ -522,7 +522,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】接口按行情、交易、身份、智能体和运维分组。比如买入和查行情走不同接口。想看每个接口接收和返回什么，可以打开 Swagger。
+【20 秒】接口按行情、交易、身份、智能体和运维分组。页面上列了几个常用的例子。各接口的请求和返回格式，都可以在 Swagger 文档里查看。
 -->
 
 ---
@@ -531,7 +531,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.6 软件质量</div>
 
-# 提交代码后会做哪些检查
+# 代码检查与测试
 
 <div class="body">
 
@@ -543,7 +543,7 @@ layout: default
 </div>
 
 <div class="grid2">
-  <div class="card" v-click><div class="accent small font-bold">常见问题怎么处理</div>
+  <div class="card" v-click><div class="accent small font-bold">运行保障</div>
     <ul class="clean">
       <li>日志记录接口请求和报错，便于排查</li>
       <li>异常：全局统一错误码，前端友好提示</li>
@@ -568,7 +568,7 @@ layout: default
 </div>
 
 <!--
-【25 秒】后端跑 pytest，前端跑 Vitest。GitHub Actions 里也有代码检查和构建。举个例子，我们用同一事务和条件更新防止两笔卖单同时把持仓扣成负数。
+【25 秒】后端用 pytest，前端用 Vitest。GitHub Actions 也会执行代码检查和构建。这里以并发卖出为例，同一个数据库事务配合条件更新，可以防止两笔卖单同时扣减时出现超卖。
 -->
 
 ---
@@ -577,7 +577,7 @@ layout: default
 
 <div class="kicker">03 产品实现 · 3.7 代码统计</div>
 
-# 仓库里有多少代码
+# 代码与文档统计
 
 <div class="body">
 
@@ -602,7 +602,7 @@ layout: default
 </div>
 
 <!--
-【15 秒】表里按文件类型统计代码行数和文档。成员贡献按 Git 提交作者统计，胡德昊的两个作者身份合并计数。AI 参与了部分测试和文档，核心交易代码由团队编写和评审。
+【15 秒】表中按文件类型列出了代码和文档行数。成员贡献按 Git 提交作者统计，胡德昊的两个作者身份合并计数。AI 参与了部分测试和文档，核心交易代码由团队编写和评审。
 -->
 
 ---
@@ -611,7 +611,7 @@ layout: default
 
 <div class="kicker">验收 · 测试与容量</div>
 
-# 我们测了什么，结果怎么样
+# 用户测试、智能体评测与压测
 
 <div class="body">
 
@@ -629,7 +629,7 @@ layout: default
 </div>
 
 <!--
-【20 秒】用户测试 33 项，32 项全过，1 项部分通过。智能体的六字段校验通过了 16 次线上测试，11 项红队用例都通过。只读压测测到每秒约 38 次请求，没有报错。我们用的是模拟赛果，暂未评估真实比赛预测。
+【20 秒】33 项用户测试中，32 项通过，1 项部分通过。线上评测的 16 次智能体输出都通过了字段校验。只读接口压测达到每秒约 38 次请求，没有报错。这里的比赛数据是模拟的，评测范围限于系统行为。
 -->
 
 ---
@@ -656,7 +656,7 @@ layout: default
 </div>
 
 <!--
-【5 秒】接下来现场看一遍行情、智能体建议和买入，再检查持仓和流水。
+【5 秒】接下来从市场页进入一位选手的详情，先看智能体建议，再买入两股，最后查看持仓和流水。
 -->
 
 ---
@@ -689,5 +689,5 @@ layout: default
 </div>
 
 <!--
-【结束】我们的汇报到这里。在线演示、源码和 PDF 都在这页。谢谢各位老师。
+【结束】我们的汇报到这里。最后一页留有在线演示、源码和 PDF 的入口，方便课后查看。谢谢各位老师。
 -->
