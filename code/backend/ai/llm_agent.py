@@ -189,8 +189,13 @@ def build_user_prompt(player_context: dict[str, Any]) -> str:
 
 # ---------- 默认客户端（标准库，无第三方依赖）----------
 
-def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
+def _default_chat(
+    user_prompt: str, *, settings: Any = None, system_prompt: str | None = None
+) -> str:
     """调用 OpenAI 兼容的 chat/completions 接口，返回模型原始文本。
+
+    `system_prompt` 默认用建议卡的 `SYSTEM_PROMPT`；多角色协作（`ai/panel.py`）
+    会传入各自的角色说明，让模型知道自己是分析师、风控还是交易员。
 
     无网络 / 超时 / 非 2xx / 响应结构异常 都抛 LLMOutputError，由 analyze 回落。
     """
@@ -205,7 +210,7 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
         "model": _model(settings),
         "temperature": 0,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt or SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
     }
