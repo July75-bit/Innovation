@@ -78,7 +78,7 @@ cd Innovation && git checkout develop && git rev-parse HEAD
 | `LLM_MODEL` | `deepseek-flash` |
 | `CORS_ORIGINS` | 前端 origin，英文逗号分隔，**不能带尾斜杠** |
 | `DEBUG_ENDPOINTS` | 验收期 `1`；验收结束改 `0` 并重新部署 |
-| `RESEED_TOKEN` | 随机串；重灌演示数据时必须携带 |
+| `RESEED_TOKEN` | 随机串（`render.yaml` 用 `generateValue: true` 自动生成）；重灌演示数据时必须携带。不覆盖就会用代码里公开的默认值 |
 
 前端（Static Site → Environment，**构建期生效**）：
 

@@ -103,10 +103,14 @@ jobs:
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
         run: npm ci
+      # 不用 npm run lint：那个脚本带 --fix，CI 里会先把问题自动改掉再报通过，
+      # 改动又不会提交回仓库，等于可自动修的问题永远不会让 CI 变红。
       - name: 代码规范
         if: steps.detect.outputs.ready == 'true'
         working-directory: code/frontend
-        run: npm run lint
+        run: |
+          npx oxlint . --deny-warnings
+          npx eslint . --max-warnings 0
       # 51 条 Vitest 用例（注册 / 登录 / 删号弹窗 / 路由守卫）此前只在本地跑过，CI 完全没覆盖，
       # 前端只剩 eslint 和 build 两道防线——鉴权这种带状态机的改动尤其需要它。
       # 必须带 --run：package.json 里 test:unit = "vitest"，不加就进 watch 模式把 job 挂死。
