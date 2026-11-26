@@ -222,7 +222,7 @@ psql "<External Database URL>" -f backup.sql      # 恢复前确认目标库
 - [ ] `CORS_ORIGINS` 精确匹配前端 origin，无尾斜杠
 - [ ] 前端 `VITE_API_BASE_URL` 指向后端公网地址
 - [ ] `DEBUG_ENDPOINTS` 在验收结束后已改 0
-- [ ] `RESEED_TOKEN` 已改为随机值
+- [x] `RESEED_TOKEN` 已改为随机值（2026-11-26 在 Render 控制台设置；新代码已上线，结算与重灌接口都要求 token）
 
 ### C. 数据库
 
