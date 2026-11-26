@@ -11,8 +11,8 @@ Render 免费 Postgres 没有网页数据浏览器，本地/校园网络又常�
 **安全边界（刻意收窄，两者同口径）**：
 - 都属 debug 运维面，`DEBUG_ENDPOINTS=0` 时 404（`config.debug_endpoints`）；
 - `/db` 只读、只回元信息，不回连接串、不回密码；
-- `/reseed` 必须携带 token（默认 `playerstock-demo-reseed-2026`，`RESEED_TOKEN` 可覆盖），
-  错误码 `TOKEN_MISMATCH`；且**破坏性**（drop 全表重建，交易/持仓/流水清零），文档已告知；
+- `/reseed` 必须携带 token（等于 `RESEED_TOKEN`；没配置时 403 `OPS_TOKEN_UNSET`，
+  不匹配 403 `TOKEN_MISMATCH`，见 `app/core/ops_auth.py`）；且**破坏性**（drop 全表重建，交易/持仓/流水清零），文档已告知；
 - 非业务接口，前端从不调用；功能验收后一起关闭。
 """
 
@@ -31,6 +31,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import Base, get_db
 from app.core.errors import ApiError
+from app.core.ops_auth import require_ops_token
 from app.models import Player, Position, PriceHistory, Trade, User
 
 #: 种子历史点的固定时间戳（开赛前，早于赛程第 1 轮 2026-11-01）。
@@ -87,7 +88,7 @@ def debug_db(db: Session = Depends(get_db)) -> dict:
 )
 def debug_reseed(
     db: Session = Depends(get_db),
-    token: str = Query(description="口令，等于 settings.reseed_token"),
+    token: str | None = Query(default=None, description="运维口令，等于 RESEED_TOKEN"),
     rounds: int = Query(default=12, ge=0, le=30, description="模拟轮数（默认 12：赛程 4 的倍数，每队停 3 轮）"),
     seed: int = Query(default=42, description="core_engine 的随机种子（同值结果可复现）"),
 ) -> dict:
@@ -111,8 +112,7 @@ def debug_reseed(
             status_code=404,
             code="ENDPOINT_DISABLED",
         )
-    if token != settings.reseed_token:
-        raise ApiError("重灌口令不匹配", status_code=403, code="TOKEN_MISMATCH")
+    require_ops_token(token)
     if _RESEED_LOCK.locked():
         raise ApiError("已有一次重灌在进行中", status_code=409, code="RESEED_BUSY")
 

@@ -50,7 +50,7 @@
 | 8 | POST | /api/trades/sell | 卖出 |
 | 9 | GET | /api/trades | 交易流水（倒序） |
 | 10 | GET | /api/analysis/{player_id} | AI 建议（6 字段） |
-| 11 | POST | /api/prices/recalc | 赛后结算（运维接口，前端不调用） |
+| 11 | POST | /api/prices/recalc | 赛后结算（运维接口，前端不调用；需 `?token=<RESEED_TOKEN>`，未配置口令时 403 `OPS_TOKEN_UNSET`） |
 | 12 | GET | /api/debug/db | 只读数据库自检（DEBUG_ENDPOINTS=0 时 404） |
 | 13 | POST | /api/auth/register | 注册私人账号，成功即登录 |
 | 14 | POST | /api/auth/login | 登录，签发新令牌 |

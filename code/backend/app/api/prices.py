@@ -23,13 +23,14 @@ from dataclasses import replace
 from datetime import date, datetime, time, timedelta, timezone
 
 from core_engine import suspension_reason, update_price
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.demo_schedule import DEMO_SCHEDULE
 from app.core.errors import ApiError
+from app.core.ops_auth import require_ops_token
 from app.core.price_update import apply_updates, plan_for_player
 from app.models import Player, PriceHistory
 from app.schemas.price import (
@@ -82,13 +83,19 @@ def get_price_history(
     summary="按轮次重算价格（幂等：同一 (player_id, round) 只落一次）",
 )
 def recalc_prices(
-    payload: PriceRecalcRequest, db: Session = Depends(get_db)
+    payload: PriceRecalcRequest,
+    db: Session = Depends(get_db),
+    token: str | None = Query(default=None, description="运维口令，等于 RESEED_TOKEN"),
 ) -> PriceRecalcResponse:
     """赛后结算：一轮里每名选手提交一次 (score, S)，算价并落库。
+
+    运维接口，必须带口令（与 `/api/debug/reseed` 同一个 `RESEED_TOKEN`）：
+    不校验的话，任何人换个 `played_at` 就能反复拉抬某名选手的价格。
 
     去重键为 `(player_id, round)`：`round` 由 `played_at` 体现（每轮一个比赛日），
     已存在的 `price_history` 行会被跳过，因此同一份数据重放多少次结果都一样。
     """
+    require_ops_token(token)
     round_ts = _round_ts(payload.played_at)
     next_ts = round_ts + timedelta(days=1)
 

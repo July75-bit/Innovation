@@ -37,8 +37,9 @@ class Settings(BaseSettings):
     debug_endpoints: bool = True
     # 运维重灌接口 `POST /api/debug/reseed` 的口令（见 app/api/debug.py）。
     # 它会**清空并重建**演示数据（16 名选手 + demo 账户），所以必须带 token 防误触；
-    # 默认值仅用于课程演示，上线正式环境请设 RESEED_TOKEN 环境变量覆盖。
-    reseed_token: str = "playerstock-demo-reseed-2026"
+    # 同一口令也保护 `POST /api/prices/recalc`。默认留空 = 两个运维接口都禁用
+    # （仓库是公开的，写死的默认值等于没有口令）；校验逻辑见 app/core/ops_auth.py。
+    reseed_token: str = ""
     # 智能体审计：是否把每次智能体调用写进 agent_traces（写失败也不影响响应）。
     # 关掉后 /api/agent/traces 仍可用，只是没有新记录。
     agent_traces_enabled: bool = True

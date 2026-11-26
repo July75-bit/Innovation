@@ -27,6 +27,8 @@ os.environ.setdefault(
     "DATABASE_URL",
     f"sqlite:///{(REPO_ROOT / '.pytest-tmp' / 'bootstrap.db').as_posix()}",
 )
+# 运维接口（reseed / recalc）默认禁用；测试里给一个口令，用例通过 settings.reseed_token 引用
+os.environ.setdefault("RESEED_TOKEN", "pytest-ops-token")
 
 from app.core.database import Base, get_db  # noqa: E402
 from app.core.time import utcnow  # noqa: E402

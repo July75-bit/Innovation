@@ -42,8 +42,8 @@ services:
       - key: LLM_API_KEY
         sync: false # 在 Render 控制台手工填写，绝不提交明文
       - key: RESEED_TOKEN
-        # POST /api/debug/reseed 的口令。代码里的默认值写在公开仓库，谁都能看到；
-        # 不覆盖的话，任何人都能远程重置线上行情和 demo 账户。
+        # 运维口令：POST /api/debug/reseed 与 POST /api/prices/recalc 都要带 ?token=。
+        # 没配置时这两个接口直接 403（app/core/ops_auth.py），所以必须在这里生成。
         # generateValue 让 Render 生成随机串，需要重灌时去控制台 Environment 里复制。
         generateValue: true
       - key: CORS_ORIGINS
