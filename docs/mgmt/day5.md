@@ -5,7 +5,7 @@
 > **配套文件**：`milestones.md` T5-01~08、`docs/software/deployment.md`、`docs/acceptance/test_report.md` §6、`docs/acceptance/cross_test.md`、`render.yaml`。
 > **本文件读法**：§1 是已完成的部署记录（对应第 1 部分）；§2–§3 是剩余任务与「完善作品」的优化迭代清单（对应第 2 部分）；§4 起是验收与产出物。
 
-> **后续变更（2026-11-21 补注）**：本文件是当时的任务记录。其后 `deployment.md` 检查单由 37 项扩到 **93 项（A–G 组，全部已勾）**；答辩主材料由 `defense.pdf`（16 页）迁移到 **Slidev 17 页**（`docs/slides/`，Actions 导出 PDF）。当前口径以 `docs/presentation/README.md`、`docs/acceptance/test_report.md` 为准。
+> **后续变更（2026-11-21 补注）**：本文件是当时的任务记录。其后 `deployment.md` 检查单改为每次发布逐项填写的 **A–G 模板**（2026-11-26 补注）；答辩主材料由 `defense.pdf`（16 页）迁移到 **Slidev 19 页**（`docs/slides/`，Actions 导出 PDF）。当前口径以 `docs/presentation/README.md`、`docs/acceptance/test_report.md` 为准。
 
 ## 0. 现状快照（2026-10-25 实测）
 

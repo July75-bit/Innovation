@@ -40,7 +40,7 @@
 | 09:25–11:30 | **T3-04 浏览器全链路收口**：`npm ci` → `Copy-Item .env.example .env.local` → 后端 `seed_db.py` + `uvicorn --port 8000` → `npm run dev`；跑「查行情 → 买 2 股 → 持仓 → 卖 1 股 → 流水」 | 逐步截图；T3-02/T3-03 实机验证（余额不足/持仓不足/超上限/非法数量/暂停交易 5 条错误分支弹后端原文） |
 | 11:30–13:00 | **T4-01 折线图**：`PriceChart` 接 10+ 个点；处理 0 点空态、单点；时间轴按 ts 升序 | 每人（sh1ro 暂停除外）≥10 点可见 |
 | 14:00–15:00 | **T4-02 涨跌原因**：详情页展示 `latest_reason` + 折线每点 `reason`（tooltip 或列表） | 页面能看到最近原因；抽查 3 个点与后端一致 |
-| 15:00–16:00 | **T4-04 AI 建议卡**：action / reason / risk / source / disclaimer；`source=rule_fallback` 有降级徽标 | 6 字段与契约 §4.10 一致 |
+| 15:00–16:00 | **T4-04 AI 建议卡**：action / reason / risk / source / disclaimer；`source=rule_fallback` 有降级徽标 | 6 字段与契约 §3 #10 一致 |
 | 16:00–17:00 | **T4-05 三态**：加载中 / 无数据 / 失败；拔网线或停后端看到失败态并可重试 | 三态截图 |
 | 17:00–17:40 | 补 `docs/requirements/wireframes/README.md` 页面截图 + 状态改 ✅；配合 D 做交叉原型测试演示 | 文档有截图；3 分钟演示脚本能跑 |
 | 17:40–18:00 | CI 前端 job 复核（lint + build） | run 绿 |

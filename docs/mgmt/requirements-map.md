@@ -38,7 +38,7 @@
 | 要求 | 落点 | 证据 | 状态 |
 | --- | --- | --- | --- |
 | **3.1 用户体验设计考虑的因素** | `prototype_review.md` §1.5（2026-11-07 补） | 9 类因素 × 取舍 × 落点 | ✅ |
-| **账号体系（第 7 轮新增）** | `api_contract.md` §3 #13–17、§4.11–4.15；`user_manual.md` §2.5；`compliance.md` §4.3 | 注册/登录/me/退出/删号 5 个接口；PBKDF2-HMAC-SHA256 加盐 10 万次、令牌 30 天可撤销；`test_api_auth.py` + `test_auth_multiuser.py` | ✅ |
+| **账号体系（第 7 轮新增）** | `api_contract.md` §3 #13–17、§3 #13–17（认证说明见 §4）；`user_manual.md` §2.5；`compliance.md` §4.3 | 注册/登录/me/退出/删号 5 个接口；PBKDF2-HMAC-SHA256 加盐 10 万次、令牌 30 天可撤销；`test_api_auth.py` + `test_auth_multiuser.py` | ✅ |
 | **性能 / 容量（NFR-04/05）** | `acceptance/load_test_report.md`、`tests/perf/load_test.py` | ✅ 线上只读压测：饱和 38 req/s、P95≤1s 并发≈10、估算 ≈190 在线、0 错误 | ✅ |
 | **3.2 语言/IDE/框架 + 版本号，写在 README** | `README.md` 技术栈表、`architecture.md` §4 | Vue 3.5.42 / TS 6.0 / Vite 8.2.2 / FastAPI 0.161.1 / SQLAlchemy 2.1.6 | ✅ |
 | **3.3 仓库链接 + 每人提交次数截图** | `evidence/20~22`、`pulse-committers.csv` | pulse 截图 + 准数统计（49/41/28/21）+ 口径说明 | ✅ |
@@ -47,8 +47,8 @@
 | 3.5.1 系统架构图 | `architecture.md` §1 | flowchart 分层图 | ✅ |
 | 3.5.2 基础设施图 | `architecture.md` §6、`deployment.md` §6 | Render 三服务拓扑 | ✅ |
 | **3.5.3 AI/算法说明 + 文献** | `ai_agent_prompt.md` §7.5（2026-11-07 补）、`pricing_model.md` | 模型选择理由、接口规范链接、定价公式来源 | ✅ |
-| 3.5.4 数据库设计（ER 图） | `database_design.md` §2 | erDiagram 5 张表 + 字段口径 | ✅ |
-| 3.5.5 接口设计（表格） | `api_contract.md` §3/§4 | 12 个接口清单 + 逐接口输入输出与错误码 | ✅ |
+| 3.5.4 数据库设计（ER 图） | `database_design.md` §2 | erDiagram + 9 张表字段口径 | ✅ |
+| 3.5.5 接口设计（表格） | `api_contract.md` §3/§4 | 29 个接口清单 + 错误码表 + 关键示例 | ✅ |
 | **3.5.6 前端设计** | `architecture.md` §3.5（2026-11-07 补） | 框架/路由/状态/图表/样式/响应式/无障碍 8 项决策 | ✅ |
 | **3.6 软件质量（3.6.1 + 3.6.2）** | `software/CodeReview.md` §1/§2 | 日志 15 处 + 异常五层 + PEP8/Pylint/复杂度 + 3 张截图 | ✅ |
 | **3.7 代码统计（AI 比例/模块数/行数）** | `CodeReview.md` §3 | 178 文件 24764 行、模块 18、AI 首稿 37%（可复算） | ✅ |
@@ -71,9 +71,7 @@
 | 第 4 天第 3 部分：小组交叉用户测试 | `cross_test.md` §3（我方测 Tome）/ §4（他组测我方） | ✅ 双向完成（2026-11-14；他组那份属材料评审） |
 | 第 3 天检查点：提交 `docs/software/code_quality.md` / `code_review.md` | 两个文件均已按课件路径建好 | ✅ |
 
-> 📄 **已备好可直接粘贴的 Issue 标题 + 正文**：[`bug-issues.md`](bug-issues.md)（14 条，含两种建法）。
-> 🟡 **Issues 说明**：仓库现有 Issue 以「day1 / day3 / check frontend」等任务类为主，
-> 14 条缺陷（BUG-01~14）记录在 `test_report.md` §9。若要把缺陷也纳进 BugTracker，需要逐条建 Issue（见交付说明）。
+> 缺陷索引见 [`bug-issues.md`](bug-issues.md) 与 `test_report.md` §9：共 15 条，BUG-01~14 对应 Issue #22–#35，BUG-15 对应 #37，全部已关闭。
 
 ## 三、交付物与工程证据
 
@@ -83,7 +81,7 @@
 | 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 350 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 98% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
-| CI 可复现 | `.github/workflows/ci.yml` 三 job | ✅ |
+| CI 可复现 | `.github/workflows/ci.yml` 4 个 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |
 | 团队协作痕迹（Projects/Milestones/Issues） | 三个 Project（**2026-11-14 无痕窗口实测已 Public**，证据 evidence/38-projects-public-incognito.png） + M1–M6 + **缺陷 Issue #22–#35、#37（15 条，bug/P0-P2 标签，含修复证据，已关闭）** | ✅ 匿名可见，无需登录 |
 
@@ -101,5 +99,5 @@
 ## 五、答辩前最后 3 件事
 
 1. **彩排两遍**（`rehearsal-plan.md`，8+2+5=15:00）；
-2. **演示前重置数据**（`bootstrap_demo_data.py --reset`，余额回 5000）；
+2. **演示前重置数据**（`POST /api/debug/reseed?token=<RESEED_TOKEN>&rounds=12&seed=42`，demo 余额回 5000，注册账号不动）；
 3. **确认线上 `source=llm`**（真模型，中位 2.5s）与 16 名选手都在。

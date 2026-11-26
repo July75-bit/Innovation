@@ -18,8 +18,8 @@ erDiagram
     USERS {
         int user_id PK
         string nickname "UNIQUE，登录凭据"
-        float balance
-        float initial_balance
+        decimal balance
+        decimal initial_balance
         string password_hash "可空：demo 公共账户无口令"
         string salt "可空"
         datetime created_at
@@ -35,8 +35,8 @@ erDiagram
         string name
         string display_name
         string team
-        float current_price
-        float prev_price
+        decimal current_price
+        decimal prev_price
         int rating
         string status
         datetime updated_at
@@ -46,7 +46,7 @@ erDiagram
         int user_id FK
         int player_id FK
         int quantity
-        float avg_cost
+        decimal avg_cost
         datetime updated_at
     }
     TRADES {
@@ -55,15 +55,15 @@ erDiagram
         int player_id FK
         string side
         int quantity
-        float price
-        float amount
-        float balance_after
+        decimal price
+        decimal amount
+        decimal balance_after
         datetime created_at
     }
     PRICE_HISTORY {
         int price_id PK
         int player_id FK
-        float price
+        decimal price
         string reason
         datetime ts
     }
@@ -77,8 +77,8 @@ erDiagram
 | --- | --- | --- | --- |
 | `user_id` | INTEGER | PK, autoincrement | |
 | `nickname` | VARCHAR(50) | NOT NULL, **UNIQUE** | 登录凭据；`demo` = 公共演示账户（第 7 轮起仍保留） |
-| `balance` | FLOAT | NOT NULL, default 5000 | 信用点余额，不可为负 |
-| `initial_balance` | FLOAT | NOT NULL, default 5000 | 用于算收益率 |
+| `balance` | NUMERIC(12,2) | NOT NULL, default 5000, CHECK ≥ 0 | 信用点余额，不可为负 |
+| `initial_balance` | NUMERIC(12,2) | NOT NULL, default 5000, CHECK ≥ 0 | 用于算收益率 |
 | `password_hash` | VARCHAR(255) | NULL | 第 7 轮新增：`pbkdf2_sha256$<迭代>$<盐>$<散列>`（`app/core/security.py`） |
 | `salt` | VARCHAR(64) | NULL | 第 7 轮新增：每用户独立随机盐（hex） |
 | `created_at` | DATETIME | NOT NULL, default now | |
@@ -100,14 +100,62 @@ erDiagram
 | `name` | VARCHAR(50) | NOT NULL, UNIQUE | CS2 选手游戏内 ID（真实公开信息），如 ZywOo |
 | `display_name` | VARCHAR(50) | | 展示名，真实选手暂无官方中文名时与 name 相同 |
 | `team` | VARCHAR(50) | | 所属战队（真实公开信息），如 Vitality |
-| `current_price` | FLOAT | NOT NULL, > 0 | 定价模块写入 |
-| `prev_price` | FLOAT | NOT NULL | 用于算涨跌幅 |
+| `current_price` | NUMERIC(12,2) | NOT NULL, CHECK > 0 | 定价模块写入 |
+| `prev_price` | NUMERIC(12,2) | NOT NULL, CHECK > 0 | 用于算涨跌幅 |
 | `role` | VARCHAR(20) | | 选手真实位置：AWPer / Entry / Rifler / IGL / Support / Lurker |
-| `rating` | INTEGER | 0–100 | 本项目模拟综合表现分（C 维护），**不是 HLTV Rating 或任何官方统计** |
+| `rating` | INTEGER | NOT NULL, CHECK 0–100 | 本项目模拟综合表现分（C 维护），**不是 HLTV Rating 或任何官方统计** |
 | `status` | VARCHAR(20) | NOT NULL, default 'trading' | `trading` / `suspended` |
 | `updated_at` | DATETIME | NOT NULL | |
 
 > 说明：`data/seed_players.json` 里的 `initial_price`（上市价）**不是本表字段**，落库时写成 `price_history` 的第一条记录（`reason = 初始价格`）。
+
+### 2.3 `positions` 持仓
+
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| `position_id` | INTEGER | PK | |
+| `user_id` / `player_id` | INTEGER | FK，(user_id, player_id) UNIQUE | 一人一选手只有一行 |
+| `quantity` | INTEGER | NOT NULL, CHECK 1–50 | 卖光时删行，不写 0 |
+| `avg_cost` | NUMERIC(12,4) | NOT NULL, CHECK ≥ 0 | 加仓时按金额加权重算 |
+| `updated_at` | DATETIME | NOT NULL | |
+
+### 2.4 `trades` 流水（只追加）
+
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| `trade_id` | INTEGER | PK | |
+| `user_id` / `player_id` | INTEGER | FK；索引 (user_id, created_at) | |
+| `side` | VARCHAR(4) | CHECK IN ('BUY','SELL') | |
+| `quantity` | INTEGER | CHECK > 0 | |
+| `price` / `amount` | NUMERIC(12,2) | price > 0，amount ≥ 0 | 成交价取下单时 `current_price` |
+| `balance_after` | NUMERIC(12,2) | NOT NULL | 成交后余额，便于逐笔对账 |
+| `created_at` | DATETIME | NOT NULL | |
+
+### 2.5 `price_history` 价格历史（只追加）
+
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| `price_id` | INTEGER | PK | |
+| `player_id` | INTEGER | FK；索引 (player_id, ts) | |
+| `price` | NUMERIC(12,2) | CHECK > 0 | |
+| `reason` | VARCHAR(200) | NOT NULL | 涨跌原因，含本轮得分与 S |
+| `ts` | DATETIME | NOT NULL | 比赛日；同一 (player_id, 轮次) 只落一次 |
+
+### 2.6 `auth_tokens` 登录令牌
+
+| 字段 | 类型 | 约束 | 说明 |
+| --- | --- | --- | --- |
+| `token_hash` | VARCHAR(64) | PK | 令牌原文的 SHA-256，库里不存原文 |
+| `user_id` | INTEGER | FK | |
+| `created_at` / `expires_at` | DATETIME | NOT NULL | 30 天有效；退出即删行 |
+
+### 2.7–2.9 智能体审计表（只写审计，不碰业务表）
+
+| 表 | 主要字段 | 用途 |
+| --- | --- | --- |
+| `agent_traces` | trace_id、mode、player_id、source、model、latency_ms、fallback_reason、input_digest、output_json | 每次智能体调用一行 |
+| `decision_logs` | decision_id、user_id、player_id、advice_action、advice_source、decision、trace_id、note | 用户采纳 / 忽略建议的记录 |
+| `price_narratives` | narrative_id、player_id、ts、narrative、source、model；(player_id, ts) UNIQUE | 价格点的文字归因缓存 |
 
 ## 3. 一致性规则（事务）
 

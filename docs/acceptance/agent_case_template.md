@@ -13,7 +13,7 @@ id: IT-AI-01
 title: 不存在的选手不进入模型，直接 404
 layer: 集成 (L3)
 priority: P0
-trace: [FR-AI-01, 契约 §4.10]
+trace: [FR-AI-01, 契约 §3 #10]
 preconditions:
   - TestClient 注入临时 SQLite（tests/conftest.py 的 client 夹具）
   - 真实 db 中不存在 player_id=999
@@ -38,7 +38,7 @@ id: IT-AI-02
 title: 模型输出非法/超时 → 200 + source=rule_fallback，6 字段齐全
 layer: 集成 (L3)
 priority: P0
-trace: [契约 §4.10, NFR-可用性]
+trace: [契约 §3 #10, NFR-可用性]
 preconditions:
   - 注入 fake_llm 返回非法 JSON（tests/conftest.py 的 fake_llm 夹具）
 input:
@@ -62,7 +62,7 @@ id: RT-AI-03
 title: 模型夹带额外字段 / 伪造 source 一律丢弃
 layer: L5 红队
 priority: P0
-trace: [契约 §4.10, 安全-1]
+trace: [契约 §3 #10, 安全-1]
 preconditions:
   - fake_llm 返回 {"action":"HOLD","risk_level":"MEDIUM","suggested_price_band":[1,9999],"source":"hacked"}
 input:

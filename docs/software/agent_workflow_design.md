@@ -2,7 +2,7 @@
 
 > 参考：bettermorn/AIAgent `docs/AIAgentConcept.md`（常见 Agent 工作流模式对比、设计通用建议）
 > 角色：程序产品经理 ｜ 日期：2026-10-24 ｜ 状态：待评审
-> 关联文档：`docs/algorithm/ai_agent_prompt.md`、`docs/software/architecture.md`、`docs/software/api_contract.md` §4.10
+> 关联文档：`docs/algorithm/ai_agent_prompt.md`、`docs/software/architecture.md`、`docs/software/api_contract.md` §3 #10
 
 ## 1. 现状盘点
 
@@ -27,7 +27,8 @@
 
 ### 2.2 明确不采用（及理由）
 
-- ReAct / Plan-and-Execute / Supervisor / 全自主型：本任务是单步、确定上下文的分析任务；引入循环推理带来延迟、成本与幻觉不可控，且与「AI 不自动交易」合规定位冲突。对应文章通用建议第 1 条：简单任务优先使用简单流程。
+- Plan-and-Execute / Supervisor / 全自主型：本任务是确定上下文的分析任务，自主规划带来的延迟、成本与幻觉不可控，且与「AI 不自动交易」的合规定位冲突。
+- ReAct 只做了受限版本：`GET /api/agent/tools/{id}` 让模型在 3 个只读工具里选择、最多 3 轮；多角色分析（`/api/agent/panel/{id}`）是固定顺序的三次调用，不是自主调度。
 
 ## 3. 完善路线图
 

@@ -32,7 +32,7 @@
 
 ## 快速开始
 
-需要 Python 3.12+、Node.js 20+。
+需要 Python 3.12+、Node.js 22.18+ 或 24.12+（与 `code/frontend/package.json` 的 engines 一致）。
 
 ```powershell
 # 后端
@@ -48,7 +48,7 @@ npm install
 npm run dev
 
 # 演示数据 / 跑测试（仓库根目录）
-python scripts/seed_db.py
+python scripts/bootstrap_demo_data.py   # 16 名选手 + 每人约 11 个价格点
 python -m pytest
 cd code/frontend; npm run test:unit -- --run
 ```
@@ -88,7 +88,7 @@ render.yaml      Render 部署蓝图
 | `docs/software/` | 架构、接口契约、数据库、部署、UI 规范 |
 | `docs/algorithm/` | 定价模型、AI 提示词、回测 |
 | `docs/acceptance/` | 测试计划/报告、用户手册、证据 |
-| `docs/slides/` | Slidev 答辩稿（17 页）+ 讲稿 |
+| `docs/slides/` | Slidev 答辩稿（19 页）+ 讲稿 |
 | `docs/mgmt/` | 里程碑、缺陷记录、要求对照 |
 
 ## 团队分工
@@ -103,7 +103,7 @@ render.yaml      Render 部署蓝图
 ## 交易规则
 
 - 注册赠送 5000 信用点；单选手持仓上限 50 股
-- 比赛期间对应选手暂停交易，结算后恢复
+- 本轮有比赛的两支战队整队暂停交易，下一轮恢复
 - 买入需余额充足，卖出需持仓足够；数量必须为正整数
 - 交易流水持久化，持仓/流水按时间倒序查询
 

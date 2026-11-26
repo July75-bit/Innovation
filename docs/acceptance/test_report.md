@@ -75,18 +75,18 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-10-24 实测（当时 104 条用例；后续新增用例未重跑覆盖率）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-11-26 复测（350 条用例）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
-| **全部（app + core_engine）** | 1956 | 45 | **98%** |
-| 定价 `core_engine/pricing.py` | 113 | 21 | 81% |
-| 模拟器 `core_engine/simulator.py` | 58 | 8 | 86% |
-| 价格落库 `app/core/price_update.py` | 64 | 5 | 92% |
-| 交易规则 `app/core/rules.py` | 23 | 0 | 100% |
-| 模型 + 响应 schema | 238 | 0 | 100% |
+| **全部（app + core_engine）** | 1976 | 45 | **98%** |
+| 定价 `core_engine/pricing.py` | 118 | 0 | 100% |
+| 模拟器 `core_engine/simulator.py` | 58 | 0 | 100% |
+| 价格落库 `app/core/price_update.py` | 64 | 0 | 100% |
+| 交易规则 `app/core/rules.py` | 54 | 0 | 100% |
+| 模型 + 响应 schema | 331 | 1 | 99.7% |
 
-> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（2026-11-21 复测：1976 语句 / 45 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支与定价的极端 clamp 分支，属可接受范围。
+> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（1976 语句 / 45 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支、`agent.py` 等接口的降级分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -109,6 +109,25 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 证据：<https://github.com/July75-bit/Innovation/actions/runs/42326740664>
 > 这一节只证明**代码能装、能编译、能过静态检查**；浏览器交互已由 §2.5 的 16 张截图补齐（T3-04 / T4）。
 
+### 2.5 浏览器验收证据（T3-04 / T4，2026-10-24）
+
+> 采集方式：真实后端（uvicorn :8000，seed + 8 轮模拟价格）+ 真实浏览器截图（1280×900 全页）；
+> 目录：`docs/acceptance/evidence/`（README 有逐张关键断言）。
+
+| 证据 | 对应验收 |
+| --- | --- |
+| [01-market.png](evidence/01-market.png) | T3-04 行情页：8 名选手、涨跌色、模拟数据标注、连接成功徽标 |
+| [02-detail-chart-ai.png](evidence/02-detail-chart-ai.png) | **T4-01** 折线图（10 点）+ **T4-02** 最近变动 reason + **T4-04** AI 建议卡（6 字段） |
+| [03-buy2-success.png](evidence/03-buy2-success.png) | T3-04 买入 2 股成功（余额 5000→4747.46） |
+| [04-positions.png](evidence/04-positions.png) | T3-04 持仓页（数量/均价/现价/市值/盈亏） |
+| [05-sell1-success.png](evidence/05-sell1-success.png) | T3-04 卖出 1 股成功（余额→4873.73） |
+| [06-trades.png](evidence/06-trades.png) | T3-04 交易流水（倒序 + 每笔字段） |
+| [07-err-insufficient-balance.png](evidence/07-err-insufficient-balance.png) … [11-suspended.png](evidence/11-suspended.png) | T3-03 五条错误分支（中文 message 原样展示） |
+| [12-state-loading.png](evidence/12-state-loading.png) / [13-state-empty.png](evidence/13-state-empty.png) / [14-state-offline-error.png](evidence/14-state-offline-error.png) | **T4-05** 加载中 / 空数据 / 失败三态（断网真实停后端触发） |
+| [15-t4-02-point-reason.png](evidence/15-t4-02-point-reason.png) | **T4-02** 每点 reason：悬停 tooltip + 价格变动明细列表（10 点逐点展示时间/价格/reason） |
+| [16-tc307-refresh-persist.png](evidence/16-tc307-refresh-persist.png) | **TC-307** 深链 `/players/1` F5 刷新后数据仍由后端重建 |
+
+> 结论：**M3（浏览器交易闭环）与 M4（图表+原因+AI 卡）均已有可复核证据**；剩余未验项只在线上部署（第 5 天）。
 ## 3. 交易规则边界测试结果（P0 必过）
 
 | ID | 用例 | 结果 | 实际现象 / 截图 |
@@ -159,7 +178,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 | TC-203 | 非法输出兜底 | ✅ | 假 client 返回非 JSON → 200 + 规则版；不 500 |
 | TC-204 | 超时保护 | 🟡 | 注入超时 client → 200 + 规则版（`test_llm_timeout_still_returns_200_fallback`）；真实 20s 延迟未压测 |
 | TC-205 | AI 不改余额 | ✅ | `test_analysis_never_modifies_balance_or_positions` + e2e：调用前后 `/api/account`、`/api/positions` 完全不变 |
-| TC-206 | 密钥不外泄 | 🟡 | 接口层已断言响应不含密钥；前端 bundle 与线上抓包待第 5 天 |
+| TC-206 | 密钥不外泄 | ✅ | 接口层已断言响应不含密钥；2026-11-26 抓取线上前端全部 10 个 JS 包（214 KB），未出现 `sk-` 密钥、`LLM_API_KEY`、`RESEED_TOKEN` 或模型端点地址 |
 
 ## 6. 线上验收结果
 
@@ -207,6 +226,20 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 > 余额 5000.00 → 4149.20 与之**算术闭合** → 数据没丢，且部署后仍可写。
 > 详见 `evidence/online/persistence-redeploy.md`。
 
+## 7. 本地持久化验证（T3-05，2026-10-24）
+
+> 目的：验证「重启后端后数据仍在」，而不是只写进内存/临时库。做法：真实 `uvicorn` 进程 + 独立 SQLite 文件（`DATABASE_URL` 指向工作区临时库），**杀掉进程再起一个新进程**，对比重启前后的余额/持仓/流水/价格历史。
+
+**执行命令（可复现）**
+
+```powershell
+$env:DATABASE_URL = "sqlite:///D:/projects/innovation/_t305.db"
+python scripts/seed_db.py                  # 建表 + 16 名选手（8 队×2 人）+ demo 账户
+cd code/backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8010
+```
+
+```powershell
 # 进程 A：健康检查 → 买入 2 股（价 126.00）→ 记录四个读接口
 Invoke-RestMethod http://127.0.0.1:8010/api/health
 Invoke-RestMethod -Method Post http://127.0.0.1:8010/api/trades/buy `
@@ -232,6 +265,95 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 8. 性能实测（对照非功能需求）
 
+### 8.1 本地基线（真实 `uvicorn :8011` + 临时 SQLite）
+
+| 指标 | 目标 | 实测 | 结论 |
+| --- | --- | --- | --- |
+| 行情列表响应 | ≤ 300ms | **24.17ms**（P95，20 次采样） | ✅ |
+| 买入/卖出接口响应 | ≤ 500ms | **买 36.24ms / 卖 28.86ms**（P95） | ✅ |
+| AI 分析响应 | ≤ 8s（上限 20s） | **25.15ms**（`rule_fallback`；有密钥的 LLM 延迟待第 5 天线上） | ✅ |
+| 前端首屏 | ≤ 3s | 未测（本机无浏览器依赖，待第 5 天线上） | 🟡 |
+| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（待第 5/6 天浏览器实测） | 🟡 |
+
+> 环境：本地真实 `uvicorn :8011` + 临时 SQLite（`bootstrap_demo_data.py` 灌数），每个接口 20 次采样取 P95；
+> AI 路径为无密钥兜底（`rule_fallback`）；前端两项待浏览器/线上补测。
+
+### 8.2 线上实测（2026-10-25，B，Render 公网）
+
+> 方法：先打一次 `/api/health` 预热（免费实例冷启动不算进接口耗时），再连打 5 次取中位数；
+> 买卖是一次**净额为 0** 的一买一卖（买 1 股再卖 1 股，余额回到 5000.00、持仓清空，只多 2 条流水）。
+
+| 指标 | 目标 | 线上实测（中位） | 结论 |
+| --- | --- | --- | --- |
+| 行情列表响应 | ≤ 300ms | **171.8ms**（min 129.4 / max 204.6） | ✅ |
+| 价格历史响应 | — | 133.7ms | — |
+| 账户响应 | — | 127.4ms | — |
+| 买入接口响应 | ≤ 500ms | **308.8ms**（成交价 108.75） | ✅ |
+| 卖出接口响应 | ≤ 500ms | 196.0ms | ✅ |
+| AI 分析响应 | ≤ 8s | **198.0ms**（`rule_fallback`，无密钥） | ✅（配真模型后见 §8.3） |
+| 前端首屏 | ≤ 3s | **≈437.8ms**（HTML 263ms + JS/CSS 174.8ms，gzip 合计 100.5KB） | ✅（以资源下载近似，浏览器渲染未测） |
+| 价格历史图渲染（≥100 点） | 不卡顿 | 未测（需浏览器；当前每人 10–11 点） | 🟡 |
+
+> 线上比本地慢一个数量级（168ms vs 24ms），主要是 Render 免费实例的跨区网络与冷容器开销，
+> 仍远低于目标值。**结论：四项非功能指标线上全部达标**；折线图渲染一条留待浏览器验证。
+
+### 8.3 线上 LLM 版实测（2026-11-07，B，DeepSeek 官方 API）
+
+> 背景：AI 从"规则兜底"切到真模型后补测。先试 OpenCode Zen 免费档失败（`429 FreeUsageLimitError`，
+> 换 4 个免费模型均 429），改用 **DeepSeek 官方 API**：
+> `LLM_BASE_URL=https://api.deepseek.com/v1`、`LLM_MODEL=deepseek-flash`。
+> 方法：`/api/health` 预热后，对 **5 名不同选手**各调一次 `/api/analysis/{id}`。
+
+| 指标 | 目标 | 实测 | 结论 |
+| --- | --- | --- | --- |
+| AI 分析响应（真模型） | ≤ 8s（上限 20s） | **中位 2461ms**（最快 1839 / 最慢 3930，n=5） | ✅ |
+| `source` 字段 | `llm` | **5/5 全部 `llm`** | ✅ |
+| 契约 6 字段 | 不变 | `action/disclaimer/player_id/reason/risk_level/source` 齐全 | ✅ |
+| 模型判断多样性 | 非固定文案 | HOLD×4 + **BUY×1**；risk HIGH×3 / MEDIUM×2；reason 各不相同 | ✅ |
+| 其它接口未受影响 | 行情 ≤300 / 买卖 ≤500ms | players 813ms（冷启动）、trades 430ms、prices 291ms、account 1310ms（冷） | ✅ 预热后达标 |
+
+> **与规则版的差异（答辩要点）**：同一选手规则版给 `risk=LOW`，模型版给 `risk=HIGH` 并写出更长理由——
+> 说明 AI 是独立建议者；两者共用同一 6 字段契约，前端只按 `source` 区分展示。
+> **失败仍自动回落规则版**（超时上限 20s），演示不会卡死。
+> 成本参考：单次约 684 输入 + 200 输出 tokens，`deepseek-flash` 高峰价约 **¥0.003/次**，答辩当天十次以内忽略不计。
+
+### 8.4 线上只读压测（2026-11-14，D）
+
+> 目的：回答能同时跑多少用户。方法、原始数据与完整分析见 [load_test_report.md](load_test_report.md)，
+> 脚本 `tests/perf/load_test.py`（只读、带熔断，可复跑）。
+
+| 指标 | 实测 | 说明 |
+| --- | --- | --- |
+| 饱和吞吐 | **≈ 38 req/s** | 40→60→80 并发吞吐停在 35–39，P50 从 0.9s 涨到 1.8s |
+| P95 ≤ 1s 的并发 | **≈ 10** | 10 并发时 P95 990ms |
+| 错误率 | **0.0%** | 全档位无 4xx/5xx/超时 |
+| 估算可支撑用户 | **≈ 190 人同时在线** | 浏览型假设：每 10 秒一次动作、每次 2 请求 |
+| 瓶颈 | Render Free **0.1 vCPU 单实例** | 加并发只排队不提速；非代码问题 |
+
+> 局限：只测只读接口；交易（写）与 AI（2.5s/次）未压；跨区 WAN 延迟（≈400ms）计入 P50/P95。
+## 9. 缺陷清单
+
+> 只登记真实发现并修掉的缺陷，共 15 条，全部已修并关闭。复现步骤、根因和修复提交见对应 GitHub Issue；
+> 简表另见 `docs/mgmt/bug-issues.md`。
+
+| ID | 问题 | 等级 | Issue | 状态 |
+| --- | --- | --- | --- | --- |
+| BUG-01 | 并发卖出超卖并重复入账 | P0 | [#22](https://github.com/July75-bit/Innovation/issues/22) | 已修 |
+| BUG-02 | 买入校验顺序违反契约 | P1 | [#23](https://github.com/July75-bit/Innovation/issues/23) | 已修 |
+| BUG-03 | 清仓触发 CHECK 约束导致 500 | P1 | [#24](https://github.com/July75-bit/Innovation/issues/24) | 已修 |
+| BUG-04 | 价格 reason 里的「得分」被拼两遍 | P2 | [#25](https://github.com/July75-bit/Innovation/issues/25) | 已修 |
+| BUG-05 | 临时定价规则污染价格历史 | P1 | [#26](https://github.com/July75-bit/Innovation/issues/26) | 已修 |
+| BUG-06 | 暂停交易选手仍被改价 | P1 | [#27](https://github.com/July75-bit/Innovation/issues/27) | 已修 |
+| BUG-07 | 长 reason 写库失败 | P2 | [#28](https://github.com/July75-bit/Innovation/issues/28) | 已修 |
+| BUG-08 | Render 上服务起不来 | P0 | [#29](https://github.com/July75-bit/Innovation/issues/29) | 已修 |
+| BUG-09 | WAL 临时文件误入版本库 | P2 | [#30](https://github.com/July75-bit/Innovation/issues/30) | 已修 |
+| BUG-10 | Windows 中文控制台下测试报编码错 | P1 | [#31](https://github.com/July75-bit/Innovation/issues/31) | 已修 |
+| BUG-11 | 线上 /market 刷新白屏 | P2 | [#32](https://github.com/July75-bit/Innovation/issues/32) | 已修 |
+| BUG-12 | 线上前端被跨域拦掉 | P0 | [#33](https://github.com/July75-bit/Innovation/issues/33) | 已修 |
+| BUG-13 | 测试里的「日期炸弹」 | P2 | [#34](https://github.com/July75-bit/Innovation/issues/34) | 已修 |
+| BUG-14 | 答辩稿生成脚本写死绝对路径 | P2 | [#35](https://github.com/July75-bit/Innovation/issues/35) | 已修 |
+| BUG-15 | 重灌 / 重置会删掉注册账号（数据丢失） | P1 | [#37](https://github.com/July75-bit/Innovation/issues/37) | 已修 |
+
 ## 10. 未覆盖与已知限制
 
 | 项 | 原因 | 影响 | 后续 |
@@ -239,20 +361,28 @@ SAME balance=True total=True qty=True trades=True points=True
 | 价格归因结构化（score 列） | 方案 A：本期用 `reason` 文本承载 S/得分，不新增列/表 | 不能按得分做 SQL 统计 | 课程后如需统计报表再走契约 §6 评估选项 B |
 | 线上截图归档 | TC-401/403/404/406 已有 HTTP 证据；TC-402/405 的浏览器截图待 A 归档（服务端已复核 200） | 不影响功能验收 | 第 6 天补图 |
 | 代码质量静态扫描 | 已完成（第 3 天） | — | 见 `code_quality_report.md`：D 负责文件 0 残留；剩余 51 项按归属移交 B/C；CI 门槛已按目录分档 |
-| 并发压测 | 6 天时间不足 | 未验证高并发 | 已用事务 + 校验兜底，文档说明 |
+| 写接口与 LLM 压测 | 只读接口已压测（§8.4，≈38 req/s）；交易并发由 `test_trades_concurrency.py` 等单测覆盖 | 未验证高并发写入与真模型吞吐 | 如实说明 |
 | 真实赛事数据 | 接口不可用 | 用模拟数据 | 架构留适配器 |
 | 浏览器兼容性 | 只测 Chrome/Edge | 未测 Safari | 演示只用 Chrome |
-| 移动端适配 | 非重点 | 手机端体验一般 | 如实说明 |
+| 移动端适配 | 已做响应式（≤960px 底部标签导航），390px 宽度检查无横向溢出 | 未在真机上系统测试 | 演示以桌面为主 |
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **320** 条，CI 与本机全绿；浏览器证据见 §2.5）
+- P0 缺陷：**0** 个（自动化层 **350** 条，CI 与本机全绿；浏览器证据见 §2.5，缺陷清单见 §9）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**350** 条自动化（单元 295 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-21）+ 核心逻辑覆盖率 **98%**（1976 语句 / 45 未覆盖，2026-11-26 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**350** 条自动化（单元 295 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **98%**（1976 语句 / 45 未覆盖，2026-11-26 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
-  `deployment.md` 上线检查单 **93/93** 全勾（A–G 七组，0 项未勾）；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **17 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 为历史 HTML 产物（16 页，2026-11-07 重导）。
+  `deployment.md` §5 的 A–G 检查单是每次发布时逐项填写的模板；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **19 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 是历史产物。
 - 答辩当天仍需执行（非交付物缺口）：**彩排 ≥2 次并计时**（8+2+5 ≤15 分钟）、演示前 15 分钟跑 `prewarm.py` 预热、
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。
-- 已知限制如实列在 §10（并发压测未做、LLM 版 AI 未压测）；**外部交叉测试双向完成**——2026-11-14 我方测 Tome 组 33 题（9/17/6/1，`cross_test.md` §3）；同日宇宙无敌暴龙战士测我方 33 题（28 通过 / 4 部分 / 0 不通过 / 1 未覆盖，对方注明「未重新测试」，按材料评审引用，§4）。
+- 已知限制如实列在 §10（写接口与 LLM 版 AI 未压测）；**外部交叉测试双向完成**——2026-11-14 我方测 Tome 组 33 题（9/17/6/1，`cross_test.md` §3）；同日宇宙无敌暴龙战士测我方 33 题（28 通过 / 4 部分 / 0 不通过 / 1 未覆盖，对方注明「未重新测试」，按材料评审引用，§4）。
 - 签字：A____ B____ C____ **D 王泽棠（2026-11-07，自动化 + 代码质量 + 线上验收）**
+
+## 12. 附件
+
+- 线上地址：前端 `https://playerstock-frontend-mdlk.onrender.com`、后端 `https://playerstock-backend-mdlk.onrender.com`；线上证据在 `docs/acceptance/evidence/online/`
+- 浏览器验收证据：`docs/acceptance/evidence/`（147 张截图 + README 索引）
+- pytest 输出：见 §2.1 / §2.2
+- 本地持久化验证：见 §7；线上重新部署持久化：见 §6 TC-404
+- 性能与压测：见 §8、`load_test_report.md`

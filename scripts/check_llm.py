@@ -8,7 +8,7 @@
 | 变量 | 说明 |
 | --- | --- |
 | `LLM_API_KEY` | 只在部署平台填（`sync: false`），不进仓库 |
-| `LLM_BASE_URL` | 要**完整 URL**（`.../chat/completions`），不是 base 路径 |
+| `LLM_BASE_URL` | 填 base（如 `https://api.deepseek.com/v1`）或完整 `.../chat/completions` 都行，代码会自动补齐 |
 | `LLM_MODEL` | 必须是该服务真实存在的模型名 |
 
 用法：

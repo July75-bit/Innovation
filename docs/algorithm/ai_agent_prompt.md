@@ -61,12 +61,12 @@
 | `action` | enum | 只能是 `BUY` / `SELL` / `HOLD`，大写 |
 | `reason` | string | 1–3 句中文，必须提到具体数值，长度 ≤ 200 字（超长在句末标点处截断并补 `…`） |
 | `risk_level` | enum | `LOW` / `MEDIUM` / `HIGH` |
-| `suggested_price_band` | object | **本期不输出**（契约 §4.10 中保留为可缺省字段），`low` ≤ `high`；前端按缺省容错 |
+| `suggested_price_band` | object | **本期不输出**（接口契约的 AI 建议示例里没有这个字段），`low` ≤ `high`；前端按缺省容错 |
 | `source` | enum | `llm` / `rule_fallback` |
 | `disclaimer` | string | 固定文案，前端必显示 |
 
 > **当前实现（2026-10-23，D）**：输出字段固定 **6 个** —— `player_id` / `action` / `reason` / `risk_level` / `source` / `disclaimer`。
-> **`suggested_price_band` 两版都不输出**（契约 §4.10 中该字段可缺省）：规则版没有价格预测能力，不编造区间；LLM 版即使模型返回也会被丢弃，
+> **`suggested_price_band` 两版都不输出**（接口契约的 AI 建议示例里没有这个字段）：规则版没有价格预测能力，不编造区间；LLM 版即使模型返回也会被丢弃，
 > 以保证 day2 计划里"两版字段集合完全一致"这条验收。前端按"可缺省"渲染：有区间就显示区间条，没有就隐藏。
 
 ## 4. Prompt 结构
@@ -126,13 +126,13 @@ flowchart TD
 
 > **已实现**：`code/backend/ai/fallback.py`（D，2026-10-23），参数常量 `WINDOW=5`、`RISE_THRESHOLD=+5%`、`FALL_THRESHOLD=-5%`、`LOW_RATING=60`、`HIGH_RATING=75`，
 > 单元测试 `tests/unit/test_ai_fallback.py`。
-> **规则版不输出 `suggested_price_band`**（契约 §4.10 中该字段可缺省）：规则模型没有价格预测能力，不编造区间；前端按"可缺省"容错。
+> **规则版不输出 `suggested_price_band`**（接口契约的 AI 建议示例里没有这个字段）：规则模型没有价格预测能力，不编造区间；前端按"可缺省"容错。
 
 ## 6. 成本与限流（加分项）
 
 - 单次分析 token 上限：**输入约 600–900 tokens（上下文 JSON）、输出约 120–200 tokens**；实测一次分析 `source=llm` 中位 **2461ms**，未触发 20s 超时（`test_report.md` §8.3）
-- 是否缓存：同一选手 5 分钟内复用上次结果（建议做，演示时省钱且更快）
-- 失败重试：最多 1 次，超时即兜底
+- 缓存：前端对 `/api/analysis/{id}` 缓存 2 分钟（`src/api/cache.ts`），点「重新分析」会跳过缓存；后端简报缓存 10 分钟；单条建议后端不缓存
+- 失败重试：不重试，一次失败（超时 / 网络错误 / 输出不合规）直接回落规则版
 
 ## 7. 答辩要点
 
@@ -155,5 +155,5 @@ flowchart TD
 ## 8. TODO
 
 - [x] D 第 2 天：填第 4 节迭代记录（至少 2 版）——§4 已有 v1（小写/夹带解释）与 v2（大写 + 校验回退）
-- [x] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码 → 404 `PLAYER_NOT_FOUND` / 200（含 AI 降级）/ 500 仅非 AI 故障；已写入契约 §4.10 并落到 `app/api/ai.py`（2026-10-23）
+- [x] D 第 3 天：与 B 确认 `/api/analysis/{player_id}` 的错误码 → 404 `PLAYER_NOT_FOUND` / 200（含 AI 降级）/ 500 仅非 AI 故障；已写入契约 §3 #10 并落到 `app/api/ai.py`（2026-10-23）
 - [x] D 第 6 天：把最差一次模型输出做成答辩"翻车→兜底"演示素材——现场用 `python -m ai.llm_agent 1 --demo dirty` 复现（无需额外静态素材）

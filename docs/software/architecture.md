@@ -104,7 +104,7 @@ sequenceDiagram
 | 数据库 | SQLite（本地/CI）/ Postgres（线上） | SQLite 3（Python 内置）· Render Postgres | 零运维，6 天够用；线上无持久盘故换 Postgres | PostgreSQL（线上持久化可选） |
 | 测试 | pytest + httpx + Vitest | **9.1.1 / 0.28.1 / 4.1.11** | 与 FastAPI TestClient 配套 | — |
 | 代码质量 | ruff + ESLint + oxlint + Pylint + complexipy | **0.17.4 / 10.10.0 / 1.82.0 / 4.1.3 / 8.3.0** | CI 门禁可复现 | — |
-| 运行时 | Python | **3.13.5** 本机基线 · Render 3.12.6 | 锁文件在 3.13 下生成，CI 用 3.12 验证兼容 | — |
+| 运行时 | Python | **3.13** 本机基线 · CI 3.12 · Render 3.12.6 | 锁文件在 3.13 下生成，CI 用 3.12 验证兼容 | — |
 | CI | GitHub Actions | — | 免费、与仓库绑定 | — |
 | 部署 | Render | — | 支持前后端分离 + 蓝图配置 | 阿里云/腾讯云 |
 
@@ -116,7 +116,7 @@ sequenceDiagram
 | --- | --- | --- | --- |
 | 定价模块位置 | `code/core_engine/`（同仓库、可 pip 安装） | 独立部署的定价服务 | 6 天版不引入第二个服务；后端通过 `sys.path` 注入 / `pip install -e` 导入，避免跨目录 import 失败 |
 | 数据库 | 本地/CI 用 SQLite，线上用 Render Postgres | 纯 SQLite、纯 MySQL | SQLite 零运维、测试快；免费实例无持久盘、重启会丢数据，线上必须 Postgres（部署方案 B）；SQLAlchemy 一套模型双环境复用（见 `deployment.md` §3） |
-| 智能体编排 | 单智能体 | LangGraph 多智能体 DAG | 时间不够，单智能体已能体现"智能体肌肉" |
+| 智能体编排 | 同一进程内顺序调用：多角色分析（分析师 → 风控 → 交易员）+ 最多 3 轮只读工具调用 | LangGraph 等多智能体框架 | 流程固定、步骤少，用普通函数串起来更容易测试和降级；不引入额外依赖 |
 | 真实赛事数据 | 模拟数据 + 适配器接口 | 直接接 SportScore | 接口可用性未知，模拟数据保证演示稳定 |
 | 鉴权 | 演示账户 + **私人账号（PBKDF2-HMAC-SHA256 + 不透明令牌）** | JWT / OAuth 第三方登录 | 只用标准库就能做到「口令加盐散列 + 可撤销令牌」，引 JWT 库反而多一个依赖与过期时钟坑；第三方登录与课程目标无关 |
 | 价格归因（score/S） | 写进 `price_history.reason`：`S=…` + 本轮得分（方案 A，2026-10-24；现由 C 在 `update_price` 生成「本轮得分 76.6，S=-1.00」，B 只透传） | 给 `price_history` 加 `score` 列 / 新建 `matches` 表（方案 B） | 6 天课程优先"可解释、可复现"：reason 文本直接服务详情页、AI 上下文与答辩，且**不改表、不改契约**；方案 B 要走契约 §6 变更流程 + 第 5 天 Postgres 迁移，风险高。精确复现靠 `simulate_match.py` 固定 seed 与 reason 里的得分对齐；结构化统计列入课程后 backlog（对应验收 `TC-110`） |
@@ -125,10 +125,11 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-    GH["GitHub 仓库"] --> CI["GitHub Actions<br/>pytest + eslint + build"]
-    GH -- "push main" --> R1["Render Static Site<br/>code/frontend/dist"]
-    GH -- "push main" --> R2["Render Web Service<br/>uvicorn app.main:app"]
-    R2 --> DB[("Render Postgres<br/>免费实例（30 天）")]
+    GH["GitHub 仓库"] --> CI["GitHub Actions<br/>仓库健康 / 后端 / 前端 / 交付物"]
+    GH -- "push develop" --> R1["Render Static Site<br/>code/frontend/dist"]
+    GH -- "push develop" --> R2["Render Web Service<br/>uvicorn app.main:app"]
+    R2 --> DB[("Render Postgres<br/>9 张表")]
+    CR["Render Cron<br/>agent_patrol.py"] --> R2
     U["老师/同学浏览器"] --> R1
     R1 --> R2
 ```

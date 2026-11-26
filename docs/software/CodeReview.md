@@ -152,12 +152,12 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
 | pytest | 单元+集成测试 | `pyproject.toml` | **350 passed / 0 skipped**（截图 17 摄于 134 条的时点，此后补到 350 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1956/45，≥60% 达标，2026-11-21 复测） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1976/45，≥60% 达标，2026-11-26 复测） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
-| vitest | 前端单测 | 3 个 spec（format / PriceChart / router） | 本地绿 |
-| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #95 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库健康（误提交拦截）** |
+| vitest | 前端单测 | 23 个测试文件 / 186 条 | CI 与本地均绿 |
+| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 4 个 job（仓库健康 / 后端 / 前端 / 交付物） | 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库健康（误提交拦截）** |
 | VS Code 扩展 | 编码即时反馈 | `.vscode/settings.json`（Pylance basic + Ruff 保存自动修） | 全员共用 |
 
 ---
@@ -168,17 +168,16 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 类别 | 语言 | 文件数 | 行数 |
 | --- | --- | ---: | ---: |
-| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 104 | 14849 |
-| | Vue（单文件组件） | 14 | 4595 |
-| | TypeScript（api / router / composables / 测试） | 23 | 2841 |
-| | CSS | 1 | 120 |
-| | HTML（原型 591 + 入口 451） | 3 | 1042 |
-| **文档** | Markdown（README + 65 份交付文档） | 65 | 10411 |
-| **配置与数据** | JSON（种子数据、package、tsconfig 等） | 17 | 1992 |
-| | YAML（CI、render 蓝图） | 2 | 285 |
-| | **合计（全部跟踪文件）** | **229** | **36135** |
+| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 113 | 17113 |
+| | Vue（单文件组件） | 21 | 8998 |
+| | TypeScript（api / router / composables / 测试） | 49 | 6412 |
+| | CSS | 4 | 969 |
+| | HTML（原型 591 + 入口等） | 3 | 1083 |
+| **文档** | Markdown | 76 | 约 9500 |
+| **配置与数据** | JSON（种子数据、package、tsconfig 等，不含 lock 文件） | 22 | 5697 |
+| | YAML（CI、Slidev 发布、render 蓝图） | 3 | 415 |
 
-- **代码行小计（Python + Vue + TS + CSS + HTML）= 23447 行**；文档与配置单列，不计入代码。
+- **代码行小计（Python + Vue + TS + CSS + HTML）= 34575 行**（2026-11-26 统计）；文档与配置单列，不计入代码。
 - **模块数：20** —— 后端 Python 包 7（`ai`、`app`、`app/api`、`app/core`、`app/models`、`app/schemas`、`core_engine`）+ `scripts` + 测试 4（`tests/unit`、`tests/integration`、`tests/eval`、`tests/perf`）+ 前端 `src` 目录 8（`api`/`assets`/`components`/`composables`/`mock`/`router`/`utils`/`views`）。
 - 相比第 5 天的统计（133 文件 / 17420 行），增长主要来自 A 的登录注册页与智能体页面入口、B 的账号/agent 接口、C 的回测脚本，以及 D 的评测集（`tests/eval`）、压测脚本与汇报材料。
 - 截图：`evidence/19-complexity-stats.png` 第 2 段（该图摄于第 5 天，行数为当时快照）。
@@ -241,4 +240,4 @@ git grep -n "pragma: no cover" -- code/backend                # 刻意不测的�
 python -c "import logging; logging.basicConfig(level=logging.INFO); from ai.llm_agent import analyze; analyze({'player_id':1,'name':'ZywOo','current_price':126.0,'change_pct':5.0,'rating':88,'recent_prices':[{'price':120.0},{'price':126.0}],'position':{'quantity':10,'avg_cost':120.0}}, chat=lambda p: (_ for _ in ()).throw(TimeoutError('model did not respond in 20s')))"
 ```
 
-CI 结果：<https://github.com/July75-bit/Innovation/actions>（push 后复核最新一轮三 job）。
+CI 结果：<https://github.com/July75-bit/Innovation/actions>（push 后复核最新一轮 4 个 job）。
