@@ -536,7 +536,7 @@ layout: default
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">335</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，默认跳过 live 用例</div></div>
+  <div class="card" v-click><div class="metric">346</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，默认跳过 live 用例</div></div>
   <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 23 个测试文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine 模块</div></div>
   <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 检查</div><div class="small muted">健康、后端、前端、交付物</div></div>
