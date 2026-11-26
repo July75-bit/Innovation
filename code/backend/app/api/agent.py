@@ -587,8 +587,16 @@ def agent_narrative(
 
 # ---------------------------------------------------------------- 工具调用演示
 @router.get("/tools/{player_id}", summary="工具调用演示（模型自己决定查什么）")
-def agent_tools(player_id: int, db: Session = Depends(get_db)) -> dict:
-    """让模型通过三个只读工具自己取数；工具协议不支持时回落单次问答。"""
+def agent_tools(
+    player_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """让模型通过三个只读工具自己取数；工具协议不支持时回落单次问答。
+
+    「查账户」查的是**当前请求的用户**：带令牌就是登录者本人，没带就是公共演示账户
+    （与决策卡 `/decision` 同一口径；2026-11-26 修，原先总是查 demo）。
+    """
     player = db.get(Player, player_id)
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
@@ -606,8 +614,7 @@ def agent_tools(player_id: int, db: Session = Depends(get_db)) -> dict:
         return [{"ts": r.ts.isoformat(), "price": float(r.price), "reason": r.reason} for r in reversed(rows)]
 
     def get_account_snapshot(args: dict[str, Any]) -> Any:
-        demo = db.scalar(select(User).where(User.nickname == "demo"))
-        balance, held = _account_state(db, demo, int(args.get("player_id") or player_id)) if demo else (0.0, 0)
+        balance, held = _account_state(db, user, int(args.get("player_id") or player_id))
         return {"balance": round(balance, 2), "held_quantity": held}
 
     def calc_position_size(args: dict[str, Any]) -> Any:

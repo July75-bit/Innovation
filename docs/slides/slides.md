@@ -506,7 +506,7 @@ erDiagram
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">353</div><div class="small font-bold">后端测试</div><div class="small muted">单元 298 · 集成 22 · 评测 33</div></div>
+  <div class="card" v-click><div class="metric">354</div><div class="small font-bold">后端测试</div><div class="small muted">单元 299 · 集成 22 · 评测 33</div></div>
   <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest，23 个测试文件</div></div>
   <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine；含智能体 94%</div></div>
   <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 检查</div><div class="small muted">冲突标记、后端、前端、交付物</div></div>

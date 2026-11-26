@@ -346,3 +346,26 @@ def test_brief_endpoint_never_leaks_json(client, monkeypatch) -> None:
     assert "今日涨跌分化" in body["summary"]
     assert body["source"] == "llm"
     _clear_brief_cache()
+
+
+def test_tools_account_snapshot_uses_current_user(client, monkeypatch) -> None:
+    """「查账户」工具查的是当前请求的用户；没带令牌才是公共演示账户（2026-11-26 修，原先总查 demo）。"""
+    reg = client.post("/api/auth/register", json={"username": "tools_user", "password": "Passw0rd123"})
+    assert reg.status_code == 201
+    auth = {"Authorization": f"Bearer {reg.json()['token']}"}
+    assert client.post("/api/trades/buy", json={"player_id": 1, "quantity": 3}, headers=auth).status_code == 200
+    mine = client.get("/api/account", headers=auth).json()
+
+    snapshots: list[dict] = []
+
+    def _fake_run_loop(_system, _user, executors, **_kwargs):  # noqa: ANN001
+        snapshots.append(executors["get_account_snapshot"]({"player_id": 1}))
+        return {"content": "HOLD", "tool_calls": [], "rounds": 1}
+
+    monkeypatch.setattr(agent_api, "run_tool_loop", _fake_run_loop)
+
+    assert client.get("/api/agent/tools/1", headers=auth).status_code == 200
+    assert client.get("/api/agent/tools/1").status_code == 200
+
+    assert snapshots[0] == {"balance": round(float(mine["balance"]), 2), "held_quantity": 3}
+    assert snapshots[1]["held_quantity"] == 0  # 未登录 = 公共演示账户，看不到注册用户的持仓
