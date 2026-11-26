@@ -1,6 +1,6 @@
 # Slidev 结课审查幻灯片
 
-PlayerStock 结课项目审查用的 Slidev 项目：20 页 16:9 幻灯片，覆盖课程 wiki「项目汇报内容」1.1–3.7，
+PlayerStock 结课项目审查用的 Slidev 项目：19 页 16:9 幻灯片，覆盖课程 wiki「项目汇报内容」1.1–3.7，
 架构/ER 图用 Mermaid，逐页讲稿写在 markdown 注释里（放映时按 `P` 查看演讲者模式）。
 
 > 版式：每页标题先出现，正文按讲解顺序逐块点击出现；两栏版面左右起点对齐、正文垂直居中。
@@ -30,7 +30,7 @@ PlayerStock 结课项目审查用的 Slidev 项目：20 页 16:9 幻灯片，覆
 
 | 文件 | 用途 |
 | --- | --- |
-| [`slides.md`](slides.md) | **源稿**：20 页 Markdown（含 frontmatter、Mermaid、讲稿注释） |
+| [`slides.md`](slides.md) | **源稿**：19 页 Markdown（含 frontmatter、Mermaid、讲稿注释） |
 | [`style.css`](style.css) | 全局样式（暖纸色、卡片、表格、代码块） |
 | [`assets/`](assets/) | 幻灯片引用的产品截图（市场浅/深、详情、移动端） |
 | [`package.json`](package.json) | `dev` / `build` / `export` 脚本与依赖版本 |

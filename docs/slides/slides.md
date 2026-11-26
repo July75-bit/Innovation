@@ -4,7 +4,7 @@ colorSchema: light
 title: PlayerStock 结课审查
 info: |
   软件新技术创新实践课程 · 结课项目审查
-  产品、设计、测试与演示
+  产品设计、产品实现、验收与演示
 class: text-left
 highlighter: shiki
 lineNumbers: false
@@ -22,12 +22,12 @@ fonts:
 
 <div class="text-2xl font-bold mt-3">CS2 虚拟选手股交易系统</div>
 
-<div class="excerpt text-lg mt-2">用信用点买卖 CS2 选手股，价格随模拟比赛表现变化</div>
+<div class="excerpt text-lg mt-2">看懂比赛，从持有起。</div>
 
 <div class="mt-8 flex gap-2 flex-wrap">
-  <span class="pill pill-accent">纯积分制 · 无充值 / 提现 / 兑换</span>
+  <span class="pill pill-accent">只用信用点 · 不能充值 / 提现 / 兑换</span>
   <span class="pill">16 名选手 · 8 支战队</span>
-  <span class="pill">智能体查行情、给建议</span>
+  <span class="pill">智能体只给建议，不替人下单</span>
 </div>
 
 <div class="mt-10 small muted">
@@ -42,109 +42,146 @@ fonts:
 </div>
 
 <!--
-【15 秒】老师们好，我们是「有请下一组」。我们做的项目叫 PlayerStock。系统根据模拟比赛给 CS2 选手股定价，用户可以用信用点买卖。详情页也会展示智能体的建议和依据。
+【10 秒】老师们好，我们是「有请下一组」，项目叫 PlayerStock。一句话说：用信用点买卖 CS2 选手股，价格跟着比赛表现走。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">01 产品设计 · 1.1 定位与分工</div>
+<div class="kicker">01 产品设计 · 1.1 使命、口号和目标用户</div>
 
-# 给 CS 观众的模拟交易工具
+# 让观众的判断变成一条能回看的价格曲线
 
 <div class="body">
+
+<div class="grid2">
+  <div class="flex flex-col gap-3">
+    <div class="card" v-click>
+      <div class="accent small font-bold">使命</div>
+      <div class="text-lg font-bold mt-1 leading-relaxed">看比赛时觉得某位选手状态好，就能用信用点买一点，事后对照价格看自己判断得准不准。</div>
+    </div>
+    <div class="card" v-click>
+      <div class="accent small font-bold">口号</div>
+      <div class="text-lg font-bold mt-1">看懂比赛，从持有起。</div>
+      <div class="small muted mt-1">不提「赚」「赢」「翻倍」，和博彩划清界线。</div>
+    </div>
+  </div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">目标用户</div>
+    <ul class="clean">
+      <li><b>CS2 观众</b>：对选手有自己的看法，但没地方验证</li>
+      <li><b>想体验交易的人</b>：想练手，不想担真钱的风险</li>
+      <li><b>学编程和数据的同学</b>：想看一个能跑通的完整项目</li>
+    </ul>
+    <div class="small muted mt-3 pt-3 border-t border-#e3ded4">不面向：想靠它赚钱的人、未成年人、真钱竞猜用户</div>
+  </div>
+</div>
+
+</div>
+
+<!--
+【30 秒】我们想做的事很简单：看比赛时你觉得某个选手状态好，就用信用点买一点，过几轮回来看价格，就知道自己看得准不准。口号是「看懂比赛，从持有起」，里面故意没有赚钱、翻倍这类词。用户主要是三类：CS2 观众、想体验交易的人，还有学编程的同学。
+-->
+
+---
+
+<div class="kicker">01 产品设计 · 1.1 差异化、获客与团队</div>
+
+# 和现有产品比，我们交易的是选手的表现
+
+<div class="body">
+
+<div v-click>
+
+| 维度     | 赛事竞猜     | 电竞养成游戏   | 模拟炒股       | PlayerStock           |
+| ------ | -------- | -------- | ---------- | --------------------- |
+| 买的是什么  | 比赛结果     | 策划定的数值   | 公司股票       | 单个选手的身价               |
+| 价格怎么来  | 盘口赔率     | 数值表      | 真实行情       | 比赛表现驱动，连续、可回测         |
+| 涨跌有没有原因 | 没有       | 没有       | 部分有        | 每次变价都写明原因             |
+| 钱的风险   | 真钱       | 虚拟       | 虚拟         | 全程信用点，没有出口            |
+
+</div>
+
+<div class="grid2">
+  <div class="card" v-click><div class="accent small font-bold">怎么找到第一批用户</div><div class="small muted">赛前预告、赛后发涨跌复盘；先在校园电竞社群和 B 站找人试用。</div></div>
+  <div class="card" v-click><div class="accent small font-bold">为什么是我们四个</div><div class="small muted">A 前端交互、B 交易与部署、C 定价与回测、D 智能体与测试，四段正好连成一条链。</div></div>
+</div>
+
+</div>
+
+<!--
+【30 秒】跟竞猜比，我们买的不是输赢，是某个选手的身价；跟模拟炒股比，价格来自比赛表现，而且每次涨跌都写了原因。全程只有信用点，没有充值和提现。第一批用户打算从校园电竞社群找，赛后发涨跌复盘。我们四个人各管一段，正好连成一条完整链路。
+-->
+
+---
+
+<div class="kicker">01 产品设计 · 1.2 产品定义</div>
+
+# 我们在做什么
+
+<div class="body">
+
+<div class="dark-band text-base leading-relaxed" v-click>
+对于<b>关注 CS2 选手、又想体验虚拟交易的观众</b>，他们想知道选手表现怎么变成价格，并亲手验证自己的判断。<br>
+PlayerStock 是一个<b>以 CS2 职业选手为标的的虚拟股交易网站</b>，提供行情、买卖、持仓、走势和智能体建议。<br>
+不同于只报比分的资讯站和只交易公司股票的模拟盘，我们把「选手表现 → 价格 → 你的判断」这条线做了出来。
+</div>
 
 <div class="grid2">
   <div class="card" v-click>
-    <div class="accent font-bold text-sm">产品定位</div>
-    <div class="text-lg font-bold mt-2 leading-relaxed">看 CS 比赛时觉得某位选手状态好，可以用信用点试试自己的判断。</div>
-    <div class="small muted mt-4">纯信用点，不可充值 / 提现 / 兑换</div>
-    <div class="border-t border-#e3ded4 mt-3 pt-3">
-      <div class="small font-bold">价格和交易都能回查</div>
-      <ul class="clean">
-        <li><b>涨跌有原因</b>：点开价格曲线就能看</li>
-        <li><b>交易有记录</b>：买卖记录随时能查</li>
-        <li><b>只用信用点</b>：不能充值、提现或兑换</li>
-      </ul>
-    </div>
+    <div class="accent small font-bold">一条用户故事</div>
+    <div class="small mt-1">作为一个看 CS2 比赛的观众，我想在比赛结束后马上买入我觉得被低估的选手，这样就能验证我是不是比解说更早看出来。</div>
+    <div class="small muted mt-2">共 7 条，每条都写了验收条件（user_stories.md）</div>
   </div>
-  <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">目标用户</div><div class="small muted">关注 CS 比赛、对选手发挥有个人判断的普通观众。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">试用与推广</div><div class="small muted">大赛期间分享涨跌复盘，先在校园电竞社群找人试用。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">团队分工</div><div class="small muted">4 人各自负责独立模块：前端交互 / 后端与交易 / 定价与数据 / AI、测试与部署。</div></div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">形态与边界</div>
+    <ul class="clean">
+      <li>网页应用，桌面和手机都能用</li>
+      <li>初始 5000 信用点，单个选手最多持有 50 股</li>
+      <li>不登录就用公共演示账户，也能注册私人账号</li>
+      <li>不充值、不提现、不兑换、不给赔率、不自动交易</li>
+    </ul>
   </div>
 </div>
 
 </div>
 
 <!--
-【20 秒】这个项目面向平时看 CS 比赛的观众。比如你看好一位选手，可以用信用点试着买入，再结合价格曲线和自己的交易记录复盘。我们四个人分工完成了前端、后端交易、定价和数据，以及智能体、测试和部署。
+【35 秒】产品定义按课程模板写成了三句：给谁用、他们想要什么、我们和别人哪里不同。举一条用户故事：看完比赛，我想马上买入一个我觉得被低估的选手，验证自己是不是比解说先看出来。边界也写死了：不充值、不提现、不给赔率，智能体也不会替你下单。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">01 产品设计 · 1.2 核心玩法</div>
+<div class="kicker">02 产品设计应用的原则</div>
 
-# 选手股的模拟买卖
+# 五条原则，每条都对应一个真实决定
 
 <div class="body">
 
-<div class="dark-band text-base font-bold leading-relaxed" v-click>
-系统按模拟比赛表现更新价格。用户看行情、决定买卖，再回头看自己的判断准不准。
+<div v-click>
+
+| 原则       | 我们做的决定                              | 在哪里能核对                      |
+| -------- | ----------------------------------- | --------------------------- |
+| 先解决真问题   | 只做「看得懂、能验证」，砍掉充值、撮合盘口和第三方登录         | `problem_definition.md` 不做清单  |
+| 让选择收敛    | 定价只有一条公式；智能体只输出 6 个固定字段             | `pricing_model.md`、`api_contract.md` |
+| 能复用就不重写  | 用成熟的 FastAPI、SQLAlchemy；图表自己画，不引大库   | `architecture.md`             |
+| 能量化才算验收  | 测试数、覆盖率、单次涨跌上限、接口耗时都给数字            | `test_report.md`              |
+| 先机器后人工   | CI 4 个 job 先拦，人工评审只看设计               | `ci.yml`、`CodeReview.md`        |
+
 </div>
 
-<div class="grid3">
-  <div class="card" v-click><div class="accent small font-bold">先看行情</div><div class="font-bold text-sm mt-1">首页简报列出涨跌和停牌选手</div></div>
-  <div class="card" v-click><div class="accent small font-bold">再看原因</div><div class="font-bold text-sm mt-1">点开选手详情，对照历史曲线看涨跌原因</div></div>
-  <div class="card" v-click><div class="accent small font-bold">模型不可用时</div><div class="font-bold text-sm mt-1">后端仍可用时，按规则给建议，买卖照常</div></div>
-</div>
-
-<div class="flex gap-2 flex-wrap" v-click>
-  <span class="pill">5000 初始信用点</span><span class="pill">16 名选手 / 8 支战队</span>
-  <span class="pill">11 个价格历史点</span><span class="pill">0 充值 / 0 提现 / 0 兑换</span>
-</div>
+<div class="sage small font-bold" v-click>被问「真按原则做了吗」，可以顺着右边一列直接翻文档。</div>
 
 </div>
 
 <!--
-【30 秒】进入市场后，可以先看简报，再点开感兴趣的选手。详情页有价格曲线和每次涨跌的原因。成交后，持仓和流水会随之更新。演示包含 16 名选手和 8 支战队，初始余额是 5000 信用点。
+【35 秒】这五条原则不是套话，每条都能对上一个具体决定。比如「让选择收敛」：定价只有一条公式，智能体只输出六个固定字段；「先机器后人工」：CI 先跑完四道检查，人工评审只看设计。右边那一列是文档位置，老师想核对可以直接翻。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">02 设计取舍</div>
+<div class="kicker">03 产品实现 · 3.1 用户体验设计</div>
 
-# 五项设计取舍
-
-<div class="body">
-
-<div class="grid2">
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">01</div><div><div class="accent small font-bold">先看简报</div><div class="font-bold">打开首页就能看到市场变化</div><div class="small">想看细节再展开。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">02</div><div><div class="accent small font-bold">同页完成</div><div class="font-bold">选手详情页就能看走势和买卖</div><div class="small">价格、建议和买卖按钮放在一起。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">03</div><div><div class="accent small font-bold">先看关键数据</div><div class="font-bold">选手卡突出价格和涨跌</div><div class="small">桌面端一屏能看 6 张卡。</div></div></div></div>
-  <div class="card" v-click><div class="flex gap-3"><div class="metric">04</div><div><div class="accent small font-bold">按规则算价</div><div class="font-bold">价格和交易都按代码里的规则处理</div><div class="small">模型服务出问题，买卖照常。</div></div></div></div>
-</div>
-
-<div class="card" v-click><div class="flex gap-3"><div class="metric">05</div><div><div class="accent small font-bold">权限隔离</div><div class="font-bold">买卖由用户自己确认</div><div class="small">智能体可以查行情和给建议。账户余额随实际成交更新。</div></div></div></div>
-
-</div>
-
-<!--
-【30 秒】首页把市场简报放在前面，详细信息可以按需展开。选手详情页把走势、建议和买卖放在一起。定价和交易都有明确的规则，模型服务暂时不可用时，买卖仍可继续。
--->
-
----
-layout: default
----
-
-<div class="kicker">03 产品实现 · 3.1 界面设计</div>
-
-# 市场页和选手详情页
+# 一屏看完行情，详情页直接下单
 
 <div class="body">
 
@@ -152,23 +189,23 @@ layout: default
   <div class="flex flex-col gap-2">
     <div v-click>
       <img class="shot" src="./assets/market-light.png" alt="市场页" />
-      <div class="small muted mt-2">市场页：顶部简报 + 条件筛选 + 3 列选手卡</div>
+      <div class="small muted mt-2">市场页：顶部一行简报，下面 3 列选手卡</div>
     </div>
     <ul class="clean" v-click>
-      <li>先看市场简报</li>
-      <li>一屏 6 张卡片，3 列栅格对齐</li>
-      <li>筛选和排序在当前页完成</li>
+      <li>进来先看简报：谁涨最多、谁停牌</li>
+      <li>桌面一屏 6 张卡，只放价格和涨跌</li>
+      <li>筛选、排序、返回后状态都保留</li>
     </ul>
   </div>
   <div class="flex flex-col gap-2">
     <div v-click>
       <img class="shot" src="./assets/detail-light.png" alt="详情页" />
-      <div class="small muted mt-2">详情页：历史曲线 + 智能体建议 + 下单面板</div>
+      <div class="small muted mt-2">详情页：价格曲线、智能体建议、下单面板</div>
     </div>
     <ul class="clean" v-click>
-      <li>左侧看价格走势，右侧直接买入/卖出</li>
-      <li>手机底部可切换四个主页面</li>
-      <li>支持深色 / 浅色主题切换</li>
+      <li>看走势、看建议、下单在同一页</li>
+      <li>手机端底部四个标签切换主页面</li>
+      <li>浅色 / 深色主题，文字对比度全部达标</li>
     </ul>
   </div>
 </div>
@@ -176,145 +213,103 @@ layout: default
 </div>
 
 <!--
-【30 秒】左边是市场页，可以在这里筛选和排序。右边是选手详情，价格曲线、智能体建议和买卖按钮放在同一页。移动端用底部导航切换主页面。
+【30 秒】左边是市场页，进来先看一行简报，下面是选手卡，桌面上一屏能看六张。右边是详情页，价格曲线、智能体建议和买卖按钮放在同一页，不用来回跳。手机上用底部四个标签切换，浅色深色两套主题都做了对比度检查。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">03 产品实现 · 3.2 技术选型</div>
 
-# 技术选型
+# 技术选型：够用、稳定、我们熟
 
 <div class="body">
 
 <div v-click>
 
-| 层    | 选型与版本（完整版本表见 README）                                         | 选用理由               |
-| ---- | ------------------------------------------------------------ | ------------------ |
-| 前端   | Vue 3.5 · Vue Router 5.4 · Vite 8.3 · TS 6.0 · Vitest 4.1    | 轻量、构建快、类型检查完善      |
-| 后端   | Python 3.12 · FastAPI 0.161 · SQLAlchemy 2.1 · Pydantic 2.14 | 接口文档自动生成、路由组织清晰    |
-| 数据   | 本地 SQLite / 线上 Render Postgres（psycopg2）                     | 本地零配置调试，线上持久化存储    |
-| AI   | DeepSeek API（OpenAI 兼容）+ rule_fallback                       | 生成自然语言分析，异常时降级本地规则 |
-| 部署   | Render：Static Site + Web Service + Cron + Postgres           | 支持免费托管、HTTPS 与复现   |
-| 质量工具 | GitHub Actions · ruff · oxlint · eslint · vue-tsc · pytest   | 4 个 CI job 门禁把关    |
+| 层    | 选型与版本（完整版本表见 README）                                         | 为什么选它          |
+| ---- | ------------------------------------------------------------ | -------------- |
+| 前端   | Vue 3.5 · Vue Router 5 · Vite 8 · TypeScript 6 · Vitest 4    | 轻量、构建快、有类型检查   |
+| 后端   | Python 3.12 · FastAPI 0.161 · SQLAlchemy 2.1 · Pydantic 2    | 自动生成接口文档，校验省事  |
+| 数据   | 本地 SQLite，线上 Render Postgres                                 | 本地不用配置，线上数据不丢  |
+| 智能体  | DeepSeek API（OpenAI 兼容协议）+ 规则版兜底                            | 便宜、响应快，坏了能退回规则 |
+| 部署   | Render：静态站 + 后端服务 + 定时任务 + Postgres                         | 免费、自带 HTTPS    |
+| 质量   | GitHub Actions · ruff · oxlint · eslint · vue-tsc · pytest   | 每次提交自动检查       |
 
 </div>
 
-<div class="sage small font-bold" v-click>我们选了团队熟悉、六天内能做完并上线的工具。</div>
+<div class="sage small font-bold" v-click>只有六天，所以挑的都是组里有人用过、能当天上线的工具。</div>
 
 </div>
 
 <!--
-【25 秒】开发周期是六天，我们选了组里熟悉的技术。前端用 Vue 和 TypeScript，后端用 FastAPI。本地用 SQLite 调试，线上用 PostgreSQL 存数据。智能体接入 DeepSeek，项目部署在 Render。
+【20 秒】只有六天，我们挑的都是组里用过的东西。前端 Vue 加 TypeScript，后端 FastAPI，本地用 SQLite，线上用 Postgres。智能体接 DeepSeek，模型出问题就退回规则版。部署全放在 Render 上。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">03 产品实现 · 3.3 代码仓库与协作</div>
 
-# 团队分工与开发记录
+# 代码仓库与协作
 
 <div class="body">
 
-<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ develop ｜ 522 次提交（379 次非合并，统计至 b4674b5）</div>
+<div class="small muted font-bold" v-click>github.com/July75-bit/Innovation ｜ develop 分支 ｜ 529 次提交，其中 386 次非合并（统计至 2026-11-26）</div>
 
 <div class="grid2">
   <div class="card" v-click>
-    <div class="accent small font-bold">提交分布（git shortlog，含合并提交）</div>
+    <div class="accent small font-bold">每人提交次数（git shortlog，含合并提交）</div>
     <table class="mt-2">
       <tbody>
-      <tr><td>D 王泽棠</td><td>229</td><td>A 倪颢容</td><td>74</td></tr>
-      <tr><td>B 胡德昊</td><td>116</td><td>C 刘宏</td><td>103</td></tr>
+      <tr><td>D 王泽棠</td><td>236</td><td>B 胡德昊</td><td>116</td></tr>
+      <tr><td>C 刘宏</td><td>103</td><td>A 倪颢容</td><td>74</td></tr>
       </tbody>
     </table>
+    <div class="small muted mt-2">B 有两个提交身份（July75-bit 60 + Hu De Hao 56），合并计数。</div>
   </div>
   <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">任务管理</div><div class="small muted">使用 GitHub Issues + Projects 跟踪进度，14 条缺陷均建有对应 Issue。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">CI 检查</div><div class="small muted">包含健康检查、后端、前端及交付物共 4 个 job，每次 push 自动触发。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">任务和缺陷</div><div class="small muted">GitHub Issues + Projects 看板；14 条缺陷各建一个 Issue，全部关闭。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">自动检查</div><div class="small muted">每次 push 跑 4 个 job：冲突标记、后端、前端、交付物；幻灯片另有一条流水线发布到 GitHub Pages。</div></div>
   </div>
 </div>
 
 </div>
 
 <!--
-【20 秒】代码放在 GitHub，日常开发合入 develop 分支。以页面标注的版本为准，四位成员共有 522 次提交，其中 379 次是非合并提交。我们用 Issues 和 Projects 跟进任务和缺陷。
+【20 秒】代码在 GitHub，日常提交都进 develop 分支，到今天一共 529 次提交。每人的次数在左边，B 有两个提交身份，我们合在一起算。任务和缺陷用 Issues 和看板管，每次 push 都会自动跑四道检查。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">03 产品实现 · 3.4 问题复盘</div>
+<div class="kicker">03 产品实现 · 3.4 生命周期中遇到的问题</div>
 
-# 开发和上线时遇到的 6 个问题
+# 六个真实踩过的坑
 
 <div class="body">
 
 <div v-click>
 
-| 问题                     | 根因                     | 解决方案（已验证）           |
-| ---------------------- | ---------------------- | ------------------ |
-| 部署后数据重置                | 免费实例使用临时磁盘 + SQLite    | 迁移至 Postgres 并规范连接串 |
-| 线上启动报 No module psycopg | SQLAlchemy 2.1 驱动变更    | 补充 psycopg2 依赖及单测  |
-| 前端全站接口 CORS 失败         | CORS_ORIGINS 缺失或含尾斜杠   | 精确配置 origin 并线上验证  |
-| 简报直接透传模型 JSON          | 未对大模型返回文本做清洗           | 增加后端清洗与前端兜底解析      |
-| CI 后端检查报错              | ruff C901 圈复杂度 11 > 10 | 拆分为 6 个独立 helper 函数 |
-| 首次访问耗时 33.6 秒          | 免费实例闲置 15 分钟后自动休眠      | 增加 Cron 保活 + 骨架屏 + 重试 |
+| 阶段  | 问题                    | 原因                          | 怎么解决的                    |
+| --- | --------------------- | --------------------------- | ------------------------ |
+| 部署  | 重新部署后数据全没了            | 免费实例是临时磁盘，SQLite 文件跟着丢      | 线上改用 Postgres，启动时检查并告警    |
+| 部署  | 线上启动报找不到 psycopg       | SQLAlchemy 2.1 换了默认驱动        | 连接串统一补成 psycopg2，并加了测试   |
+| 联调  | 线上前端所有请求被跨域拦掉         | CORS 来源没配，或多写了尾斜杠           | 自动去尾斜杠，漏配时告警             |
+| 智能体 | 首页简报直接显示模型返回的 JSON    | 模型输出没清洗就展示                  | 后端清洗 + 前端兜底，加回归测试        |
+| 上线  | 第一次打开要等 33.6 秒        | 免费实例闲置 15 分钟就休眠             | 定时任务保活 + 骨架屏 + 失败自动重试一次  |
+| 审查  | 赛后结算接口没有口令，谁都能改价      | 当初只当内部接口，没加校验               | 改为必须带运维口令，补了 4 条测试       |
 
 </div>
 
-<div class="sage small font-bold" v-click>修完后，我们补了测试、监控检查或部署说明。</div>
-
-</div>
-
-<!--
-【35 秒】上线时，我们发现 Render 免费实例使用临时磁盘，重启后 SQLite 数据会丢失，所以把线上数据迁到了 PostgreSQL。首页简报也曾显示模型返回的原始 JSON。我们在后端整理文本，并在前端增加了相应的处理。
--->
-
----
-layout: default
----
-
-<div class="kicker">03 产品实现 · 缺陷跟踪</div>
-
-# 14 条缺陷的跟踪记录
-
-<div class="body">
-
-<div class="small muted font-bold" v-click>GitHub Issues #22–#35 ｜ P0 3 条 · P1 5 条 · P2 6 条 ｜ 均已关闭</div>
-
-<div class="grid3">
-  <div class="card" v-click>
-    <div class="accent small font-bold">P0 · 3 条</div>
-    <div class="small mt-2">#22 并发超卖、重复入账<br>#29 线上数据库驱动起不来<br>#33 CORS 未配，整站失败</div>
-  </div>
-  <div class="card" v-click>
-    <div class="accent small font-bold">P1 · 5 条</div>
-    <div class="small mt-2">#23 买入校验顺序反了<br>#24 清仓触发约束报 500<br>#26 定价文案污染历史<br>#27 停牌选手仍被改价<br>#31 GBK 控制台测试报错</div>
-  </div>
-  <div class="card" v-click>
-    <div class="accent small font-bold">P2 · 6 条</div>
-    <div class="small mt-2">#25 得分被拼两遍<br>#28 reason 超长写库失败<br>#30 WAL 文件误入仓库<br>#32 /market 刷新白屏<br>#34 测试日期炸弹<br>#35 脚本写死绝对路径</div>
-  </div>
-</div>
-
-<div class="sage small font-bold" v-click>可以按编号回查问题和处理过程。#36、#37 另记注册账号的问题。</div>
+<div class="sage small font-bold" v-click>每个问题修完都补了测试或检查，同样的错不会悄悄再来一次。</div>
 
 </div>
 
 <!--
-【20 秒】这里列出 GitHub 上编号 22 到 35 的 14 条缺陷。这批记录都已关闭。第 22 条涉及两笔卖单同时处理时可能出现的超卖和重复入账，具体处理过程可以按编号查阅。
+【35 秒】这六个都是真踩过的。最典型的是第一个：Render 免费实例是临时磁盘，一重新部署 SQLite 就清空了，我们才换成 Postgres。最后一条是结课前自查发现的：赛后结算接口没有口令，理论上谁都能改价，现在已经改成必须带口令。每个问题修完都补了测试。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">03 产品实现 · 3.5 概要设计</div>
+<div class="kicker">03 产品实现 · 3.5.1 系统架构与基础设施</div>
 
 # 系统架构
 
@@ -322,157 +317,123 @@ layout: default
 
 <div v-click>
 
-```mermaid
+```mermaid {scale: 0.58}
 flowchart LR
-  B["浏览器<br/>Vue 3 SPA"] --> S["Render Static Site<br/>dist / SPA fallback"]
-  S --> A["FastAPI /api<br/>23 个接口 · 11 个路由模块"]
-  A --> R["业务规则层<br/>交易事务 / 停牌 / 余额"]
-  A --> C["core_engine<br/>模拟比赛 / z-score 定价"]
-  A --> I["智能体<br/>模型建议 / 规则建议"]
+  B["浏览器<br/>Vue 3 单页应用"] --> S["Render 静态站<br/>前端构建产物"]
+  S --> A["FastAPI /api<br/>29 个接口"]
+  A --> R["交易规则<br/>事务 / 停牌 / 余额"]
+  A --> C["定价引擎 core_engine<br/>模拟比赛 / z-score 定价"]
+  A --> I["智能体<br/>模型建议 / 规则兜底"]
   R --> D[("Postgres<br/>9 张表")]
   C --> D
   I --> D
-  G["GitHub Actions<br/>4 个 job"] -.部署.-> S
-  G -.部署.-> A
-  H["Cron 巡检<br/>简报新鲜度"] --> A
+  G["GitHub Actions"] -.检查.-> A
+  H["Render 定时任务<br/>保活 + 刷新简报"] --> A
 ```
 
 </div>
 
 <div class="grid3">
-  <div class="card" v-click><div class="accent small font-bold">部署架构</div><div class="small muted">前端、后端和定时任务部署在 Render</div></div>
-  <div class="card" v-click><div class="accent small font-bold">运行状态</div><div class="small muted">查请求日志、健康接口和简报更新时间</div></div>
-  <div class="card" v-click><div class="accent small font-bold">价格和建议分开</div><div class="small muted">程序算价格和处理交易，智能体给建议</div></div>
+  <div class="card" v-click><div class="accent small font-bold">三个服务</div><div class="small muted">静态站、后端服务、定时任务，都在 Render 新加坡区</div></div>
+  <div class="card" v-click><div class="accent small font-bold">价格和建议分开</div><div class="small muted">价格和交易由程序按规则算，智能体只读数据、给建议</div></div>
+  <div class="card" v-click><div class="accent small font-bold">出问题能查</div><div class="small muted">健康检查接口、运行日志、每次智能体调用都有记录</div></div>
 </div>
 
 </div>
 
 <!--
-【30 秒】浏览器加载 Vue 页面，前端通过 FastAPI 查询行情或提交订单。定价和交易由后端按规则处理，结果保存在数据库。智能体也会读取相关数据，生成建议并留下分析记录。
+【30 秒】浏览器加载 Vue 页面，所有请求打到 FastAPI。后面分三块：交易规则、定价引擎、智能体，数据都存在 Postgres 的九张表里。关键的一点是价格和交易由程序按规则算，智能体只读数据、给建议，碰不到钱。线上一共三个服务，都部署在 Render。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">03 产品实现 · 3.5.3 算法与 AI</div>
+<div class="kicker">03 产品实现 · 3.5.3 算法</div>
 
-# 选手股的定价规则
+# 价格怎么算
 
 <div class="body">
 
 <div class="grid2">
   <div class="card" v-click>
-    <div class="accent small font-bold">价格计算规则</div>
+    <div class="accent small font-bold">定价公式</div>
     <div class="formula mt-3">P′ = max(1.0, P × (1 + 0.15 · S))</div>
-    <div class="small mt-2">新价格 = 原价格 ×（1 + 0.15 × 表现分），底价 1.0</div>
+    <div class="small mt-2">新价格 = 原价格 ×（1 + 0.15 × 表现分），最低 1 个信用点</div>
     <ul class="clean mt-2">
-      <li>表现分比较选手这一轮和自己过去的表现</li>
-      <li>单次涨跌有 ±20% 的上限</li>
-      <li>每次调价的原因都能在详情页查到</li>
+      <li>表现分 S：这一轮得分和他自己最近 5 场比，算 z-score，压到 −1 到 1</li>
+      <li>单次涨跌最多 ±20%</li>
+      <li>本队这一轮在比赛，就整队停牌，不能买卖</li>
     </ul>
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click>
-      <div class="accent small font-bold">智能体的行情分析</div>
-      <div class="small mt-2">看价格历史和涨跌原因，给出买入、卖出或观望的建议。</div>
-      <div class="small muted mt-2">决策卡会结合账户余额和持仓，估算建议买卖数量。</div>
-      <div class="small mt-2">用户可以采纳或忽略建议，下单时再单独确认。</div>
+      <div class="accent small font-bold">为什么和自己比</div>
+      <div class="small muted mt-1">明星选手天天高分，跟全场比会一直涨。和自己的近况比，只有发挥超出平时才会涨。</div>
     </div>
-    <div class="dark-band small" v-click>
-      <b>定价与建议各自独立</b><br>
-      同样的输入算出同样的价格。模型服务出问题，定价和交易照常。
+    <div class="card" v-click>
+      <div class="accent small font-bold">每次变价都有原因</div>
+      <div class="small muted mt-1">每个价格点都记一句原因，例如本轮得分和涨跌幅度，详情页能逐条看。</div>
     </div>
+    <div class="dark-band small" v-click>同样的输入一定算出同样的价格。100 个随机种子回测过，结果稳定。</div>
   </div>
 </div>
 
 </div>
 
 <!--
-【40 秒】系统先比较选手本轮与以往的表现，再按公式计算新价格。价格最低为 1 个信用点，单次涨跌也有限制。每次变价都附有原因，用户和智能体都可以查到。
+【30 秒】价格只有一条公式：新价格等于原价格乘以一加零点一五倍的表现分，最低一个信用点。表现分是拿这一轮和选手自己最近五场比，所以明星选手不会一直涨，只有发挥超出平时才涨。每次变价都写了原因，我们也用一百个随机种子回测过，结果是稳定的。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
+<div class="kicker">03 产品实现 · 3.5.3 智能体</div>
 
-# 智能体的分析流程与护栏
+# 智能体：会查数据、会分工，但不碰钱
 
 <div class="body">
 
-<div class="dark-band text-base font-bold leading-relaxed" v-click>
-决策卡先生成建议，再按余额和持仓算计划。多角色分析和工具调用各有自己的入口。
+<div class="grid3">
+  <div class="card" v-click><div class="accent small font-bold">工具调用</div><div class="small mt-1">模型自己决定查什么：价格历史、账户持仓、建议股数。最多 3 轮。</div></div>
+  <div class="card" v-click><div class="accent small font-bold">多角色分析</div><div class="small mt-1">分析师先看行情，风控再挑毛病，交易员最后给方案，后一步读前一步的结果。</div></div>
+  <div class="card" v-click><div class="accent small font-bold">人来拍板</div><div class="small mt-1">建议旁边有「采纳 / 忽略」，点了只记录；真要买卖还得自己在面板确认。</div></div>
 </div>
 
-<div class="grid3" v-click>
-  <div class="card"><div class="accent small font-bold">任务编排</div><div class="small mt-1">多角色分析按分析师、风控、交易员的顺序走，后一步会读前一步的结果。</div></div>
-  <div class="card"><div class="accent small font-bold">工具调用</div><div class="small mt-1">模型可查最近价格、读演示账户快照、算建议股数，最多跑 3 轮。</div></div>
-  <div class="card"><div class="accent small font-bold">护栏</div><div class="small mt-1">基础建议校验 6 个字段。工具只查数据和做计算，采纳只记录选择。</div></div>
+<div class="grid2">
+  <div class="card" v-click>
+    <div class="accent small font-bold">护栏</div>
+    <ul class="clean">
+      <li>输出固定 6 个字段，动作和风险等级只能取规定的值</li>
+      <li>工具全部只读，唯一会写的是审计记录</li>
+      <li>没密钥、超时 20 秒、格式不对：自动改用规则版，页面不报错</li>
+    </ul>
+  </div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">数据与边界</div>
+    <ul class="clean">
+      <li>每次请求现查数据库，不靠模型记忆</li>
+      <li>每次调用、采纳都有记录，可以回查</li>
+      <li>没有接 RAG 和跨会话记忆：数据量小，用 SQL 就够</li>
+    </ul>
+  </div>
 </div>
-
-<div class="card" v-click><div class="accent small font-bold">模型没返回可用结果时</div><div class="small mt-1">模型单次调用默认等 20 秒。基础建议遇到缺密钥、超时或格式错误时，会改用规则版。</div></div>
-
-<div class="sage small font-bold" v-click>决策卡和工具演示都有 trace_id，可以回查结果。</div>
 
 </div>
 
 <!--
-【30 秒】决策卡先给出建议方向，再根据余额和持仓估算数量。多角色分析依次经过分析师、风控和交易员。工具调用另有演示入口，模型可以在三个工具中选择，最多运行三轮。基础建议会校验字段，模型失败时用规则版。用户点采纳只会留下记录。
--->
-
----
-layout: default
----
-
-<div class="kicker">03 产品实现 · 3.5.3 智能体设计</div>
-
-# 智能体的数据来源与记忆
-
-<div class="body">
-
-<div class="grid2" v-click>
-  <div class="card"><div class="accent small font-bold">记忆</div><div class="small mt-1">本次请求临时整理所需数据。调用、采纳和归因可回查，简报有短时缓存。</div></div>
-  <div class="card"><div class="accent small font-bold">领域数据与规则</div><div class="small mt-1">行情和价格历史从关系库取，定价、停牌和仓位规则写在代码里。</div></div>
-</div>
-
-<div class="grid2" v-click>
-  <div class="card"><div class="accent small font-bold">当前用 SQL 取数</div><div class="small mt-1">数据量小，所需字段明确。当前未接入 RAG、知识图谱或跨会话偏好记忆。</div></div>
-  <div class="card"><div class="accent small font-bold">可扩展的方向</div><div class="small mt-1">RAG 找历次复盘，知识图谱核对选手和战队关系，偏好记忆补上用户关注点。</div></div>
-</div>
-
-<div class="dark-band small" v-click>当前可以回查建议和采纳记录。用户历史选择暂未用于生成下一次建议。</div>
-
-</div>
-
-<!--
-【25 秒】每次请求都会读取当时需要的行情和价格记录，定价、停牌等规则由代码处理。系统保留调用、采纳和价格归因记录，简报也会短时缓存。目前没有接入 RAG、知识图谱或跨会话偏好记忆。以后若扩展，可以分别用它们查阅复盘、核对关系和保留用户的关注点。
+【40 秒】智能体有三个特点。第一，会用工具：模型自己决定要查价格历史还是账户持仓，最多三轮。第二，会分工：分析师、风控、交易员依次过一遍。第三，人来拍板：采纳只是记一笔，买卖还要用户自己确认。护栏也很明确：输出固定六个字段，工具全是只读的，模型挂了自动换规则版，用户看不到报错。
 -->
 
 ---
 
 <div class="kicker">03 产品实现 · 3.5.4 数据库设计</div>
 
-# 数据库中的 9 张表
+# 九张表，交易一次写完
 
 <div class="body">
-
-<div v-click>
-
-| 分组  | 表名                                              | 关键设计                                     |
-| --- | ----------------------------------------------- | ---------------------------------------- |
-| 账号  | users / auth_tokens                             | 记录余额与初始本金；Token 有效期 30 天且支持主动撤销          |
-| 市场  | players / price_history                         | 价格历史仅追加写入；reason 归因字段非空                  |
-| 交易  | positions / trades                              | 流水只追加并记录 balance_after；持仓按(user, player)唯一 |
-| 智能体 | agent_traces / decision_logs / price_narratives | 记录每次调用、采纳与归因，业务表只读                       |
-
-</div>
 
 <div class="grid2">
   <div v-click>
 
-```mermaid
+```mermaid {scale: 0.62}
 erDiagram
   USERS ||--o{ POSITIONS : "持有"
   USERS ||--o{ TRADES : "产生"
@@ -482,158 +443,155 @@ erDiagram
   PLAYERS ||--o{ PRICE_HISTORY : "有历史"
 ```
 
-</div>
+  </div>
   <div class="flex flex-col gap-3">
-    <div class="card" v-click><div class="accent small font-bold">交易的事务处理</div><div class="small muted">余额、持仓和流水在同一个事务里更新。</div></div>
-    <div class="card" v-click><div class="accent small font-bold">方便对账</div><div class="small muted">流水记下成交后的余额，可以逐笔核对。</div></div>
+    <div class="card" v-click><div class="accent small font-bold">账号 · 市场 · 交易</div><div class="small muted">users / auth_tokens、players / price_history、positions / trades</div></div>
+    <div class="card" v-click><div class="accent small font-bold">智能体审计</div><div class="small muted">agent_traces / decision_logs / price_narratives，只记录，不碰业务表</div></div>
+    <div class="card" v-click><div class="accent small font-bold">一笔交易一个事务</div><div class="small muted">扣钱、改持仓、写流水同时成功或同时撤销；扣款用「余额够才更新」的条件语句，两笔同时下单也不会超卖。</div></div>
   </div>
 </div>
 
 </div>
 
 <!--
-【25 秒】九张表分别保存账号、市场、交易和智能体记录。一笔交易会在同一个事务里更新余额、持仓和流水。流水还会记下成交后的余额，便于之后对账。
+【25 秒】一共九张表，分账号、市场、交易和智能体审计四组。最重要的是交易：扣钱、改持仓、写流水放在一个事务里，要么全成，要么全撤。扣款用的是「余额够才更新」的条件语句，两笔单子同时进来也不会超卖。
 -->
 
 ---
-layout: default
----
 
-<div class="kicker">03 产品实现 · 3.5.5 接口设计</div>
+<div class="kicker">03 产品实现 · 3.5.5 接口与 3.5.6 前端设计</div>
 
-# 前后端接口
+# 接口和前端
 
 <div class="body">
 
-<div v-click>
+<div class="grid2" style="grid-template-columns:1.3fr 1fr">
+  <div v-click>
 
-| 分组  | 功能范围            | 接口示例                     |
-| --- | --------------- | ------------------------ |
-| 行情  | 选手列表、详情查询、历史价格  | GET /api/players         |
-| 交易  | 账户资产、买入、卖出、持仓流水 | POST /api/trades/buy     |
-| 身份  | 注册、登录、注销、账号删除   | POST /api/auth/login     |
-| AI  | 个股建议、市场简报、决策记录  | GET /api/analysis/\{id\} |
-| 运维  | 健康检查、数据库自检、日志查询 | GET /api/health          |
+| 分组  | 能做什么          | 例子                       |
+| --- | ------------- | ------------------------ |
+| 行情  | 选手列表、详情、价格历史  | GET /api/players         |
+| 交易  | 买入、卖出、持仓、流水   | POST /api/trades/buy |
+| 账号  | 注册、登录、退出、删号   | POST /api/auth/login     |
+| 智能体 | 建议、简报、决策、审计记录 | GET /api/analysis/\{id\} |
+| 运维  | 健康检查、重灌数据     | GET /api/health          |
 
+  </div>
+  <div class="card" v-click>
+    <div class="accent small font-bold">前端怎么搭的</div>
+    <ul class="clean">
+      <li>8 个页面，路由切换带过渡动画</li>
+      <li>不用状态库：几个组合函数就够</li>
+      <li>价格曲线和资产曲线用 SVG 自己画</li>
+      <li>颜色、间距全部走设计令牌，深浅主题一套代码</li>
+      <li>请求带缓存和失败重试，慢的时候先出骨架屏</li>
+    </ul>
+  </div>
 </div>
 
-<div class="dark-band small" v-click>常见错误会给中文提示。在线接口文档可直接试用：playerstock-backend-mdlk.onrender.com/docs</div>
+<div class="small muted" v-click>出错统一返回中文提示和错误码；在线接口文档：playerstock-backend-mdlk.onrender.com/docs</div>
 
 </div>
 
 <!--
-【20 秒】接口按行情、交易、身份、智能体和运维分组。页面上列了几个常用的例子。各接口的请求和返回格式，都可以在 Swagger 文档里查看。
+【25 秒】后端一共二十九个接口，分五组，左边每组举一个例子，所有接口都能在在线文档里直接试。前端八个页面，没有用状态库，图表是自己用 SVG 画的，颜色和间距统一走设计令牌，所以深浅两套主题是同一份代码。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">03 产品实现 · 3.6 软件质量</div>
 
-# 代码检查与测试
+# 质量靠自动检查兜底
 
 <div class="body">
 
 <div class="grid4">
-  <div class="card" v-click><div class="metric">350</div><div class="small font-bold">后端测试</div><div class="small muted">pytest，默认跳过 live 用例</div></div>
-  <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest / 23 个测试文件</div></div>
-  <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine 模块</div></div>
-  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 检查</div><div class="small muted">健康、后端、前端、交付物</div></div>
+  <div class="card" v-click><div class="metric">350</div><div class="small font-bold">后端测试</div><div class="small muted">单元 295 · 集成 22 · 评测 33</div></div>
+  <div class="card" v-click><div class="metric">186</div><div class="small font-bold">前端测试</div><div class="small muted">Vitest，23 个测试文件</div></div>
+  <div class="card" v-click><div class="metric">98%</div><div class="small font-bold">核心覆盖率</div><div class="small muted">app + core_engine；含智能体 94%</div></div>
+  <div class="card" v-click><div class="metric">4</div><div class="small font-bold">CI 检查</div><div class="small muted">冲突标记、后端、前端、交付物</div></div>
 </div>
 
 <div class="grid2">
-  <div class="card" v-click><div class="accent small font-bold">运行保障</div>
+  <div class="card" v-click><div class="accent small font-bold">3.6.1 运行时的保障</div>
     <ul class="clean">
-      <li>日志记录接口请求和报错，便于排查</li>
-      <li>异常：全局统一错误码，前端友好提示</li>
-      <li>契约：Pydantic 严格校验入参与出参</li>
-      <li>并发：数据库事务 + 条件更新防超卖</li>
-      <li>降级：针对 LLM 超时、断网、冷启动做兜底</li>
+      <li>日志：请求和报错都落文件，线上也能直接看</li>
+      <li>异常：统一错误码 + 中文提示，不把堆栈给用户</li>
+      <li>校验：入参出参都过 Pydantic</li>
+      <li>并发：事务 + 条件更新，专门测了同时卖出</li>
     </ul>
   </div>
-  <div class="card" v-click><div class="accent small font-bold">自动化工具链</div>
-    <table>
-      <tbody>
-      <tr><td>ruff</td><td>代码规范与圈复杂度检查</td></tr>
-      <tr><td>oxlint / eslint</td><td>检查前端代码写法</td></tr>
-      <tr><td>vue-tsc</td><td>构建阶段强制类型检查</td></tr>
-      <tr><td>Vitest / pytest</td><td>覆盖单元、集成、评测与并发场景</td></tr>
-      <tr><td>GitHub Actions</td><td>检查仓库、前后端和交付材料</td></tr>
-      </tbody>
-    </table>
+  <div class="card" v-click><div class="accent small font-bold">3.6.2 代码规范</div>
+    <ul class="clean">
+      <li>Python：ruff 查真实缺陷和圈复杂度（上限 10）</li>
+      <li>前端：oxlint + eslint 零警告，vue-tsc 类型检查</li>
+      <li>CI 只检查不自动改，有问题就红</li>
+    </ul>
   </div>
 </div>
 
 </div>
 
 <!--
-【25 秒】后端用 pytest，前端用 Vitest。GitHub Actions 也会执行代码检查和构建。这里以并发卖出为例，同一个数据库事务配合条件更新，可以防止两笔卖单同时扣减时出现超卖。
+【30 秒】后端三百五十条测试，前端一百八十六条，核心模块覆盖率百分之九十八，把智能体也算上是百分之九十四。运行时有日志、统一错误码、参数校验和并发保护。代码规范交给工具：ruff 查缺陷和复杂度，前端零警告，CI 只检查不自动改，有问题就直接变红。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">03 产品实现 · 3.7 代码统计</div>
 
-# 代码与文档统计
+# 代码统计
 
 <div class="body">
 
-<div v-click>
-
-| 语言           | 文件数 | 行数     |
-| ------------ | --- | ------ |
-| Python       | 111 | 16,790 |
-| Vue          | 21  | 8,992  |
-| TypeScript   | 49  | 6,410  |
-| CSS          | 4   | 969    |
-| HTML         | 3   | 1,082  |
-| Markdown（文档） | 70  | 8,270  |
-
-</div>
-
 <div class="grid2">
-  <div class="card" v-click><div class="accent small font-bold">模块规模</div><div class="small muted">前端包含 8 个视图、12 个组件；后端包含 11 个路由模块、9 个 AI 模块。</div></div>
-  <div class="dark-band small" v-click><b>团队协作与 AI 辅助</b><br>按 Git 作者统计，含合并提交。D 229、B 116、C 103、A 74。AI 帮忙写部分测试和文档，核心交易代码由团队编写、互相评审。</div>
+  <div v-click>
+
+| 类型          | 文件数 | 行数     |
+| ----------- | --- | ------ |
+| Python      | 113 | 17,113 |
+| Vue         | 21  | 8,998  |
+| TypeScript  | 49  | 6,412  |
+| CSS / HTML  | 7   | 2,052  |
+| 代码合计        | 190 | 34,575 |
+| Markdown 文档 | 76  | 9,449  |
+
+  </div>
+  <div class="flex flex-col gap-3">
+    <div class="card" v-click><div class="accent small font-bold">模块</div><div class="small muted">前端 8 个页面、12 个组件；后端 11 个路由模块、8 个智能体模块、1 个定价引擎。</div></div>
+    <div class="dark-band small" v-click><b>AI 辅助</b><br>AI 帮忙写了部分测试和文档；交易事务、定价公式和接口契约由组员自己写、互相评审。</div>
+  </div>
 </div>
 
 </div>
 
 <!--
-【15 秒】表中按文件类型列出了代码和文档行数。成员贡献按 Git 提交作者统计，胡德昊的两个作者身份合并计数。AI 参与了部分测试和文档，核心交易代码由团队编写和评审。
+【15 秒】按文件类型统计，代码大约三万四千行，文档九千多行。AI 帮我们写了部分测试和文档，但交易、定价和接口这些核心部分是组员自己写、互相审过的。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">验收 · 测试与容量</div>
 
-# 用户测试、智能体评测与压测
+# 用户测试、智能体评测和压测
 
 <div class="body">
 
 <div class="grid2">
-  <div class="card" v-click><div class="metric">33 项</div><div class="small font-bold">用户验收测试</div><div class="sage small font-bold">32 通过 / 1 部分通过</div><div class="small muted">测了日常操作、错误提示和边界情况</div></div>
-  <div class="card" v-click><div class="metric">16/16</div><div class="small font-bold">AI 输出契约评测</div><div class="sage small font-bold">source=llm 100% · P95 3.39s</div><div class="small muted">6 个字段完整度与合规校验均通过</div></div>
-  <div class="card" v-click><div class="metric">11/11</div><div class="small font-bold">安全红队测试</div><div class="sage small font-bold">提示注入 / 越权 / 伪造来源</div><div class="small muted">全部拦截，并有对应审计记录</div></div>
-  <div class="card" v-click><div class="metric">38 req/s</div><div class="small font-bold">只读接口压测</div><div class="sage small font-bold">≈190 人同时在线 · 0 错误</div><div class="small muted">当前瓶颈在于免费托管实例规格</div></div>
+  <div class="card" v-click><div class="metric">32 / 33</div><div class="small font-bold">用户测试检查表</div><div class="small muted">1 项部分通过；另有两组互测，各 33 题</div></div>
+  <div class="card" v-click><div class="metric">16 / 16</div><div class="small font-bold">线上真模型评测</div><div class="small muted">6 个字段全部合规，P95 3.39 秒</div></div>
+  <div class="card" v-click><div class="metric">11 / 11</div><div class="small font-bold">红队测试</div><div class="small muted">提示注入、越权、伪造来源都被拦下</div></div>
+  <div class="card" v-click><div class="metric">38 次/秒</div><div class="small font-bold">只读接口压测</div><div class="small muted">约 190 人同时在线，0 错误；瓶颈是免费实例</div></div>
 </div>
 
-<div class="small muted" v-click>两组互测各 33 题。赛事数据是模拟的，未评估真实比赛预测准确率。</div>
-
-<div class="card" v-click><div class="small">证据索引：docs/acceptance/evidence（147 张截图）· test_report.md · agent_eval_report.md · load_test_report.md</div></div>
+<div class="small muted" v-click>说清边界：比赛数据是模拟的，所以没有评估真实比赛的预测准确率。证据在 docs/acceptance/（147 张截图）。</div>
 
 </div>
 
 <!--
-【20 秒】33 项用户测试中，32 项通过，1 项部分通过。线上评测的 16 次智能体输出都通过了字段校验。只读接口压测达到每秒约 38 次请求，没有报错。这里的比赛数据是模拟的，评测范围限于系统行为。
+【25 秒】用户测试检查表 33 项，32 项通过，1 项部分通过。线上真模型评测 16 次，字段全部合规，最慢的百分之五也在 3.4 秒内。红队 11 条全拦下。压测每秒 38 次请求，大概能撑 190 人同时在线，瓶颈是免费实例。比赛数据是模拟的，所以我们不评估预测准不准。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">演示</div>
@@ -643,24 +601,22 @@ layout: default
 <div class="body">
 
 <div class="grid3">
-  <div class="card" v-click><div class="accent font-bold">01 市场页</div><div class="small muted mt-1">查看顶部简报与 3 列选手行情、停牌状态</div></div>
-  <div class="card" v-click><div class="accent font-bold">02 详情页</div><div class="small muted mt-1">查看历史价格曲线、智能体建议与停牌提示</div></div>
-  <div class="card" v-click><div class="accent font-bold">03 买入下单</div><div class="small muted mt-1">模拟买入 2 股，验证余额、持仓与流水同步更新</div></div>
-  <div class="card" v-click><div class="accent font-bold">04 资产复盘</div><div class="small muted mt-1">进入个人页查看资产曲线与成交统计</div></div>
-  <div class="card" v-click><div class="accent font-bold">05 降级演示</div><div class="small muted mt-1">验证停牌拦截与无 Key 时的规则兜底</div></div>
-  <div class="card" v-click><div class="accent font-bold">06 回到市场</div><div class="small muted mt-1">回到行情列表，结束演示</div></div>
+  <div class="card" v-click><div class="accent font-bold">01 市场页</div><div class="small muted mt-1">看简报、选手卡和停牌状态</div></div>
+  <div class="card" v-click><div class="accent font-bold">02 详情页</div><div class="small muted mt-1">看价格曲线、涨跌原因和智能体建议</div></div>
+  <div class="card" v-click><div class="accent font-bold">03 买入</div><div class="small muted mt-1">买 2 股，余额、持仓、流水一起变</div></div>
+  <div class="card" v-click><div class="accent font-bold">04 个人页</div><div class="small muted mt-1">看资产曲线和交易统计</div></div>
+  <div class="card" v-click><div class="accent font-bold">05 兜底</div><div class="small muted mt-1">停牌选手买不了；模型不可用时显示规则版</div></div>
+  <div class="card" v-click><div class="accent font-bold">06 回到市场</div><div class="small muted mt-1">结束演示</div></div>
 </div>
 
-<div class="small muted" v-click>演示过程中不切换窗口；若遇网络波动则刷新只读页面或切换备用录屏。</div>
+<div class="small muted" v-click>网络不稳时先刷新只读页面，还不行就放备用录屏。</div>
 
 </div>
 
 <!--
-【5 秒】接下来从市场页进入一位选手的详情，先看智能体建议，再买入两股，最后查看持仓和流水。
+【5 秒】下面切到网页，从市场页进一位选手，看建议，买两股，再看持仓和流水。
 -->
 
----
-layout: default
 ---
 
 <div class="kicker">结课审查</div>
@@ -680,7 +636,7 @@ layout: default
   </div>
   <div class="card">
     <div class="accent font-bold">完整材料</div>
-    <div class="small muted mt-2">站点内 /playerstock_defense.pdf</div>
+    <div class="small muted mt-2">july75-bit.github.io/Innovation/playerstock_defense.pdf</div>
   </div>
 </div>
 
@@ -689,5 +645,5 @@ layout: default
 </div>
 
 <!--
-【结束】我们的汇报到这里。最后一页留有在线演示、源码和 PDF 的入口，方便课后查看。谢谢各位老师。
+【结束】我们的汇报就到这里，在线演示、源码和 PDF 的地址都在这一页。谢谢各位老师。
 -->
