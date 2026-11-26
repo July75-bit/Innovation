@@ -64,7 +64,10 @@ def test_redteam_api_has_no_free_text_input() -> None:
             assert operation.get("requestBody") is None, f"{method} {path} 不该有请求体"
             params = operation.get("parameters", [])
             names = {p["name"] for p in params}
-            assert names <= {"player_id"}, f"{method} {path} 出现额外参数：{names}"
+            # Authorization 头只用来认出当前用户（取他的持仓），不会拼进给模型的提问
+            assert names <= {"player_id", "Authorization"}, f"{method} {path} 出现额外参数：{names}"
+            header = [p for p in params if p["name"] == "Authorization"]
+            assert all(p["in"] == "header" for p in header), "Authorization 只能是请求头"
 
 
 # ---------------------------------------------------------------- 攻击面 2：间接注入

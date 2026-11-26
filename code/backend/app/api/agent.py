@@ -104,9 +104,10 @@ def _account_state(db: Session, user: User, player_id: int) -> tuple[float, int]
     return balance, int(held or 0)
 
 
-def _safe_context(player: Player, db: Session) -> dict[str, Any]:
+def _safe_context(player: Player, db: Session, user: User) -> dict[str, Any]:
+    """资料袋里的"持仓"按当前用户取（2026-11-26 修，原先不分用户）。"""
     try:
-        return build_player_context(player.player_id, db=db)
+        return build_player_context(player.player_id, db=db, user_id=user.user_id)
     except Exception as exc:  # noqa: BLE001
         logger.warning("agent 上下文失败，用最小上下文：%s: %s", type(exc).__name__, exc)
         return {
@@ -135,7 +136,7 @@ def agent_decision(
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     advice = analyze(context)
     latency_ms = int((time.perf_counter() - started) * 1000)
@@ -483,12 +484,16 @@ def decision_stats(db: Session = Depends(get_db), user: User = Depends(get_curre
 
 # ---------------------------------------------------------------- 多角色协作
 @router.get("/panel/{player_id}", summary="多角色协作纪要（分析师→风控→交易员）")
-def agent_panel(player_id: int, db: Session = Depends(get_db)) -> dict:
+def agent_panel(
+    player_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
     player = db.get(Player, player_id)
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     result = run_panel(context, settings=settings)
     latency_ms = int((time.perf_counter() - started) * 1000)
@@ -633,7 +638,7 @@ def agent_tools(
         "get_account_snapshot": get_account_snapshot,
         "calc_position_size": calc_position_size,
     }
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     try:
         result = run_tool_loop(

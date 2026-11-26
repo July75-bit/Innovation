@@ -130,16 +130,36 @@ SELECT price, reason, ts FROM (
 ORDER BY ts
 """
 
-# 说明：positions 表有 `user_id`，但本项目是**单一共享演示账户**（`users.nickname='demo'`，
-# 见 `app/api/deps.py`），故这里只按 player_id 取。将来接多用户时必须同时按 user_id 过滤。
+# 持仓必须按**用户**取：可注册私人账号后，同一选手会有多人持有。
+# 2026-11-26 修：原先只按 player_id 取，多人持有时会拿到别人的持仓喂给 AI。
+# 调用方传 user_id（接口层的当前用户）；不传（命令行演示）就取公共演示账户 demo。
 _SQL_POSITION = """
 SELECT quantity, avg_cost
 FROM positions
-WHERE player_id = :player_id
+WHERE player_id = :player_id AND user_id = :user_id
+"""
+
+_SQL_DEMO_POSITION = """
+SELECT p.quantity, p.avg_cost
+FROM positions p
+JOIN users u ON u.user_id = p.user_id
+WHERE p.player_id = :player_id AND u.nickname = 'demo'
 """
 
 
-def _read_context(db: Any, player_id: int) -> dict[str, Any]:
+def _read_position(db: Any, player_id: int, user_id: int | None) -> Any:
+    from sqlalchemy import text
+
+    if user_id is None:
+        return db.execute(text(_SQL_DEMO_POSITION), {"player_id": player_id}).mappings().first()
+    return (
+        db.execute(text(_SQL_POSITION), {"player_id": player_id, "user_id": user_id})
+        .mappings()
+        .first()
+    )
+
+
+def _read_context(db: Any, player_id: int, user_id: int | None = None) -> dict[str, Any]:
     """在给定会话上执行 3 条只读 SELECT 并组装上下文（不 commit、不写库）。"""
     from sqlalchemy import text  # 延迟导入：本地无依赖时也能 import 本模块
 
@@ -152,7 +172,7 @@ def _read_context(db: Any, player_id: int) -> dict[str, Any]:
         .mappings()
         .all()
     )
-    position = db.execute(text(_SQL_POSITION), {"player_id": player_id}).mappings().first()
+    position = _read_position(db, player_id, user_id)
 
     recent_prices = [
         {"ts": _fmt_ts(row["ts"]), "price": float(row["price"])} for row in history
@@ -185,7 +205,7 @@ def _read_context(db: Any, player_id: int) -> dict[str, Any]:
     }
 
 
-def db_context(player_id: int, *, db: Any = None) -> dict[str, Any]:
+def db_context(player_id: int, *, db: Any = None, user_id: int | None = None) -> dict[str, Any]:
     """按 database_design.md 的表结构只读取数；任何一步失败都抛异常交给上层回落。
 
     Args:
@@ -193,28 +213,30 @@ def db_context(player_id: int, *, db: Any = None) -> dict[str, Any]:
         db: 可选的 SQLAlchemy 会话。接口层把 FastAPI 依赖注入的**同一个只读会话**传进来，
             这样测试里 `get_db` 的依赖覆盖也生效（不会另开一个连到开发库的会话）。
             默认（None）自己开一个会话，供命令行/独立调用使用。
+        user_id: 取谁的持仓。接口层传当前用户；None 取公共演示账户 demo。
     """
     if db is not None:
-        return _read_context(db, player_id)
+        return _read_context(db, player_id, user_id)
 
     from app.core.database import SessionLocal
 
     with SessionLocal() as own_session:
-        return _read_context(own_session, player_id)
+        return _read_context(own_session, player_id, user_id)
 
 
 # ---------------------------------------------------------------- 对外入口
 
 def build_player_context(
-    player_id: int, *, prefer_db: bool = True, db: Any = None
+    player_id: int, *, prefer_db: bool = True, db: Any = None, user_id: int | None = None
 ) -> dict[str, Any]:
     """组装上下文：优先真实数据库，失败自动回落 mock（并把回落原因带出来便于排查）。
 
-    `db` 传入接口层的只读会话时，真实路径就在该会话上跑；其余行为不变。
+    `db` 传入接口层的只读会话时，真实路径就在该会话上跑；
+    `user_id` 决定"持仓"取谁的（当前用户；None 为公共演示账户）。
     """
     if prefer_db:
         try:
-            return db_context(player_id, db=db)
+            return db_context(player_id, db=db, user_id=user_id)
         except Exception as exc:  # noqa: BLE001 —— 兜底链路：查库失败必须回落 mock，不能把 AI 故障升级成 5xx
             logger.warning(
                 "AI 上下文查库失败，回落 seed 数据：player_id=%s %s: %s",

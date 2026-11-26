@@ -369,3 +369,38 @@ def test_tools_account_snapshot_uses_current_user(client, monkeypatch) -> None:
 
     assert snapshots[0] == {"balance": round(float(mine["balance"]), 2), "held_quantity": 3}
     assert snapshots[1]["held_quantity"] == 0  # 未登录 = 公共演示账户，看不到注册用户的持仓
+
+
+def test_ai_context_position_is_per_user(client, monkeypatch) -> None:
+    """交给 AI 的「持仓」按当前用户取（2026-11-26 修）：两人都持有同一选手时互不串。
+
+    原先 `ai/context.py` 只按 player_id 查 positions，多人持有时会拿到别人的持仓。
+    """
+    import app.api.ai as ai_api
+
+    headers = {}
+    for name, qty in (("ctx_a", 3), ("ctx_b", 5)):
+        reg = client.post("/api/auth/register", json={"username": name, "password": "Passw0rd123"})
+        assert reg.status_code == 201
+        headers[name] = {"Authorization": f"Bearer {reg.json()['token']}"}
+        buy = client.post("/api/trades/buy", json={"player_id": 1, "quantity": qty}, headers=headers[name])
+        assert buy.status_code == 200
+
+    seen: list[float] = []
+
+    def _capture(context, **_kwargs):  # noqa: ANN001
+        seen.append(context["position"]["quantity"])
+        return {
+            "player_id": 1, "action": "HOLD", "reason": "测试", "risk_level": "LOW",
+            "source": "rule_fallback", "disclaimer": "测试",
+        }
+
+    monkeypatch.setattr(ai_api, "analyze", _capture)
+    monkeypatch.setattr(agent_api, "analyze", _capture)
+
+    for path in ("/api/analysis/1", "/api/agent/decision/1"):
+        assert client.get(path, headers=headers["ctx_a"]).status_code == 200
+        assert client.get(path, headers=headers["ctx_b"]).status_code == 200
+        assert client.get(path).status_code == 200
+
+    assert seen == [3.0, 5.0, 0.0, 3.0, 5.0, 0.0]  # A 看到 3、B 看到 5、未登录（演示账户）看到 0
