@@ -45,7 +45,7 @@
 | 内存 | 小内存，以控制台为准 | 无深度学习框架，常驻开销低 |
 | 磁盘 | **临时文件系统**，不能放 SQLite / 上传文件 | 业务数据全部进 PostgreSQL |
 | Static Site | 免费、全球 CDN、HTTPS | 构建产物 `dist/` |
-| PostgreSQL | 免费实例，**约 30 天到期（2026-11-23 前后）** | 9 张表；演示数据可重建；到期前必须备份并迁移/续期 |
+| PostgreSQL | 原免费实例 30 天期限已续期 / 升级（2026-11-26 确认，套餐以 Render 控制台为准） | 9 张表；演示数据可重建；到期前必须备份并迁移/续期 |
 | Cron | 免费，`*/10 0-15 * * *` | 约 496 h/月，在免费 750 h 额度内 |
 | 冷启动 | 闲置 15 分钟休眠 | 冷启动 30–60 s；暖态 API 约 0.88 s |
 | AI 延迟 | DeepSeek 外部依赖 | 线上中位 2.0–2.5 s；L4 P95 3.39 s（门禁 10 s） |
@@ -59,7 +59,7 @@
 - GitHub 仓库：`github.com/July75-bit/Innovation`（public，分支 `develop`）
 - Render 账号（可用 GitHub 登录）
 - DeepSeek API Key（可选；没有 Key 时 AI 自动降级为规则版，交易功能不受影响）
-- 本地只用于改代码 / 灌演示数据：Git、Python 3.12+、Node.js 20+
+- 本地只用于改代码 / 灌演示数据：Git、Python 3.12+、Node.js 22.18+ 或 24.12+
 
 ```bash
 git clone https://github.com/July75-bit/Innovation.git
@@ -149,7 +149,7 @@ curl -fsS $BASE/api/agent/brief | head -c 300
 | AI | 6 字段建议；无 Key 时 `source=rule_fallback` 且仍 200 |
 | 简报 | `generated_at` 不超过 30 分钟 |
 
-### 3.6 演示前预热
+### 3.5 演示前预热
 
 免费实例休眠后首次请求很慢；演示前 10 分钟执行：
 
@@ -167,7 +167,7 @@ python scripts/prewarm.py --base https://playerstock-backend-mdlk.onrender.com
 | --- | --- |
 | CPU | 免费档约 0.1 vCPU；压测饱和 ~38 req/s、约 190 人同时在线、0 错误 |
 | 内存 / 磁盘 | 小内存；文件系统临时，**不能放 SQLite** |
-| Postgres | 免费实例约 30 天到期（2026-11-23 前后），到期需迁移或续期 |
+| Postgres | 已续期 / 升级（2026-11-26 确认）；到期时间以 Render 控制台为准 |
 | 休眠 | 闲置 15 分钟休眠，冷启动 30–60s（曾实测首请求 33.6s） |
 | Cron | `*/10 0-15 * * *`，约 496h/月，在免费额度内 |
 | AI | DeepSeek 中位 ~2.0–2.5s；L4 P95 3.39s |
@@ -190,14 +190,14 @@ psql "<External Database URL>" -f backup.sql      # 恢复前确认目标库
 | --- | --- | --- |
 | 存活 | Render 健康检查 `/api/health` | 失败自动重启 |
 | 业务 | players / prices / account | 发布后全 200 |
-| 数据 | `/api/debug/db`（§4.5.1） | 方言 postgresql、表非空 |
+| 数据 | `/api/debug/db`（§4.4） | 方言 postgresql、表非空 |
 | AI | `/api/analysis/1` 的 `source` | rule_fallback 属正常降级 |
 | 简报 | `generated_at` | 超过 30 分钟算异常 |
 | 平台 | Render Metrics / Logs | 5xx 明显升高即回滚 |
 
 免费档没有自定义告警，靠发布后人工检查 + Cron + Render 服务状态页。
 
-### 4.5.1 只读数据库自检
+### 4.4 只读数据库自检
 
 `GET /api/debug/db` 返回数据库方言、表清单与行数，只读，不含连接串与个人数据；`DEBUG_ENDPOINTS=0` 时返回 404。验收标准：方言 `postgresql`、players=16。
 
@@ -230,7 +230,7 @@ psql "<External Database URL>" -f backup.sql      # 恢复前确认目标库
 - [ ] schema 无未评估的变更；如有，先备份
 - [ ] 演示数据可重建（`bootstrap_demo_data.py`）
 - [ ] 私人注册账号未被重灌覆盖
-- [ ] 数据库未到期（免费档约 2026-11-23）
+- [ ] 数据库未到期（在 Render 控制台核对到期时间）
 
 ### D. 基础设施
 
@@ -287,7 +287,7 @@ psql "<External Database URL>" -f backup.sql      # 恢复前确认目标库
 | API 文档 | <https://playerstock-backend-mdlk.onrender.com/docs> |
 | 部署源 | 分支 `develop` + `render.yaml` |
 
-**已知限制**：冷启动 30–60 s；免费 Postgres 约 30 天到期；无灰度 / 自动备份 / 自定义告警；0.1 vCPU 不适合真实高并发。
+**已知限制**：冷启动 30–60 s；Postgres 到期时间以 Render 控制台为准；无灰度 / 自动备份 / 自定义告警；0.1 vCPU 不适合真实高并发。
 
 ---
 
@@ -330,7 +330,7 @@ Render 选 09:26 版本 Rollback → 部署成功 → `/api/health` 200 → 再�
 
 ### 9.1 待办
 
-- 免费 Postgres 到期前完成备份与迁移 / 续期。
+- 关注 Postgres 到期时间，到期前完成备份与迁移 / 续期。
 - 演示前重置演示数据并预热，避免冷启动与脏数据。
 - 验收结束后关闭 `DEBUG_ENDPOINTS`。
 

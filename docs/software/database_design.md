@@ -218,7 +218,7 @@ python scripts/bootstrap_demo_data.py
 2. **临时磁盘**：Render 免费实例的文件系统是临时的，**必须用 Postgres**，
    否则每次重新部署/休眠后数据归零；`app/main.py` 在 Render 上检测到 SQLite 会打 WARNING。
 
-**免费 Postgres 注意**：Render 免费库有约 30 天有效期（够答辩），到期前导出或升级；
+**Postgres 有效期**：最初用的是 30 天免费库，已续期 / 升级（2026-11-26 确认），到期时间以 Render 控制台为准；到期前导出或升级；
 连接串含密码，只能用 `sync: false` 在控制台填，绝不提交明文。
 
 **上线后验收清单**：

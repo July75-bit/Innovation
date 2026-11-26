@@ -554,19 +554,19 @@ erDiagram
 | TypeScript  | 49  | 6,412  |
 | CSS / HTML  | 7   | 2,052  |
 | 代码合计        | 190 | 34,575 |
-| Markdown 文档 | 76  | 9,449  |
+| Markdown 文档 | 76  | 9,596  |
 
   </div>
   <div class="flex flex-col gap-3">
     <div class="card" v-click><div class="accent small font-bold">模块</div><div class="small muted">前端 8 个页面、12 个组件；后端 11 个路由模块、8 个智能体模块、1 个定价引擎。</div></div>
-    <div class="dark-band small" v-click><b>AI 辅助</b><br>AI 帮忙写了部分测试和文档；交易事务、定价公式和接口契约由组员自己写、互相评审。</div>
+    <div class="dark-band small" v-click><b>AI 辅助</b><br>前端业务代码和原型由 AI 出初稿，约占代码的 39%，组员逐行复核修改；部分测试和文档也有 AI 参与。交易事务、定价公式和接口契约由组员编写、互相评审。</div>
   </div>
 </div>
 
 </div>
 
 <!--
-【15 秒】按文件类型统计，代码约三万四千行，文档约九千行。AI 帮我们写了部分测试和文档，交易、定价和接口等核心部分由组员编写并互相评审。
+【15 秒】按文件类型统计，代码约三万四千行，文档约九千行。前端代码和原型由 AI 出初稿，约占全部代码的百分之三十九，组员逐行复核过；部分测试和文档也用了 AI。交易、定价和接口这些核心部分由组员编写并互相评审。
 -->
 
 ---

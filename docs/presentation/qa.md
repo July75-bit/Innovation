@@ -100,10 +100,10 @@ SQLite 会**静默忽略** `FOR UPDATE`（编译出的 SQL 里干脆没有），
 **Q18 线上怎么部署的？数据会丢吗？**
 Render Blueprint 三个服务：前端 Static Site + 后端 Web Service + **Postgres 18**。免费实例没有持久盘，所以**必须**用 Postgres——TC-404 实测过：重新部署后端后，交易流水与价格点一条没丢。
 **当前线上数据（2026-11-14 重灌后）**：16 名选手 / 8 队 / 每人 11 个价格点（共 175 条）/ 12 轮；第 12 轮 Vitality vs Spirit 四人整队停牌（详情页显示「比赛中，暂停交易」）。
-已知限制：免费库 **2026-11-23 到期**；实例 15 分钟无流量休眠，冷启动约 1 分钟（演示前预热）。已验证：health / CORS / 买卖闭环 / 持久化 / 子路由刷新 / 无密钥可用（TC-401~406 全 ✅）。
+已知限制：数据库原为 30 天免费库，已续期 / 升级（2026-11-26 确认）；实例 15 分钟无流量休眠，冷启动约 1 分钟（演示前预热）。已验证：health / CORS / 买卖闭环 / 持久化 / 子路由刷新 / 无密钥可用（TC-401~406 全 ✅）。
 
-**Q26 免费 Postgres 11-23 到期，演示怎么办？**
-两条路：① Render 控制台续/升级（最稳）；② 演示前重灌到新库（`POST /api/debug/reseed?token=<RESEED_TOKEN>&rounds=12&seed=42` 或本地 External URL 跑 `bootstrap_demo_data.py`）。数据本身不依赖历史库——16 人 + 12 轮价格 10 秒可重建；重灌会保留注册账号、重置 demo 余额。（`deployment.md` §3.6/§9）
+**Q26 免费 Postgres 有 30 天期限，你们怎么处理？**
+已在 Render 控制台续期 / 升级（2026-11-26 确认）。万一以后库不可用，还有第二条路：建新库后重灌（`POST /api/debug/reseed?token=<RESEED_TOKEN>&rounds=12&seed=42` 或本地 External URL 跑 `bootstrap_demo_data.py`）。数据本身不依赖历史库——16 人 + 12 轮价格 10 秒可重建；重灌会保留注册账号、重置 demo 余额。（`deployment.md` §3.3/§9）
 
 **Q27 线上冷启动/休眠怎么处理？**
 免费实例 15 分钟无流量休眠，冷启动约 30–60 秒。我们加了 cron 每 10 分钟保活 + 前端慢加载提示与 GET 重试；演示前 15 分钟跑 `scripts/prewarm.py`，再留一份本地录屏兜底。（`deployment.md` §9、`scripts/prewarm.py`）
