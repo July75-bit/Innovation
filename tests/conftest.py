@@ -66,6 +66,16 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 @pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """限流计数是进程内全局状态：每条用例前后清空，免得前一条的登录失败/模型调用漏到下一条。"""
+    from app.core.rate_limit import limiter
+
+    limiter.clear()
+    yield
+    limiter.clear()
+
+
+@pytest.fixture(autouse=True)
 def _no_live_season_round(monkeypatch) -> None:
     """默认把"今天是不是比赛日"关掉，交易闸门只认手动 status。
 

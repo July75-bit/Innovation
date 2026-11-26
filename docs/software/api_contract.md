@@ -38,8 +38,12 @@
 | 404 | ENDPOINT_DISABLED | 调试接口已关闭（`DEBUG_ENDPOINTS=0`） |
 | 409 | USERNAME_TAKEN / USERNAME_RESERVED | 用户名已被注册 / 用户名是 `demo` |
 | 409 | RESEED_BUSY | 已有一次重灌在进行 |
-| 422 | VALIDATION_ERROR | Pydantic 校验失败（含数量不是正整数） |
+| 422 | VALIDATION_ERROR | Pydantic 校验失败（含数量不是正整数、数量超过 1000） |
 | 422 | INVALID_INPUT | 注册时用户名或密码不符合规则 |
+| 429 | TOO_MANY_ATTEMPTS | 同一用户名 10 分钟内输错密码 5 次，先锁 10 分钟 |
+| 429 | TOO_MANY_REQUESTS | 注册太频繁（全站每分钟 30 个） |
+
+AI 接口不会因为限流报错：全站模型调用超过每分钟额度（默认 60 次）时，直接返回规则版（`source=rule_fallback`），仍是 200。
 | 500 | INTERNAL_ERROR | 未预期异常 |
 
 `message` 必须是可以直接展示的中文，前端不做映射。

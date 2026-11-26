@@ -79,6 +79,7 @@ cd Innovation && git checkout develop && git rev-parse HEAD
 | `CORS_ORIGINS` | 前端 origin，英文逗号分隔，**不能带尾斜杠** |
 | `DEBUG_ENDPOINTS` | 验收期 `1`；验收结束改 `0` 并重新部署 |
 | `RESEED_TOKEN` | 随机串（`render.yaml` 用 `generateValue: true` 自动生成）；重灌（`/api/debug/reseed`）与赛后结算（`/api/prices/recalc`）都要带 `?token=`；未配置时两个接口 403，线上用 `.env.example` 示例值也会被拒 |
+| `LLM_CALLS_PER_MINUTE` / `LOGIN_MAX_FAILURES` / `REGISTER_PER_MINUTE` | 可不填，默认 60 / 5 / 30（0 = 不限）。模型超额自动走规则版；同一用户名输错 5 次锁 10 分钟；注册每分钟 30 个。计数在进程内存，单实例有效（`app/core/rate_limit.py`） |
 
 前端（Static Site → Environment，**构建期生效**）：
 

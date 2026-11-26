@@ -3,7 +3,7 @@
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《软件新技术创新实践课程 · 项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
 > **状态**：✅ 已具备（有产物 + 可验证）｜🟡 有但不完整｜❌ 缺
-> 最后核对：2026-11-26（本机后端 355 passed / 前端 186 passed / 覆盖率 98%，见 `test_report.md` §2）
+> 最后核对：2026-11-26（本机后端 366 passed / 前端 187 passed / 覆盖率 98%，见 `test_report.md` §2）
 
 ## 一、汇报第一部分：产品设计（8 分钟 / 40%）
 
@@ -78,7 +78,7 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 355 passed |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 366 passed |
 | 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 98% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 4 个 job | ✅ |

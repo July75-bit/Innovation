@@ -44,6 +44,14 @@ class Settings(BaseSettings):
     # 关掉后 /api/agent/traces 仍可用，只是没有新记录。
     agent_traces_enabled: bool = True
 
+    # ---------- 限流（见 app/core/rate_limit.py；0 = 不限） ----------
+    # 全站每分钟最多调用模型几次；超了自动走规则版（接口仍 200）
+    llm_calls_per_minute: int = 60
+    # 同一用户名 10 分钟内输错几次密码就先锁 10 分钟
+    login_max_failures: int = 5
+    # 全站每分钟最多注册几个账号
+    register_per_minute: int = 30
+
     # ---------- 交易规则（B） ----------
     initial_balance: int = 5000
     max_position_per_player: int = 50

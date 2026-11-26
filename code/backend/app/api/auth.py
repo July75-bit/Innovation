@@ -29,6 +29,7 @@ from app.api.deps import DEMO_NICKNAME, bearer_token, get_current_user, issue_to
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.errors import ApiError
+from app.core.rate_limit import LOGIN_WINDOW_SECONDS, REGISTER_KEY, limiter, login_key
 from app.core.security import hash_password, validate_password, validate_username, verify_password
 from app.core.time import utcnow
 from app.models import AuthToken, Position, Trade, User
@@ -71,6 +72,8 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> AuthRespon
     invalid = validate_username(name) or validate_password(body.password)
     if invalid:
         raise ApiError(invalid, status_code=422, code="INVALID_INPUT")
+    if not limiter.try_acquire(REGISTER_KEY, settings.register_per_minute, 60.0):
+        raise ApiError("注册太频繁，请过一分钟再试", status_code=429, code="TOO_MANY_REQUESTS")
     if name.lower() == DEMO_NICKNAME:
         raise ApiError(
             f"用户名 {DEMO_NICKNAME} 是公共演示账户，换一个名字",
@@ -105,11 +108,22 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> AuthRespon
 @router.post("/login", response_model=AuthResponse, summary="登录")
 def login(body: LoginRequest, db: Session = Depends(get_db)) -> AuthResponse:
     name = body.username.strip()
+    # 防暴力猜密码：同一用户名 10 分钟内输错 N 次先锁住（不管用户名存不存在，避免借此枚举账号）
+    fail_key = login_key(name)
+    max_failures = settings.login_max_failures
+    if max_failures > 0 and limiter.count(fail_key, LOGIN_WINDOW_SECONDS) >= max_failures:
+        raise ApiError(
+            "密码错误次数太多，请 10 分钟后再试",
+            status_code=429,
+            code="TOO_MANY_ATTEMPTS",
+        )
     user = _find_by_name(db, name)
     # 用户名不存在与密码错都是同一句提示 + 同一个 401：
     # 本地演示可以分开提示，但这里已经是真后端接口，不该用来枚举账号名
     if user is None or not verify_password(body.password, user.salt, user.password_hash):
+        limiter.record(fail_key, LOGIN_WINDOW_SECONDS)
         raise ApiError("用户名或密码不正确", status_code=401, code="INVALID_CREDENTIALS")
+    limiter.reset(fail_key)
     if user.password_hash is None:
         raise ApiError(
             "公共演示账户不支持密码登录，请直接访问（未登录即为公共账户）",

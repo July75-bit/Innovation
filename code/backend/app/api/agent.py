@@ -559,6 +559,17 @@ def agent_narrative(
         name=player.name, team=player.team or "", points=points, settings=settings
     )
     latency_ms = int((time.perf_counter() - started) * 1000)
+    if cached and cached.source == "llm" and source != "llm":
+        # 重新生成失败（超额度/模型挂了）：别用规则版盖掉已有的模型解读
+        return {
+            "player_id": player_id,
+            "ts": latest.ts.isoformat(),
+            "narrative": cached.narrative,
+            "source": cached.source,
+            "change_pct": round(change_pct, 2),
+            "big_move": is_big_move(change_pct),
+            "cached": True,
+        }
     try:
         if cached:
             cached.narrative, cached.source, cached.model = narrative, source, model

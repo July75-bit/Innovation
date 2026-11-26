@@ -13,13 +13,13 @@
 | 执行人 | D（王泽棠） |
 | 代码版本 | `develop` 分支第 3 天提交（含 B 的价格落库、C 的定价实现、A 的前端初版、D 的代码质量重构；`git log --oneline -1`） |
 | 环境 | 本地 Windows + conda `playerstock`（Python 3.13.14）；**2026-11-21 复测**为 DSH 运行时 Python 3.12.14；CI：GitHub Actions ubuntu-latest（Python 3.12） |
-| 自动化用例总数 | **355**（单元 300 / 集成 22 / 评测 33） |
-| 通过 / 失败 / 跳过 | **355 / 0 / 0**（单元 300 + 集成 22 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
+| 自动化用例总数 | **366**（单元 311 / 集成 22 / 评测 33） |
+| 通过 / 失败 / 跳过 | **366 / 0 / 0**（单元 311 + 集成 22 + 评测 33；CI 与本机 Windows 均全绿；原 BUG-03 编码问题已修，见 §9 BUG-10） |
 | 手工用例总数 | ✅ 已执行（T3-04/T4 浏览器证据 16 张，见 §2.5） |
 | 通过 / 失败 | 16 张证据截图全过 / 0 |
 | CI run（连续两次） | **#205**（commit `7d8a7e4`）与 **#206**（commit `daf928a`）：仓库健康 / 后端测试（pytest）/ 前端检查（eslint + vitest + build）**3 个 job 全部 completed successfully**（2026-11-21） |
 
-> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 355 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
+> 复跑说明（2026-10-25，B 核对；**当时 137 条，当前 366 条，以上表为准**）：当时总数由 **137** 条组成——C 的 `test_simulator.py`（+3，TC-106）、
 > `test_price_reason_traceability.py`（+4）、`test_prices_recalc.py`（+5，第 4 天 recalc 接口）、
 > B 的 `test_update_prices_script.py`（9 条）、D 的 `test_core_exceptions.py`（+7）、
 > C 的 `test_simulate_match_cli.py`（+2）、`test_pricing.py`（11 条）、
@@ -35,11 +35,11 @@
 
 ```text
 $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编码问题已修）
-355 passed, 6 deselected in 45.97s
+366 passed, 6 deselected in 53.44s
 # CI（ubuntu-latest）run #205 / #206（2026-11-21）连续两次 3 job 全绿；条数以本机实测为准
 ```
 
-> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **355**（单元 300 / 集成 22 / 评测 33；
+> 用例数演进：第 4 天 65 → 第 5 天 137 → 第 6 天守卫 39 条 → **366**（单元 311 / 集成 22 / 评测 33；
 > 含 auth 22+7、重灌端点 4、余额重建 2 等；`--collect-only` 分目录复核）。
 
 | 文件 | 用例数 | 通过 | 失败 | 跳过 | 备注 |
@@ -75,18 +75,18 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-11-26 复测（355 条用例）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-11-26 复测（366 条用例）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
-| **全部（app + core_engine）** | 1976 | 45 | **98%** |
+| **全部（app + core_engine）** | 2035 | 47 | **98%** |
 | 定价 `core_engine/pricing.py` | 118 | 0 | 100% |
 | 模拟器 `core_engine/simulator.py` | 58 | 0 | 100% |
 | 价格落库 `app/core/price_update.py` | 64 | 0 | 100% |
 | 交易规则 `app/core/rules.py` | 54 | 0 | 100% |
 | 模型 + 响应 schema | 331 | 1 | 99.7% |
 
-> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（1976 语句 / 45 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支、`agent.py` 等接口的降级分支，属可接受范围。
+> 结论：核心逻辑 **98% ≥ 课程要求的 60%**（2035 语句 / 47 未覆盖）；未覆盖主要是 `database.py` 的初始化/异常分支、`agent.py` 等接口的降级分支，属可接受范围。
 
 ### 2.4 前端构建 / 静态检查 / 单测（CI 前端 job 的等价本地复跑）
 
@@ -98,7 +98,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 | 安装依赖 | `npm ci` | ✅ `added 380 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **186 passed / 23 文件**（2026-11-26 本机；`format.spec.ts` 的 4 条是其中一部分） |
+| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **187 passed / 23 文件**（2026-11-26 本机；`format.spec.ts` 的 4 条是其中一部分） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
@@ -368,9 +368,9 @@ SAME balance=True total=True qty=True trades=True points=True
 
 ## 11. 结论
 
-- P0 缺陷：**0** 个（自动化层 **355** 条，CI 与本机全绿；浏览器证据见 §2.5，缺陷清单见 §9）
+- P0 缺陷：**0** 个（自动化层 **366** 条，CI 与本机全绿；浏览器证据见 §2.5，缺陷清单见 §9）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**355** 条自动化（单元 300 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **98%**（1976 语句 / 45 未覆盖，2026-11-26 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**366** 条自动化（单元 311 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **98%**（2035 语句 / 47 未覆盖，2026-11-26 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` §5 的 A–G 检查单是每次发布时逐项填写的模板；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **19 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 是历史产物。

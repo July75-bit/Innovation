@@ -189,6 +189,15 @@ def build_user_prompt(player_context: dict[str, Any]) -> str:
 
 # ---------- 默认客户端（标准库，无第三方依赖）----------
 
+def _llm_budget_ok(settings: Any = None) -> bool:
+    """全站模型调用额度（app/core/rate_limit.py）；拿不到限流模块时（单独跑 ai/）不限。"""
+    try:
+        from app.core.rate_limit import llm_budget_ok
+    except ImportError:
+        return True
+    return llm_budget_ok(settings if settings is not None else _load_settings())
+
+
 def _default_chat(
     user_prompt: str, *, settings: Any = None, system_prompt: str | None = None
 ) -> str:
@@ -205,6 +214,9 @@ def _default_chat(
     api_key = _api_key(settings)
     if not api_key:
         raise LLMOutputError("未配置 LLM_API_KEY")
+    if not _llm_budget_ok(settings):
+        # 和"模型挂了"走同一条路：调用方各自回落规则版，接口仍 200
+        raise LLMOutputError("模型调用太频繁（超过每分钟额度），本次用规则版")
 
     payload = {
         "model": _model(settings),

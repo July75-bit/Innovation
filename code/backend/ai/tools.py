@@ -18,7 +18,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Callable
 
-from ai.llm_agent import _api_key, _base_url, _model, _timeout
+from ai.llm_agent import _api_key, _base_url, _llm_budget_ok, _model, _timeout
 
 ToolExecutor = Callable[[dict[str, Any]], Any]
 
@@ -80,6 +80,8 @@ def _post(messages: list[dict[str, Any]], tools: list[dict[str, Any]], *, settin
     api_key = _api_key(settings)
     if not api_key:
         raise ToolLoopError("未配置 LLM_API_KEY")
+    if not _llm_budget_ok(settings):  # 每一轮都算一次调用；超额 → 调用方回落规则版
+        raise ToolLoopError("模型调用太频繁（超过每分钟额度）")
     payload = {
         "model": _model(settings),
         "temperature": 0,
