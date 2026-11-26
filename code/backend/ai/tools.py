@@ -88,7 +88,7 @@ def _post(messages: list[dict[str, Any]], tools: list[dict[str, Any]], *, settin
         "tool_choice": "auto",
     }
     req = urllib.request.Request(
-        _base_url(),
+        _base_url(settings),
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",

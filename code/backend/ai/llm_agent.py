@@ -116,8 +116,14 @@ def _timeout(settings: Any) -> float:
     return float(os.getenv("LLM_TIMEOUT_SECONDS", DEFAULT_TIMEOUT))
 
 
-def _base_url() -> str:
+def _base_url(settings: Any = None) -> str:
     """模型端点 URL，两种写法都接受。
+
+    读取顺序：`settings.llm_base_url` → 环境变量 `LLM_BASE_URL` → OpenAI 默认端点。
+    先看 settings 是因为本地把配置写在 `code/backend/.env` 时，pydantic-settings 只把值
+    填进 Settings 字段，不会写回 `os.environ`；只读环境变量的话，`.env` 里的 DeepSeek
+    地址会被忽略，请求带着 DeepSeek 的 key 打到 api.openai.com，然后静默回落规则版
+    （2026-11-26 复现）。
 
     - `https://host/openai/v1`                 → 自动补成 `.../v1/chat/completions`
     - `https://host/openai/v1/chat/completions` → 原样使用
@@ -126,7 +132,10 @@ def _base_url() -> str:
     而旧实现把它当完整 URL 直接 POST → 404 → 被静默回落成规则版，看起来像"配了没生效"。
     这里统一补齐，去掉一个只能靠记性避免的坑。顺带清掉粘贴带的引号/空格（见 `_clean_env`）。
     """
-    raw = (_clean_env(os.getenv("LLM_BASE_URL", "")) or DEFAULT_BASE_URL).rstrip("/")
+    configured = ""
+    if settings is not None and getattr(settings, "llm_base_url", ""):
+        configured = _clean_env(str(settings.llm_base_url))
+    raw = (configured or _clean_env(os.getenv("LLM_BASE_URL", "")) or DEFAULT_BASE_URL).rstrip("/")
     if not raw.endswith("/chat/completions"):
         raw = f"{raw}/chat/completions"
     return raw
@@ -201,7 +210,7 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
         ],
     }
     request = urllib.request.Request(
-        _base_url(),
+        _base_url(settings),
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",

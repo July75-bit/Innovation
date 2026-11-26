@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     # ---------- 大模型（D） ----------
     llm_provider: str = "openai"
     llm_model: str = "gpt-4o-mini"
+    # 端点 base（如 https://api.deepseek.com/v1）；留空时 ai/llm_agent.py 再读环境变量、最后用 OpenAI 默认。
+    # 必须是 Settings 字段：pydantic 读 .env 只填字段，不写 os.environ，不声明就读不到 .env 里的值。
+    llm_base_url: str = ""
     llm_api_key: str = ""
     llm_timeout_seconds: float = 20.0
 
