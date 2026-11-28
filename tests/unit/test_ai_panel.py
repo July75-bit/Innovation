@@ -85,3 +85,34 @@ def test_invalid_trader_output_falls_back_to_rules(monkeypatch):
     assert result["final"]["action"] in {"BUY", "SELL", "HOLD"}
     assert result["minutes"][-1]["role"] == "system"  # 前两位的发言保留，末尾说明已回落
     assert [m["role"] for m in result["minutes"][:2]] == ["analyst", "risk"]
+
+
+def test_risk_officer_sees_balance_and_limit(monkeypatch):
+    """风控的提问里要有余额、已持股数和单选手上限（2026-11-28 修，原先只给持仓）。"""
+    calls = _fake_model(
+        monkeypatch,
+        {
+            "analyst": "趋势上行。",
+            "risk": "余额充足，建议最多 5 股。",
+            "trader": '{"action": "BUY", "risk_level": "LOW", "reason": "按风控买 5 股。"}',
+        },
+    )
+    ctx = {**CONTEXT, "position": {"quantity": 3, "avg_cost": 110.0},
+           "account": {"balance": 4567.8, "position_limit": 50}}
+
+    panel.run_panel(ctx)
+
+    risk_prompt = calls[1]["prompt"]
+    assert "可用余额 4567.80 信用点" in risk_prompt
+    assert "已持有 3 股" in risk_prompt
+    assert "还能买 47 股" in risk_prompt
+    assert "最多够买 38 股" in risk_prompt  # 4567.8 // 120
+
+
+def test_without_account_says_balance_missing(monkeypatch):
+    calls = _fake_model(
+        monkeypatch,
+        {"analyst": "震荡。", "risk": "正常。", "trader": '{"action": "HOLD", "risk_level": "LOW", "reason": "观望。"}'},
+    )
+    panel.run_panel(CONTEXT)
+    assert "可用余额未提供" in calls[1]["prompt"]

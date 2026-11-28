@@ -404,3 +404,25 @@ def test_ai_context_position_is_per_user(client, monkeypatch) -> None:
         assert client.get(path).status_code == 200
 
     assert seen == [3.0, 5.0, 0.0, 3.0, 5.0, 0.0]  # A 看到 3、B 看到 5、未登录（演示账户）看到 0
+
+
+def test_panel_passes_current_user_balance(client, monkeypatch) -> None:
+    """/api/agent/panel 把当前用户的余额交给三个角色；未登录用演示账户余额。"""
+    reg = client.post("/api/auth/register", json={"username": "panel_user", "password": "Passw0rd123"})
+    auth = {"Authorization": f"Bearer {reg.json()['token']}"}
+    assert client.post("/api/trades/buy", json={"player_id": 1, "quantity": 2}, headers=auth).status_code == 200
+    mine = client.get("/api/account", headers=auth).json()["balance"]
+
+    seen: list[dict] = []
+
+    def _fake_panel(context, **_kw):  # noqa: ANN001
+        seen.append(context["account"])
+        return {"source": "rule_fallback", "minutes": [], "final": {"action": "HOLD", "risk_level": "LOW",
+                "reason": "测试", "disclaimer": "测试"}}
+
+    monkeypatch.setattr(agent_api, "run_panel", _fake_panel)
+    assert client.get("/api/agent/panel/1", headers=auth).status_code == 200
+    assert client.get("/api/agent/panel/1").status_code == 200
+
+    assert seen[0] == {"balance": round(float(mine), 2), "position_limit": 50}
+    assert seen[1]["balance"] == 5000.0  # 演示账户

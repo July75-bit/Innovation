@@ -92,7 +92,7 @@
 | 功能 | 接口函数（`code/backend/app/api/agent.py`） | 核心逻辑 |
 | --- | --- | --- |
 | 决策卡（建议 + 股数 + 止损） | `agent_decision()` :130 | `analyze()` 出建议 → `code/backend/ai/decision.py:46` `build_plan()` 按风险等级算股数（10% / 6% / 3% 余额）和止损线（−12% / −9% / −6%） |
-| 三人协作 | `agent_panel()` :487 | `code/backend/ai/panel.py:83` `run_panel()`：分析师 → 风控 → 交易员依次调用模型，角色提示在 `ROLE_PROMPTS`（:28），结论取自交易员 |
+| 三人协作 | `agent_panel()` :487 | `code/backend/ai/panel.py:83` `run_panel()`：分析师 → 风控 → 交易员依次调用模型，角色提示在 `ROLE_PROMPTS`（:28），结论取自交易员；三人共用的资料由 `_account_line()` 写入当前用户的余额、已持股数和 50 股上限 |
 | 工具调用 | `agent_tools()` :606（3 个工具的执行函数写在这个函数里） | `code/backend/ai/tools.py:109` `run_tool_loop()`：工具清单 `TOOL_SPECS`（:27），模型决定调用哪个，最多 3 轮 |
 | 价格解读 | `agent_narrative()` :511 | `code/backend/ai/narrate.py:51` `generate_narrative()`，按价格点缓存在 price_narratives 表 |
 | 今日简报 | `agent_brief()` :359 | `_brief_items()` :300 生成三条要点；`_clean_brief_summary()` :264 清洗模型输出；缓存 10 分钟 |

@@ -519,6 +519,9 @@ def agent_panel(
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
     context = _safe_context(player, db, user)
+    # 风控要判断资金占用与仓位上限：把当前用户的余额和上限一并交给三个角色（2026-11-28 修）
+    balance, _held = _account_state(db, user, player_id)
+    context["account"] = {"balance": round(balance, 2), "position_limit": settings.max_position_per_player}
     started = time.perf_counter()
     result = run_panel(context, settings=settings)
     latency_ms = int((time.perf_counter() - started) * 1000)

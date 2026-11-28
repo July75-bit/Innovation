@@ -80,13 +80,36 @@ def _clip(text: str, limit: int = 220) -> str:
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+def _account_line(context: dict[str, Any]) -> str:
+    """给三个角色的账户信息（2026-11-28 修：此前只给持仓、不给余额，风控无法判断资金占用）。
+
+    `account` 由接口层按**当前用户**填入：余额、单选手上限。
+    没有 account（命令行 / 单测直接调用）时只写持仓，并明确说明余额未提供。
+    """
+    position = context.get("position") or {}
+    held = int(float(position.get("quantity") or 0))
+    avg_cost = float(position.get("avg_cost") or 0)
+    holding = f"已持有 {held} 股" + (f"（均价 {avg_cost:.2f}）" if held else "")
+    account = context.get("account")
+    if not account:
+        return f"账户：{holding}；可用余额未提供"
+    balance = float(account.get("balance") or 0)
+    limit = int(account.get("position_limit") or 0)
+    price = float(context.get("current_price") or 0)
+    parts = [f"账户：可用余额 {balance:.2f} 信用点", holding]
+    if limit:
+        parts.append(f"单选手上限 {limit} 股，还能买 {max(0, limit - held)} 股")
+    parts.append(f"按现价余额最多够买 {int(balance // price) if price > 0 else 0} 股")
+    return "；".join(parts)
+
+
 def run_panel(context: dict[str, Any], *, settings: Any = None) -> dict[str, Any]:
     """跑三角色流水线；返回 {source, minutes:[...], final:{...}}，失败自动降级。"""
     digest = (
         f"选手：{context.get('name')}（{context.get('team')}，评分 {context.get('rating')}）\n"
         f"现价 {context.get('current_price')}，近期变动 {context.get('change_pct')}%\n"
         f"最近价格点：{context.get('recent_prices')}\n"
-        f"持仓：{context.get('position')}\n"
+        f"{_account_line(context)}\n"
     )
 
     minutes: list[dict[str, str]] = []

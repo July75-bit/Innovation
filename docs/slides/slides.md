@@ -719,12 +719,12 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.6 软件质量</div>
 
-# 软件质量：377 条后端测试，覆盖率 97%
+# 软件质量：380 条后端测试，覆盖率 97%
 
 <div class="body">
 
 <div class="stats" v-click>
-  <div><div class="num">377</div><div class="what">后端测试</div><div class="how">单元 322 · 集成 22 · 评测 33</div></div>
+  <div><div class="num">380</div><div class="what">后端测试</div><div class="how">单元 325 · 集成 22 · 评测 33</div></div>
   <div><div class="num">187</div><div class="what">前端测试</div><div class="how">Vitest，23 个测试文件</div></div>
   <div><div class="num accent">97<small>%</small></div><div class="what">核心代码覆盖率</div><div class="how">app + core_engine<br>含智能体模块为 95%</div></div>
   <div><div class="num">4</div><div class="what">CI 检查</div><div class="how">冲突标记 · 后端<br>前端 · 交付物</div></div>
