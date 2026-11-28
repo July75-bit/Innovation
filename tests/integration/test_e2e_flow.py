@@ -213,7 +213,8 @@ def test_ai_analysis_always_returns_valid_shape(client, monkeypatch) -> None:
         raise TimeoutError("read timeout=20s")
 
     monkeypatch.setattr(ai.llm_agent, "_default_chat", timeout_llm)
-    fallback = _get_json(client, f"/api/analysis/{SEED_ZYWOO}")
+    # 建议在 120 秒内共享缓存，换了模型行为要用 refresh=true 强制重算
+    fallback = _get_json(client, f"/api/analysis/{SEED_ZYWOO}?refresh=true")
     _assert_valid_advice(fallback, SEED_ZYWOO)
     assert fallback["source"] == "rule_fallback"
 

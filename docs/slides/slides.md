@@ -538,7 +538,7 @@ flowchart LR
 
 **问**：建议买几股怎么算的？
 
-答：纯算术：低、中、高风险分别最多用余额的 10%、6%、3%，再受余额和 50 股上限约束；止损线分别比现价低 12%、9%、6%。
+答：纯算术：目标持仓 =（余额 + 已持仓市值）× 风险比例（低 10%、中 6%、高 3%），建议买入 = 目标 − 已持股数，再受余额和 50 股上限约束；止损线分别比现价低 12%、9%、6%。
 -->
 
 ---
@@ -719,13 +719,13 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.6 软件质量</div>
 
-# 软件质量：380 条后端测试，覆盖率 97%
+# 软件质量：382 条后端测试，覆盖率 97%
 
 <div class="body">
 
 <div class="stats" v-click>
-  <div><div class="num">380</div><div class="what">后端测试</div><div class="how">单元 325 · 集成 22 · 评测 33</div></div>
-  <div><div class="num">187</div><div class="what">前端测试</div><div class="how">Vitest，23 个测试文件</div></div>
+  <div><div class="num">382</div><div class="what">后端测试</div><div class="how">单元 327 · 集成 22 · 评测 33</div></div>
+  <div><div class="num">191</div><div class="what">前端测试</div><div class="how">Vitest，23 个测试文件</div></div>
   <div><div class="num accent">97<small>%</small></div><div class="what">核心代码覆盖率</div><div class="how">app + core_engine<br>含智能体模块为 95%</div></div>
   <div><div class="num">4</div><div class="what">CI 检查</div><div class="how">冲突标记 · 后端<br>前端 · 交付物</div></div>
 </div>

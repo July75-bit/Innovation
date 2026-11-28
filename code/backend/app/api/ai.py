@@ -38,11 +38,12 @@ from typing import Literal
 
 from ai.context import build_player_context, pct_change
 from ai.llm_agent import analyze
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.advice_cache import shared_advice
 from app.core.database import get_db
 from app.core.errors import ApiError
 from app.models import Player, User
@@ -96,6 +97,7 @@ def get_analysis(  # noqa: B008 —— FastAPI 依赖注入惯用法
     player_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    refresh: bool = Query(default=False, description="忽略共享建议缓存重新分析"),
 ) -> AnalysisAdvice:
     """返回某位选手的 AI 建议；AI 故障一律 200 + `source=rule_fallback`。
 
@@ -114,6 +116,8 @@ def get_analysis(  # noqa: B008 —— FastAPI 依赖注入惯用法
         logger.warning("AI 上下文组装失败，使用最小上下文：player_id=%s %s: %s", player_id, type(exc).__name__, exc)
         context = _minimal_context(player)
 
-    advice = analyze(context)
+    # 与决策卡 /api/agent/decision 共用同一条建议（2026-11-28 修：以前两边各问一次模型，
+    # 页面显示「买入」而「若采纳可买」按另一次的「持有」算成 0 股）
+    advice = shared_advice(user.user_id, context, lambda: analyze(context), refresh=refresh)
     advice["player_id"] = player_id  # 以请求路径为准，防止上下文/模型回填错 id
     return AnalysisAdvice(**advice)

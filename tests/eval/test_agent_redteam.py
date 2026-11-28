@@ -65,7 +65,10 @@ def test_redteam_api_has_no_free_text_input() -> None:
             params = operation.get("parameters", [])
             names = {p["name"] for p in params}
             # Authorization 头只用来认出当前用户（取他的持仓），不会拼进给模型的提问
-            assert names <= {"player_id", "Authorization"}, f"{method} {path} 出现额外参数：{names}"
+            # refresh 只是布尔开关（忽略共享缓存重算），同样不会进入给模型的提问
+            assert names <= {"player_id", "Authorization", "refresh"}, f"{method} {path} 出现额外参数：{names}"
+            refresh = [p for p in params if p["name"] == "refresh"]
+            assert all(p["schema"].get("type") == "boolean" for p in refresh), "refresh 只能是布尔值"
             header = [p for p in params if p["name"] == "Authorization"]
             assert all(p["in"] == "header" for p in header), "Authorization 只能是请求头"
 

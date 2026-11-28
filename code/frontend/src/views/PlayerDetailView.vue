@@ -284,10 +284,18 @@ async function refreshAnalysis() {
   if (analysisLoading.value || invalidId.value) return
   const token = requestToken // 沿用当前页面的令牌：切走选手后丢弃本次响应
   analysisLoading.value = true
-  api.invalidate?.(`analysis:${playerId.value}`) // 用户主动"重新分析"：必须拿新结果，不吃缓存
   try {
-    const a = await api.getAnalysis(playerId.value)
+    // 用户主动"重新分析"：后端强制重算（refresh=true），并让决策卡跟着取同一条新建议，
+    // 否则上面显示新的「买入/持有」，下面「若采纳可买 N 股」还是按旧建议算的
+    const a = await api.getAnalysis(playerId.value, true)
     if (token === requestToken) analysis.value = a
+    api.invalidate?.(`decision:${playerId.value}`)
+    const d = await api.getAgentDecision(playerId.value)
+    if (token === requestToken) {
+      plan.value = d.plan
+      snapshot.value = d.snapshot
+      traceId.value = d.trace_id
+    }
   } catch {
     if (token === requestToken) analysis.value = null
   } finally {
@@ -350,7 +358,7 @@ const factsLabel = computed(() => {
 })
 
 const factsQuantity = computed(() => {
-  if (analysis.value?.action === 'HOLD') return snapshot.value?.held_quantity ?? 0
+  if (analysis.value?.action === 'HOLD') return held.value || snapshot.value?.held_quantity || 0
   return plan.value?.suggested_quantity ?? 0
 })
 

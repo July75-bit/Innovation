@@ -398,7 +398,10 @@ def test_ai_context_position_is_per_user(client, monkeypatch) -> None:
     monkeypatch.setattr(ai_api, "analyze", _capture)
     monkeypatch.setattr(agent_api, "analyze", _capture)
 
+    from app.core import advice_cache
+
     for path in ("/api/analysis/1", "/api/agent/decision/1"):
+        advice_cache.clear()  # 两个接口共用建议缓存；这里要分别验证各自取的持仓
         assert client.get(path, headers=headers["ctx_a"]).status_code == 200
         assert client.get(path, headers=headers["ctx_b"]).status_code == 200
         assert client.get(path).status_code == 200
@@ -426,3 +429,47 @@ def test_panel_passes_current_user_balance(client, monkeypatch) -> None:
 
     assert seen[0] == {"balance": round(float(mine), 2), "position_limit": 50}
     assert seen[1]["balance"] == 5000.0  # 演示账户
+
+
+
+def test_analysis_and_decision_share_one_advice(client, monkeypatch) -> None:
+    """建议卡和决策卡用同一条建议（2026-11-28 修）：页面上的「买入」和「若采纳可买」不再各说各的。"""
+    import app.api.ai as ai_api
+
+    replies = iter(["BUY", "HOLD", "SELL"])
+    calls: list[str] = []
+
+    def _fake(context, **_kw):  # noqa: ANN001
+        action = next(replies)
+        calls.append(action)
+        return {"player_id": 1, "action": action, "reason": "测试", "risk_level": "MEDIUM",
+                "source": "llm", "disclaimer": "测试"}
+
+    monkeypatch.setattr(ai_api, "analyze", _fake)
+    monkeypatch.setattr(agent_api, "analyze", _fake)
+
+    shown = client.get("/api/analysis/1").json()
+    decision = client.get("/api/agent/decision/1").json()
+    assert shown["action"] == decision["advice"]["action"] == "BUY"
+    assert decision["plan"]["suggested_quantity"] > 0  # 按「买入」算出的股数
+    assert calls == ["BUY"]  # 只问了一次模型
+
+    refreshed = client.get("/api/analysis/1?refresh=true").json()
+    assert refreshed["action"] == "HOLD"
+    assert client.get("/api/agent/decision/1").json()["advice"]["action"] == "HOLD"
+
+
+def test_buy_plan_tops_up_when_already_holding() -> None:
+    """已持有时按目标仓位补足，不再一律 0 股（2026-11-28 修）。"""
+    from ai.decision import build_plan
+
+    advice = {"action": "BUY", "risk_level": "LOW", "source": "llm"}  # 目标 = 总资产 × 10%
+    fresh = build_plan(advice, balance=5000.0, current_price=100.0, held_quantity=0)
+    assert fresh["suggested_quantity"] == 5  # 5000 × 10% ÷ 100
+
+    partial = build_plan(advice, balance=4800.0, current_price=100.0, held_quantity=2)
+    assert partial["suggested_quantity"] == 3  # 目标 5 股，已持 2 股 → 再买 3
+
+    full = build_plan(advice, balance=4500.0, current_price=100.0, held_quantity=5)
+    assert full["suggested_quantity"] == 0
+    assert any("目标仓位" in line for line in full["rationale"])

@@ -42,6 +42,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.advice_cache import shared_advice
 from app.core.errors import ApiError
 from app.core.trace_hash import GENESIS, WRITE_LOCK, compute_hash, verify_chain
 from app.models import AgentTrace, DecisionLog, Player, Position, PriceHistory, PriceNarrative, User
@@ -147,6 +148,7 @@ def agent_decision(
     player_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    refresh: bool = Query(default=False, description="忽略共享建议缓存重新分析"),
 ) -> dict:
     player = db.get(Player, player_id)
     if player is None:
@@ -154,7 +156,8 @@ def agent_decision(
 
     context = _safe_context(player, db, user)
     started = time.perf_counter()
-    advice = analyze(context)
+    # 与 /api/analysis 共用同一条建议：页面上的「买入/持有」和「若采纳可买 N 股」出自同一次分析
+    advice = shared_advice(user.user_id, context, lambda: analyze(context), refresh=refresh)
     latency_ms = int((time.perf_counter() - started) * 1000)
 
     balance, held = _account_state(db, user, player_id)

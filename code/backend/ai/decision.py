@@ -11,7 +11,7 @@
 
 算法要点（都可口头解释，不需要背参数）：
 - **仓位**：按风险等级给"可动用的钱"上限（LOW 10% / MEDIUM 6% / HIGH 3%），
-  再叠加三条硬约束：余额、单选手 50 股上限、持仓集中度（已持有就不再建议加）；
+  目标仓位 =（余额 + 已持仓市值）× 该比例，建议买入 = 目标 − 已持，再受余额和单选手 50 股上限约束；
 - **止损**：按风险等级给回撤线（LOW 12% / MEDIUM 9% / HIGH 6%），向下取整到分；
 - **置信度**：来源（模型 > 规则）× 评分档位 × 波动惩罚，压到 0.35–0.92 区间，
   并**明确标注这是启发式**，不是概率校准过的模型输出。
@@ -71,17 +71,22 @@ def build_plan(
     rationale: list[str] = []
 
     if action == "BUY" and current_price > 0:
+        # 目标仓位 = (余额 + 已持仓市值) × 风险预算；建议买入 = 目标 − 已持，再受余额和 50 股上限约束。
+        # 2026-11-28 修：以前只要已持有就强制 0 股，买过一次后「若采纳可买」永远是 0。
         affordable = int(balance // current_price) if balance > 0 else 0
-        risk_budget = int((balance * budget_ratio) // current_price)
+        total_value = max(balance, 0) + held_quantity * current_price
+        target = int((total_value * budget_ratio) // current_price)
         room = max(0, position_limit - held_quantity)
-        quantity = max(0, min(affordable, risk_budget, room))
-        rationale.append(f"可用 {balance:.2f} 币 × 风险预算 {int(budget_ratio * 100)}% → {risk_budget} 股")
-        rationale.append(f"单选手上限 {position_limit} 股、已持 {held_quantity} 股 → 还能买 {room} 股")
-        if held_quantity > 0:
-            rationale.append("已持有该选手，本建议只做提示、不追加")
-            quantity = min(quantity, 0)
+        quantity = max(0, min(target - held_quantity, affordable, room))
+        rationale.append(
+            f"总资产约 {total_value:.2f} × 风险预算 {int(budget_ratio * 100)}% → 目标持有 {target} 股"
+        )
+        rationale.append(f"已持 {held_quantity} 股，单选手上限 {position_limit} 股 → 还能买 {room} 股")
         if quantity == 0:
-            rationale.append("按当前约束不建议开新仓（余额/上限/已持有）")
+            if held_quantity >= target and held_quantity > 0:
+                rationale.append("已达到按风险预算的目标仓位，不建议再加")
+            else:
+                rationale.append("按当前约束不建议买入（余额或持仓上限不足）")
     elif action == "SELL":
         quantity = int(held_quantity)
         rationale.append(f"当前持有 {held_quantity} 股，卖出建议按全部可卖计算")

@@ -68,11 +68,14 @@ def pytest_configure(config: pytest.Config) -> None:
 @pytest.fixture(autouse=True)
 def _fresh_rate_limits():
     """限流计数是进程内全局状态：每条用例前后清空，免得前一条的登录失败/模型调用漏到下一条。"""
+    from app.core import advice_cache
     from app.core.rate_limit import limiter
 
     limiter.clear()
+    advice_cache.clear()
     yield
     limiter.clear()
+    advice_cache.clear()
 
 
 @pytest.fixture(autouse=True)

@@ -137,12 +137,18 @@ export const api = {
    * 成功返回裸对象（无 success 字段）；AI 故障一律 200 + source='rule_fallback'，
    * 所以这里不需要为 AI 失败写额外分支，只有 404（PLAYER_NOT_FOUND）走错误体。
    */
-  getAnalysis: (playerId: number): Promise<AnalysisResponse> =>
+  getAnalysis: (playerId: number, refresh = false): Promise<AnalysisResponse> =>
     USE_MOCK
       ? fromMock(() => mockApi.getAnalysis(playerId))
-      : cached(`analysis:${playerId}`, 120_000, () =>
-          request<AnalysisResponse>(`/api/analysis/${playerId}`),
-        ),
+      : refresh
+        ? // 「重新分析」：后端忽略共享建议缓存重算，前端缓存也换成新结果
+          request<AnalysisResponse>(`/api/analysis/${playerId}?refresh=true`).then((a) => {
+            invalidateCache(`analysis:${playerId}`)
+            return cached(`analysis:${playerId}`, 120_000, async () => a)
+          })
+        : cached(`analysis:${playerId}`, 120_000, () =>
+            request<AnalysisResponse>(`/api/analysis/${playerId}`),
+          ),
 
   /* ---------------- 第 7 轮：私人账号 ---------------- */
 

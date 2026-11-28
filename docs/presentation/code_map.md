@@ -76,7 +76,7 @@
 
 | 步骤 | 位置 | 函数 | 做什么 |
 | --- | --- | --- | --- |
-| 接口 | `code/backend/app/api/ai.py:95` | `get_analysis()` | 取当前用户 → 准备资料 → 调 `analyze()` |
+| 接口 | `code/backend/app/api/ai.py:95` | `get_analysis()` | 取当前用户 → 准备资料 → `shared_advice()` 调 `analyze()`；同一用户、选手、价格、持仓 120 秒内与决策卡共用一条建议，`?refresh=true` 强制重算 |
 | 准备资料 | `code/backend/ai/context.py:229` | `build_player_context()` | 查选手、最近 10 个价格点、**当前用户**的持仓；查库失败用种子数据 |
 | 查持仓 | `context.py:150` | `_read_position()` | 按用户编号取持仓（未登录取演示账户） |
 | 总入口 | `code/backend/ai/llm_agent.py:342` | `analyze()` | 没密钥直接规则版；否则问模型，出任何错都回落规则版 |
@@ -91,7 +91,7 @@
 
 | 功能 | 接口函数（`code/backend/app/api/agent.py`） | 核心逻辑 |
 | --- | --- | --- |
-| 决策卡（建议 + 股数 + 止损） | `agent_decision()` :130 | `analyze()` 出建议 → `code/backend/ai/decision.py:46` `build_plan()` 按风险等级算股数（10% / 6% / 3% 余额）和止损线（−12% / −9% / −6%） |
+| 决策卡（建议 + 股数 + 止损） | `agent_decision()` | `shared_advice()`（`code/backend/app/core/advice_cache.py`）取与建议卡同一条建议 → `code/backend/ai/decision.py` `build_plan()`：目标持仓 =（余额 + 已持仓市值）× 10% / 6% / 3%，建议买入 = 目标 − 已持，再受余额和 50 股上限约束；止损线 −12% / −9% / −6% |
 | 三人协作 | `agent_panel()` :487 | `code/backend/ai/panel.py:83` `run_panel()`：分析师 → 风控 → 交易员依次调用模型，角色提示在 `ROLE_PROMPTS`（:28），结论取自交易员；三人共用的资料由 `_account_line()` 写入当前用户的余额、已持股数和 50 股上限 |
 | 工具调用 | `agent_tools()` :606（3 个工具的执行函数写在这个函数里） | `code/backend/ai/tools.py:109` `run_tool_loop()`：工具清单 `TOOL_SPECS`（:27），模型决定调用哪个，最多 3 轮 |
 | 价格解读 | `agent_narrative()` :511 | `code/backend/ai/narrate.py:51` `generate_narrative()`，按价格点缓存在 price_narratives 表 |
