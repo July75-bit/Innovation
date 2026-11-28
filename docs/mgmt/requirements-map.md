@@ -3,7 +3,7 @@
 > **用途**：课程手册与汇报要求里点名的每一项，在这里都能查到「写在哪、证据是什么、谁负责」。
 > 对照来源：`ACMWDevHubPPT`《软件新技术创新实践课程 · 项目汇报内容》（汇报 15 分钟）、SWIEP.pdf 六天任务、作业一/二/三。
 > **状态**：✅ 已具备（有产物 + 可验证）｜🟡 有但不完整｜❌ 缺
-> 最后核对：2026-11-26（本机后端 366 passed / 前端 187 passed / 覆盖率 98%，见 `test_report.md` §2）
+> 最后核对：2026-11-26（本机后端 377 passed / 前端 187 passed / 覆盖率 97%，见 `test_report.md` §2）
 
 ## 一、汇报第一部分：产品设计（8 分钟 / 40%）
 
@@ -48,7 +48,7 @@
 | 3.5.2 基础设施图 | `architecture.md` §6、`deployment.md` §6 | Render 三服务拓扑 | ✅ |
 | **3.5.3 AI/算法说明 + 文献** | `ai_agent_prompt.md` §7.5（2026-11-07 补）、`pricing_model.md` | 模型选择理由、接口规范链接、定价公式来源 | ✅ |
 | 3.5.4 数据库设计（ER 图） | `database_design.md` §2 | erDiagram + 9 张表字段口径 | ✅ |
-| 3.5.5 接口设计（表格） | `api_contract.md` §3/§4 | 29 个接口清单 + 错误码表 + 关键示例 | ✅ |
+| 3.5.5 接口设计（表格） | `api_contract.md` §3/§4 | 30 个接口清单 + 错误码表 + 关键示例 | ✅ |
 | **3.5.6 前端设计** | `architecture.md` §3.5（2026-11-07 补） | 框架/路由/状态/图表/样式/响应式/无障碍 8 项决策 | ✅ |
 | **3.6 软件质量（3.6.1 + 3.6.2）** | `software/CodeReview.md` §1/§2 | 日志 15 处 + 异常五层 + PEP8/Pylint/复杂度 + 3 张截图 | ✅ |
 | **3.7 代码统计（AI 比例/模块数/行数）** | `CodeReview.md` §3 | 代码 190 文件 34575 行（2026-11-26）、AI 初稿约 39%（前端业务代码 + 原型，可复算） | ✅ |
@@ -60,7 +60,7 @@
 | 单元测试核心逻辑（pytest） | `tests/unit` 24 个文件 | ✅ |
 | 等价类 + 边界值为至少一个输入字段设计用例 | `test_plan.md` §4.0（TC-001~012）+ §7 方法对照 | ✅ |
 | 场景法为一条关键业务流程写 E2E | `tests/integration/test_e2e_flow.py` | ✅ |
-| 覆盖率 ≥60% | `test_report.md` §2.3 → 98% | ✅ |
+| 覆盖率 ≥60% | `test_report.md` §2.3 → 97% | ✅ |
 | **≥10 个测试用例文档（七列模板：编号/名称/前置条件/步骤/输入/预期/优先级）** | `test_plan.md` **§4.0**（2026-11-14 补，12 条） | ✅ |
 | 测试代码与文档提交到 `tests/` | `tests/unit` + `tests/integration` | ✅ |
 | **缺陷修复使用 GitHub Issues / BugTracker Project** | **BUG-01~14 已逐条建成 Issue #22–#35 并全部关闭**（`bug` + `P0/P1/P2` 标签齐全） | ✅ 已完成（2026-11-14 核实） |
@@ -78,8 +78,8 @@
 | 要求 | 落点 | 状态 |
 | --- | --- | --- |
 | 可运行作品 + 公网地址 | Render 三服务（`deployment.md` §6） | ✅ |
-| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 366 passed |
-| 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 98% |
+| 测试用例文档 + 测试代码（`tests/`） | `test_plan.md`、`test_report.md`、`tests/` 26 文件 | ✅ 377 passed |
+| 覆盖率 ≥60% | `test_report.md` §2.3 | ✅ 97% |
 | 代码评审（模板 + 记录） | `code_review_template.md`、`docs/reviews/` 1 份 | 🟡 仅 1 份记录 |
 | CI 可复现 | `.github/workflows/ci.yml` 4 个 job | ✅ |
 | 合规声明 / 用户手册 / 部署说明 | `compliance.md`、`user_manual.md`、`deployment.md` | ✅ |

@@ -11,7 +11,7 @@
 | `code/frontend/src/views/` | 8 个页面（市场、详情、持仓、流水、赛程、个人、登录、404） | A |
 | `code/frontend/src/components/` | 页面里的部件（交易面板、价格曲线、资产曲线等） | A |
 | `code/frontend/src/api/` | 网页调用后端接口的代码 | A |
-| `code/backend/app/api/` | 29 个接口，每个文件一组 | B |
+| `code/backend/app/api/` | 30 个接口，每个文件一组 | B |
 | `code/backend/app/core/` | 交易规则、密码、限流、写价格、自动结算等公共逻辑 | B |
 | `code/backend/app/models/` | 9 张数据库表的定义 | B |
 | `code/core_engine/` | 定价公式、模拟比赛、赛程 | C |
@@ -97,7 +97,8 @@
 | 价格解读 | `agent_narrative()` :511 | `code/backend/ai/narrate.py:51` `generate_narrative()`，按价格点缓存在 price_narratives 表 |
 | 今日简报 | `agent_brief()` :359 | `_brief_items()` :300 生成三条要点；`_clean_brief_summary()` :264 清洗模型输出；缓存 10 分钟 |
 | 采纳 / 忽略 | `record_decision()` :442、`decision_stats()` :464 | 写 decision_logs 表，统计采纳率 |
-| 调用审计 | `_write_trace()` :62、`agent_traces()` :406 | 每次调用写 agent_traces 表；写失败不影响页面 |
+| 调用审计 | `_write_trace()` :62、`agent_traces()`、`verify_traces()` | 每次调用写 agent_traces 表并串入哈希链；`GET /api/agent/traces/verify` 校验链是否完整；写失败不影响页面 |
+| 审计哈希链 | `code/backend/app/core/trace_hash.py` | `compute_hash()` 算 SHA-256(本条内容 + 上一条哈希)；`verify_chain()` 逐条重算，报告第一处断开 |
 | 前端调用 | `code/frontend/src/views/PlayerDetailView.vue` | `loadCore()` :163（先并行取选手信息和价格，再并行取建议、决策卡、价格解读）、`loadPanel()` :109、`loadTools()` :133、`recordChoice()` :260 |
 
 **被问「AI 坏了怎么办」**：看 `llm_agent.py` 的 `analyze()`，`try ... except Exception` 里回落 `_fallback()`；三人协作和工具调用也各有 `except` 回落规则版。测试在 `tests/unit/test_ai_fallback.py`、`test_ai_panel.py`、`test_ai_tools_loop.py`。
@@ -158,6 +159,7 @@
 | 智能体评测、红队 | `eval/test_agent_properties.py`、`eval/test_agent_redteam.py` |
 | 登录、多用户 | `unit/test_api_auth.py`、`integration/test_auth_multiuser.py` |
 | 限流、数量上限 | `unit/test_rate_limit_and_caps.py` |
+| 审计哈希链 | `unit/test_trace_hash_chain.py` |
 | 端到端流程 | `integration/test_e2e_flow.py` |
 
 现场跑：仓库根目录执行 `python -m pytest tests/unit/test_trades_rule.py -q`（换成任意文件）。

@@ -12,7 +12,7 @@
 | **ruff 0.17.4** | 静态分析 + 风格（兼容 pycodestyle E/W、"真实缺陷"规则 F、圈复杂度 C901） | `pyproject.toml` `[tool.ruff.lint]`，`line-length = 100` | ✅ 四条命令分档卡门禁 |
 | **Pylint 4.1.3** | 语义分析（未定义变量、隐蔽的编码错误） | 命令行，范围为 `core_engine` + `app/core` | ⬜ 只做体检（结果进报告） |
 | **complexipy 8.3.0** | 认知复杂度（与 VSCode 插件同内核） | 命令行 | ⬜ 只做体检 |
-| **coverage.py** | 覆盖率 | `--source=app,core_engine` | ⬜ 本地复跑（98%） |
+| **coverage.py** | 覆盖率 | `--source=app,core_engine` | ⬜ 本地复跑（97%） |
 | **ESLint + oxlint + vue-tsc** | 前端规范与类型 | `code/frontend` | ✅ CI 前端 job |
 
 ## 2. 扫描指标（重构前 → 现状）
@@ -23,8 +23,8 @@
 | 重复率 | 16.09%（dup-report 口径） | 12.52% | — |
 | 业务代码最高圈复杂度 | 11（`scripts/simulate_match.py`） | **7** | 7 |
 | 认知复杂度（complexipy） | 未统计 | 最大 27 / 均值 3.31（>15 全在 `scripts/`） | 同左 |
-| pytest | 65 passed / 5 skipped | 81 passed / 0 skipped | **366 passed / 0 skipped** |
-| 覆盖率 | 未统计 | 91% | **98%**（2035 语句 / 47 未覆盖） |
+| pytest | 65 passed / 5 skipped | 81 passed / 0 skipped | **377 passed / 0 skipped** |
+| 覆盖率 | 未统计 | 91% | **97%**（2207 语句 / 56 未覆盖） |
 
 ## 3. Top 5 最严重问题与重构方式
 
@@ -48,7 +48,7 @@ ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests   # 业�
 ruff check --select E4,E7,E9,F,C901 scripts                               # 脚本（阈值 12）
 ruff check --statistics .                                                  # 全仓统计（72 项）
 pylint code/core_engine code/backend/app/core                              # 9.74/10
-coverage run --source=app,core_engine -m pytest && coverage report -m      # 98%
+coverage run --source=app,core_engine -m pytest && coverage report -m      # 97%
 ```
 
 ## 5. 截图
@@ -56,7 +56,7 @@ coverage run --source=app,core_engine -m pytest && coverage report -m      # 98%
 - `docs/acceptance/evidence/17-code-quality-scan.png`：静态扫描 + 测试 + CI 门禁
 - `docs/acceptance/evidence/18-quality-pylint-pep8.png`：Pylint 评分 / PEP8（仅 25 条 E501）/ 格式化体检
 - `docs/acceptance/evidence/19-complexity-stats.png`：认知复杂度 + 代码统计
-- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（366 条 / 98%）
+- `docs/acceptance/evidence/37-pytest-coverage.png`：回归 + 覆盖率（377 条 / 97%）
 
 ## 6. 已知不足（如实交代）
 

@@ -400,7 +400,7 @@ fonts:
 ```mermaid {scale: 0.78}
 flowchart LR
   B["浏览器 · Vue 3"] --> S["Render 静态站"]
-  S --> A["FastAPI · 29 个接口"]
+  S --> A["FastAPI · 30 个接口"]
   A --> R["交易规则"]
   A --> C["定价引擎"]
   A --> I["智能体（只读）"]
@@ -510,7 +510,7 @@ flowchart LR
   <div><div class="n">02</div><div class="t">分析</div><div class="d">三个角色依次分析，或由模型调用 3 个只读工具</div></div>
   <div><div class="n">03</div><div class="t">检查</div><div class="d">只接受 6 个固定字段和规定取值</div></div>
   <div><div class="n">04</div><div class="t">算股数</div><div class="d">按余额和风险等级计算建议股数与止损线</div></div>
-  <div class="hl"><div class="n">05</div><div class="t">记录</div><div class="d">每次调用写入审计；用户的采纳或忽略同样记录</div></div>
+  <div class="hl"><div class="n">05</div><div class="t">记录</div><div class="d">调用写入审计并串成哈希链，采纳也记录</div></div>
 </div>
 
 <div class="g g-7-5 rule-top" v-click>
@@ -556,7 +556,7 @@ flowchart LR
 <tbody>
 <tr><td>任务拆解</td><td class="mono">app/api/agent.py<br>ai/panel.py</td><td>固定五步：准备资料 → 分析 → 检查 → 算股数 → 记录；分析按分析师、风控、交易员顺序进行</td></tr>
 <tr><td>工具调用</td><td class="mono">ai/tools.py</td><td>3 个只读工具：查价格历史、查当前用户账户、计算建议股数；由模型决定调用哪个，最多 3 轮，每次调用的参数和结果写入审计</td></tr>
-<tr><td>记忆</td><td class="mono">ai/context.py<br>app/models/agent.py</td><td>每次请求从数据库读取最新行情和当前用户持仓；保存调用记录、采纳记录，价格解读按价格点缓存，简报缓存 10 分钟；不做跨会话的对话记忆</td></tr>
+<tr><td>记忆</td><td class="mono">ai/context.py<br>app/core/trace_hash.py</td><td>每次请求从数据库读取最新行情和当前用户持仓；调用记录和采纳记录存表，调用记录用 SHA-256 哈希链防篡改；不做跨会话的对话记忆</td></tr>
 <tr><td>护栏</td><td class="mono">ai/llm_agent.py<br>app/core/rate_limit.py</td><td>输入：只接收选手编号，提示词按白名单取 11 个字段；输出：6 个字段与取值校验、理由截断到 200 字、清洗 JSON；运行：20 秒超时、每分钟 60 次额度、失败改用规则版</td></tr>
 <tr><td>专业知识</td><td class="mono">ai/prompts.py<br>ai/fallback.py</td><td>提示词要求只依据给定数据作答并引用具体数值；规则版的涨跌与表现分阈值；数据库中带原因的价格历史</td></tr>
 </tbody>
@@ -569,7 +569,7 @@ flowchart LR
 </div>
 
 <!--
-【25 秒】这一页按智能体的五个基本组成来对照我们的实现。任务拆解是固定的五步流程，加上三个角色的顺序分工；工具调用有三个只读工具，由模型决定调用哪个，最多三轮；记忆方面，每次请求从数据库读取最新数据，调用和采纳都有记录，不做跨会话的对话记忆；护栏覆盖输入、输出和运行三个环节；专业知识来自提示词、规则版阈值和带原因的价格历史。数据量小，没有建立向量检索和知识图谱。
+【25 秒】这一页按智能体的五个基本组成来对照我们的实现。任务拆解是固定的五步流程，加上三个角色的顺序分工；工具调用有三个只读工具，由模型决定调用哪个，最多三轮；记忆方面，每次请求从数据库读取最新数据，调用和采纳都有记录，调用记录用哈希链串起来防篡改，不做跨会话的对话记忆；护栏覆盖输入、输出和运行三个环节；专业知识来自提示词、规则版阈值和带原因的价格历史。数据量小，没有建立向量检索和知识图谱。
 
 **【可能被问】**
 
@@ -580,6 +580,10 @@ flowchart LR
 **问**：为什么没有长期记忆？
 
 答：每次建议只需要这位选手的当前行情和当前用户的持仓，这些每次都从数据库实时读取，比记忆更准确。历史上的每次调用和用户的采纳、忽略都存在审计表里，可以回查，但不会再喂给模型。
+
+**问**：审计记录怎么防篡改？
+
+答：每条调用记录写入时，把它的内容和上一条记录的哈希一起做 SHA-256，存成本条的哈希，记录一条接一条串成链。改动任何一条内容，它的哈希就对不上；删掉中间一条，下一条就接不上。GET /api/agent/traces/verify 会从头重算，报告第一处断开的位置。它能发现篡改，但不能阻止能直接改库的人整条重算，这需要把最新哈希另存到库外，我们没有做。
 
 **问**：为什么不做 RAG 或知识图谱？
 
@@ -679,7 +683,7 @@ flowchart LR
 </div>
 
 <div class="g g-1-1 rule-top" v-click>
-  <div class="text"><span class="label">怎么看　</span>GET 表示读取数据，POST 表示提交操作；路径最后的数字是选手编号。共 29 个接口：行情 3、交易与账户 7、账号 5、智能体 9、运维 5。</div>
+  <div class="text"><span class="label">怎么看　</span>GET 表示读取数据，POST 表示提交操作；路径最后的数字是选手编号。共 30 个接口：行情 3、交易与账户 7、账号 5、智能体 10、运维 5。</div>
   <div class="text"><span class="label">前端　</span>8 个页面；价格曲线用 SVG 绘制；颜色和间距统一定义，深色、浅色主题共用一份代码。</div>
 </div>
 
@@ -694,9 +698,9 @@ flowchart LR
 
 答：页面负责显示，接口负责提供数据和执行操作。一个页面通常会调用几个接口，比如详情页同时调用选手信息、价格历史和智能体建议三个接口。
 
-**问**：29 个接口分别有哪些？
+**问**：30 个接口分别有哪些？
 
-答：行情 3 个（选手列表、选手详情、价格历史），交易与账户 7 个（买入、卖出、持仓、流水、账户、资产曲线、重建余额），账号 5 个（注册、登录、当前身份、退出、删号），智能体 9 个，运维 5 个（健康检查、数据库自检、日志、重灌数据、赛后结算）。完整列表可在在线接口文档 playerstock-backend-mdlk.onrender.com/docs 查看并直接试用。
+答：行情 3 个（选手列表、选手详情、价格历史），交易与账户 7 个（买入、卖出、持仓、流水、账户、资产曲线、重建余额），账号 5 个（注册、登录、当前身份、退出、删号），智能体 10 个，运维 5 个（健康检查、数据库自检、日志、重灌数据、赛后结算）。完整列表可在在线接口文档 playerstock-backend-mdlk.onrender.com/docs 查看并直接试用。
 
 **问**：出错时接口返回什么？
 
@@ -715,14 +719,14 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.6 软件质量</div>
 
-# 软件质量：366 条后端测试，覆盖率 98%
+# 软件质量：377 条后端测试，覆盖率 97%
 
 <div class="body">
 
 <div class="stats" v-click>
-  <div><div class="num">366</div><div class="what">后端测试</div><div class="how">单元 311 · 集成 22 · 评测 33</div></div>
+  <div><div class="num">377</div><div class="what">后端测试</div><div class="how">单元 322 · 集成 22 · 评测 33</div></div>
   <div><div class="num">187</div><div class="what">前端测试</div><div class="how">Vitest，23 个测试文件</div></div>
-  <div><div class="num accent">98<small>%</small></div><div class="what">核心代码覆盖率</div><div class="how">app + core_engine<br>含智能体模块为 95%</div></div>
+  <div><div class="num accent">97<small>%</small></div><div class="what">核心代码覆盖率</div><div class="how">app + core_engine<br>含智能体模块为 95%</div></div>
   <div><div class="num">4</div><div class="what">CI 检查</div><div class="how">冲突标记 · 后端<br>前端 · 交付物</div></div>
 </div>
 
@@ -744,9 +748,9 @@ flowchart LR
 
 **【可能被问】**
 
-**问**：98% 为什么不算智能体？
+**问**：97% 为什么不算智能体？
 
-答：98% 统计的是交易和定价的代码；智能体有一部分要真的联网调用模型，离线测不到，单独算。全部算上是 95%，两个数字我们都公开。
+答：97% 统计的是交易和定价的代码；智能体有一部分要真的联网调用模型，离线测不到，单独算。全部算上是 95%，两个数字我们都公开。
 
 **问**：剩下没覆盖的是什么？
 
@@ -918,5 +922,5 @@ flowchart LR
 
 先给结论，再给一个数字或例子，30 秒内说完；没做到的直接说没做到和原因，不要编。
 
-最容易被追问的三点：多智能体是同一个模型三个身份；98% 覆盖率不含智能体，全算是 95%；AI 初稿约占 39%，每行都看过。
+最容易被追问的三点：多智能体是同一个模型三个身份；97% 覆盖率不含智能体，全算是 95%；AI 初稿约占 39%，每行都看过。
 -->

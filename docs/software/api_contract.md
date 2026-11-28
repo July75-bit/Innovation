@@ -75,14 +75,15 @@ AI 接口不会因为限流报错：全站模型调用超过每分钟额度（�
 | 20 | POST | /api/account/rebuild | 把当前账户恢复到初始余额并清空自己的持仓与流水（需 `?confirm=true`） |
 | 21 | GET | /api/agent/decision/{player_id} | 决策卡：6 字段建议 + 建议股数 / 止损 / 置信度 + trace_id |
 | 22 | GET | /api/agent/brief | 市场简报（缓存 10 分钟；`?refresh=true` 强制刷新） |
-| 23 | GET | /api/agent/traces | 智能体调用审计记录（只读） |
+| 23 | GET | /api/agent/traces | 智能体调用审计记录（只读；每条带 `prev_hash` / `record_hash`） |
+| 23.1 | GET | /api/agent/traces/verify | 重算审计哈希链，返回 `ok`、校验条数、旧记录数；断开时返回 `broken_at` 与原因 |
 | 24 | POST | /api/agent/decisions | 记录用户对建议的采纳 / 忽略 |
 | 25 | GET | /api/agent/decisions/stats | 采纳率统计 |
 | 26 | GET | /api/agent/panel/{player_id} | 多角色分析：分析师 → 风控 → 交易员 |
 | 27 | GET | /api/agent/narrative/{player_id} | 价格变化的文字归因 |
 | 28 | GET | /api/agent/tools/{player_id} | 工具调用演示（模型自选只读工具，最多 3 轮） |
 
-> 共 29 个接口（上表 28 行，5.1 单列）。完整参数与响应以线上 Swagger `/docs` 为准。
+> 共 30 个接口（上表 28 行，5.1、23.1 单列）。完整参数与响应以线上 Swagger `/docs` 为准。
 
 ## 4. 关键示例
 

@@ -153,7 +153,7 @@ erDiagram
 
 | 表 | 主要字段 | 用途 |
 | --- | --- | --- |
-| `agent_traces` | trace_id、mode、player_id、source、model、latency_ms、fallback_reason、input_digest、output_json | 每次智能体调用一行 |
+| `agent_traces` | trace_id、mode、player_id、source、model、latency_ms、fallback_reason、input_digest、output_json、prev_hash、record_hash | 每次智能体调用一行；`record_hash` = SHA-256(本条内容 + 上一条 `record_hash`)，串成哈希链，改动或删除可由 `GET /api/agent/traces/verify` 发现 |
 | `decision_logs` | decision_id、user_id、player_id、advice_action、advice_source、decision、trace_id、note | 用户采纳 / 忽略建议的记录 |
 | `price_narratives` | narrative_id、player_id、ts、narrative、source、model；(player_id, ts) UNIQUE | 价格点的文字归因缓存 |
 
@@ -336,6 +336,6 @@ CREATE INDEX ix_trades_user_created ON trades (user_id, created_at);
 `price_history(player_id, ts)` 索引均已实际生成。
 
 **最新复核（2026-11-21）**：按本节命令重新生成 `code/backend/playerstock.db` 后，结果为
-**9 张表、9 条索引**（最初 5 张业务表之外，新增 `auth_tokens` / `agent_traces` / `decision_logs` / `price_narratives`）、
+**9 张表、10 条索引**（含 2026-11-28 新增的 `agent_traces.record_hash`）（最初 5 张业务表之外，新增 `auth_tokens` / `agent_traces` / `decision_logs` / `price_narratives`）、
 `players=16`（8 队 × 2）、`price_history=175`。表结构只在「账号体系」「智能体审计」两次迭代中**增量加表**，
 既有列未改，所以第 2 天的并发加固（§3.1）与后续接口都无需数据迁移。
