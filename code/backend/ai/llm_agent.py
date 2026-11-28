@@ -169,6 +169,27 @@ def _fmt_position(position: Any) -> str:
     return f"持有 {quantity} 股，买入均价 {position.get('avg_cost', 0)}"
 
 
+def _fmt_account(ctx: dict[str, Any]) -> str:
+    """账户资金（2026-11-28 加：此前建议卡只看持仓不看余额，判断风险时不知道钱够不够）。
+
+    `account` 由接口层按当前用户填入（余额、单选手上限）；没有时明确写「未提供」。
+    """
+    account = ctx.get("account")
+    if not isinstance(account, dict):
+        return "（未提供）"
+    balance = float(account.get("balance") or 0)
+    limit = int(account.get("position_limit") or 0)
+    position = ctx.get("position") if isinstance(ctx.get("position"), dict) else {}
+    held = int(float(position.get("quantity") or 0))
+    price = float(ctx.get("current_price") or 0)
+    parts = [f"可用余额 {balance:.2f} 信用点"]
+    if limit:
+        parts.append(f"单选手上限 {limit} 股，还能买 {max(0, limit - held)} 股")
+    if price > 0:
+        parts.append(f"按现价最多够买 {int(balance // price)} 股")
+    return "；".join(parts)
+
+
 def build_user_prompt(player_context: dict[str, Any]) -> str:
     ctx = player_context or {}
     values = _SafeDict(
@@ -183,6 +204,7 @@ def build_user_prompt(player_context: dict[str, Any]) -> str:
         recent_prices=_fmt_prices(ctx.get("recent_prices")),
         recent_reasons="；".join(ctx.get("recent_reasons") or []) or "（无）",
         position=_fmt_position(ctx.get("position")),
+        account=_fmt_account(ctx),
     )
     return USER_PROMPT_TEMPLATE.format_map(values)
 

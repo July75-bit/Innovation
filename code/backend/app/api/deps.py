@@ -104,6 +104,14 @@ def get_current_user(
     return user
 
 
+def account_info(user: User) -> dict[str, float | int]:
+    """交给智能体的账户资金：当前用户余额 + 单选手持仓上限（建议卡、决策卡、三人协作共用）。"""
+    return {
+        "balance": round(float(user.balance or 0), 2),
+        "position_limit": int(settings.max_position_per_player),
+    }
+
+
 def issue_token(db: Session, user: User) -> tuple[str, datetime]:
     """发一枚不透明令牌（原文只在这一次返回里出现，库里只存 SHA-256）。"""
     raw, token_hash = new_token()

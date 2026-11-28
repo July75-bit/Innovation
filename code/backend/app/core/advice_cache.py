@@ -4,7 +4,7 @@
 `/api/agent/decision/{id}`（显示「若采纳可买 N 股」）。两个接口以前各自问一次模型，
 两次回答可能不一样——页面写着「买入」，下面却是按「持有」算出的 0 股。
 
-**做法**：按「用户 + 选手 + 现价 + 持仓数」缓存建议 120 秒，两个接口取同一条；
+**做法**：按「用户 + 选手 + 现价 + 持仓数 + 余额」缓存建议 120 秒，两个接口取同一条；
 价格或持仓一变，键就变，自然重新分析。用户点「重新分析」时传 refresh 强制重算。
 顺带省掉一半的模型调用。进程内缓存，单实例部署够用。
 """
@@ -28,6 +28,7 @@ def _key(user_id: int, context: dict[str, Any]) -> tuple:
         context.get("player_id"),
         str(context.get("current_price")),
         float(position.get("quantity") or 0),
+        str((context.get("account") or {}).get("balance")),  # 余额变了也重新分析
     )
 
 

@@ -39,7 +39,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import account_info, get_current_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.advice_cache import shared_advice
@@ -122,7 +122,13 @@ def _account_state(db: Session, user: User, player_id: int) -> tuple[float, int]
 
 
 def _safe_context(player: Player, db: Session, user: User) -> dict[str, Any]:
-    """资料袋里的"持仓"按当前用户取（2026-11-26 修，原先不分用户）。"""
+    """资料袋：持仓按当前用户取（2026-11-26 修），并带上余额与仓位上限（2026-11-28 修）。"""
+    context = _player_context(player, db, user)
+    context["account"] = account_info(user)
+    return context
+
+
+def _player_context(player: Player, db: Session, user: User) -> dict[str, Any]:
     try:
         return build_player_context(player.player_id, db=db, user_id=user.user_id)
     except Exception as exc:  # noqa: BLE001
@@ -522,9 +528,7 @@ def agent_panel(
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
     context = _safe_context(player, db, user)
-    # 风控要判断资金占用与仓位上限：把当前用户的余额和上限一并交给三个角色（2026-11-28 修）
-    balance, _held = _account_state(db, user, player_id)
-    context["account"] = {"balance": round(balance, 2), "position_limit": settings.max_position_per_player}
+    # 余额与仓位上限已由 _safe_context 放进 context["account"]，风控据此判断资金占用
     started = time.perf_counter()
     result = run_panel(context, settings=settings)
     latency_ms = int((time.perf_counter() - started) * 1000)

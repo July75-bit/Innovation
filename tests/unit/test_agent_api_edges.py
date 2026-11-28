@@ -473,3 +473,34 @@ def test_buy_plan_tops_up_when_already_holding() -> None:
     full = build_plan(advice, balance=4500.0, current_price=100.0, held_quantity=5)
     assert full["suggested_quantity"] == 0
     assert any("目标仓位" in line for line in full["rationale"])
+
+
+def test_analysis_prompt_includes_balance(client, monkeypatch) -> None:
+    """建议卡给模型的提问里有当前用户的余额和仓位上限（2026-11-28 补）。"""
+    import ai.llm_agent as llm
+    import app.api.ai as ai_api
+
+    from ai.llm_agent import build_user_prompt
+
+    reg = client.post("/api/auth/register", json={"username": "card_user", "password": "Passw0rd123"})
+    auth = {"Authorization": f"Bearer {reg.json()['token']}"}
+    assert client.post("/api/trades/buy", json={"player_id": 1, "quantity": 4}, headers=auth).status_code == 200
+    balance = float(client.get("/api/account", headers=auth).json()["balance"])
+
+    prompts: list[str] = []
+
+    def _capture(context, **_kw):  # noqa: ANN001
+        prompts.append(build_user_prompt(context))
+        return llm._fallback(context)
+
+    monkeypatch.setattr(ai_api, "analyze", _capture)
+    assert client.get("/api/analysis/1", headers=auth).status_code == 200
+
+    assert f"可用余额 {balance:.2f} 信用点" in prompts[0]
+    assert "还能买 46 股" in prompts[0]  # 50 − 已持 4
+
+
+def test_prompt_without_account_says_not_provided() -> None:
+    from ai.llm_agent import build_user_prompt
+
+    assert "账户资金：（未提供）" in build_user_prompt({"player_id": 1, "current_price": 100})

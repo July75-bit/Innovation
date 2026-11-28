@@ -80,7 +80,7 @@
 | 准备资料 | `code/backend/ai/context.py:229` | `build_player_context()` | 查选手、最近 10 个价格点、**当前用户**的持仓；查库失败用种子数据 |
 | 查持仓 | `context.py:150` | `_read_position()` | 按用户编号取持仓（未登录取演示账户） |
 | 总入口 | `code/backend/ai/llm_agent.py:342` | `analyze()` | 没密钥直接规则版；否则问模型，出任何错都回落规则版 |
-| 拼提问 | `llm_agent.py:172` | `build_user_prompt()` | 按白名单取 11 个字段拼成中文提问 |
+| 拼提问 | `llm_agent.py` | `build_user_prompt()`、`_fmt_account()` | 按白名单取 12 个字段拼成中文提问，含当前用户余额、还能买几股 |
 | 调模型 | `llm_agent.py:201` | `_default_chat()` | 用标准库发请求给 DeepSeek，20 秒超时；先检查每分钟额度 |
 | 检查回答 | `llm_agent.py:293` | `_parse_and_validate()` | 取出 JSON，动作只能买/卖/持有，风险只能低/中/高，理由不能空 |
 | 截断理由 | `llm_agent.py:312` | `_truncate_reason()` | 超过 200 字在句号处截断 |

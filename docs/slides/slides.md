@@ -557,7 +557,7 @@ flowchart LR
 <tr><td>任务拆解</td><td class="mono">app/api/agent.py<br>ai/panel.py</td><td>固定五步：准备资料 → 分析 → 检查 → 算股数 → 记录；分析按分析师、风控、交易员顺序进行</td></tr>
 <tr><td>工具调用</td><td class="mono">ai/tools.py</td><td>3 个只读工具：查价格历史、查当前用户账户、计算建议股数；由模型决定调用哪个，最多 3 轮，每次调用的参数和结果写入审计</td></tr>
 <tr><td>记忆</td><td class="mono">ai/context.py<br>app/core/trace_hash.py</td><td>每次请求从数据库读取最新行情和当前用户持仓；调用记录和采纳记录存表，调用记录用 SHA-256 哈希链防篡改；不做跨会话的对话记忆</td></tr>
-<tr><td>护栏</td><td class="mono">ai/llm_agent.py<br>app/core/rate_limit.py</td><td>输入：只接收选手编号，提示词按白名单取 11 个字段；输出：6 个字段与取值校验、理由截断到 200 字、清洗 JSON；运行：20 秒超时、每分钟 60 次额度、失败改用规则版</td></tr>
+<tr><td>护栏</td><td class="mono">ai/llm_agent.py<br>app/core/rate_limit.py</td><td>输入：只接收选手编号，提示词按白名单取 12 个字段；输出：6 个字段与取值校验、理由截断到 200 字、清洗 JSON；运行：20 秒超时、每分钟 60 次额度、失败改用规则版</td></tr>
 <tr><td>专业知识</td><td class="mono">ai/prompts.py<br>ai/fallback.py</td><td>提示词要求只依据给定数据作答并引用具体数值；规则版的涨跌与表现分阈值；数据库中带原因的价格历史</td></tr>
 </tbody>
 </table>
@@ -591,7 +591,7 @@ flowchart LR
 
 **问**：护栏怎么防止提示词注入？
 
-答：接口只接收选手编号，没有可以写字的入口；提示词按白名单只取 11 个字段，不含口令和其他用户的数据；模型输出必须通过 6 个字段和取值校验，否则改用规则版。红队测试 11 条都通过了。
+答：接口只接收选手编号，没有可以写字的入口；提示词按白名单只取 12 个字段，不含口令和其他用户的数据；模型输出必须通过 6 个字段和取值校验，否则改用规则版。红队测试 11 条都通过了。
 
 **问**：模型被人反复调用怎么办？
 
@@ -719,12 +719,12 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.6 软件质量</div>
 
-# 软件质量：382 条后端测试，覆盖率 97%
+# 软件质量：384 条后端测试，覆盖率 97%
 
 <div class="body">
 
 <div class="stats" v-click>
-  <div><div class="num">382</div><div class="what">后端测试</div><div class="how">单元 327 · 集成 22 · 评测 33</div></div>
+  <div><div class="num">384</div><div class="what">后端测试</div><div class="how">单元 329 · 集成 22 · 评测 33</div></div>
   <div><div class="num">191</div><div class="what">前端测试</div><div class="how">Vitest，23 个测试文件</div></div>
   <div><div class="num accent">97<small>%</small></div><div class="what">核心代码覆盖率</div><div class="how">app + core_engine<br>含智能体模块为 95%</div></div>
   <div><div class="num">4</div><div class="what">CI 检查</div><div class="how">冲突标记 · 后端<br>前端 · 交付物</div></div>

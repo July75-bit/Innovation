@@ -42,7 +42,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import account_info, get_current_user
 from app.core.advice_cache import shared_advice
 from app.core.database import get_db
 from app.core.errors import ApiError
@@ -115,6 +115,7 @@ def get_analysis(  # noqa: B008 —— FastAPI 依赖注入惯用法
     except Exception as exc:  # noqa: BLE001 —— 上下文失败属于 AI 侧故障，仍要 200 + 规则版
         logger.warning("AI 上下文组装失败，使用最小上下文：player_id=%s %s: %s", player_id, type(exc).__name__, exc)
         context = _minimal_context(player)
+    context["account"] = account_info(user)  # 余额与仓位上限也交给模型（2026-11-28）
 
     # 与决策卡 /api/agent/decision 共用同一条建议（2026-11-28 修：以前两边各问一次模型，
     # 页面显示「买入」而「若采纳可买」按另一次的「持有」算成 0 股）
