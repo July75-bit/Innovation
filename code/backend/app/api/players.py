@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.auto_settle import settle_now
 from app.core.database import get_db
 from app.core.errors import ApiError
 from app.models import Player, PriceHistory
@@ -49,7 +50,10 @@ def _to_summary(player: Player) -> PlayerSummary:
 
 
 @router.get("", response_model=list[PlayerSummary], summary="市场选手列表")
-def list_players(db: Session = Depends(get_db)) -> list[PlayerSummary]:
+def list_players(
+    db: Session = Depends(get_db),
+    _settle: None = Depends(settle_now),
+) -> list[PlayerSummary]:
     """16 名选手无分页，按 player_id 升序。"""
     players = db.scalars(select(Player).order_by(Player.player_id)).all()
     return [_to_summary(player) for player in players]

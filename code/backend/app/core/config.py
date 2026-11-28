@@ -40,6 +40,19 @@ class Settings(BaseSettings):
     # 同一口令也保护 `POST /api/prices/recalc`。默认留空 = 两个运维接口都禁用
     # （仓库是公开的，写死的默认值等于没有口令）；校验逻辑见 app/core/ops_auth.py。
     reseed_token: str = ""
+    # ---------- 惰性自动结算（免费档没有 cron → 读接口顺路补算，见 app/core/auto_settle.py） ----------
+    # 总开关：默认关闭（测试/本机行为零变化）；线上 render.yaml 设 AUTO_SETTLE=1。
+    auto_settle: bool = False
+    # 复现链参数：与 scripts/simulate_match.py / bootstrap 一致，改任何一项 = 换剧本
+    auto_settle_seed: int = 42
+    auto_settle_window: int = 5
+    auto_settle_warmup: int = 3
+    # 赛季首日（第 1 轮的比赛日，UTC）；与 data/match_schedule.json / demo_schedule.py 同源
+    auto_settle_start_date: str = "2026-11-01"
+    # 演示用"日期覆盖"（YYYY-MM-DD）：设成明天即可当场看到补算；线上务必留空
+    auto_settle_as_of: str = ""
+    # 两次检查的最小间隔（秒）：避免热点接口每次都去扫 max(ts)
+    auto_settle_min_interval: int = 300
     # 智能体审计：是否把每次智能体调用写进 agent_traces（写失败也不影响响应）。
     # 关掉后 /api/agent/traces 仍可用，只是没有新记录。
     agent_traces_enabled: bool = True

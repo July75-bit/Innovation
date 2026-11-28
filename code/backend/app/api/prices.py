@@ -27,6 +27,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.auto_settle import settle_now
 from app.core.database import get_db
 from app.core.demo_schedule import DEMO_SCHEDULE
 from app.core.errors import ApiError
@@ -57,7 +58,9 @@ def _round_ts(played_at: date) -> datetime:
     summary="选手价格历史（升序，空数组不 404）",
 )
 def get_price_history(
-    player_id: int, db: Session = Depends(get_db)
+    player_id: int,
+    db: Session = Depends(get_db),
+    _settle: None = Depends(settle_now),
 ) -> PriceHistoryResponse:
     if db.get(Player, player_id) is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
