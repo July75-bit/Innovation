@@ -58,6 +58,32 @@ services:
     #   mountPath: /var/data
     #   sizeGB: 1
 
+  # ---------------- 每日价格自动结算（2026-11-28 方案 A） ----------------
+  # 修复"价格历史停在 bootstrap 批次、不随时间更新"：每天跑一次 scripts/settle_round.py，
+  # 把"已到期但没落库"的轮次用固定 seed 重放生成 (score, S)，再 POST /api/prices/recalc 补结算。
+  # 幂等三重保险：脚本从"库内最新 ts"续跑 + recalc 按 (player_id, 比赛日) 去重 + 同 seed 可复现，
+  # 所以 cron 重跑、停机多日后补跑都安全。第 29 轮起对阵循环（core_engine.schedule 取模），永不过季。
+  # 口令：fromService 引用后端生成的 RESEED_TOKEN，明文不进仓库（控制台看不到脚本里的值）。
+  - type: cron
+    name: playerstock-price-settle
+    runtime: python
+    plan: free
+    region: singapore
+    # 每天 UTC 00:20（北京 08:20）跑一次：轮次日期按 UTC 零点计，0 点刚过即"结算当天轮次"。
+    # 选在巡检（*/10 0-15 UTC）时间窗内，此时后端通常是热的；万一在睡，脚本自己等冷启动（<=150s）。
+    schedule: "20 0 * * *"
+    buildCommand: echo "settle 脚本只用标准库 + core_engine，无需构建"
+    startCommand: python scripts/settle_round.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.6"
+      - key: BACKEND_BASE_URL
+        value: https://playerstock-backend-mdlk.onrender.com
+      - key: RESEED_TOKEN
+        fromService:
+          type: web
+          name: playerstock-backend
+          envVarKey: RESEED_TOKEN
   # ---------------- 智能体定时巡检（第 8 轮） ----------------
   # 定时让智能体"自己上班"（频率见下方 schedule）：拉行情 → 标出需要关注的标的 → 刷新今日简报（写审计表）。
   # 只调用只读接口 + 简报刷新，不下单、不碰余额。

@@ -62,3 +62,39 @@ describe('PriceChart（T4-02 每点 reason 展示）', () => {
     expect(items[2]!.text()).toContain('表现下滑，价格下跌 4.55%')
   })
 })
+
+describe('PriceChart 显示窗口（只保留最新 10 个日历天）', () => {
+  /** 造 n 个连续日期的点（UTC 零点），起始日可指定 */
+  function daily(from: string, n: number): PricePoint[] {
+    return Array.from({ length: n }, (_, i) => {
+      const day = new Date(Date.parse(`${from}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)
+      return { ts: `${day}T00:00:00Z`, price: 100 + i, reason: `第 ${i + 1} 点` }
+    })
+  }
+
+  it('12 个连续日点 → 只画最近 10 天（最旧 2 点被裁掉）', () => {
+    const w = mount(PriceChart, { props: { points: daily('2026-10-01', 12) } })
+    const titles = w.findAll('.hit title')
+    expect(titles).toHaveLength(10)
+    expect(titles[0]!.text()).toContain('第 3 点')
+    expect(titles[9]!.text()).toContain('第 12 点')
+  })
+
+  it('窗口按日历天而非点数：含停牌缺口时点数可少于 10', () => {
+    const pts = daily('2026-10-01', 12).filter((p) => !p.ts.startsWith('2026-10-05') && !p.ts.startsWith('2026-10-06'))
+    const w = mount(PriceChart, { props: { points: pts } })
+    // 最新点 10-12 → 窗口 10-03 起；10-05/06 本就不存在 → 8 个点
+    expect(w.findAll('.hit title')).toHaveLength(8)
+  })
+
+  it('锚定最新点所在日：选手停牌时窗口跟着回退，不会裁成空图', () => {
+    const pts = daily('2026-10-01', 12).slice(0, 10) // 最新点 10-10，今天可能是 10-20
+    const w = mount(PriceChart, { props: { points: pts } })
+    expect(w.findAll('.hit title')).toHaveLength(10)
+  })
+
+  it('windowDays=0 → 全量展示（逃生口）', () => {
+    const w = mount(PriceChart, { props: { points: daily('2026-10-01', 12), windowDays: 0 } })
+    expect(w.findAll('.hit title')).toHaveLength(12)
+  })
+})
