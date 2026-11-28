@@ -46,6 +46,10 @@ class AgentTrace(Base):
     # 输入摘要（不存原文，避免把账户数据留底）与输出快照
     input_digest: Mapped[str | None] = mapped_column(String(120), nullable=True)
     output_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 哈希链（app/core/trace_hash.py）：上一条记录的哈希 + 本条内容的 SHA-256；
+    # 可空是为了兼容加哈希之前写入的旧记录
+    prev_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    record_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
 
 
 class DecisionLog(Base):

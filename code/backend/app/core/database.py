@@ -95,9 +95,32 @@ def _ensure_user_auth_columns() -> None:
     logger.info("users 表补齐口令列：%s", ", ".join(name for name, _ in missing))
 
 
+def _ensure_trace_hash_columns() -> None:
+    """给**已存在**的 agent_traces 表补 prev_hash / record_hash 两列（幂等，2026-11-28）。
+
+    原因同 `_ensure_user_auth_columns`：create_all 不会给老表加列，线上 Postgres 已有这张表。
+    旧记录两列为空，校验时按「加哈希前的旧记录」单独计数。
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "agent_traces" not in inspector.get_table_names():
+        return
+    existing = {column["name"] for column in inspector.get_columns("agent_traces")}
+    missing = [name for name in ("prev_hash", "record_hash") if name not in existing]
+    if not missing:
+        return
+    with engine.begin() as conn:
+        for name in missing:
+            # 表名与列名都是写死的常量，没有注入面
+            conn.execute(text(f"ALTER TABLE agent_traces ADD COLUMN {name} VARCHAR(64)"))
+    logger.info("agent_traces 表补齐哈希列：%s", ", ".join(missing))
+
+
 def init_db() -> None:
     """建表 + 补列（开发期用；生产迁移属于加分项，6 天版不做 Alembic）。"""
     from app import models  # noqa: F401  确保模型已注册到 Base.metadata
 
     _ensure_user_auth_columns()
+    _ensure_trace_hash_columns()
     Base.metadata.create_all(bind=engine)

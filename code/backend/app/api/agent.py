@@ -43,6 +43,7 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.errors import ApiError
+from app.core.trace_hash import GENESIS, WRITE_LOCK, compute_hash, verify_chain
 from app.models import AgentTrace, DecisionLog, Player, Position, PriceHistory, PriceNarrative, User
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -71,23 +72,38 @@ def _write_trace(
     fallback_reason: str | None = None,
     input_digest: str | None = None,
 ) -> int:
-    """写一条审计行（best-effort：失败只记日志，绝不影响主响应）。"""
+    """写一条审计行（best-effort：失败只记日志，绝不影响主响应）。
+
+    2026-11-28 起每条记录串进哈希链（app/core/trace_hash.py）：先取上一条的 record_hash
+    作为 prev_hash，flush 拿到 trace_id 后再算本条哈希，一起提交。
+    """
     if not settings.agent_traces_enabled:
         return 0
     try:
-        row = AgentTrace(
-            mode=mode,
-            player_id=player_id,
-            source=source,
-            model=model or None,
-            latency_ms=int(latency_ms),
-            fallback_reason=fallback_reason,
-            input_digest=(input_digest or "")[:120] or None,
-            output_json=json.dumps(output, ensure_ascii=False)[:4000],
-        )
-        db.add(row)
-        db.commit()
-        return int(row.trace_id)
+        with WRITE_LOCK:
+            prev_hash = db.scalar(
+                select(AgentTrace.record_hash)
+                .where(AgentTrace.record_hash.is_not(None))
+                .order_by(AgentTrace.trace_id.desc())
+                .limit(1)
+            ) or GENESIS
+            row = AgentTrace(
+                created_at=_now(),
+                mode=mode,
+                player_id=player_id,
+                source=source,
+                model=model or None,
+                latency_ms=int(latency_ms),
+                fallback_reason=(fallback_reason or "")[:200] or None,
+                input_digest=(input_digest or "")[:120] or None,
+                output_json=json.dumps(output, ensure_ascii=False)[:4000],
+                prev_hash=prev_hash,
+            )
+            db.add(row)
+            db.flush()  # 拿到 trace_id，它也参与哈希
+            row.record_hash = compute_hash(row, prev_hash)
+            db.commit()
+            return int(row.trace_id)
     except Exception as exc:  # noqa: BLE001 —— 审计失败不影响业务
         logger.warning("写入 agent_trace 失败：%s: %s", type(exc).__name__, exc)
         db.rollback()
@@ -421,11 +437,20 @@ def agent_traces(
                 "model": r.model,
                 "latency_ms": r.latency_ms,
                 "fallback_reason": r.fallback_reason,
+                "prev_hash": r.prev_hash,
+                "record_hash": r.record_hash,
             }
             for r in rows
         ],
-        "提示": "只读审计；不含账户与连接串数据",
+        "提示": "只读审计；不含账户与连接串数据；完整性校验见 /api/agent/traces/verify",
     }
+
+
+@router.get("/traces/verify", summary="校验审计记录哈希链是否完整（只读）")
+def verify_traces(db: Session = Depends(get_db)) -> dict:
+    """从第一条到最后一条重算哈希：内容被改、记录被删或被替换都会报告断开位置。"""
+    rows = db.scalars(select(AgentTrace).order_by(AgentTrace.trace_id)).all()
+    return verify_chain(rows)
 
 
 # ---------------------------------------------------------------- 人在环
