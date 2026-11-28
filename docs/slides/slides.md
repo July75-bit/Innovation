@@ -443,29 +443,42 @@ flowchart LR
 <div class="body">
 
 <div v-click>
-  <div class="formula">P′ = max(1, P × (1 + 0.15 × <span class="s">S</span>))</div>
-  <div class="note" style="margin-top:.4rem">新价格 = 原价格 ×（1 + 0.15 × 表现分），最低 1 个信用点</div>
+  <div class="formula">P′ = max(P<sub>floor</sub>, P × (1 + α<span class="s">S</span> + β<span class="s">D</span>))</div>
+  <div class="note" style="margin-top:.4rem">新价格 = max（价格下限，原价格 ×（1 + 表现权重 × 表现信号 + 需求权重 × 需求信号））<span class="mono" style="margin-left:.6rem">core_engine/pricing.py · update_price()</span></div>
 </div>
 
-<div class="g g-7-5 rule-top" style="margin-top:.4rem">
-  <dl class="dl" v-click>
-    <dt>表现分 <span class="accent">S</span></dt><dd>本轮得分相对近 5 场的标准分，截断到 −1～1</dd>
-    <dt>上限</dt><dd>单次涨跌最多 ±20%</dd>
-    <dt>停牌</dt><dd>本队这一轮在比赛，整队暂停买卖</dd>
+<div class="g g-7-5 rule-top" style="margin-top:.2rem">
+  <dl class="dl pricing-dl" v-click>
+    <dt><span class="accent">S</span> 表现信号</dt><dd>（本轮得分 − 近 5 场均值）÷ 标准差 ÷ 3，截断到 ±1</dd>
+    <dt><span class="accent">D</span> 需求信号</dt><dd>净买入量 ÷ 总成交量，范围 −1～1</dd>
+    <dt>α 表现权重</dt><dd>默认 0.15：S 满格时单次涨跌 15%</dd>
+    <dt>β 需求权重</dt><dd>默认 0：本期不启用需求信号，D 不影响价格</dd>
+    <dt>P<sub>floor</sub> 下限</dt><dd>默认 1.0 信用点</dd>
+    <dt>单次上限</dt><dd>αS + βD 截断到 ±20% 后再计算新价格</dd>
   </dl>
-  <div v-click>
+  <div v-click class="pricing-side">
     <div class="label">与自身比较的原因</div>
-    <div class="text">若与全体选手比较，高水平选手的价格会持续上涨；与自身近期表现比较，只有表现高于平时，价格才上涨。</div>
-    <div class="note" style="margin-top:.8rem">每个价格点记录一条原因；相同输入得到相同价格，已用 100 个随机种子回测。</div>
+    <div class="text">与全体选手比较，高水平选手会持续上涨；与自身近期比较，只有表现高于平时才上涨。</div>
+    <div class="label" style="margin-top:.9rem">β 设为 0 的原因</div>
+    <div class="text">没有真实成交数据，用户买卖产生的需求信号容易被刷高，因此先关闭，公式和接口保留。</div>
+    <div class="note" style="margin-top:.6rem">每个价格点记录原因；已用 100 个随机种子回测。</div>
   </div>
 </div>
 
 </div>
 
 <!--
-【30 秒】定价只有这一条公式：新价格等于原价格乘以一加零点一五倍的表现分，最低一个信用点。关键在表现分：它是拿选手这一轮的得分和他自己最近五场比。如果和所有人比，强队选手就会一直涨；和自己平时比，只有打得比平时好才涨。单次涨跌最多百分之二十，每个价格点都记了原因。
+【30 秒】定价公式写在 core_engine/pricing.py 的 update_price 里：新价格等于原价格乘以一加 α 乘表现信号 S、再加 β 乘需求信号 D，最低不低于价格下限。S 是选手本轮得分和他自己近五场相比的标准分，除以三后截断到正负一；D 是净买入量占总成交量的比例。参数默认 α 为 0.15、β 为 0，也就是本期只用表现信号，需求信号保留但不生效。α 乘 S 加 β 乘 D 还会先截断到正负百分之二十，单次涨跌不会超过这个范围。
 
 **【可能被问】**
+
+**问**：β 为什么是 0？需求信号 D 有什么用？
+
+答：D 是净买入量除以总成交量，反映大家在买还是在卖。本项目没有真实成交和盘口，用户自己买卖就能把需求信号刷高，所以本期把 β 设为 0，D 不影响价格。公式里的 β·D 和计算 D 的函数 to_demand_signal 都已保留并有测试，接入真实成交数据后再设置 β，同时要加流动性限制。
+
+**问**：参数在哪里改？
+
+答：α、β 和价格下限可以通过环境变量 PRICING_ALPHA、PRICING_BETA、PRICING_FLOOR 设置，优先级是显式传参、后端配置、环境变量、代码默认值；单次 ±20% 上限写死在代码里，不对外开放。
 
 **问**：表现分具体怎么算？
 

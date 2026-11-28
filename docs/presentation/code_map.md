@@ -58,8 +58,9 @@
 | --- | --- | --- | --- |
 | 模拟比赛 | `code/core_engine/simulator.py:65` | `generate_match()` | 按选手评分和随机种子生成本轮得分（同种子结果相同） |
 | 表现分 | `code/core_engine/pricing.py:247` | `standardize_score()` | 本轮得分与近 5 场的标准分，除以 3 后截断到 −1～1 |
-| 新价格 | `pricing.py:162` | `update_price()` | `P′ = max(1, P × (1 + 0.15 × S))`，单次涨跌不超过 ±20%，并生成原因文字 |
-| 参数 | `pricing.py:44–52` | `DEFAULT_ALPHA = 0.15`、`MAX_STEP_PCT = 0.20`、`Z_FULL_SCALE = 3.0` | 公式里的常数 |
+| 新价格 | `pricing.py:162` | `update_price()` | `P′ = max(P_floor, P × (1 + αS + βD))`：α=0.15、β=0（需求信号 D 本期不生效）、P_floor=1.0；αS+βD 先截断到 ±20%，并生成原因文字 |
+| 参数 | `pricing.py:44–52` | `DEFAULT_ALPHA = 0.15`、`DEFAULT_BETA = 0.0`、`DEFAULT_FLOOR = 1.0`、`MAX_STEP_PCT = 0.20`、`Z_FULL_SCALE = 3.0` | 公式里的常数；α、β、下限可用环境变量 PRICING_ALPHA / PRICING_BETA / PRICING_FLOOR 覆盖 |
+| 需求信号 | `code/core_engine/simulator.py:145` | `to_demand_signal()` | 净买入量 ÷ 总成交量，截断到 −1～1；β=0 时不影响价格 |
 | 停牌判断 | `code/core_engine/schedule.py:162` | `suspension_reason()` | 本队这一轮在比赛就整队停牌 |
 | 写入数据库 | `code/backend/app/core/price_update.py:70` / `:119` | `plan_for_player()` / `apply_updates()` | 先算好每人的新价格，再在一个事务里写 players 和 price_history |
 | 手动结算接口 | `code/backend/app/api/prices.py:88` | `recalc_prices()` | 带运维口令才能触发一轮结算 |

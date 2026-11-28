@@ -191,3 +191,8 @@
 .slidev-layout table.db9 td[rowspan] { color: var(--grey); font-weight: 500; vertical-align: middle; border-right: 1px solid var(--rule); width: 4.5rem; }
 .slidev-layout table.db9 td.mono, .slidev-layout table.api5 td.mono { font-family: var(--mono); font-size: .8rem; color: var(--ink); font-weight: 500; white-space: nowrap; padding-left: .8rem; }
 .slidev-layout table.api5 td { font-size: .92rem; }
+
+/* 定价页参数说明：六行，字号略小 */
+.dl.pricing-dl { grid-template-columns: 6.6rem 1fr; row-gap: .45rem; font-size: .92rem; line-height: 1.5; }
+.formula sub { font-size: .5em; }
+.pricing-side .text { font-size: .94rem; line-height: 1.65; }
