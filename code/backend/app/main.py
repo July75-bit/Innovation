@@ -106,6 +106,18 @@ async def lifespan(_: FastAPI):
         )
     # 开发期直接建表；表结构由 B 在 app/models/ 中定义
     init_db()
+    # 惰性自动结算：实例冷启动时先补一遍"到期轮次"（AUTO_SETTLE=1 才生效，
+    # 默认关闭时 settle_if_due 立即返回 off，不碰任何数据；见 app/core/auto_settle.py）
+    try:
+        from app.core.auto_settle import settle_if_due
+        from app.core.database import SessionLocal
+
+        with SessionLocal() as _db:
+            _r = settle_if_due(_db, force=True)
+            if _r not in ("off", "throttled"):
+                logger.info("启动时自动结算检查：%s", _r)
+    except Exception:  # noqa: BLE001 - 结算失败绝不阻断启动
+        logger.warning("启动时惰性自动结算失败（不影响服务）", exc_info=True)
     yield
 
 

@@ -20,6 +20,11 @@
 `core_engine.schedule` 的圆桌循环对阵（`round_match` 取模），比赛日期按
 `start + (round-1)` 天顺延 → 演示季"永不过季"，曲线每天照涨。
 
+**2026-11-28 调整（免费档没有 cron）**：`playerstock-price-settle` 已从 render.yaml
+移除，"每天自动"改为**后端惰性自结算**（`app/core/auto_settle.py`，`AUTO_SETTLE=1`，
+冷启动 / 访问市场或行情接口时顺路补到期轮次，链条与本脚本完全一致）。
+本脚本保留用途：① 运维手动补结算；② 升级付费档恢复 cron 或改用 GitHub Actions 定时时的参考实现。
+
 用法（仓库根）：
     python scripts/settle_round.py --dry-run        # 只打印将补哪些轮、每轮交谁
     python scripts/settle_round.py                  # 实际结算（需要 BACKEND_BASE_URL / RESEED_TOKEN）

@@ -46,6 +46,11 @@ services:
         # 没配置时这两个接口直接 403（app/core/ops_auth.py），所以必须在这里生成。
         # generateValue 让 Render 生成随机串，需要重灌时去控制台 Environment 里复制。
         generateValue: true
+      - key: AUTO_SETTLE
+        # 免费档没有 cron 服务（type: cron + plan: free 创建会直接失败），
+        # 方案 A 改为后端惰性自结算：冷启动 / 首次访问市场或行情接口时顺路补算到期轮次
+        # （实现见 app/core/auto_settle.py；节流 300s + 幂等去重，多实例/重复触发都安全）。
+        value: "1"
       - key: CORS_ORIGINS
         # 直接写死前端公网地址：这是`render.yaml` 管的部署配置，写在文件里比"记得去控制台填"
         # 可靠（2026-10-25 就是因为没填，线上前端被跨域拦掉）。
@@ -58,53 +63,13 @@ services:
     #   mountPath: /var/data
     #   sizeGB: 1
 
-  # ---------------- 每日价格自动结算（2026-11-28 方案 A） ----------------
-  # 修复"价格历史停在 bootstrap 批次、不随时间更新"：每天跑一次 scripts/settle_round.py，
-  # 把"已到期但没落库"的轮次用固定 seed 重放生成 (score, S)，再 POST /api/prices/recalc 补结算。
-  # 幂等三重保险：脚本从"库内最新 ts"续跑 + recalc 按 (player_id, 比赛日) 去重 + 同 seed 可复现，
-  # 所以 cron 重跑、停机多日后补跑都安全。第 29 轮起对阵循环（core_engine.schedule 取模），永不过季。
-  # 口令：fromService 引用后端生成的 RESEED_TOKEN，明文不进仓库（控制台看不到脚本里的值）。
-  - type: cron
-    name: playerstock-price-settle
-    runtime: python
-    plan: free
-    region: singapore
-    # 每天 UTC 00:20（北京 08:20）跑一次：轮次日期按 UTC 零点计，0 点刚过即"结算当天轮次"。
-    # 选在巡检（*/10 0-15 UTC）时间窗内，此时后端通常是热的；万一在睡，脚本自己等冷启动（<=150s）。
-    schedule: "20 0 * * *"
-    buildCommand: echo "settle 脚本只用标准库 + core_engine，无需构建"
-    startCommand: python scripts/settle_round.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.6"
-      - key: BACKEND_BASE_URL
-        value: https://playerstock-backend-mdlk.onrender.com
-      - key: RESEED_TOKEN
-        fromService:
-          type: web
-          name: playerstock-backend
-          envVarKey: RESEED_TOKEN
-  # ---------------- 智能体定时巡检（第 8 轮） ----------------
-  # 定时让智能体"自己上班"（频率见下方 schedule）：拉行情 → 标出需要关注的标的 → 刷新今日简报（写审计表）。
-  # 只调用只读接口 + 简报刷新，不下单、不碰余额。
-  # 注意：这里**不设 rootDir**（构建上下文=仓库根），因为脚本在 scripts/ 下；
-  # 脚本只用标准库 urllib，所以 buildCommand 不需要装依赖。
-  - type: cron
-    name: playerstock-agent-patrol
-    runtime: python
-    plan: free
-    region: singapore
-    # 每 10 分钟一次：Render 免费 Web Service 闲置 15 分钟就休眠，唤醒一次约 30 秒。
-    # 巡检本身也是一次 HTTP 请求 → 用来"保活"；只在 UTC 0–15 点（北京 08:00–23:59）跑，
-    # 避开整夜空转，免费 750 小时/月不会被打满（约 16h/天 ≈ 496h/月）。
-    schedule: "*/10 0-15 * * *"
-    buildCommand: echo "patrol 脚本只用标准库，无需构建"
-    startCommand: python scripts/agent_patrol.py
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.12.6"
-      - key: BACKEND_BASE_URL
-        value: https://playerstock-backend-mdlk.onrender.com
+  # ---------------- 定时任务取消说明（2026-11-28） ----------------
+  # 本蓝图原有两个 type: cron 服务（playerstock-agent-patrol / playerstock-price-settle），
+  # 但 Render 免费档不支持 cron，保留会导致 Blueprint Apply 失败，故一并移除：
+  # - 价格更新 → 后端惰性自结算（上方 AUTO_SETTLE=1，见 app/core/auto_settle.py）；
+  # - 智能体巡检/保活 → 改为浏览器访问天然唤醒；简报可手动刷新 GET /api/agent/brief?refresh=true。
+  # 升级付费档后可从 git 历史（提交 dc121d0 / 0f797b1）恢复这两段 YAML。
+  # 手动补结算（不升级也随时可用）：仓库根目录运行 python scripts/settle_round.py
 
   # ---------------- 前端 Static Site ----------------
   - type: web
