@@ -75,7 +75,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 ### 2.3 覆盖率（课程 p.177，第 4 天新增）
 
 > 命令：`pip install --target _cov pytest-cov` → `PYTHONPATH=_cov python -m coverage run --source=app,core_engine -m pytest` → `python -m coverage report -m`。
-> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-11-26 复测（384 条用例）。
+> 只统计 `code/backend/app` + `code/core_engine` 的源码语句，不含测试代码；数字为 2026-11-28 复测（384 条用例）。
 
 | 范围 | 语句数 | 未覆盖 | 覆盖率 |
 | --- | --- | --- | --- |
@@ -98,7 +98,7 @@ $ python -m pytest -q          # 本机 Windows（2026-11-21 复测；BUG-03 编
 | 安装依赖 | `npm ci` | ✅ `added 384 packages in 16s` |
 | 构建 | `npm run build`（`vue-tsc` 类型检查 + `vite build`） | ✅ exit 0，58 modules，400ms；产物 114 kB（gzip 45 kB） |
 | 静态检查 | `npm run lint`（oxlint + eslint；本地改用不带 `--fix` 的等价检查） | ✅ oxlint `0 warnings / 0 errors`（23 文件）；eslint exit 0 |
-| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **191 passed / 23 文件**（2026-11-26 本机；`format.spec.ts` 的 4 条是其中一部分） |
+| 单元测试 | `vitest run`（**CI 前端 job 同命令**） | ✅ **191 passed / 23 文件**（2026-11-28 本机；`format.spec.ts` 的 4 条是其中一部分） |
 
 > 说明：`npm run lint` 脚本自带 `--fix`，CI 上会顺手改文件但不影响退出码；
 > 本地为避免改动 A 的源码，用不带 `--fix` 的检查模式。
@@ -370,7 +370,7 @@ SAME balance=True total=True qty=True trades=True points=True
 
 - P0 缺陷：**0** 个（自动化层 **384** 条，CI 与本机全绿；浏览器证据见 §2.5，缺陷清单见 §9）
 - P1 缺陷：**0** 个（BUG-10 编码问题已修并复现验证；BUG-12 线上 CORS 事故已修复并线上复验；BUG-15 账号被重灌删除已修）
-- **结论：可交付** —— M3/M4/M5 均已达成；**384** 条自动化（单元 329 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **97%**（2244 语句 / 57 未覆盖，2026-11-26 复测） +
+- **结论：可交付** —— M3/M4/M5 均已达成；**384** 条自动化（单元 329 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **97%**（2244 语句 / 57 未覆盖，2026-11-28 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
   `deployment.md` §5 的 A–G 检查单是每次发布时逐项填写的模板；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **20 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 是历史产物。

@@ -51,8 +51,10 @@
 - [x] 失败降级策略（rule_fallback，永不阻塞交易）
 - [x] 统一输出格式（固定 6 字段 JSON）
 - [ ] 最大重试次数（P0：Critic 重试上限 1）—— 🟡 未实现（当前只有超时兜底，不重试）
-- [x] 工具调用审计日志（P0）——`agent_traces` 表 + `app/api/agent.py` 每次调用写审计行，`GET /api/agent/traces` 可查
-- [ ] 幂等键（P0：缓存键）—— 🟡 未实现（`price_narratives` 有缓存，但无显式幂等键）
+- [x] 工具调用审计日志（P0）——`agent_traces` 表 + `app/api/agent.py` 每次调用写审计行，`GET /api/agent/traces` 可查；2026-11-28 起记录串成 SHA-256 哈希链（`app/core/trace_hash.py`），`GET /api/agent/traces/verify` 校验
+- [x] 调用额度（2026-11-28）——全站每分钟最多 60 次模型调用，超额回落规则版（`app/core/rate_limit.py`）
+- [x] 输入完整（2026-11-28）——建议卡、决策卡、三人协作的资料都含当前用户的持仓、余额和单选手上限
+- [x] 幂等键（P0：缓存键）—— 建议卡与决策卡按「用户 + 选手 + 现价 + 持仓 + 余额」共用建议 120 秒（`app/core/advice_cache.py`）；`price_narratives` 按 (player_id, ts) 唯一
 - [ ] 最大 token 消耗 / 单日预算（P1）—— 🟡 未实现（课程期用免费额度，未做预算闸）
 - [ ] 可观测性面板指标（P2）—— 🟡 部分：`agent_traces` 已记审计数据，可视化面板未做
 

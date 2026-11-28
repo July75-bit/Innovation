@@ -506,7 +506,7 @@ flowchart LR
 <div class="body">
 
 <div class="flow" v-click>
-  <div><div class="n">01</div><div class="t">准备资料</div><div class="d">读取行情、最近价格和当前用户的持仓</div></div>
+  <div><div class="n">01</div><div class="t">准备资料</div><div class="d">读取行情、最近价格和当前用户的持仓、余额</div></div>
   <div><div class="n">02</div><div class="t">分析</div><div class="d">三个角色依次分析，或由模型调用 3 个只读工具</div></div>
   <div><div class="n">03</div><div class="t">检查</div><div class="d">只接受 6 个固定字段和规定取值</div></div>
   <div><div class="n">04</div><div class="t">算股数</div><div class="d">按余额和风险等级计算建议股数与止损线</div></div>
@@ -524,7 +524,7 @@ flowchart LR
 </div>
 
 <!--
-【30 秒】智能体的处理分五步：从数据库准备资料；由分析师、风控、交易员依次分析，或由模型调用三个只读工具；检查回答是否符合六个固定字段；按余额和风险计算建议股数和止损线；最后写入记录。三个角色由同一个模型担任，每次使用不同的角色提示。任何一步出错都会改用规则版。智能体只提供建议，买卖须由用户确认。
+【30 秒】智能体的处理分五步：从数据库读取行情和当前用户的持仓、余额；由分析师、风控、交易员依次分析，或由模型调用三个只读工具；检查回答是否符合六个固定字段；按余额和风险计算建议股数和止损线；最后写入记录。三个角色由同一个模型担任，每次使用不同的角色提示。任何一步出错都会改用规则版。智能体只提供建议，买卖须由用户确认。
 
 **【可能被问】**
 
@@ -556,7 +556,7 @@ flowchart LR
 <tbody>
 <tr><td>任务拆解</td><td class="mono">app/api/agent.py<br>ai/panel.py</td><td>固定五步：准备资料 → 分析 → 检查 → 算股数 → 记录；分析按分析师、风控、交易员顺序进行</td></tr>
 <tr><td>工具调用</td><td class="mono">ai/tools.py</td><td>3 个只读工具：查价格历史、查当前用户账户、计算建议股数；由模型决定调用哪个，最多 3 轮，每次调用的参数和结果写入审计</td></tr>
-<tr><td>记忆</td><td class="mono">ai/context.py<br>app/core/trace_hash.py</td><td>每次请求从数据库读取最新行情和当前用户持仓；调用记录和采纳记录存表，调用记录用 SHA-256 哈希链防篡改；不做跨会话的对话记忆</td></tr>
+<tr><td>记忆</td><td class="mono">ai/context.py<br>app/core/trace_hash.py</td><td>每次请求从数据库读取最新行情和当前用户的持仓、余额；调用记录和采纳记录存表，调用记录用 SHA-256 哈希链防篡改；不做跨会话的对话记忆</td></tr>
 <tr><td>护栏</td><td class="mono">ai/llm_agent.py<br>app/core/rate_limit.py</td><td>输入：只接收选手编号，提示词按白名单取 12 个字段；输出：6 个字段与取值校验、理由截断到 200 字、清洗 JSON；运行：20 秒超时、每分钟 60 次额度、失败改用规则版</td></tr>
 <tr><td>专业知识</td><td class="mono">ai/prompts.py<br>ai/fallback.py</td><td>提示词要求只依据给定数据作答并引用具体数值；规则版的涨跌与表现分阈值；数据库中带原因的价格历史</td></tr>
 </tbody>

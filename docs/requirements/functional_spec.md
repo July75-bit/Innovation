@@ -82,7 +82,7 @@
 | FR-M4-03 | 赛程与整队停牌 | 轮次 | 本轮有比赛的两队暂停交易，前后端同一规则 | 停牌名单 | `test_schedule.py`、`ScheduleView.spec.ts` | ✅ |
 | FR-M4-04 | 个人页资产曲线 | — | 用现金流与历史价格重建资产曲线 | 曲线点 + 交易统计 | `test_account_history.py`、`ProfileView.spec.ts` | ✅ |
 | FR-M4-05 | 智能体决策卡 / 简报 / 多角色 / 工具调用 / 叙事归因 | player_id | 只读取数，模型失败回落规则版 | 建议 + 仓位 / 简报要点 / 角色纪要 | `test_agent_api.py`、`test_ai_tools_loop.py` | ✅ |
-| FR-M4-06 | 人在环与审计 | 采纳 / 忽略 | 只写 `decision_logs` / `agent_traces`，不下单 | 采纳率、调用记录 | `test_agent_api_edges.py` | ✅ |
+| FR-M4-06 | 人在环与审计 | 采纳 / 忽略 | 只写 `decision_logs` / `agent_traces`，不下单；调用记录串成 SHA-256 哈希链，可校验是否被改动 | 采纳率、调用记录、链校验结果 | `test_agent_api_edges.py`、`test_trace_hash_chain.py` | ✅ |
 
 ## 3. 领域模型（UML 领域类图）
 
