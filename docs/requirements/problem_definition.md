@@ -41,7 +41,7 @@ PlayerStock 是一个**纯信用点、不可兑换**的娱乐性"选手股"交�
 - ❌ 真实资金、充值、提现、兑换任何实物或货币
 - ❌ 真实赛事数据实时接入（用模拟数据流，架构上留适配器）
 - ❌ 复杂登录鉴权体系（单用户/演示账户即可）
-- ❌ 多智能体 LangGraph 编排（降级为单智能体分析，方案见 `docs/algorithm/ai_agent_prompt.md`）
+- ❌ 多智能体 LangGraph 编排（未引入框架；后来的多角色分析用普通函数顺序调用实现，见 `docs/software/agent_workflow_design.md`）
 - ❌ LMSR 自动做市商（可选彩蛋，不阻塞交付）
 - ❌ 区块链上链存证
 

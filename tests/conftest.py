@@ -27,6 +27,8 @@ os.environ.setdefault(
     "DATABASE_URL",
     f"sqlite:///{(REPO_ROOT / '.pytest-tmp' / 'bootstrap.db').as_posix()}",
 )
+# 运维接口（reseed / recalc）默认禁用；测试里给一个口令，用例通过 settings.reseed_token 引用
+os.environ.setdefault("RESEED_TOKEN", "pytest-ops-token")
 
 from app.core.database import Base, get_db  # noqa: E402
 from app.core.time import utcnow  # noqa: E402
@@ -61,6 +63,16 @@ def pytest_configure(config: pytest.Config) -> None:
     # 显式传了 --basetemp 时尊重调用方的选择
     if config.option.basetemp is None:
         config.option.basetemp = str(PYTEST_BASETMP)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_rate_limits():
+    """限流计数是进程内全局状态：每条用例前后清空，免得前一条的登录失败/模型调用漏到下一条。"""
+    from app.core.rate_limit import limiter
+
+    limiter.clear()
+    yield
+    limiter.clear()
 
 
 @pytest.fixture(autouse=True)

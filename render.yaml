@@ -41,6 +41,11 @@ services:
         value: https://api.deepseek.com/v1
       - key: LLM_API_KEY
         sync: false # 在 Render 控制台手工填写，绝不提交明文
+      - key: RESEED_TOKEN
+        # 运维口令：POST /api/debug/reseed 与 POST /api/prices/recalc 都要带 ?token=。
+        # 没配置时这两个接口直接 403（app/core/ops_auth.py），所以必须在这里生成。
+        # generateValue 让 Render 生成随机串，需要重灌时去控制台 Environment 里复制。
+        generateValue: true
       - key: CORS_ORIGINS
         # 直接写死前端公网地址：这是`render.yaml` 管的部署配置，写在文件里比"记得去控制台填"
         # 可靠（2026-10-25 就是因为没填，线上前端被跨域拦掉）。
@@ -54,7 +59,7 @@ services:
     #   sizeGB: 1
 
   # ---------------- 智能体定时巡检（第 8 轮） ----------------
-  # 每小时让智能体"自己上班"：拉行情 → 标出需要关注的标的 → 刷新今日简报（写审计表）。
+  # 定时让智能体"自己上班"（频率见下方 schedule）：拉行情 → 标出需要关注的标的 → 刷新今日简报（写审计表）。
   # 只调用只读接口 + 简报刷新，不下单、不碰余额。
   # 注意：这里**不设 rootDir**（构建上下文=仓库根），因为脚本在 scripts/ 下；
   # 脚本只用标准库 urllib，所以 buildCommand 不需要装依赖。

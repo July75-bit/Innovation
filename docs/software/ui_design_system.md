@@ -244,13 +244,13 @@ CSS `color-scheme`——原生表单控件（`<select>` 弹层、日期选择器
   （浏览器后退/刷新同样能恢复）；从市场等其它入口进来的详情页仍是「← 返回市场」。
 - 证据：`126-drawer-desktop.png`、`127-drawer-mobile.png`、`131-detail-back-schedule.png`、`132-schedule-drawer-restored.png`。
 
-### 11.14 样式分包与仓库卫生（2026-11-19）
+### 11.14 样式分包与仓库健康（2026-11-19）
 
 - **2026-11-21 移除 `/ui-kit` 展示页**：同时删除 10 个只在展示页使用的 Ui* 组件、
   `ui-kit.css` 与 18 条组件测试；业务页只加载 `index-*.css`，仓库少约 2,200 行。
   仅保留业务真正在用的 `UiBottomTab` / `UiModal`，以及设计令牌（`tokens.css` / `design-tokens.json`）。
 - `liquid-glass.css` **仍全局**：模态框、删除账号弹窗、图表 tooltip 还在用 `.glass` 系列，不能拆。
-- **CI 仓库卫生 job**（最前置，几秒内失败）：`git grep -n -E "^(<<<<<<< |>>>>>>> )"`，
+- **CI 仓库健康 job**（最前置，几秒内失败）：`git grep -n -E "^(<<<<<<< |>>>>>>> )"`，
   防"冲突标记进仓库"（历史两次事故：eslint 报 diff marker → Render 构建失败 → 白屏）。
 
 ### 11.15 赛程状态可读性 + `--halt` 别名修复（2026-11-19）

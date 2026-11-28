@@ -104,9 +104,10 @@ def _account_state(db: Session, user: User, player_id: int) -> tuple[float, int]
     return balance, int(held or 0)
 
 
-def _safe_context(player: Player, db: Session) -> dict[str, Any]:
+def _safe_context(player: Player, db: Session, user: User) -> dict[str, Any]:
+    """资料袋里的"持仓"按当前用户取（2026-11-26 修，原先不分用户）。"""
     try:
-        return build_player_context(player.player_id, db=db)
+        return build_player_context(player.player_id, db=db, user_id=user.user_id)
     except Exception as exc:  # noqa: BLE001
         logger.warning("agent 上下文失败，用最小上下文：%s: %s", type(exc).__name__, exc)
         return {
@@ -135,7 +136,7 @@ def agent_decision(
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     advice = analyze(context)
     latency_ms = int((time.perf_counter() - started) * 1000)
@@ -483,12 +484,16 @@ def decision_stats(db: Session = Depends(get_db), user: User = Depends(get_curre
 
 # ---------------------------------------------------------------- 多角色协作
 @router.get("/panel/{player_id}", summary="多角色协作纪要（分析师→风控→交易员）")
-def agent_panel(player_id: int, db: Session = Depends(get_db)) -> dict:
+def agent_panel(
+    player_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
     player = db.get(Player, player_id)
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
 
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     result = run_panel(context, settings=settings)
     latency_ms = int((time.perf_counter() - started) * 1000)
@@ -554,6 +559,17 @@ def agent_narrative(
         name=player.name, team=player.team or "", points=points, settings=settings
     )
     latency_ms = int((time.perf_counter() - started) * 1000)
+    if cached and cached.source == "llm" and source != "llm":
+        # 重新生成失败（超额度/模型挂了）：别用规则版盖掉已有的模型解读
+        return {
+            "player_id": player_id,
+            "ts": latest.ts.isoformat(),
+            "narrative": cached.narrative,
+            "source": cached.source,
+            "change_pct": round(change_pct, 2),
+            "big_move": is_big_move(change_pct),
+            "cached": True,
+        }
     try:
         if cached:
             cached.narrative, cached.source, cached.model = narrative, source, model
@@ -587,8 +603,16 @@ def agent_narrative(
 
 # ---------------------------------------------------------------- 工具调用演示
 @router.get("/tools/{player_id}", summary="工具调用演示（模型自己决定查什么）")
-def agent_tools(player_id: int, db: Session = Depends(get_db)) -> dict:
-    """让模型通过三个只读工具自己取数；工具协议不支持时回落单次问答。"""
+def agent_tools(
+    player_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """让模型通过三个只读工具自己取数；工具协议不支持时回落单次问答。
+
+    「查账户」查的是**当前请求的用户**：带令牌就是登录者本人，没带就是公共演示账户
+    （与决策卡 `/decision` 同一口径；2026-11-26 修，原先总是查 demo）。
+    """
     player = db.get(Player, player_id)
     if player is None:
         raise ApiError("选手不存在", status_code=404, code="PLAYER_NOT_FOUND")
@@ -606,8 +630,7 @@ def agent_tools(player_id: int, db: Session = Depends(get_db)) -> dict:
         return [{"ts": r.ts.isoformat(), "price": float(r.price), "reason": r.reason} for r in reversed(rows)]
 
     def get_account_snapshot(args: dict[str, Any]) -> Any:
-        demo = db.scalar(select(User).where(User.nickname == "demo"))
-        balance, held = _account_state(db, demo, int(args.get("player_id") or player_id)) if demo else (0.0, 0)
+        balance, held = _account_state(db, user, int(args.get("player_id") or player_id))
         return {"balance": round(balance, 2), "held_quantity": held}
 
     def calc_position_size(args: dict[str, Any]) -> Any:
@@ -626,7 +649,7 @@ def agent_tools(player_id: int, db: Session = Depends(get_db)) -> dict:
         "get_account_snapshot": get_account_snapshot,
         "calc_position_size": calc_position_size,
     }
-    context = _safe_context(player, db)
+    context = _safe_context(player, db, user)
     started = time.perf_counter()
     try:
         result = run_tool_loop(

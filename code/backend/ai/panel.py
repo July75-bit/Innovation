@@ -7,8 +7,12 @@
 不仅能演示"多智能体协作"，还能暴露**分歧**——答辩时"风控不同意交易员的加仓"
 比"AI 说 BUY"有价值得多。
 
-**成本控制**：三次调用串行，最坏 3×超时；任一环节失败 → 整份纪要回落规则版
-（`source=rule_fallback`），仍然 200，不影响交易。
+**怎么协作**：三个角色各有一段系统提示（`ROLE_PROMPTS`），依次调用模型；
+后一位的提问里带着前面几位的发言。最终动作 / 风险等级 / 理由取自**交易员**，
+并用建议卡同一套规则校验（`_parse_and_validate`）。
+
+**成本控制**：三次调用串行，最坏 3×超时；任一环节失败（含交易员输出不合规）→
+整份纪要回落规则版（`source=rule_fallback`），仍然 200，不影响交易。
 
 **只读**：三个角色都只吃上下文、不写库；纪要由调用方决定是否落 trace。
 """
@@ -18,8 +22,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from ai.fallback import rule_based_advice
-from ai.llm_agent import _default_chat, analyze
+from ai.fallback import DISCLAIMER, rule_based_advice
+from ai.llm_agent import _default_chat, _parse_and_validate
 
 ROLE_PROMPTS = {
     "analyst": (
@@ -33,9 +37,14 @@ ROLE_PROMPTS = {
     ),
     "trader": (
         "你是交易员。根据分析师与风控的意见，给出最终动作（BUY/SELL/HOLD）、风险等级"
-        "（LOW/MEDIUM/HIGH）与一句话理由。如果与风控意见冲突，必须明确指出冲突点。"
+        "（LOW/MEDIUM/HIGH）与一句话理由。如果与风控意见冲突，必须在理由里明确指出冲突点。"
+        '只输出一个 JSON 对象：{"action": "...", "risk_level": "...", "reason": "..."}，'
+        "不要输出其他文字。"
     ),
 }
+
+#: 分析师与风控只写一两句中文判断；不加这句，模型会沿用"只输出 JSON"的习惯
+_PLAIN_TEXT = "用一两句中文回答，不要输出 JSON 或代码块。"
 
 
 _JSON_KEY_RE = re.compile(r'"(?:reason|summary|text|narrative|analysis|view)"\s*:\s*"((?:[^"\\]|\\.)*)')
@@ -82,32 +91,41 @@ def run_panel(context: dict[str, Any], *, settings: Any = None) -> dict[str, Any
 
     minutes: list[dict[str, str]] = []
     try:
-        analyst = _default_chat(f"{digest}\n请按你的角色输出。", settings=settings)
+        # 1) 分析师：只看趋势
+        analyst = _default_chat(
+            f"{digest}\n{_PLAIN_TEXT}",
+            settings=settings,
+            system_prompt=ROLE_PROMPTS["analyst"],
+        )
         minutes.append({"role": "analyst", "content": _clip(analyst)})
 
+        # 2) 风控：带上分析师的话，只谈风险和仓位上限
         risk = _default_chat(
-            f"{digest}\n分析师意见：{_clip(analyst)}\n请按风控角色输出。", settings=settings
+            f"{digest}\n分析师意见：{_clip(analyst)}\n{_PLAIN_TEXT}",
+            settings=settings,
+            system_prompt=ROLE_PROMPTS["risk"],
         )
         minutes.append({"role": "risk", "content": _clip(risk)})
 
-        trader = _default_chat(
-            f"{digest}\n分析师：{_clip(analyst)}\n风控：{_clip(risk)}\n"
-            "按交易员角色输出：动作 / 风险等级 / 一句话理由（可在末尾标注与风控的冲突）。",
+        # 3) 交易员：带上前两位的话，给出最终结论（JSON，按建议卡同一套规则校验）
+        trader_raw = _default_chat(
+            f"{digest}\n分析师：{_clip(analyst)}\n风控：{_clip(risk)}",
             settings=settings,
+            system_prompt=ROLE_PROMPTS["trader"],
         )
-        minutes.append({"role": "trader", "content": _clip(trader)})
+        decision = _parse_and_validate(trader_raw)  # 动作 / 风险等级非法或缺理由 → 抛错 → 整份回落
+        minutes.append({"role": "trader", "content": _clip(decision["reason"])})
 
-        advice = analyze(context, settings=settings)
         return {
             "source": "llm",
             "minutes": minutes,
             "final": {
-                "action": advice.get("action"),
-                "risk_level": advice.get("risk_level"),
-                "reason": _clip(str(advice.get("reason")), 160),
-                "disclaimer": advice.get("disclaimer"),
+                "action": decision["action"],
+                "risk_level": decision["risk_level"],
+                "reason": _clip(decision["reason"], 160),
+                "disclaimer": DISCLAIMER,
             },
-            "note": "三个角色分别调用模型；最终动作以交易员环节为准，冲突点已写在纪要里",
+            "note": "三个角色依次调用模型，后一位能看到前面的发言；最终结论取自交易员",
         }
     except Exception as exc:  # noqa: BLE001 —— 任一环节失败整份回落规则版
         fallback = rule_based_advice(context)

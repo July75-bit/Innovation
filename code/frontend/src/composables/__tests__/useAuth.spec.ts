@@ -385,3 +385,34 @@ describe('删除账号', () => {
     expect(m.isGuest.value).toBe(true)
   })
 })
+
+describe('换身份要清空接口缓存（2026-11-26 修）', () => {
+  it('登录 / 退出 / 访客进入 / 删号后，上一个人的缓存一条不留', async () => {
+    const { login, logout, enterAsGuest, deleteAccount } = await fresh()
+    const cache = await import('../../api/cache')
+    const seed = async () => {
+      await cache.cached('account', 30_000, async () => ({ user_id: 1 }))
+      await cache.cached('decision:1', 120_000, async () => ({ plan: 'x' }))
+      expect(cache.__cacheSize()).toBe(2)
+    }
+
+    await seed()
+    apiMock.login.mockResolvedValue({ token: 'tok-A', expires_at: '2099-01-01', user: USER })
+    await login({ username: 'lan_player', password: 'demo1234', remember: false })
+    expect(cache.__cacheSize()).toBe(0)
+
+    await seed()
+    apiMock.logout.mockResolvedValue({ message: 'ok', revoked: true })
+    await logout()
+    expect(cache.__cacheSize()).toBe(0)
+
+    await seed()
+    enterAsGuest()
+    expect(cache.__cacheSize()).toBe(0)
+
+    await seed()
+    apiMock.deleteAccount.mockResolvedValue({ deleted_positions: 0, deleted_trades: 0 })
+    await deleteAccount('demo1234')
+    expect(cache.__cacheSize()).toBe(0)
+  })
+})

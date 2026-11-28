@@ -7,12 +7,12 @@
 
 ## 它是什么
 
-用 **5000 信用点**买卖 CS2 选手的虚拟股，价格随模拟比赛表现变化；AI 给 BUY / SELL / HOLD 建议，**只建议、不自动下单**。
+用 **5000 信用点**买卖 CS2 选手的虚拟股，价格随模拟比赛表现变化；内置 **AI 智能体**：会拉行情、多角色分析、人在环采纳、全程留审计，**只给建议、不自动下单**。
 
 - 16 名选手 / 8 支战队，每人 11 个价格点
 - 每条涨跌都有原因（reason），可逐条追溯
-- AI 契约固定 6 字段；没 Key、超时、坏 JSON 都走规则兜底，接口仍 200
-- 交易、定价、结算由确定性代码完成；AI 只读，不碰余额
+- 智能体固定 6 字段契约；没 Key、超时、坏 JSON 都走规则兜底，接口仍 200
+- 交易、定价、结算由确定性代码完成；智能体只读，不碰余额
 - 浅色 / 深色双模式，移动端可用
 
 ## 合规声明
@@ -24,7 +24,7 @@
 | 内容 | 地址 |
 | --- | --- |
 | 前端 | <https://playerstock-frontend-mdlk.onrender.com> |
-| 后端 API 文档 | <https://playerstock-backend-mdlk.onrender.com/api/docs> |
+| 后端 API 文档 | <https://playerstock-backend-mdlk.onrender.com/docs> |
 | 答辩幻灯片 | <https://july75-bit.github.io/Innovation/> |
 | 幻灯片 PDF | <https://july75-bit.github.io/Innovation/playerstock_defense.pdf> |
 
@@ -32,7 +32,7 @@
 
 ## 快速开始
 
-需要 Python 3.12+、Node.js 20+。
+需要 Python 3.12+、Node.js 22.18+ 或 24.12+（与 `code/frontend/package.json` 的 engines 一致）。
 
 ```powershell
 # 后端
@@ -48,7 +48,7 @@ npm install
 npm run dev
 
 # 演示数据 / 跑测试（仓库根目录）
-python scripts/seed_db.py
+python scripts/bootstrap_demo_data.py   # 16 名选手 + 每人约 11 个价格点
 python -m pytest
 cd code/frontend; npm run test:unit -- --run
 ```
@@ -88,7 +88,7 @@ render.yaml      Render 部署蓝图
 | `docs/software/` | 架构、接口契约、数据库、部署、UI 规范 |
 | `docs/algorithm/` | 定价模型、AI 提示词、回测 |
 | `docs/acceptance/` | 测试计划/报告、用户手册、证据 |
-| `docs/slides/` | Slidev 答辩稿（17 页）+ 讲稿 |
+| `docs/slides/` | Slidev 答辩稿（19 页）+ 讲稿 |
 | `docs/mgmt/` | 里程碑、缺陷记录、要求对照 |
 
 ## 团队分工
@@ -103,12 +103,12 @@ render.yaml      Render 部署蓝图
 ## 交易规则
 
 - 注册赠送 5000 信用点；单选手持仓上限 50 股
-- 比赛期间对应选手暂停交易，结算后恢复
+- 本轮有比赛的两支战队整队暂停交易，下一轮恢复
 - 买入需余额充足，卖出需持仓足够；数量必须为正整数
 - 交易流水持久化，持仓/流水按时间倒序查询
 
 ## 已知限制
 
 - Render 免费实例会休眠，冷启动约 30–60 秒
-- 免费 Postgres 有到期时间，到期需换库或续期
+- Postgres 已续期 / 升级（2026-11-26 确认），到期时间以 Render 控制台为准
 - 不接真实赛事数据，不宣称预测准确率

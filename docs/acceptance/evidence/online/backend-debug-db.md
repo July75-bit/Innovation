@@ -45,7 +45,7 @@ curl https://playerstock-backend-mdlk.onrender.com/api/debug/db
 5 张表齐全；`price_history` 78 条（9 轮配方）、`trades` 5 条（TC-403 的 3 条 + 性能实测的 2 条）、
 `players` 8 名、`demo 余额 5000.00`（净额为 0 的买卖后回到初始值）。
 
-> 这与 `deployment.md` §4.5.1 的期望完全一致；接口是只读探针，功能验收后可 `DEBUG_ENDPOINTS=0` 关掉。
+> 这与 `deployment.md` §4.4 的期望完全一致；接口是只读探针，功能验收后可 `DEBUG_ENDPOINTS=0` 关掉。
 
 ## 2. CORS 实测（证明前端域名被放行，且不是 `*`）
 

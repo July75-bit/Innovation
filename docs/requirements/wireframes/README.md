@@ -68,7 +68,7 @@ flowchart TD
 │        └────── ts 首点 ──────── ts 末点 ─
 ── AI 建议 ──────────────────────────────
 │ [持有] 风险：低  规则兜底（AI 暂不可用）    ← source 区分 llm/rule_fallback
-│ 近 5 个价格点累计变动 +5.0%…（≤120 字）    ← reason
+│ 近 5 个价格点累计变动 +5.0%…（≤200 字）    ← reason
 │ 仅为分析建议，不构成投资建议；AI 不会自动交易 ← disclaimer（必须展示）
 ── 交易 ─────────────────────────────────
 │ 数量 [__2__] 现价 126.00 币，约需 252.00 币
@@ -127,7 +127,7 @@ flowchart TD
 | 余额/总资产 | `balance`/`position_value`/`total_asset` | §4.5 |
 | 持仓行 | `quantity`/`avg_cost`/`market_value`/`profit`/`profit_pct` | §4.6 |
 | 流水行 | `side`/`quantity`/`price`/`amount`/`balance_after`/`created_at` | §4.9 |
-| AI 卡 | `action`/`reason`/`risk_level`/`source`/`disclaimer` | §4.10 |
+| AI 卡 | `action`/`reason`/`risk_level`/`source`/`disclaimer` | 契约 §3 #10 |
 
 ## TODO
 

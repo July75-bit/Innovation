@@ -116,8 +116,14 @@ def _timeout(settings: Any) -> float:
     return float(os.getenv("LLM_TIMEOUT_SECONDS", DEFAULT_TIMEOUT))
 
 
-def _base_url() -> str:
+def _base_url(settings: Any = None) -> str:
     """模型端点 URL，两种写法都接受。
+
+    读取顺序：`settings.llm_base_url` → 环境变量 `LLM_BASE_URL` → OpenAI 默认端点。
+    先看 settings 是因为本地把配置写在 `code/backend/.env` 时，pydantic-settings 只把值
+    填进 Settings 字段，不会写回 `os.environ`；只读环境变量的话，`.env` 里的 DeepSeek
+    地址会被忽略，请求带着 DeepSeek 的 key 打到 api.openai.com，然后静默回落规则版
+    （2026-11-26 复现）。
 
     - `https://host/openai/v1`                 → 自动补成 `.../v1/chat/completions`
     - `https://host/openai/v1/chat/completions` → 原样使用
@@ -126,7 +132,10 @@ def _base_url() -> str:
     而旧实现把它当完整 URL 直接 POST → 404 → 被静默回落成规则版，看起来像"配了没生效"。
     这里统一补齐，去掉一个只能靠记性避免的坑。顺带清掉粘贴带的引号/空格（见 `_clean_env`）。
     """
-    raw = (_clean_env(os.getenv("LLM_BASE_URL", "")) or DEFAULT_BASE_URL).rstrip("/")
+    configured = ""
+    if settings is not None and getattr(settings, "llm_base_url", ""):
+        configured = _clean_env(str(settings.llm_base_url))
+    raw = (configured or _clean_env(os.getenv("LLM_BASE_URL", "")) or DEFAULT_BASE_URL).rstrip("/")
     if not raw.endswith("/chat/completions"):
         raw = f"{raw}/chat/completions"
     return raw
@@ -180,8 +189,22 @@ def build_user_prompt(player_context: dict[str, Any]) -> str:
 
 # ---------- 默认客户端（标准库，无第三方依赖）----------
 
-def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
+def _llm_budget_ok(settings: Any = None) -> bool:
+    """全站模型调用额度（app/core/rate_limit.py）；拿不到限流模块时（单独跑 ai/）不限。"""
+    try:
+        from app.core.rate_limit import llm_budget_ok
+    except ImportError:
+        return True
+    return llm_budget_ok(settings if settings is not None else _load_settings())
+
+
+def _default_chat(
+    user_prompt: str, *, settings: Any = None, system_prompt: str | None = None
+) -> str:
     """调用 OpenAI 兼容的 chat/completions 接口，返回模型原始文本。
+
+    `system_prompt` 默认用建议卡的 `SYSTEM_PROMPT`；多角色协作（`ai/panel.py`）
+    会传入各自的角色说明，让模型知道自己是分析师、风控还是交易员。
 
     无网络 / 超时 / 非 2xx / 响应结构异常 都抛 LLMOutputError，由 analyze 回落。
     """
@@ -191,17 +214,20 @@ def _default_chat(user_prompt: str, *, settings: Any = None) -> str:
     api_key = _api_key(settings)
     if not api_key:
         raise LLMOutputError("未配置 LLM_API_KEY")
+    if not _llm_budget_ok(settings):
+        # 和"模型挂了"走同一条路：调用方各自回落规则版，接口仍 200
+        raise LLMOutputError("模型调用太频繁（超过每分钟额度），本次用规则版")
 
     payload = {
         "model": _model(settings),
         "temperature": 0,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt or SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
     }
     request = urllib.request.Request(
-        _base_url(),
+        _base_url(settings),
         data=json.dumps(payload).encode("utf-8"),
         headers={
             "Content-Type": "application/json",

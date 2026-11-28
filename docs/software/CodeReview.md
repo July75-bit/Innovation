@@ -2,7 +2,7 @@
 
 > **负责人**：D 王泽棠 ｜ **对应汇报内容**：第一部分 **3.6 软件质量**（3.6.1 质量控制和保证方法、3.6.2 质量工具使用）与 **3.7 代码统计**；代码评审流程与记录一并收纳于此。
 > **截图证据**：[`evidence/17-code-quality-scan.png`](../acceptance/evidence/17-code-quality-scan.png)（静态扫描+测试+CI 门禁）、[`evidence/18-quality-pylint-pep8.png`](../acceptance/evidence/18-quality-pylint-pep8.png)（Pylint 语义分析 + PEP8 + 格式化体检）、[`evidence/19-complexity-stats.png`](../acceptance/evidence/19-complexity-stats.png)（认知复杂度 + 代码统计）。截图由真实命令输出渲染生成（脚本可复跑）。
-> **当前基线（2026-11-21 复测）**：pytest **335 passed / 0 skipped**（单元 281 / 集成 21 / 评测 33）· 前端 Vitest **182 passed / 22 文件**（2026-11-21 本机）· 核心逻辑覆盖率 **98%**（1956 语句 / 45 未覆盖）· push 后最新一轮 CI **4 个 job** · 已修复缺陷 **15 条**（P0/P1 清零）。
+> **当前基线（2026-11-26 复测）**：pytest **366 passed / 0 skipped**（单元 311 / 集成 22 / 评测 33）· 前端 Vitest **187 passed / 23 文件**（2026-11-21 本机）· 核心逻辑覆盖率 **98%**（2035 语句 / 47 未覆盖）· push 后最新一轮 CI **4 个 job** · 已修复缺陷 **15 条**（P0/P1 清零）。
 
 ---
 
@@ -42,7 +42,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 这一行同时证明三件事：① 异常被**分级捕获**而不是裸 except；② 降级**留痕**；③ 故障**没有升级成 5xx**，交易与行情不受影响。
 
-> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（335 条中约 50 条是异常/边界路径）。
+> 量化：`app/` + `ai/` 中 `except / raise ApiError` 相关语句 **28 处**，全部有对应用例（366 条中约 50 条是异常/边界路径）。
 
 **日志不只刷在控制台：同时落盘，出错能自查**
 
@@ -151,13 +151,13 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 工具 | 类别 | 配置 | 最近结果 |
 | --- | --- | --- | --- |
-| pytest | 单元+集成测试 | `pyproject.toml` | **335 passed / 0 skipped**（截图 17 摄于 134 条的时点，此后补到 335 条） |
-| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（1956/45，≥60% 达标，2026-11-21 复测） |
+| pytest | 单元+集成测试 | `pyproject.toml` | **366 passed / 0 skipped**（截图 17 摄于 134 条的时点，此后补到 366 条） |
+| coverage.py | 覆盖率 | 命令行 `--source=app,core_engine` | **98%**（2035/47，≥60% 达标，2026-11-26 复测） |
 | ruff | lint + format | `pyproject.toml` + CI | CI 门槛全绿；D 负责文件 0 残留 |
 | eslint + oxlint | 前端 lint | `code/frontend` | CI 绿 |
 | vue-tsc | 前端类型检查 | `npm run build` 内含 | CI 绿 |
-| vitest | 前端单测 | 3 个 spec（format / PriceChart / router） | 本地绿 |
-| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 三 job | run #95 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库卫生（误提交拦截）** |
+| vitest | 前端单测 | 23 个测试文件 / 187 条 | CI 与本地均绿 |
+| GitHub Actions | CI 门禁 | `.github/workflows/ci.yml` 4 个 job（仓库健康 / 后端 / 前端 / 交付物） | 全绿；**交付物 job 现校验 45 项必需文件（非空）+ 证据图 ≥20 张 + 仓库健康（误提交拦截）** |
 | VS Code 扩展 | 编码即时反馈 | `.vscode/settings.json`（Pylance basic + Ruff 保存自动修） | 全员共用 |
 
 ---
@@ -168,33 +168,34 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 | 类别 | 语言 | 文件数 | 行数 |
 | --- | --- | ---: | ---: |
-| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 104 | 14849 |
-| | Vue（单文件组件） | 14 | 4595 |
-| | TypeScript（api / router / composables / 测试） | 23 | 2841 |
-| | CSS | 1 | 120 |
-| | HTML（原型 591 + 入口 451） | 3 | 1042 |
-| **文档** | Markdown（README + 65 份交付文档） | 65 | 10411 |
-| **配置与数据** | JSON（种子数据、package、tsconfig 等） | 17 | 1992 |
-| | YAML（CI、render 蓝图） | 2 | 285 |
-| | **合计（全部跟踪文件）** | **229** | **36135** |
+| **代码** | Python（后端 + 引擎 + 脚本 + 测试） | 113 | 17113 |
+| | Vue（单文件组件） | 21 | 8998 |
+| | TypeScript（api / router / composables / 测试） | 49 | 6412 |
+| | CSS | 4 | 969 |
+| | HTML（原型 591 + 入口等） | 3 | 1083 |
+| **文档** | Markdown | 76 | 约 9500 |
+| **配置与数据** | JSON（种子数据、package、tsconfig 等，不含 lock 文件） | 22 | 5697 |
+| | YAML（CI、Slidev 发布、render 蓝图） | 3 | 415 |
 
-- **代码行小计（Python + Vue + TS + CSS + HTML）= 23447 行**；文档与配置单列，不计入代码。
+- **代码行小计（Python + Vue + TS + CSS + HTML）= 34575 行**（2026-11-26 统计）；文档与配置单列，不计入代码。
 - **模块数：20** —— 后端 Python 包 7（`ai`、`app`、`app/api`、`app/core`、`app/models`、`app/schemas`、`core_engine`）+ `scripts` + 测试 4（`tests/unit`、`tests/integration`、`tests/eval`、`tests/perf`）+ 前端 `src` 目录 8（`api`/`assets`/`components`/`composables`/`mock`/`router`/`utils`/`views`）。
 - 相比第 5 天的统计（133 文件 / 17420 行），增长主要来自 A 的登录注册页与智能体页面入口、B 的账号/agent 接口、C 的回测脚本，以及 D 的评测集（`tests/eval`）、压测脚本与汇报材料。
 - 截图：`evidence/19-complexity-stats.png` 第 2 段（该图摄于第 5 天，行数为当时快照）。
 
 ### 3.1 AI Vibe coding / 团队自写比例（估算，如实标注）
 
-**算法**（人人可复核）：把"由 AI 起草的代码"除以"代码总行"，分子只算前端与原型，分母不含文档与配置。
+**算法**（人人可复核，2026-11-26 统计）：分子只算能整块归为「AI 出初稿」的前端业务代码与原型，分母是全部代码行（不含文档与配置）。
 
 | 部分 | 行数 | AI 参与度 |
 | --- | ---: | --- |
-| 前端 Vue + TS + CSS | 7556 | **AI 出初稿**，A 逐行复核并做 6 次人工修正 |
+| 前端业务代码（Vue + TS + CSS，不含测试） | 13025 | **AI 出初稿**，A 逐行复核并人工修改 |
 | 交互原型 `docs/software/prototype/index.html` | 591 | **AI 草稿**，D 校验 18 项交互后定稿 |
-| 后端 + 定价引擎 + 脚本 + 测试（Python） | 14849 | **人工编写**，AI 仅辅助排错与补测试 |
-| **合计（代码行）** | **23447** | — |
+| 前端测试（Vitest） | 3168 | 部分由 AI 起草，组员补断言与边界，未计入分子 |
+| Python（后端、定价引擎、脚本、测试） | 17113 | 交易事务、定价公式、接口契约**由组员编写、互相评审**；部分测试由 AI 辅助，未计入分子 |
+| 其余（HTML 入口等） | 678 | — |
+| **合计（代码行）** | **34575** | — |
 
-> **结论：AI 首稿约 8147 行 / 23447 行 ≈ 35%**（前端 7556 + 原型 591）；其余 65% 人工编写。
+> **结论：AI 初稿约 13616 行 / 34575 行 ≈ 39%**（前端业务代码 13025 + 原型 591）。部分测试和文档也有 AI 参与，因为和人工修改混在一起、无法逐行区分，没有计入这个比例。
 > **但 100% 的提交代码经负责人逐行阅读、本地运行验证并配测试背书**（见 `compliance.md` §3 的声明："不存在直接复制未理解代码"）。
 > 比例本身不是评分点，"**用了 AI 但每一行都过手**"才是——这也是我们能在被追问时现场改代码、讲清每处设计的前提。
 
@@ -221,7 +222,7 @@ WARNING ai.llm_agent LLM 输出不可用，回落规则版：TimeoutError: model
 
 # 先确认用「项目环境」而非 conda base（否则报 No module named pytest）
 conda activate playerstock      # 或 & "D:\miniconda\envs\playerstock\python.exe"
-python -m pytest                                     # 335 passed
+python -m pytest                                     # 366 passed
 ruff check --select E4,E7,E9,F,C901 code/backend code/core_engine tests
 ruff check --select E,W code/backend code/core_engine tests scripts   # PEP8：仅 25 条 E501
 pylint code/core_engine code/backend/app/core        # 9.74/10
@@ -241,4 +242,4 @@ git grep -n "pragma: no cover" -- code/backend                # 刻意不测的�
 python -c "import logging; logging.basicConfig(level=logging.INFO); from ai.llm_agent import analyze; analyze({'player_id':1,'name':'ZywOo','current_price':126.0,'change_pct':5.0,'rating':88,'recent_prices':[{'price':120.0},{'price':126.0}],'position':{'quantity':10,'avg_cost':120.0}}, chat=lambda p: (_ for _ in ()).throw(TimeoutError('model did not respond in 20s')))"
 ```
 
-CI 结果：<https://github.com/July75-bit/Innovation/actions>（push 后复核最新一轮三 job）。
+CI 结果：<https://github.com/July75-bit/Innovation/actions>（push 后复核最新一轮 4 个 job）。

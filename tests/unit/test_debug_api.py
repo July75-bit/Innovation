@@ -159,3 +159,43 @@ def test_reseed_can_be_disabled(client, monkeypatch: pytest.MonkeyPatch) -> None
 
     assert resp.status_code == 404
     assert resp.json()["code"] == "ENDPOINT_DISABLED"
+
+
+# ---------- 运维口令（app/core/ops_auth.py，2026-11-26 收紧） ----------
+
+
+def test_ops_endpoints_disabled_when_token_unset(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    """没配 RESEED_TOKEN 时，reseed 与 recalc 都直接 403，空口令也不能"匹配"空串。"""
+    monkeypatch.setattr(settings, "reseed_token", "")
+
+    reseed = client.post("/api/debug/reseed?token=")
+    recalc = client.post(
+        "/api/prices/recalc?token=",
+        json={"round_no": 1, "played_at": "2030-01-01", "items": [
+            {"player_id": 1, "score": 100, "signal": 1}
+        ]},
+    )
+
+    for resp in (reseed, recalc):
+        assert resp.status_code == 403
+        assert resp.json()["code"] == "OPS_TOKEN_UNSET"
+
+
+def test_public_example_token_rejected_on_render(client, monkeypatch: pytest.MonkeyPatch) -> None:
+    """线上沿用 .env.example 的公开示例口令 = 没配置。"""
+    from app.core.ops_auth import PUBLIC_EXAMPLE_TOKEN
+
+    monkeypatch.setattr(settings, "reseed_token", PUBLIC_EXAMPLE_TOKEN)
+    monkeypatch.setenv("RENDER", "true")
+
+    resp = client.post(f"/api/debug/reseed?token={PUBLIC_EXAMPLE_TOKEN}")
+
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "OPS_TOKEN_UNSET"
+
+
+def test_reseed_rejects_missing_token(client) -> None:
+    resp = client.post("/api/debug/reseed")
+
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "TOKEN_MISMATCH"

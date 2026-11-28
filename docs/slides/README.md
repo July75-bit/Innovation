@@ -1,6 +1,6 @@
 # Slidev 结课审查幻灯片
 
-PlayerStock 结课项目审查用的 Slidev 项目：17 页 16:9 幻灯片，覆盖课程 wiki「项目汇报内容」1.1–3.7，
+PlayerStock 结课项目审查用的 Slidev 项目：19 页 16:9 幻灯片，覆盖课程 wiki「项目汇报内容」1.1–3.7，
 架构/ER 图用 Mermaid，逐页讲稿写在 markdown 注释里（放映时按 `P` 查看演讲者模式）。
 
 > 版式：每页标题先出现，正文按讲解顺序逐块点击出现；两栏版面左右起点对齐、正文垂直居中。
@@ -30,13 +30,16 @@ PlayerStock 结课项目审查用的 Slidev 项目：17 页 16:9 幻灯片，覆
 
 | 文件 | 用途 |
 | --- | --- |
-| [`slides.md`](slides.md) | **源稿**：17 页 Markdown（含 frontmatter、Mermaid、讲稿注释） |
-| [`style.css`](style.css) | 全局样式（暖纸色、卡片、表格、代码块） |
+| [`slides.md`](slides.md) | **源稿**：19 页 Markdown（含 frontmatter、Mermaid、讲稿注释） |
+| [`style.css`](style.css) | 版式：纸白底、墨色字、单一砖红强调色；思源宋体标题 + 思源黑体正文；表格只留横线 |
+| [`global-top.vue`](global-top.vue) | 每页右下角页码与页脚小字（封面、结束页不显示） |
+| [`setup/mermaid.ts`](setup/mermaid.ts) | Mermaid 图配色与字体（标签用 SVG 文字，避免被节点框裁掉） |
 | [`assets/`](assets/) | 幻灯片引用的产品截图（市场浅/深、详情、移动端） |
 | [`package.json`](package.json) | `dev` / `build` / `export` 脚本与依赖版本 |
 | [`package-lock.json`](package-lock.json) | 锁定 `@slidev/cli 53.1.0` / `@slidev/theme-default` / `playwright-chromium` |
-
 | [`notes.md`](notes.md) | 逐页讲稿的纯文本版（与 slides.md 注释同步） |
+
+> 字体：思源宋体 / 思源黑体从 Google Fonts 在线加载；断网本地放映会退回系统宋体和黑体，版式不变。
 
 ## GitHub Actions 流水线
 

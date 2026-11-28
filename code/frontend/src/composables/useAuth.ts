@@ -15,6 +15,7 @@
 import { computed, readonly, ref } from 'vue'
 
 import { api } from '../api'
+import { invalidateCache } from '../api/cache'
 import { ApiError } from '../api/client'
 import { clearToken, getToken, restoreToken, setToken } from '../api/token'
 import type { AccountType, AuthUser } from '../api/types'
@@ -71,8 +72,13 @@ function writeGuestChoice(chosen: boolean): void {
   }
 }
 
-/** 清掉一切身份痕迹：令牌 + 内存用户 + 访客选择 */
+/**
+ * 换了身份，内存缓存（`api/cache.ts`）必须整体清空：
+ * 缓存按网址存、不分用户，不清的话下一个人会看到上一个人的余额/持仓/流水/AI 计划
+ * （2026-11-26 修：此前只有买卖成功才清，登录/退出/注册/删号都不清）。
+ */
 function forgetSession(): void {
+  invalidateCache()
   clearToken()
   token.value = null
   user.value = null
@@ -83,6 +89,7 @@ function forgetSession(): void {
 }
 
 function adopt(res: { user: AuthUser; token: string }, remember: boolean): void {
+  invalidateCache() // 新身份：不能沿用访客或上一个账号的缓存
   setToken(res.token, remember ? 'remember' : 'session')
   token.value = res.token
   user.value = res.user

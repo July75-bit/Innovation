@@ -51,7 +51,7 @@ src/
 ├── composables/
 │   ├── useAccount.ts        # 余额共享状态（模块级 ref，未用 Pinia）
 │   ├── useBackendHealth.ts  # 后端连接检测共享（顶栏徽标，各页刷新时同步复检）
-│   └── useAuth.ts           # 注册 / 登录：真鉴权（令牌 + /api/auth/*），身份见契约 §4.15
+│   └── useAuth.ts           # 注册 / 登录：真鉴权（令牌 + /api/auth/*），身份见契约 §3 #15
 ├── components/
 │   ├── PriceChart.vue   # 价格历史折线图（零依赖 SVG，升序直接用）
 │   ├── TradePanel.vue   # 数量输入 + 买入/卖出 + 后端 message 展示
@@ -72,7 +72,7 @@ src/
 
 ## 注册 / 登录（第 7 轮起：真鉴权）
 
-第 6 轮这层是"只写浏览器 localStorage 的假账号"；**第 7 轮换成后端真鉴权**（契约 §4.11~§4.15）：
+第 6 轮这层是"只写浏览器 localStorage 的假账号"；**第 7 轮换成后端真鉴权**（契约 §3 #13–17）：
 口令由后端 PBKDF2-HMAC-SHA256 散列，令牌由后端签发、可在服务端撤销，余额 / 持仓 / 流水**按账号隔离**。
 
 | 入口 | 行为 |

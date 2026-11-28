@@ -18,7 +18,11 @@ from datetime import datetime, timedelta, timezone
 from core_engine import update_price
 from sqlalchemy import select
 
+from app.core.config import settings
 from app.models import Player, PriceHistory
+
+#: 运维口令由 tests/conftest.py 设定（RESEED_TOKEN）
+RECALC_URL = f"/api/prices/recalc?token={settings.reseed_token}"
 
 ROUND = 7
 # ⚠️ 不能写死日期：conftest 用 `now-2h` / `now-1h` 造种子历史，
@@ -54,7 +58,7 @@ def test_recalc_applies_prices_and_reason(client, session_factory) -> None:
     expected = update_price(current, 0.5, score=90.0)
 
     resp = client.post(
-        "/api/prices/recalc",
+        RECALC_URL,
         json=_payload(
             [
                 {"player_id": SEED_ZYWOO, "score": 90.0, "signal": 0.5},
@@ -94,11 +98,11 @@ def test_recalc_is_idempotent_per_round(client, session_factory) -> None:
         {"player_id": SEED_FLAMEZ, "score": 40.0, "signal": -1.0},
     ]
 
-    first = client.post("/api/prices/recalc", json=_payload(items))
+    first = client.post(RECALC_URL, json=_payload(items))
     assert first.status_code == 200, first.text
     assert len(first.json()["applied"]) == 2
 
-    second = client.post("/api/prices/recalc", json=_payload(items))
+    second = client.post(RECALC_URL, json=_payload(items))
     assert second.status_code == 200, second.text
     body = second.json()
     assert body["applied"] == []
@@ -115,7 +119,7 @@ def test_recalc_is_idempotent_per_round(client, session_factory) -> None:
 
 def test_recalc_skips_suspended_player(client, session_factory) -> None:
     resp = client.post(
-        "/api/prices/recalc",
+        RECALC_URL,
         json=_payload([{"player_id": SEED_SH1RO, "score": 70.0, "signal": 0.2}]),
     )
 
@@ -138,7 +142,7 @@ def test_recalc_skips_team_playing_this_round(client, session_factory) -> None:
         db.commit()
 
     resp = client.post(
-        "/api/prices/recalc",
+        RECALC_URL,
         json=_payload([{"player_id": SEED_SH1RO, "score": 80.0, "signal": 0.3}]),
     )
 
@@ -155,7 +159,7 @@ def test_recalc_skips_team_playing_this_round(client, session_factory) -> None:
 
 def test_recalc_unknown_player_returns_404(client) -> None:
     resp = client.post(
-        "/api/prices/recalc",
+        RECALC_URL,
         json=_payload([{"player_id": 999, "score": 70.0, "signal": 0.2}]),
     )
 
@@ -165,8 +169,19 @@ def test_recalc_unknown_player_returns_404(client) -> None:
 
 def test_recalc_rejects_empty_items(client) -> None:
     resp = client.post(
-        "/api/prices/recalc",
+        RECALC_URL,
         json={"round_no": ROUND, "played_at": PLAYED_AT, "items": []},
     )
 
     assert resp.status_code == 422
+
+
+def test_recalc_requires_ops_token(client) -> None:
+    """不带 / 带错口令都不能改价（以前任何人换个日期就能连续拉抬价格）。"""
+    body = _payload([{"player_id": SEED_ZYWOO, "score": 100.0, "signal": 1.0}])
+
+    missing = client.post("/api/prices/recalc", json=body)
+    wrong = client.post("/api/prices/recalc?token=guess", json=body)
+
+    assert missing.status_code == 403 and missing.json()["code"] == "TOKEN_MISMATCH"
+    assert wrong.status_code == 403 and wrong.json()["code"] == "TOKEN_MISMATCH"

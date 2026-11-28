@@ -42,9 +42,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from app.api.deps import get_current_user
 from app.core.database import get_db
 from app.core.errors import ApiError
-from app.models import Player
+from app.models import Player, User
 
 router = APIRouter(prefix="/analysis", tags=["ai"])
 
@@ -91,7 +92,11 @@ def _minimal_context(player: Player) -> dict:
     response_model=AnalysisAdvice,
     summary="AI 分析建议（模型不可用时自动降级为规则版）",
 )
-def get_analysis(player_id: int, db: Session = Depends(get_db)) -> AnalysisAdvice:  # noqa: B008 —— FastAPI 依赖注入惯用法
+def get_analysis(  # noqa: B008 —— FastAPI 依赖注入惯用法
+    player_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> AnalysisAdvice:
     """返回某位选手的 AI 建议；AI 故障一律 200 + `source=rule_fallback`。
 
     只读：查选手 → 拼上下文 → `analyze()`（内部若调模型也带 20s 超时）→ 返回。
@@ -103,7 +108,8 @@ def get_analysis(player_id: int, db: Session = Depends(get_db)) -> AnalysisAdvic
 
     try:
         # 传入同一个只读会话：不另开连接，测试里的 get_db 依赖覆盖也能生效
-        context = build_player_context(player_id, db=db)
+        # 持仓按当前用户取（登录者本人 / 未登录为演示账户），2026-11-26 修
+        context = build_player_context(player_id, db=db, user_id=user.user_id)
     except Exception as exc:  # noqa: BLE001 —— 上下文失败属于 AI 侧故障，仍要 200 + 规则版
         logger.warning("AI 上下文组装失败，使用最小上下文：player_id=%s %s: %s", player_id, type(exc).__name__, exc)
         context = _minimal_context(player)
