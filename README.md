@@ -88,7 +88,7 @@ render.yaml      Render 部署蓝图
 | `docs/software/` | 架构、接口契约、数据库、部署、UI 规范 |
 | `docs/algorithm/` | 定价模型、AI 提示词、回测 |
 | `docs/acceptance/` | 测试计划/报告、用户手册、证据 |
-| `docs/slides/` | Slidev 答辩稿（19 页）+ 讲稿 |
+| `docs/slides/` | Slidev 答辩稿（20 页）+ 讲稿 |
 | `docs/mgmt/` | 里程碑、缺陷记录、要求对照 |
 
 ## 团队分工

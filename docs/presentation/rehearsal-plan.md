@@ -2,7 +2,7 @@
 
 > **用途**：彩排当天照着走，不用再翻其他文档。**打印这一份就够**。
 > **对应课件**：SWIEP.pdf p.268–270 —— **幻灯片 8 分钟 40% + 作品演示 2 分钟 40% + 问答 5 分钟 20%**。
-> **当前材料**：Slidev 源稿 docs/slides/slides.md 19 页 · GitHub Actions 产物 19 页 PDF · demo-script.md 2:00 逐秒 · qa.md 28 问（另有 Q11.b） · qa_drill.md 15 问追问链。
+> **当前材料**：Slidev 源稿 docs/slides/slides.md 20 页 · GitHub Actions 产物 20 页 PDF · demo-script.md 2:00 逐秒 · qa.md 28 问（另有 Q11.b） · qa_drill.md 15 问追问链。
 > **线上状态**：`source=llm`（真模型，中位 2.5s）；余额需**上手前重置**（见 T−30）。
 
 ---
@@ -14,7 +14,7 @@
 | 1 | 线上预热：打开 `/api/health` 连点 3 次 | B | 三次都 200（冷启动约 49s） |
 | 2 | **演示数据重置**：`POST https://playerstock-backend-mdlk.onrender.com/api/debug/reseed?token=<RESEED_TOKEN>&rounds=12&seed=42`（只复位行情和 demo 账户，注册账号不动） | B | 市场页余额 **5000.00**、持仓空、流水干净 |
 | 3 | 确认 AI 走真模型：`GET /api/analysis/1` | D | `source: "llm"`（不是 `rule_fallback`） |
-| 4 | PDF 与 md 同版：改过稿就重跑 Actions（Slidev **19 页**；`defense.pdf` 是历史产物，不用重导） | D | Pages 上的 PDF 是 19 页，封面与最后一次提交一致 |
+| 4 | PDF 与 md 同版：改过稿就重跑 Actions（Slidev **20 页**；`defense.pdf` 是历史产物，不用重导） | D | Pages 上的 PDF 是 20 页，封面与最后一次提交一致 |
 | 5 | 打印件：本手册 + `demo-script.md` + 计时表 | D | 每人手上有一份各自那段的页面 |
 | 6 | 设备：计时器（手机秒表）、投屏分辨率、翻页笔、转接头 | A | 投屏无黑边、PDF 可翻页 |
 | 7 | **录屏兜底**：2 分钟演示录一遍存本地 | A | 文件能在演示机上播放 |

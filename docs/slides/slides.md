@@ -25,7 +25,7 @@ fonts:
 
 <div>
   <div class="cover-title">PlayerStock</div>
-  <div class="cover-sub">用信用点买卖 CS2 选手，<br>价格跟着比赛走。</div>
+  <div class="cover-sub">以 CS2 职业选手为标的的虚拟交易系统，<br>价格随比赛表现变化。</div>
 </div>
 
 <dl class="dl rule-top" style="max-width:44rem">
@@ -54,26 +54,26 @@ fonts:
 
 <div class="kicker"><b>01</b> 产品设计 · 1.1 使命、口号和目标用户</div>
 
-# 看比赛时的判断，可以拿价格来验证
+# 使命：用价格验证对选手表现的判断
 
 <div class="body">
 
 <div class="g g-7-5">
   <div v-click>
     <div class="label">使命</div>
-    <div class="quote">看比赛时觉得某位选手状态好，就用信用点买一点；过几轮再看价格，就知道自己看得准不准。</div>
+    <div class="quote">观众用信用点买入看好的选手，再通过后续几轮的价格变化，检验自己的判断。</div>
     <div class="label" style="margin-top:1.6rem">口号</div>
     <div class="statement" style="font-size:1.7rem">看懂比赛，从持有起。</div>
-    <div class="note">口号里刻意不出现赚钱、输赢、翻倍。</div>
+    <div class="note">口号不使用赚钱、输赢、翻倍等表述。</div>
   </div>
   <div v-click>
-    <div class="label">写给谁</div>
+    <div class="label">目标用户</div>
     <dl class="dl" style="grid-template-columns:6.4rem 1fr">
-      <dt>CS2 观众</dt><dd>对选手有看法，没处验证</dd>
-      <dt>想练交易的人</dt><dd>想练买卖，不担真钱风险</dd>
-      <dt>学编程的同学</dt><dd>想看一个完整跑通的项目</dd>
+      <dt>CS2 观众</dt><dd>对选手有判断，缺少验证途径</dd>
+      <dt>交易体验者</dt><dd>体验买卖，不承担资金风险</dd>
+      <dt>编程学习者</dt><dd>参考一个完整的工程项目</dd>
     </dl>
-    <div class="note rule-top" style="margin-top:1.2rem">不面向：想靠它赚钱的人、未成年人、真钱竞猜用户。</div>
+    <div class="note rule-top" style="margin-top:1.2rem">不面向：以盈利为目的的用户、未成年人、真钱竞猜用户。</div>
   </div>
 </div>
 
@@ -97,7 +97,7 @@ fonts:
 
 <div class="kicker"><b>01</b> 产品设计 · 1.1 差异化、获客与团队</div>
 
-# 买的是选手身价，不是比赛结果
+# 与同类产品的区别：交易对象是选手身价
 
 <div class="body">
 
@@ -108,12 +108,12 @@ fonts:
 | 买的是什么 | 一场比赛的输赢 | 公司股票 | <span class="hl">一位选手的身价</span> |
 | 价格从哪来 | 盘口赔率 | 真实行情 | <span class="hl">按每轮比赛表现计算，可以回测</span> |
 | 涨跌有没有原因 | 没有 | 部分有 | <span class="hl">每次变价都写明原因</span> |
-| 用不用真钱 | 用 | 不用 | <span class="hl">不用，信用点没有任何出口</span> |
+| 用不用真钱 | 用 | 不用 | <span class="hl">不用，信用点不可兑换</span> |
 
 </div>
 
 <div class="g g-1-1 rule-top" v-click>
-  <div class="text"><span class="label">获客　</span>每轮比赛前后发涨跌复盘，先在校园电竞社群和 B 站找人试用。</div>
+  <div class="text"><span class="label">获客　</span>每轮比赛前后发布涨跌复盘，先在校园电竞社群和 B 站试用推广。</div>
   <div class="text"><span class="label">分工　</span>A 前端 · B 交易与部署 · C 定价与回测 · D 智能体与测试</div>
 </div>
 
@@ -141,15 +141,15 @@ fonts:
 
 <div class="kicker"><b>01</b> 产品设计 · 1.2 产品定义</div>
 
-# 给想验证自己眼光的 CS2 观众
+# 产品定义：面向关注 CS2 选手的观众
 
 <div class="body">
 
 <div class="g g-7-5">
-  <dl class="dl" v-click>
-    <dt>给谁</dt><dd>关注 CS2 选手、又想体验虚拟交易的观众，想亲手验证自己的判断。</dd>
-    <dt>是什么</dt><dd>一个以 CS2 职业选手为标的的虚拟股网站，有行情、买卖、持仓、走势和智能体建议。</dd>
-    <dt>不同在哪</dt><dd>资讯站只报比分，模拟盘交易公司股票；这里每一次价格变化，都能对应到选手某一轮的表现。</dd>
+  <dl class="dl" v-click style="grid-template-columns:5.2rem 1fr">
+    <dt>目标用户</dt><dd>关注 CS2 选手、又想体验虚拟交易的观众，想亲手验证自己的判断。</dd>
+    <dt>产品形态</dt><dd>以 CS2 职业选手为标的的虚拟股网站，提供行情、买卖、持仓、走势和智能体建议。</dd>
+    <dt>差异</dt><dd>资讯站提供比分，模拟盘交易公司股票；本产品的每次价格变化都对应选手某一轮的表现。</dd>
   </dl>
   <div v-click>
     <div class="label">一条用户故事</div>
@@ -158,7 +158,7 @@ fonts:
   </div>
 </div>
 
-<div class="text rule-top" v-click><span class="label">边界　</span>网页应用，桌面和手机都能用；初始 5000 信用点，每位选手最多持有 50 股；不登录用公共演示账户，也可以注册私人账号。不充值、不提现、不给赔率、不自动交易。</div>
+<div class="text rule-top" v-click><span class="label">边界　</span>网页应用，支持桌面和手机；初始 5000 信用点，每位选手最多持有 50 股；未登录时使用公共演示账户，也可注册私人账号。不提供充值、提现、赔率和自动交易。</div>
 
 </div>
 
@@ -184,22 +184,22 @@ fonts:
 
 <div class="kicker"><b>02</b> 产品设计应用的原则</div>
 
-# 五条原则，每条都能在仓库里查到
+# 五条设计原则及对应做法
 
 <div class="body">
 
 <div class="numbered" v-click style="row-gap:.55rem">
-  <div><span class="n">01</span><div><div class="t">先解决主要问题</div><div class="d">只做看行情和验证判断；充值、撮合盘口、第三方登录都不做。<span class="mono">problem_definition.md</span></div></div></div>
+  <div><span class="n">01</span><div><div class="t">先解决主要问题</div><div class="d">聚焦行情查看与判断验证，不做充值、撮合盘口和第三方登录。<span class="mono">problem_definition.md</span></div></div></div>
   <div><span class="n">02</span><div><div class="t">让选择收敛</div><div class="d">定价只有一条公式；智能体只输出 6 个固定字段。<span class="mono">pricing_model.md · api_contract.md</span></div></div></div>
-  <div><span class="n">03</span><div><div class="t">能复用就不自己写</div><div class="d">后端用成熟的 FastAPI 和 SQLAlchemy；图表简单，直接画 SVG，不引图表库。<span class="mono">architecture.md</span></div></div></div>
-  <div><span class="n">04</span><div><div class="t">用数字验收</div><div class="d">测试条数、覆盖率、单次涨跌上限、接口耗时，都写成具体数值。<span class="mono">test_report.md</span></div></div></div>
-  <div><span class="n">05</span><div><div class="t">机器先查，人再看</div><div class="d">每次提交先过 CI 的 4 项检查，人工评审只看设计。<span class="mono">ci.yml · CodeReview.md</span></div></div></div>
+  <div><span class="n">03</span><div><div class="t">优先复用成熟方案</div><div class="d">后端采用 FastAPI 和 SQLAlchemy；图表需求简单，使用 SVG 绘制。<span class="mono">architecture.md</span></div></div></div>
+  <div><span class="n">04</span><div><div class="t">用数字验收</div><div class="d">测试条数、覆盖率、单次涨跌上限、接口耗时均有具体数值。<span class="mono">test_report.md</span></div></div></div>
+  <div><span class="n">05</span><div><div class="t">自动检查优先</div><div class="d">每次提交先通过 CI 的 4 项检查，人工评审侧重设计。<span class="mono">ci.yml · CodeReview.md</span></div></div></div>
 </div>
 
 </div>
 
 <!--
-【35 秒】我们定了五条原则，每条后面小字是对应的文档，都能在仓库里查到。举两个例子：第二条「让选择收敛」，定价只用一条公式，智能体只能输出六个固定字段，这样好测、好查；第五条「机器先查，人再看」，格式、类型、测试这些交给 CI，组员评审时只讨论设计。
+【30 秒】我们定了五条设计原则，每条后面的小字是对应的文档。举两个例子：第二条「让选择收敛」，定价只用一条公式，智能体只输出六个固定字段，便于测试和检查；第五条「自动检查优先」，格式、类型和测试交给 CI，组员评审时主要讨论设计。
 
 **【可能被问】**
 
@@ -220,7 +220,7 @@ fonts:
 
 <div class="kicker"><b>03</b> 产品实现 · 3.1 用户体验设计</div>
 
-# 一屏看完行情，三步完成下单
+# 界面：行情集中展示，三步完成下单
 
 <div class="body">
 
@@ -235,7 +235,7 @@ fonts:
   </div>
 </div>
 
-<div class="note" v-click>选手卡 → 详情页 → 下单面板，三步买入。手机端用底部 4 个标签切换；浅色、深色两套主题都检查过文字对比度；从详情页返回，筛选和排序保持原样。</div>
+<div class="note" v-click>选手卡 → 详情页 → 下单面板，三步完成买入。手机端通过底部 4 个标签切换；浅色、深色主题均检查过文字对比度；从详情页返回后，筛选和排序保持不变。</div>
 
 </div>
 
@@ -261,24 +261,24 @@ fonts:
 
 <div class="kicker"><b>03</b> 产品实现 · 3.2 技术选型</div>
 
-# 六天工期，只选组员用过的
+# 技术选型：优先采用组员熟悉的技术
 
 <div class="body">
 
 <div v-click>
 
-| 层 | 选型 | 为什么 |
+| 层 | 选型 | 原因 |
 | --- | --- | --- |
 | 前端 | Vue 3 · Vite · TypeScript · Vitest | 组员熟悉，构建快，有类型检查 |
-| 后端 | Python · FastAPI · SQLAlchemy · Pydantic | 写接口快，自动生成接口文档 |
-| 数据 | 本地 SQLite，线上 Postgres | 本地不用装数据库；线上必须能持久保存 |
-| 智能体 | DeepSeek 接口 + 规则版备用 | 便宜；模型出问题就换规则版 |
+| 后端 | Python · FastAPI · SQLAlchemy · Pydantic | 开发效率高，自动生成接口文档 |
+| 数据 | 本地 SQLite，线上 Postgres | 本地无需安装数据库；线上需要持久保存 |
+| 智能体 | DeepSeek 接口 + 规则版备用 | 成本低；模型不可用时切换规则版 |
 | 部署 | Render：静态站 + 后端 + 定时任务 + 数据库 | 有免费额度，自带 HTTPS |
-| 检查 | GitHub Actions · ruff · oxlint · eslint · pytest | 每次提交自动跑 |
+| 检查 | GitHub Actions · ruff · oxlint · eslint · pytest | 每次提交自动执行 |
 
 </div>
 
-<div class="note" v-click>具体版本号见仓库 README。线上必须用 Postgres：免费服务器的硬盘每次重新部署都会清空。</div>
+<div class="note" v-click>具体版本号见仓库 README。线上使用 Postgres，因为免费服务器的磁盘在重新部署时会清空。</div>
 
 </div>
 
@@ -304,7 +304,7 @@ fonts:
 
 <div class="kicker"><b>03</b> 产品实现 · 3.3 代码仓库与协作</div>
 
-# 540 次提交，四个人都有份
+# 代码仓库与协作：540 次提交
 
 <div class="body">
 
@@ -320,9 +320,9 @@ fonts:
     <div class="note" style="margin-top:.9rem">B 有两个提交身份（July75-bit 60 + Hu De Hao 56），合并计算。<br>统计至 2026-11-28：共 540 次提交，其中非合并提交 397 次。</div>
   </div>
   <dl class="dl" v-click style="grid-template-columns:4.5rem 1fr">
-    <dt>仓库</dt><dd><span class="mono">github.com/July75-bit/Innovation</span><br>日常提交进 develop 分支</dd>
-    <dt>任务</dt><dd>Issues 和看板管理，15 条缺陷全部关闭</dd>
-    <dt>检查</dt><dd>每次 push 跑 4 项：冲突标记、后端、前端、交付物</dd>
+    <dt>仓库</dt><dd><span class="mono">github.com/July75-bit/Innovation</span><br>日常提交合入 develop 分支</dd>
+    <dt>任务</dt><dd>Issues 和看板管理，15 条缺陷均已关闭</dd>
+    <dt>检查</dt><dd>每次 push 执行 4 项：冲突标记、后端、前端、交付物</dd>
   </dl>
 </div>
 
@@ -350,7 +350,7 @@ fonts:
 
 <div class="kicker"><b>03</b> 产品实现 · 3.4 生命周期中遇到的问题</div>
 
-# 上线前踩过六个坑，修完都补了测试
+# 开发与上线中的六个问题及处理
 
 <div class="body">
 
@@ -358,19 +358,19 @@ fonts:
 
 | 问题 | 原因 | 怎么解决 |
 | --- | --- | --- |
-| 重新部署后数据没了 | 免费服务器的硬盘是临时的，SQLite 文件跟着清空 | 线上改用 Postgres，启动时检查并告警 |
-| 线上启动报找不到 psycopg | SQLAlchemy 2.1 换了默认数据库驱动 | 连接串统一改成 psycopg2，加测试守住 |
-| 前端请求全被跨域拦下 | 后端没配前端地址，或地址多了个尾斜杠 | 自动去掉尾斜杠，漏配时告警 |
-| 首页简报直接露出 JSON | 模型的输出没清洗就展示 | 后端清洗，前端再兜一次，加回归测试 |
-| 第一次打开要等 33.6 秒 | 免费服务器闲置 15 分钟就休眠 | 定时任务保活，加骨架屏和自动重试 |
-| 赛后结算接口没有口令 | 当初只当内部接口，没加校验 | 必须带运维口令，补了 4 条测试 |
+| 重新部署后数据丢失 | 免费服务器使用临时磁盘，SQLite 文件随之清空 | 线上改用 Postgres，启动时检查并告警 |
+| 线上启动报找不到 psycopg | SQLAlchemy 2.1 更换了默认数据库驱动 | 连接串统一改为 psycopg2，并补充测试 |
+| 前端请求被跨域策略拦截 | 后端未配置前端地址，或地址带尾斜杠 | 自动去除尾斜杠，漏配时告警 |
+| 首页简报显示原始 JSON | 模型输出未经清洗直接展示 | 后端清洗输出，前端二次校验，补充回归测试 |
+| 首次访问等待 33.6 秒 | 免费服务器闲置 15 分钟后休眠 | 定时任务保活，增加骨架屏和自动重试 |
+| 赛后结算接口缺少口令校验 | 最初按内部接口设计 | 改为必须携带运维口令，补充 4 条测试 |
 
 </div>
 
 </div>
 
 <!--
-【35 秒】这六个是开发和上线时真踩过的坑。第一个最典型：Render 免费服务器的硬盘是临时的，重新部署一次，SQLite 里的数据就没了，所以线上改用 Postgres。第五个是第一次打开要等三十多秒，因为免费服务器闲置十五分钟就会休眠，我们用定时任务保活。最后一个是结课前自查发现的：赛后结算接口没加口令，现在已经改成必须带口令。每个坑修完都补了测试。
+【30 秒】这是开发和上线中遇到的六个问题。第一个是数据丢失：Render 免费服务器使用临时磁盘，重新部署后 SQLite 文件会被清空，所以线上改用 Postgres。第五个是首次访问要等三十多秒，原因是服务器闲置十五分钟会休眠，我们用定时任务保活。最后一个是结课前自查发现的赛后结算接口缺少口令校验，已改为必须携带口令。每个问题修复后都补充了测试。
 
 **【可能被问】**
 
@@ -391,7 +391,7 @@ fonts:
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.1 系统架构与基础设施</div>
 
-# 价格由程序算，智能体只给建议
+# 系统架构：价格由程序计算，智能体只读
 
 <div class="body center">
 
@@ -412,7 +412,7 @@ flowchart LR
 
 </div>
 
-<div class="note" v-click>三个服务都在 Render 新加坡区：静态站、后端服务、定时任务。智能体到数据库那条是虚线：它只读业务数据，唯一会写的是自己的审计记录。</div>
+<div class="note" v-click>三个服务部署在 Render 新加坡区：静态站、后端服务、定时任务。智能体与数据库之间为虚线：只读取业务数据，仅写入自身的审计记录。</div>
 
 </div>
 
@@ -438,7 +438,7 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.3 算法</div>
 
-# 打得比自己平时好，价格才涨
+# 定价算法：按选手相对自身近期水平的表现调价
 
 <div class="body">
 
@@ -449,14 +449,14 @@ flowchart LR
 
 <div class="g g-7-5 rule-top" style="margin-top:.4rem">
   <dl class="dl" v-click>
-    <dt>表现分 <span class="accent">S</span></dt><dd>本轮得分和自己近 5 场比，压到 −1～1</dd>
+    <dt>表现分 <span class="accent">S</span></dt><dd>本轮得分相对近 5 场的标准分，截断到 −1～1</dd>
     <dt>上限</dt><dd>单次涨跌最多 ±20%</dd>
     <dt>停牌</dt><dd>本队这一轮在比赛，整队暂停买卖</dd>
   </dl>
   <div v-click>
-    <div class="label">为什么和自己比</div>
-    <div class="text">如果和所有选手比，强队选手会一直涨。和自己平时比，只有超常发挥才涨。</div>
-    <div class="note" style="margin-top:.8rem">每个价格点都记一句原因；同样的输入得到同样的价格，用 100 个随机种子回测过。</div>
+    <div class="label">与自身比较的原因</div>
+    <div class="text">若与全体选手比较，高水平选手的价格会持续上涨；与自身近期表现比较，只有表现高于平时，价格才上涨。</div>
+    <div class="note" style="margin-top:.8rem">每个价格点记录一条原因；相同输入得到相同价格，已用 100 个随机种子回测。</div>
   </div>
 </div>
 
@@ -488,30 +488,30 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.3 智能体</div>
 
-# 智能体只动嘴，不动钱
+# 智能体流程：只提供建议，不执行交易
 
 <div class="body">
 
 <div class="flow" v-click>
-  <div><div class="n">01</div><div class="t">准备资料</div><div class="d">读行情、最近价格和当前用户的持仓</div></div>
-  <div><div class="n">02</div><div class="t">分析</div><div class="d">三个角色依次发言；或让模型自己调 3 个只读工具</div></div>
-  <div><div class="n">03</div><div class="t">检查</div><div class="d">只认 6 个固定字段，动作只能是买、卖、不动</div></div>
-  <div><div class="n">04</div><div class="t">算股数</div><div class="d">按余额和风险算建议股数与止损线，纯算术</div></div>
-  <div class="hl"><div class="n">05</div><div class="t">留记录</div><div class="d">每次调用写审计；用户点采纳或忽略也记下来</div></div>
+  <div><div class="n">01</div><div class="t">准备资料</div><div class="d">读取行情、最近价格和当前用户的持仓</div></div>
+  <div><div class="n">02</div><div class="t">分析</div><div class="d">三个角色依次分析，或由模型调用 3 个只读工具</div></div>
+  <div><div class="n">03</div><div class="t">检查</div><div class="d">只接受 6 个固定字段和规定取值</div></div>
+  <div><div class="n">04</div><div class="t">算股数</div><div class="d">按余额和风险等级计算建议股数与止损线</div></div>
+  <div class="hl"><div class="n">05</div><div class="t">记录</div><div class="d">每次调用写入审计；用户的采纳或忽略同样记录</div></div>
 </div>
 
 <div class="g g-7-5 rule-top" v-click>
   <dl class="dl" style="grid-template-columns:6rem 1fr">
-    <dt>不下单</dt><dd>工具全是只读的，买卖必须用户自己点</dd>
-    <dt>坏了也能用</dt><dd>没密钥、超时、格式错、调用太频繁，都换规则版</dd>
+    <dt>不执行交易</dt><dd>工具均为只读，买卖须由用户确认</dd>
+    <dt>故障回退</dt><dd>无密钥、超时、格式错误或超出额度时改用规则版</dd>
   </dl>
-  <div class="note">说明：三个角色是同一个模型，每次换一段身份说明；后一位能看到前面的发言，结论取自交易员。数据量小，直接查库，没有接 RAG。</div>
+  <div class="note">说明：三个角色由同一个模型担任，每次使用不同的角色提示；后一位可读取前面的发言，结论取自交易员。</div>
 </div>
 
 </div>
 
 <!--
-【40 秒】智能体分五步：先从数据库准备资料；再让分析师、风控、交易员依次发言，也可以让模型自己调用三个只读工具去查；然后检查回答，只认六个固定字段；接着按余额和风险算出建议买几股、止损在哪；最后把这次调用记下来。要说明一点：这三个角色是同一个模型，每次给它换一段身份说明。不管哪一步出错，都会换成规则版，页面照常显示。它从头到尾只给建议，买卖必须用户自己点。
+【30 秒】智能体的处理分五步：从数据库准备资料；由分析师、风控、交易员依次分析，或由模型调用三个只读工具；检查回答是否符合六个固定字段；按余额和风险计算建议股数和止损线；最后写入记录。三个角色由同一个模型担任，每次使用不同的角色提示。任何一步出错都会改用规则版。智能体只提供建议，买卖须由用户确认。
 
 **【可能被问】**
 
@@ -526,17 +526,66 @@ flowchart LR
 **问**：建议买几股怎么算的？
 
 答：纯算术：低、中、高风险分别最多用余额的 10%、6%、3%，再受余额和 50 股上限约束；止损线分别比现价低 12%、9%、6%。
+-->
 
-**问**：模型被人刷爆了怎么办？
+---
 
-答：全站每分钟最多调用 60 次模型，超了直接用规则版，不报错、不联网。
+<div class="kicker"><b>03</b> 产品实现 · 3.5.3 智能体的五个组成</div>
+
+# 智能体的五个组成
+
+<div class="body">
+
+<div v-click>
+
+<table class="tight agent5">
+<thead><tr><th>组成</th><th>位置</th><th>实现</th></tr></thead>
+<tbody>
+<tr><td>任务拆解</td><td class="mono">app/api/agent.py<br>ai/panel.py</td><td>固定五步：准备资料 → 分析 → 检查 → 算股数 → 记录；分析按分析师、风控、交易员顺序进行</td></tr>
+<tr><td>工具调用</td><td class="mono">ai/tools.py</td><td>3 个只读工具：查价格历史、查当前用户账户、计算建议股数；由模型决定调用哪个，最多 3 轮，每次调用的参数和结果写入审计</td></tr>
+<tr><td>记忆</td><td class="mono">ai/context.py<br>app/models/agent.py</td><td>每次请求从数据库读取最新行情和当前用户持仓；保存调用记录、采纳记录，价格解读按价格点缓存，简报缓存 10 分钟；不做跨会话的对话记忆</td></tr>
+<tr><td>护栏</td><td class="mono">ai/llm_agent.py<br>app/core/rate_limit.py</td><td>输入：只接收选手编号，提示词按白名单取 11 个字段；输出：6 个字段与取值校验、理由截断到 200 字、清洗 JSON；运行：20 秒超时、每分钟 60 次额度、失败改用规则版</td></tr>
+<tr><td>专业知识</td><td class="mono">ai/prompts.py<br>ai/fallback.py</td><td>提示词要求只依据给定数据作答并引用具体数值；规则版的涨跌与表现分阈值；数据库中带原因的价格历史</td></tr>
+</tbody>
+</table>
+
+</div>
+
+<div class="note rule-top" v-click>数据规模较小（16 名选手），直接用 SQL 查询，未建立向量检索和知识图谱。</div>
+
+</div>
+
+<!--
+【25 秒】这一页按智能体的五个基本组成来对照我们的实现。任务拆解是固定的五步流程，加上三个角色的顺序分工；工具调用有三个只读工具，由模型决定调用哪个，最多三轮；记忆方面，每次请求从数据库读取最新数据，调用和采纳都有记录，不做跨会话的对话记忆；护栏覆盖输入、输出和运行三个环节；专业知识来自提示词、规则版阈值和带原因的价格历史。数据量小，没有建立向量检索和知识图谱。
+
+**【可能被问】**
+
+**问**：任务拆解是模型自己规划的吗？
+
+答：主流程是固定的五步，由代码决定，便于测试和兜底；在工具调用这一步，查哪些数据由模型自己决定，只能用白名单里的三个工具，最多三轮，超出就改用规则版。
+
+**问**：为什么没有长期记忆？
+
+答：每次建议只需要这位选手的当前行情和当前用户的持仓，这些每次都从数据库实时读取，比记忆更准确。历史上的每次调用和用户的采纳、忽略都存在审计表里，可以回查，但不会再喂给模型。
+
+**问**：为什么不做 RAG 或知识图谱？
+
+答：只有 16 名选手，结构化数据用 SQL 直接查就够了；做 RAG 需要真实赛事语料，涉及版权和合规，所以没有做。
+
+**问**：护栏怎么防止提示词注入？
+
+答：接口只接收选手编号，没有可以写字的入口；提示词按白名单只取 11 个字段，不含口令和其他用户的数据；模型输出必须通过 6 个字段和取值校验，否则改用规则版。红队测试 11 条都通过了。
+
+**问**：模型被人反复调用怎么办？
+
+答：全站每分钟最多调用 60 次模型，超出后直接用规则版，不报错、不联网。
 -->
 
 ---
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.4 数据库设计</div>
 
-# 九张表，一笔交易在一个事务里完成
+# 数据库：9 张表，交易在单个事务中完成
 
 <div class="body">
 
@@ -559,9 +608,9 @@ erDiagram
       <dt>账号</dt><dd><span class="mono">users · auth_tokens</span></dd>
       <dt>市场</dt><dd><span class="mono">players · price_history</span></dd>
       <dt>交易</dt><dd><span class="mono">positions · trades</span></dd>
-      <dt>智能体</dt><dd><span class="mono">agent_traces</span> 等 3 张，只存记录</dd>
+      <dt>智能体</dt><dd><span class="mono">agent_traces</span> 等 3 张，仅存记录</dd>
     </dl>
-    <div class="text rule-top" v-click>扣钱、改持仓、写流水在同一个事务里。扣钱时用「余额够才扣」的条件更新，两笔订单同时到也不会超卖。</div>
+    <div class="text rule-top" v-click>扣款、更新持仓、写入流水在同一事务中完成；扣款采用「余额充足才扣」的条件更新，并发下单不会超卖。</div>
   </div>
 </div>
 
@@ -589,7 +638,7 @@ erDiagram
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.5 接口与 3.5.6 前端设计</div>
 
-# 29 个接口、8 个页面、一套设计令牌
+# 接口与前端：29 个接口、8 个页面
 
 <div class="body">
 
@@ -606,9 +655,9 @@ erDiagram
 
   </div>
   <dl class="dl" v-click style="grid-template-columns:4.5rem 1fr">
-    <dt>页面</dt><dd>8 个，切换时有淡入过渡</dd>
-    <dt>状态</dt><dd>不用状态库，放在组合函数里</dd>
-    <dt>图表</dt><dd>价格曲线、资产曲线都是手画 SVG</dd>
+    <dt>页面</dt><dd>8 个，切换时淡入过渡</dd>
+    <dt>状态</dt><dd>未使用状态库，由组合函数管理</dd>
+    <dt>图表</dt><dd>价格曲线和资产曲线用 SVG 绘制</dd>
     <dt>主题</dt><dd>设计令牌，深浅两套共用一份代码</dd>
     <dt>加载</dt><dd>缓存、失败重试、骨架屏</dd>
   </dl>
@@ -640,7 +689,7 @@ erDiagram
 
 <div class="kicker"><b>03</b> 产品实现 · 3.6 软件质量</div>
 
-# 后端 366 条测试，核心代码覆盖率 98%
+# 软件质量：366 条后端测试，覆盖率 98%
 
 <div class="body">
 
@@ -654,11 +703,11 @@ erDiagram
 <div class="g g-1-1 rule-top" v-click>
   <div>
     <div class="label">3.6.1 运行时</div>
-    <div class="text">出错统一返回错误码和中文提示，不把报错细节露给用户；请求和返回都做格式校验；交易用条件更新防并发，有同时卖出的测试。</div>
+    <div class="text">出错时统一返回错误码和中文提示，不向用户暴露报错细节；请求和返回均做格式校验；交易通过条件更新防止并发问题，并有同时卖出的测试。</div>
   </div>
   <div>
     <div class="label">3.6.2 代码规范</div>
-    <div class="text">Python 用 ruff，函数复杂度上限 10；前端 oxlint 加 eslint，零警告才算过，再加类型检查。CI 只检查，不自动改代码。</div>
+    <div class="text">Python 使用 ruff，函数复杂度上限 10；前端使用 oxlint 和 eslint，要求零警告，并做类型检查。CI 只做检查，不自动修改代码。</div>
   </div>
 </div>
 
@@ -690,7 +739,7 @@ erDiagram
 
 <div class="kicker"><b>03</b> 产品实现 · 3.7 代码统计</div>
 
-# 约 3.5 万行代码，AI 写的初稿约占 39%
+# 代码统计：约 3.5 万行，AI 初稿约占 39%
 
 <div class="body">
 
@@ -712,8 +761,8 @@ erDiagram
   </div>
   <div class="body" style="gap:1.1rem">
     <div v-click>
-      <div class="label">AI 参与了多少</div>
-      <div class="quote" style="font-size:1.12rem">前端业务代码和原型由 AI 出初稿，约占全部代码的 39%，组员逐行看过、改过。交易、定价和接口约定由组员自己写，互相评审。</div>
+      <div class="label">AI 辅助情况</div>
+      <div class="quote" style="font-size:1.12rem">前端业务代码和原型由 AI 生成初稿，约占全部代码的 39%，经组员逐行审阅修改。交易、定价和接口约定由组员编写并互相评审。</div>
     </div>
     <div class="note" v-click>模块：前端 8 个页面、12 个组件；后端 11 个路由模块、8 个智能体模块、1 个定价引擎。按 git 跟踪的文件统计，2026-11-28。</div>
   </div>
@@ -743,7 +792,7 @@ erDiagram
 
 <div class="kicker"><b>04</b> 验收 · 测试与容量</div>
 
-# 真模型 16/16 通过，红队 11 条全部拦下
+# 验收：线上评测 16/16，红队测试 11/11
 
 <div class="body center">
 
@@ -754,7 +803,7 @@ erDiagram
   <div><div class="num">38<small>次/秒</small></div><div class="what">只读压测</div><div class="how">约 190 人同时在线<br>全程 0 错误</div></div>
 </div>
 
-<div class="note rule-top" v-click>没做的也说清楚：比赛数据是模拟的，所以没有评估真实比赛的预测准确率；外部用户测试样本还小。证据在 docs/acceptance/，共 147 张截图。</div>
+<div class="note rule-top" v-click>说明：比赛数据为模拟数据，因此未评估真实比赛的预测准确率；外部用户测试样本较少。证据见 docs/acceptance/，共 147 张截图。</div>
 
 </div>
 
@@ -784,7 +833,7 @@ erDiagram
 
 <div class="kicker"><b>05</b> 现场演示</div>
 
-# 接下来两分钟：从看行情到买入
+# 现场演示：从查看行情到完成买入
 
 <div class="body center">
 
@@ -796,12 +845,12 @@ erDiagram
   </div>
   <div class="numbered" v-click>
     <div><span class="n">04</span><div><div class="t">个人页</div><div class="d">看资产曲线和交易统计</div></div></div>
-    <div><span class="n">05</span><div><div class="t">出状况时</div><div class="d">停牌选手买不了；模型不可用时显示规则版建议</div></div></div>
-    <div><span class="n">06</span><div><div class="t">回到市场</div><div class="d">演示结束</div></div></div>
+    <div><span class="n">05</span><div><div class="t">异常情况</div><div class="d">停牌选手无法买入；模型不可用时显示规则版建议</div></div></div>
+    <div><span class="n">06</span><div><div class="t">回到市场</div><div class="d">结束演示</div></div></div>
   </div>
 </div>
 
-<div class="note" v-click>网络不稳时先刷新页面；还不行就放备用录屏。</div>
+<div class="note" v-click>网络不稳定时先刷新页面，仍无法访问则播放备用录屏。</div>
 
 </div>
 

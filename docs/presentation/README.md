@@ -1,13 +1,13 @@
 # 答辩幻灯片
 
-> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（Slidev 答辩稿已迁到 [docs/slides](../slides/)，19 页、Mermaid 架构/ER 图、逐页讲稿，GitHub Actions 自动构建 PDF；本目录保留演示脚本/问答/彩排手册与旧版 PDF）；待**全员彩排**
+> **负责人**：全员（D 汇总） ｜ **截止**：第 6 天 ｜ **状态**：✅ 材料齐（Slidev 答辩稿已迁到 [docs/slides](../slides/)，20 页、Mermaid 架构/ER 图、逐页讲稿，GitHub Actions 自动构建 PDF；本目录保留演示脚本/问答/彩排手册与旧版 PDF）；待**全员彩排**
 > **评分占比**：答辩评分表 —— 介绍幻灯片 **40%** + 功能演示 **40%** + 回答问题 **20%**
 
 ## 文件清单（已产出）
 
 | 文件 | 内容 | 负责人 | 状态 |
 | --- | --- | --- | --- |
-| [`../slides/`](../slides/) | **Slidev 答辩稿（19 页源稿 slides.md + style.css + assets + package.json）**；GitHub Actions 自动构建 PDF/静态站 | D | ✅ |
+| [`../slides/`](../slides/) | **Slidev 答辩稿（20 页源稿 slides.md + style.css + assets + package.json）**；GitHub Actions 自动构建 PDF/静态站 | D | ✅ |
 | [`defense.pdf`](defense.pdf) | 旧版 PDF（16 页，上一版 HTML 流程产物；新版请用 Slidev 导出） | D | 历史 |
 | [`defense.html`](defense.html) | 旧版 HTML 源文件（历史；本次答辩主材料为 Slidev） | D | 历史 |
 | [`build_deck.py`](build_deck.py) | 旧版 `defense.html` 的生成脚本（历史） | D | 历史 |
@@ -29,7 +29,7 @@
 流水线：
 npm ci → Playwright Chromium + 中文字体 → slidev build → slidev export → 发布 GitHub Pages（在线放映 + PDF），另上传 PDF 备份 artifact **playerstock-defense-pdf**（保留 30 天）。
 
-**下载**：GitHub 仓库 → Actions → 左侧「答辩幻灯片 (Slidev)」→ 最近一次绿色 run → 底部 Artifacts → 下载 `playerstock-defense-pdf`，解压得到 19 页 PDF；在线放映直接用上面的 Pages 地址。
+**下载**：GitHub 仓库 → Actions → 左侧「答辩幻灯片 (Slidev)」→ 最近一次绿色 run → 底部 Artifacts → 下载 `playerstock-defense-pdf`，解压得到 20 页 PDF；在线放映直接用上面的 Pages 地址。
 也可在 Actions 页面点 **Run workflow** 手动触发。
 
 ## 彩排记录（待填）

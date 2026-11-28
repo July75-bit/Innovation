@@ -179,3 +179,8 @@
   line-height: 1.25 !important;
   color: #221f1b;
 }
+
+/* 「智能体的五个组成」表：位置列用等宽小字，正文略小以放下五行 */
+.slidev-layout table.agent5 td { font-size: .84rem; line-height: 1.45; padding-top: .45rem; padding-bottom: .45rem; }
+.slidev-layout table.agent5 td.mono { font-family: var(--mono); font-size: .74rem; color: var(--grey); white-space: nowrap; font-weight: 400; }
+.slidev-layout table.agent5 td:first-child { width: 5.5rem; }

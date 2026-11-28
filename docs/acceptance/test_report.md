@@ -373,7 +373,7 @@ SAME balance=True total=True qty=True trades=True points=True
 - **结论：可交付** —— M3/M4/M5 均已达成；**366** 条自动化（单元 311 / 集成 22 / 评测 33；auth 22+7、重灌端点 4、余额重建 2 等入账，2026-11-26）+ 核心逻辑覆盖率 **98%**（2035 语句 / 47 未覆盖，2026-11-26 复测） +
   线上验收 **TC-401~406 全部 ✅**（CORS 白名单生效、`/market` 修复已上线、重新部署后数据仍在）+
   缺陷清单 **15 条全部已修**（含 3 个 P0：并发超卖 / 部署驱动 / 线上 CORS；含 1 条 P1 数据丢失：重灌误删账号）+
-  `deployment.md` §5 的 A–G 检查单是每次发布时逐项填写的模板；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **19 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 是历史产物。
+  `deployment.md` §5 的 A–G 检查单是每次发布时逐项填写的模板；答辩主材料为 Slidev 源稿 `docs/slides/slides.md` **20 页**（Actions 导出 PDF），`docs/presentation/defense.pdf` 是历史产物。
 - 答辩当天仍需执行（非交付物缺口）：**彩排 ≥2 次并计时**（8+2+5 ≤15 分钟）、演示前 15 分钟跑 `prewarm.py` 预热、
   若不想在演示里出现历史持仓则上台前重置演示数据（见 `demo-script.md` §0/§0.1）。
 - 已知限制如实列在 §10（写接口与 LLM 版 AI 未压测）；**外部交叉测试双向完成**——2026-11-14 我方测 Tome 组 33 题（9/17/6/1，`cross_test.md` §3）；同日宇宙无敌暴龙战士测我方 33 题（28 通过 / 4 部分 / 0 不通过 / 1 未覆盖，对方注明「未重新测试」，按材料评审引用，§4）。
