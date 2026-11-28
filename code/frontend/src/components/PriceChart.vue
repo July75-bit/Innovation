@@ -9,6 +9,10 @@
  *
  * 鼠标悬停：hoverIdx 记下当前命中的第几个点，tooltip 和竖线都由它驱动；
  * 图下方"价格变动明细"列表可展开，方便逐条核对接口返回的 reason（答辩抽查用）。
+ *
+ * 显示窗口（2026-11-28 起）：曲线只保留**最新的 10 个日历天**（windowDays 可调，0=全量）。
+ * 窗口锚在"最新点位所在日"而不是"今天"，停牌中的选手也能看到完整近 10 日走势；
+ * 停牌日没有点，所以窗口内点数允许少于天数。只影响展示——接口与明细数据不动。
  */
 /**
  * 价格历史折线图（契约 §4.4：points 已按 ts 升序，直接用，不再排序）。
@@ -23,7 +27,28 @@ import { computed, ref } from 'vue'
 import type { PricePoint } from '../api/types'
 import { dateTime, money } from '../utils/format'
 
-const props = defineProps<{ points: PricePoint[] }>()
+const props = withDefaults(defineProps<{ points: PricePoint[]; windowDays?: number }>(), {
+  windowDays: 10,
+})
+
+/** 一个 UTC 日历天（毫秒） */
+const DAY_MS = 86_400_000
+
+/**
+ * 按显示窗口裁剪点位：保留 [最新点日期 - (windowDays-1) 天, 最新点日期]（含两端，UTC）。
+ * 起点抹到 UTC 零点，12:00 的基准点不会被多算半天；ts 解析失败的点直接丢弃。
+ */
+const visiblePoints = computed(() => {
+  const pts = props.points
+  if (props.windowDays <= 0 || pts.length === 0) return pts
+  const last = Date.parse((pts[pts.length - 1] as PricePoint).ts)
+  if (!Number.isFinite(last)) return pts
+  const from = Math.floor((last - (props.windowDays - 1) * DAY_MS) / DAY_MS) * DAY_MS
+  return pts.filter((p) => {
+    const ts = Date.parse(p.ts)
+    return Number.isFinite(ts) && ts >= from
+  })
+})
 
 const W = 640
 const H = 240
@@ -33,7 +58,7 @@ const showDetail = ref(false)
 const hoverIdx = ref<number | null>(null)
 
 const chart = computed(() => {
-  const pts = props.points
+  const pts = visiblePoints.value
   if (pts.length === 0) return null
 
   let min = Infinity
