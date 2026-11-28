@@ -585,104 +585,117 @@ flowchart LR
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.4 数据库设计</div>
 
-# 数据库：9 张表，交易在单个事务中完成
+# 数据库：9 张表分别存什么
 
 <div class="body">
 
-<div class="g g-5-7">
-  <div v-click>
+<div v-click>
 
-```mermaid {scale: 0.72}
-erDiagram
-  USERS ||--o{ POSITIONS : "持有"
-  USERS ||--o{ TRADES : "产生"
-  USERS ||--o{ AUTH_TOKENS : "签发"
-  PLAYERS ||--o{ POSITIONS : "被持有"
-  PLAYERS ||--o{ TRADES : "被交易"
-  PLAYERS ||--o{ PRICE_HISTORY : "有历史"
-```
+<table class="tight db9">
+<thead><tr><th>用途</th><th>表</th><th>存什么</th></tr></thead>
+<tbody>
+<tr><td rowspan="2">账号</td><td class="mono">users</td><td>每个用户一行：用户名、当前余额、初始余额、加密后的密码</td></tr>
+<tr><td class="mono">auth_tokens</td><td>登录凭证：登录后发放，30 天有效，退出即作废</td></tr>
+<tr><td rowspan="2">市场</td><td class="mono">players</td><td>每位选手一行：名字、战队、位置、现价、上一次价格、表现评分</td></tr>
+<tr><td class="mono">price_history</td><td>每次价格变化一行：选手、新价格、时间、变化原因</td></tr>
+<tr><td rowspan="2">交易</td><td class="mono">positions</td><td>持仓：哪个用户持有哪位选手、几股、买入均价</td></tr>
+<tr><td class="mono">trades</td><td>交易流水：每笔买卖的方向、数量、成交价、金额、成交后余额</td></tr>
+<tr><td rowspan="3">智能体</td><td class="mono">agent_traces</td><td>每次调用智能体的记录：用途、模型还是规则版、耗时、输出内容</td></tr>
+<tr><td class="mono">decision_logs</td><td>用户对建议点了采纳还是忽略</td></tr>
+<tr><td class="mono">price_narratives</td><td>价格变化的文字解读，按价格点保存，避免重复调用模型</td></tr>
+</tbody>
+</table>
 
-  </div>
-  <div class="body" style="gap:1.1rem">
-    <dl class="dl" v-click style="grid-template-columns:5.5rem 1fr">
-      <dt>账号</dt><dd><span class="mono">users · auth_tokens</span></dd>
-      <dt>市场</dt><dd><span class="mono">players · price_history</span></dd>
-      <dt>交易</dt><dd><span class="mono">positions · trades</span></dd>
-      <dt>智能体</dt><dd><span class="mono">agent_traces</span> 等 3 张，仅存记录</dd>
-    </dl>
-    <div class="text rule-top" v-click>扣款、更新持仓、写入流水在同一事务中完成；扣款采用「余额充足才扣」的条件更新，并发下单不会超卖。</div>
-  </div>
 </div>
+
+<div class="text" v-click>买入一次同时改 3 张表：<span class="mono">users</span> 扣余额、<span class="mono">positions</span> 加股数、<span class="mono">trades</span> 记流水；三步在同一个事务里，要么全部成功，要么全部撤回。</div>
 
 </div>
 
 <!--
-【25 秒】数据库一共九张表，分四组：账号、市场、交易和智能体记录。智能体那三张表只存记录，不碰业务数据。一笔交易里，扣钱、改持仓、写流水在同一个事务里完成；扣钱时数据库会先判断余额够不够，所以两笔订单同时到也不会超卖。这个坑我们开发时真遇到过，后来专门加了并发测试。
+【25 秒】数据库一共九张表，按用途分四组：账号、市场、交易和智能体。表格右边写了每张表存什么，比如 players 每位选手一行，trades 每笔买卖一行。下面是一个例子：买入一次会同时修改三张表，扣余额、加股数、记流水。这三步放在同一个事务里，要么全部成功，要么全部撤回，扣款时还会先确认余额充足，所以两笔订单同时提交也不会超卖。
 
 **【可能被问】**
 
+**问**：什么是事务？
+
+答：把几步数据库操作打包成一个整体，要么全部完成，要么一步都不生效。比如买入时余额扣了、但写流水失败，整笔会撤回，余额恢复原样。
+
+**问**：表和表之间怎么关联？
+
+答：通过编号关联。positions 和 trades 里都记着用户编号和选手编号，分别指向 users 和 players；price_history 记着选手编号。
+
 **问**：为什么不用 SELECT FOR UPDATE 加锁？
 
-答：本地的 SQLite 会悄悄忽略它，本地测试全绿、线上才生效，最危险。我们用「余额够才扣」这种条件更新，SQLite 和 Postgres 行为一致。
+答：本地的 SQLite 会忽略这种加锁写法，本地测试全通过、线上才生效，风险最大。我们用「余额充足才扣」的条件更新，SQLite 和 Postgres 行为一致。
 
 **问**：金额精度怎么保证？
 
 答：数据库用定点小数，保留两位；程序里全程用 Decimal 计算，不用浮点数。
 
+**问**：密码怎么存？
+
+答：不存明文。密码加盐后做 10 万次哈希，只存结果；登录凭证也只存哈希值。
+
 **问**：用户删号后数据怎么处理？
 
-答：删号要再输一次密码，会一起删掉他的持仓、流水和登录令牌。
+答：删号要再输一次密码，会一起删除他的持仓、流水和登录凭证。
 -->
 
 ---
 
 <div class="kicker"><b>03</b> 产品实现 · 3.5.5 接口与 3.5.6 前端设计</div>
 
-# 接口与前端：29 个接口、8 个页面
+# 接口：网页向后端取数据、提交操作的入口
 
 <div class="body">
 
-<div class="g g-7-5">
-  <div v-click>
+<div v-click>
 
-| 分组 | 能做什么 | 例子 |
-| --- | --- | --- |
-| 行情 | 选手列表、详情、价格历史 | <span class="mono">GET /api/players</span> |
-| 交易 | 买入、卖出、持仓、流水 | <span class="mono">POST /api/trades/buy</span> |
-| 账号 | 注册、登录、退出、删号 | <span class="mono">POST /api/auth/login</span> |
-| 智能体 | 建议、简报、决策卡、审计 | <span class="mono">GET /api/analysis/\{id\}</span> |
-| 运维 | 健康检查、重灌数据 | <span class="mono">GET /api/health</span> |
+<table class="tight api5">
+<thead><tr><th>页面上的操作</th><th>网页调用的接口</th><th>后端做什么</th></tr></thead>
+<tbody>
+<tr><td>打开市场页</td><td class="mono">GET /api/players</td><td>返回 16 名选手的现价和涨跌</td></tr>
+<tr><td>点「买入」</td><td class="mono">POST /api/trades/buy</td><td>检查余额和持仓上限，扣款、加股数、记流水</td></tr>
+<tr><td>登录</td><td class="mono">POST /api/auth/login</td><td>核对密码，返回登录凭证</td></tr>
+<tr><td>打开 1 号选手详情</td><td class="mono">GET /api/analysis/1</td><td>返回智能体对这位选手的建议（6 个字段）</td></tr>
+<tr><td>上线检查</td><td class="mono">GET /api/health</td><td>返回服务是否正常运行</td></tr>
+</tbody>
+</table>
 
-  </div>
-  <dl class="dl" v-click style="grid-template-columns:4.5rem 1fr">
-    <dt>页面</dt><dd>8 个，切换时淡入过渡</dd>
-    <dt>状态</dt><dd>未使用状态库，由组合函数管理</dd>
-    <dt>图表</dt><dd>价格曲线和资产曲线用 SVG 绘制</dd>
-    <dt>主题</dt><dd>设计令牌，深浅两套共用一份代码</dd>
-    <dt>加载</dt><dd>缓存、失败重试、骨架屏</dd>
-  </dl>
 </div>
 
-<div class="note" v-click>出错统一返回中文提示和错误码。在线接口文档：<span class="mono">playerstock-backend-mdlk.onrender.com/docs</span></div>
+<div class="g g-1-1 rule-top" v-click>
+  <div class="text"><span class="label">怎么看　</span>GET 表示读取数据，POST 表示提交操作；路径最后的数字是选手编号。共 29 个接口：行情 3、交易与账户 7、账号 5、智能体 9、运维 5。</div>
+  <div class="text"><span class="label">前端　</span>8 个页面；价格曲线用 SVG 绘制；颜色和间距统一定义，深色、浅色主题共用一份代码。</div>
+</div>
 
 </div>
 
 <!--
-【25 秒】后端一共二十九个接口，分五组，左边每组举了一个例子，完整列表在线文档里能直接试。前端八个页面，没用状态库；价格曲线和资产曲线都是自己画的 SVG；颜色和间距统一用设计令牌，所以深色、浅色两套主题共用一份代码。
+【25 秒】接口是网页和后端之间的入口：页面上每做一个操作，网页就调用一个接口，后端处理后把结果返回。表格按「页面操作、调用的接口、后端做什么」列了五个例子，比如点「买入」，网页调用 POST /api/trades/buy，后端检查余额和持仓上限后完成扣款。GET 表示读取数据，POST 表示提交操作。一共二十九个接口，分五组。前端有八个页面，深色和浅色主题共用一份代码。
 
 **【可能被问】**
 
+**问**：接口和页面是什么关系？
+
+答：页面负责显示，接口负责提供数据和执行操作。一个页面通常会调用几个接口，比如详情页同时调用选手信息、价格历史和智能体建议三个接口。
+
+**问**：29 个接口分别有哪些？
+
+答：行情 3 个（选手列表、选手详情、价格历史），交易与账户 7 个（买入、卖出、持仓、流水、账户、资产曲线、重建余额），账号 5 个（注册、登录、当前身份、退出、删号），智能体 9 个，运维 5 个（健康检查、数据库自检、日志、重灌数据、赛后结算）。完整列表可在在线接口文档 playerstock-backend-mdlk.onrender.com/docs 查看并直接试用。
+
+**问**：出错时接口返回什么？
+
+答：统一返回中文提示和错误码，比如余额不足返回错误码 INSUFFICIENT_BALANCE，并提示最多还能买几股。AI 接口出错不会报错，直接返回规则版建议。
+
 **问**：登录怎么做的，用 JWT 吗？
 
-答：没用 JWT。密码加盐后做 10 万次哈希再存；登录发一个随机令牌，库里只存它的哈希，30 天有效，退出就作废。同一用户名 10 分钟内输错 5 次会先锁住。
+答：没用 JWT。登录后发一个随机凭证，库里只存它的哈希，30 天有效，退出即作废；同一用户名 10 分钟内输错 5 次会先锁住。
 
 **问**：为什么不用状态库？
 
 答：页面状态不复杂，用组合函数共享就够了，少一层概念，组员上手快。
-
-**问**：设计令牌是什么？
-
-答：把颜色、间距、圆角这些定成统一的变量，组件只引用变量；换主题时只换一套变量的值，组件代码不用改。
 -->
 
 ---

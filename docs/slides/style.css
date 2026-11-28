@@ -184,3 +184,10 @@
 .slidev-layout table.agent5 td { font-size: .84rem; line-height: 1.45; padding-top: .45rem; padding-bottom: .45rem; }
 .slidev-layout table.agent5 td.mono { font-family: var(--mono); font-size: .74rem; color: var(--grey); white-space: nowrap; font-weight: 400; }
 .slidev-layout table.agent5 td:first-child { width: 5.5rem; }
+
+/* 第 14 页数据库表、第 15 页接口表 */
+.slidev-layout table.db9 td { font-size: .84rem; line-height: 1.35; padding-top: .26rem; padding-bottom: .26rem; vertical-align: middle; }
+.slidev-layout table.api5 td { vertical-align: middle; }
+.slidev-layout table.db9 td[rowspan] { color: var(--grey); font-weight: 500; vertical-align: middle; border-right: 1px solid var(--rule); width: 4.5rem; }
+.slidev-layout table.db9 td.mono, .slidev-layout table.api5 td.mono { font-family: var(--mono); font-size: .8rem; color: var(--ink); font-weight: 500; white-space: nowrap; padding-left: .8rem; }
+.slidev-layout table.api5 td { font-size: .92rem; }
